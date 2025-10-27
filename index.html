@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/PhotoRoom-20250915_123950.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#7c6df2" />
+    <meta name="description" content="Application de suivi d'entraînements pour sprinteurs" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Sprintflow" />
+    <link rel="apple-touch-icon" href="/PhotoRoom-20250915_123950.png" />
+    
+    <!-- Meta tags pour le partage -->
+    <meta property="og:title" content="Sprintflow - Suivi d'entraînement" />
+    <meta property="og:description" content="Application de suivi d'entraînements pour sprinteurs et athlètes" />
+    <meta property="og:image" content="/PhotoRoom-20250915_123950.png" />
+    <meta property="og:type" content="website" />
+    
+    <title>Sprintflow - Suivi d'entraînement</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        // Service Workers ne sont pas supportés sur StackBlitz
+        console.log('ℹ️ Service Workers désactivés sur StackBlitz');
+      }
+      
+      // Gestion de l'installation PWA
+      let deferredPrompt;
+      
+      window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('📱 PWA: Prompt d\'installation disponible');
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Afficher un bouton d'installation personnalisé
+        showInstallButton();
+      });
+      
+      function showInstallButton() {
+        // Créer un bouton d'installation flottant
+        const installButton = document.createElement('button');
+        installButton.innerHTML = '📱 Installer l\'app';
+        installButton.style.cssText = `
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          background: linear-gradient(135deg, #7c6df2, #f97316);
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 25px;
+          font-weight: bold;
+          box-shadow: 0 4px 15px rgba(124, 109, 242, 0.3);
+          cursor: pointer;
+          z-index: 1000;
+          font-size: 14px;
+          transition: all 0.3s ease;
+        `;
+        
+        installButton.addEventListener('mouseenter', () => {
+          installButton.style.transform = 'scale(1.05)';
+          installButton.style.boxShadow = '0 6px 20px rgba(124, 109, 242, 0.4)';
+        });
+        
+        installButton.addEventListener('mouseleave', () => {
+          installButton.style.transform = 'scale(1)';
+          installButton.style.boxShadow = '0 4px 15px rgba(124, 109, 242, 0.3)';
+        });
+        
+        installButton.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+              console.log('✅ PWA: Installation acceptée');
+            } else {
+              console.log('❌ PWA: Installation refusée');
+            }
+            
+            deferredPrompt = null;
+            installButton.remove();
+          }
+        });
+        
+        document.body.appendChild(installButton);
+        
+        // Masquer le bouton après 10 secondes
+        setTimeout(() => {
+          if (installButton.parentNode) {
+            installButton.style.opacity = '0';
+            setTimeout(() => installButton.remove(), 300);
+          }
+        }, 10000);
+      }
+      
+      // Détecter si l'app est installée
+      window.addEventListener('appinstalled', () => {
+        console.log('🎉 PWA: Application installée avec succès !');
+        deferredPrompt = null;
+        
+        // Afficher une notification de succès
+        if (window.location.pathname === '/') {
+          setTimeout(() => {
+            alert('🎉 Sprintflow a été installé avec succès ! Vous pouvez maintenant l\'utiliser comme une application native.');
+          }, 1000);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,129 @@
+{
+  "name": "Sprintflow - Suivi d'entraînement",
+  "short_name": "Sprintflow",
+  "description": "Application de suivi d'entraînements pour sprinteurs et athlètes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#7c6df2",
+  "theme_color": "#7c6df2",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fr",
+  "categories": ["sports", "fitness", "health"],
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouvel entraînement",
+      "short_name": "Entraînement",
+      "description": "Enregistrer un nouvel entraînement",
+      "url": "/?view=workouts",
+      "icons": [
+        {
+          "src": "/PhotoRoom-20250915_123950.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Nouveau record",
+      "short_name": "Record",
+      "description": "Enregistrer un nouveau record",
+      "url": "/?view=records",
+      "icons": [
+        {
+          "src": "/PhotoRoom-20250915_123950.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Coach IA",
+      "short_name": "Coach IA",
+      "description": "Consulter le coach IA",
+      "url": "/?view=ai",
+      "icons": [
+        {
+          "src": "/PhotoRoom-20250915_123950.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/PhotoRoom-20250915_123950.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
