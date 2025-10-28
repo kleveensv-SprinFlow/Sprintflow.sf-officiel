@@ -11,6 +11,7 @@ interface RecordsFormProps {
 }
 
 export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCancel }) => {
+  const [type, setType] = useState<'run' | 'exercise' | 'jump' | 'throw'>('exercise');
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [value, setValue] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -51,23 +52,23 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!value || !date) {
+    if (!value || !date || (type !== 'exercise' && !exerciceName)) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-    if (!selectedExerciceId) {
+    if (type === 'exercise' && !selectedExerciceId) {
       alert('Veuillez sélectionner un exercice dans la liste');
       return;
     }
 
     const record: Omit<Record, 'id'> = {
-      type: 'exercise',
+      type,
       name: exerciceName,
       value: parseFloat(value),
-      unit: 'kg',
+      unit: type === 'run' ? 's' : type === 'exercise' ? 'kg' : 'm',
       date,
-      exercice_reference_id: selectedExerciceId,
+      ...(type === 'exercise' && { exercice_reference_id: selectedExerciceId }),
     };
 
     onSave(record);
@@ -89,91 +90,125 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
           <Trophy className="h-6 w-6 mr-2 text-accent-500" />
-          Nouveau record de musculation
+          Nouveau record
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <>
-            <div>
-              <label htmlFor="categorie" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Catégorie
-              </label>
-              <select
-                id="categorie"
-                value={selectedCategorie}
-                onChange={(e) => handleCategorieChange(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                required
-              >
-                <option value="">Sélectionner une catégorie</option>
-                {Object.entries(CATEGORIES).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label htmlFor="record-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Type de record
+            </label>
+            <select
+              id="record-type"
+              value={type}
+              onChange={(e) => setType(e.target.value as any)}
+              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"
+            >
+              <option value="exercise">Musculation</option>
+              <option value="run">Course</option>
+              <option value="jump">Saut</option>
+              <option value="throw">Lancer</option>
+            </select>
+          </div>
 
-            {selectedCategorie && (
-              <>
-                <div>
-                  <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Filtrer les exercices
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      id="search"
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Tapez pour filtrer..."
-                      className="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                    />
+          {type === 'exercise' ? (
+            <>
+              <div>
+                <label htmlFor="categorie" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Catégorie
+                </label>
+                <select
+                  id="categorie"
+                  value={selectedCategorie}
+                  onChange={(e) => handleCategorieChange(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Sélectionner une catégorie</option>
+                  {Object.entries(CATEGORIES).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedCategorie && (
+                <>
+                  <div>
+                    <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Filtrer les exercices
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        id="search"
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Tapez pour filtrer..."
+                        className="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label htmlFor="exercice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Exercice
-                  </label>
-                  <select
-                    id="exercice"
-                    value={selectedExerciceId}
-                    onChange={(e) => handleExerciceChange(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                    required
-                    disabled={loading}
-                  >
-                    <option value="">Sélectionner un exercice</option>
-                    {filteredExercices.map((ex) => (
-                      <option key={ex.id} value={ex.id}>
-                        {ex.nom_fr}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomForm(true)}
-                    className="mt-2 text-sm text-accent-500 hover:text-accent-600 flex items-center"
-                  >
-                    <PlusCircle className="w-4 h-4 mr-1" />
-                    Créer un exercice personnalisé
-                  </button>
-                  {filteredExercices.length === 0 && selectedCategorie && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      {searchQuery ? 'Aucun exercice trouvé' : 'Aucun exercice dans cette catégorie'}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-          </>
+                  <div>
+                    <label htmlFor="exercice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Exercice
+                    </label>
+                    <select
+                      id="exercice"
+                      value={selectedExerciceId}
+                      onChange={(e) => handleExerciceChange(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-accent-500 focus:border-transparent"
+                      required
+                      disabled={loading}
+                    >
+                      <option value="">Sélectionner un exercice</option>
+                      {filteredExercices.map((ex) => (
+                        <option key={ex.id} value={ex.id}>
+                          {ex.nom_fr}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomForm(true)}
+                      className="mt-2 text-sm text-accent-500 hover:text-accent-600 flex items-center"
+                    >
+                      <PlusCircle className="w-4 h-4 mr-1" />
+                      Créer un exercice personnalisé
+                    </button>
+                    {filteredExercices.length === 0 && selectedCategorie && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        {searchQuery ? 'Aucun exercice trouvé' : 'Aucun exercice dans cette catégorie'}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nom du record
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={exerciceName}
+                onChange={(e) => setExerciceName(e.target.value)}
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"
+                placeholder={type === 'run' ? '100m' : type === 'jump' ? 'Longueur' : 'Poids'}
+                required
+              />
+            </div>
+          )}
 
           <div>
-            <label htmlFor="charge" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Charge (kg)
+            <label htmlFor="value" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {type === 'exercise' ? 'Charge (kg)' : type === 'run' ? 'Temps (s)' : 'Distance (m)'}
             </label>
             <input
-              id="charge"
+              id="value"
               type="number"
               step="0.1"
               value={value}
