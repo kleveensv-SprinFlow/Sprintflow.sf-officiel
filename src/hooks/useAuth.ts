@@ -17,14 +17,22 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUserProfile = async (user: User) => {
-    const { data, error } = await supabase
+  const fetchUserProfile = async (user: User, signal?: AbortSignal) => {
+    let query = supabase
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
-      .single();
+      .eq('id', user.id);
+
+    if (signal) {
+      query = query.abortSignal(signal);
+    }
+    
+    const { data, error } = await query.single();
     
     if (error) {
+      if (error.name === 'AbortError') {
+        throw error;
+      }
       console.warn('⚠️ Profil non trouvé, utilisation des métadonnées:', error.message);
       // Fallback sur les métadonnées si le profil n'existe pas encore
       return {
@@ -41,34 +49,33 @@ export function useAuth() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
     let mounted = true;
 
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session?.user && mounted) {
+        if (session?.user) {
           setUser(session.user);
-          const userProfile = await fetchUserProfile(session.user);
-          if (mounted) {
-            setProfile(userProfile);
-          }
+          const userProfile = await fetchUserProfile(session.user, signal);
+          setProfile(userProfile);
         } else {
-          if (mounted) {
-            setUser(null);
-            setProfile(null);
-          }
-        }
-
-      } catch (error: any) {
-        console.warn('⚠️ Erreur auth:', error?.message);
-        setError(error?.message || 'Erreur de connexion');
-        if (mounted) {
           setUser(null);
           setProfile(null);
         }
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.log('Auth fetch aborted.');
+          return;
+        }
+        console.warn('⚠️ Erreur auth:', error?.message);
+        setError(error?.message || 'Erreur de connexion');
+        setUser(null);
+        setProfile(null);
       } finally {
-        if (mounted) {
+        if (!signal.aborted) {
           setLoading(false);
         }
       }
@@ -77,7 +84,6 @@ export function useAuth() {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      
       if (event === 'SIGNED_IN' && session?.user && mounted) {
         setError(null);
         setUser(session.user);
@@ -101,6 +107,7 @@ export function useAuth() {
     });
 
     return () => {
+      controller.abort();
       mounted = false;
       subscription.unsubscribe();
     };
