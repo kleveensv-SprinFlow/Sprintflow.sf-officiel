@@ -6,6 +6,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
+// Helper for linear interpolation
+function interpolate(value: number, points: { x: number, y: number }[]): number {
+  let p1 = points[0];
+  let p2 = points[points.length - 1];
+
+  if (value <= p1.x) return p1.y;
+  if (value >= p2.x) return p2.y;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    if (value >= points[i].x && value <= points[i+1].x) {
+      p1 = points[i];
+      p2 = points[i+1];
+      break;
+    }
+  }
+
+  const weight = (value - p1.x) / (p2.x - p1.x);
+  return p1.y + weight * (p2.y - p1.y);
+}
+
+// Score calculation for body composition
+function calculateCompositionScore(data: { masse_grasse_pct?: number, imc?: number }): { score: number, mode: 'expert' | 'standard', value: number } {
+  if (data.masse_grasse_pct) {
+    const mg = data.masse_grasse_pct;
+    // Optimal: 8-12 -> 100, 15 -> 75, 18 -> 60, >20 -> <40
+    const points = [
+      { x: 8, y: 100 },
+      { x: 12, y: 100 },
+      { x: 15, y: 75 },
+      { x: 18, y: 60 },
+      { x: 20, y: 40 },
+      { x: 25, y: 20 } // Extrapolation
+    ];
+    // Invert interpolation for fat mass (lower is better)
+    const invertedPoints = points.sort((a,b) => a.x - b.x);
+    let score = interpolate(mg, invertedPoints);
+     if (mg < 8) score = 100 - (8-mg)*5; // Penalty for being too low
+    return { score: Math.max(0, Math.min(100, score)), mode: 'expert', value: mg };
+  }
+
+  if (data.imc) {
+    const imc = data.imc;
+    // Optimal: 20-23 -> 100, 19/24 -> 75, 18/25 -> 50
+    const points = [
+        { x: 17, y: 30 },
+        { x: 18, y: 50 },
+        { x: 19, y: 75 },
+        { x: 21.5, y: 100 }, // Midpoint of optimal range
+        { x: 24, y: 75 },
+        { x: 25, y: 50 },
+        { x: 26, y: 30 }
+    ];
+    return { score: Math.max(0, Math.min(100, interpolate(imc, points))), mode: 'standard', value: imc };
+  }
+
+  return { score: 50, mode: 'standard', value: 0 }; // Default score if no data
+}
+
+
+// Score calculation for a single exercise performance
+function calculatePerformanceScore(ratio: number, base?: number, avance?: number, elite?: number): number {
+    if (!base || !avance || !elite || ratio < 0) return 0;
+
+    const points = [
+        { x: 0, y: 0 },
+        { x: base, y: 25 },
+        { x: avance, y: 75 },
+        { x: elite, y: 100 },
+        { x: elite * 1.1, y: 105 } // Bonus for exceeding elite
+    ];
+    
+    return Math.round(Math.max(0, Math.min(105, interpolate(ratio, points))));
+}
+
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -21,253 +96,109 @@ Deno.serve(async (req: Request) => {
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !userData.user) {
-      return new Response(
-        JSON.stringify({ error: 'Non autorisé' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Non autorisé' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const athleteId = userData.user.id;
-    let miniScoreComposition = 0;
-    let miniScoreForce = 0;
-    const details: any = {};
-    let modeExpert = false;
-    let causeIndiceBas = null;
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('taille_cm, date_de_naissance')
-      .eq('id', athleteId)
-      .maybeSingle();
-
-    let age = 25;
-    if (profile?.date_de_naissance) {
-      const birthDate = new Date(profile.date_de_naissance);
-      const today = new Date();
-      age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-    }
-
+    // 1. Get athlete's body data
+    const { data: profile } = await supabase.from('profiles').select('taille_cm').eq('id', athleteId).single();
     const { data: latestBodyComp } = await supabase
       .from('donnees_corporelles')
-      .select('poids_kg, masse_grasse_pct, masse_musculaire_kg')
+      .select('poids_kg, masse_grasse_pct')
       .eq('athlete_id', athleteId)
       .order('date', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (!latestBodyComp?.poids_kg) {
-      return new Response(
-        JSON.stringify({
-          score: 50,
-          mode_expert: false,
-          mini_scores: { composition: 50, force: 50 },
-          message_id: 'DONNEES_MANQUANTES',
-          cause: null,
-          details: { message: 'Poids corporel manquant. Ajoutez vos données de composition corporelle.' },
-          rapport_poids_puissance: null,
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Poids corporel manquant.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-
     const poidsKg = latestBodyComp.poids_kg;
-
-    if (latestBodyComp.masse_grasse_pct) {
-      modeExpert = true;
-      const mg = latestBodyComp.masse_grasse_pct;
-
-      if (mg >= 6 && mg <= 10) {
-        miniScoreComposition = 100;
-      } else if (mg > 10 && mg <= 12) {
-        miniScoreComposition = 95;
-      } else if (mg > 12 && mg <= 14) {
-        miniScoreComposition = 85;
-      } else if (mg > 14 && mg <= 16) {
-        miniScoreComposition = 70;
-      } else if (mg > 16 && mg <= 18) {
-        miniScoreComposition = 55;
-      } else if (mg > 18 && mg <= 20) {
-        miniScoreComposition = 40;
-      } else if (mg < 6) {
-        miniScoreComposition = 50;
-      } else {
-        miniScoreComposition = 25;
-        causeIndiceBas = 'COMP_CORP';
-      }
-
-      details.composition = {
-        mode: 'expert',
-        masse_grasse_pct: mg,
-        mini_score: miniScoreComposition,
-        evaluation: mg <= 10 ? 'Optimal' : mg <= 14 ? 'Très bon' : mg <= 16 ? 'Bon' : mg <= 18 ? 'Moyen' : 'À améliorer'
-      };
-    } else if (profile?.taille_cm && poidsKg) {
-      const imc = poidsKg / Math.pow(profile.taille_cm / 100, 2);
-
-      if (imc >= 20 && imc <= 23) miniScoreComposition = 100;
-      else if (imc >= 19 && imc < 20 || imc > 23 && imc <= 24) miniScoreComposition = 85;
-      else if (imc >= 18 && imc < 19 || imc > 24 && imc <= 25) miniScoreComposition = 70;
-      else if (imc >= 17 && imc < 18 || imc > 25 && imc <= 26) miniScoreComposition = 55;
-      else {
-        miniScoreComposition = 40;
-        if (!causeIndiceBas) causeIndiceBas = 'COMP_CORP';
-      }
-
-      details.composition = { mode: 'standard', imc: Math.round(imc * 10) / 10, mini_score: miniScoreComposition };
-    } else {
-      miniScoreComposition = 50;
-    }
-
-    const { data: exercicesDB } = await supabase
-      .from('exercices_sprint')
-      .select('nom_fr, nom_en, categorie, ratio_excellent, ratio_tres_bon, ratio_bon, utilisable_pour_indice')
-      .eq('utilisable_pour_indice', true);
-
-    const { data: allRecords } = await supabase
+    const imc = profile?.taille_cm ? poidsKg / Math.pow(profile.taille_cm / 100, 2) : undefined;
+    
+    // 2. Calculate Body Composition Score (40% of total)
+    const compoData = calculateCompositionScore({ masse_grasse_pct: latestBodyComp.masse_grasse_pct, imc });
+    const scoreComposition = Math.round(compoData.score);
+    
+    // 3. Calculate Relative Strength Score (60% of total)
+    const { data: allRecords, error: recordsError } = await supabase
       .from('records')
-      .select('exercise_name, value')
+      .select(`
+        value,
+        exercice_reference:exercices_reference (qualite_cible, unite, ratio_base, ratio_avance, ratio_elite),
+        exercice_personnalise:exercices_personnalises (
+            qualite_cible,
+            ref:exercices_reference (unite, ratio_base, ratio_avance, ratio_elite)
+        )
+      `)
       .eq('user_id', athleteId);
 
-    const subScores: any[] = [];
-    const evaluationsForce: any[] = [];
+    if (recordsError) throw recordsError;
 
-    if (allRecords && exercicesDB && allRecords.length > 0) {
-      for (const record of allRecords) {
-        const exerciceRef = exercicesDB.find(e => {
-          const nomLower = record.exercise_name.toLowerCase();
-          const nomFrLower = e.nom_fr.toLowerCase();
-          const nomEnLower = e.nom_en?.toLowerCase() || '';
+    let bestExplosiviteScore = 0;
+    let bestForceMaxScore = 0;
 
-          return nomLower.includes(nomFrLower) ||
-                 (nomEnLower && nomLower.includes(nomEnLower)) ||
-                 nomFrLower.includes(nomLower) ||
-                 (nomEnLower && nomEnLower.includes(nomLower));
-        });
+    for (const record of allRecords) {
+        const ref = record.exercice_reference || record.exercice_personnalise?.ref;
+        if (!ref) continue;
 
-        if (!exerciceRef || !exerciceRef.ratio_bon) continue;
+        const ratio = ref.unite === 'kg' ? record.value / poidsKg : record.value;
+        const performanceScore = calculatePerformanceScore(ratio, ref.ratio_base, ref.ratio_avance, ref.ratio_elite);
+        
+        const qualiteCible = record.exercice_reference?.qualite_cible || record.exercice_personnalise?.qualite_cible;
 
-        const ratio = record.value / poidsKg;
-        let score = 0;
-
-        const ratioInter = exerciceRef.ratio_bon;
-        const ratioAvance = exerciceRef.ratio_tres_bon;
-        const ratioElite = exerciceRef.ratio_excellent;
-
-        if (ratio <= ratioInter) {
-          score = (ratio / ratioInter) * 50;
-        } else if (ratio < ratioAvance) {
-          const rangeRatio = (ratio - ratioInter) / (ratioAvance - ratioInter);
-          score = 50 + (rangeRatio * 25);
-        } else if (ratio < ratioElite) {
-          const rangeRatio = (ratio - ratioAvance) / (ratioElite - ratioAvance);
-          score = 75 + (rangeRatio * 25);
-        } else {
-          score = 100;
+        if (qualiteCible.toLowerCase().includes('explosivité')) {
+            if (performanceScore > bestExplosiviteScore) {
+                bestExplosiviteScore = performanceScore;
+            }
+        } else if (qualiteCible.toLowerCase().includes('force maximale')) {
+            if (performanceScore > bestForceMaxScore) {
+                bestForceMaxScore = performanceScore;
+            }
         }
-
-        score = Math.min(100, Math.max(0, Math.round(score)));
-
-        evaluationsForce.push({
-          exercice: record.exercise_name,
-          categorie: exerciceRef.categorie,
-          ratio: Math.round(ratio * 100) / 100,
-          score: score,
-          poids: record.value
-        });
-
-        subScores.push(score);
-      }
     }
 
-    if (subScores.length > 0) {
-      miniScoreForce = Math.round(subScores.reduce((a, b) => a + b, 0) / subScores.length);
+    let scoreForceRelative = 0;
+    const hasExplo = bestExplosiviteScore > 0;
+    const hasForceMax = bestForceMaxScore > 0;
+
+    if (hasExplo && hasForceMax) {
+        scoreForceRelative = Math.round((bestExplosiviteScore * 0.7) + (bestForceMaxScore * 0.3));
+    } else if (hasExplo) {
+        scoreForceRelative = bestExplosiviteScore;
+    } else if (hasForceMax) {
+        scoreForceRelative = bestForceMaxScore;
     } else {
-      miniScoreForce = 50;
+        scoreForceRelative = 50; // Default if no relevant records
     }
-
-    if (miniScoreForce < 50 && !causeIndiceBas) {
-      causeIndiceBas = 'FORCE';
-    }
-
-    const meilleurExo = evaluationsForce.length > 0
-      ? evaluationsForce.reduce((prev, current) => (prev.score > current.score) ? prev : current)
-      : null;
-
-    details.force = {
-      nb_exercices_evalues: subScores.length,
-      meilleur_exercice: meilleurExo?.exercice || null,
-      meilleur_ratio: meilleurExo?.ratio || null,
-      mini_score: miniScoreForce,
-      evaluations: evaluationsForce
-    };
-
-    const ageModificateur = age < 20 ? 1.05 : age > 30 ? 0.95 : 1.0;
-
-    const scoreFinal = Math.round(
-      (miniScoreComposition * 0.35 + miniScoreForce * 0.65) * ageModificateur
-    );
-
-    let messageId = 'INDICE_MOYEN';
-    if (scoreFinal < 55) {
-      messageId = causeIndiceBas ? `INDICE_BAS_${causeIndiceBas}` : 'INDICE_BAS_GENERAL';
-    } else if (scoreFinal >= 85) {
-      messageId = 'INDICE_HAUT';
-    }
-
-    let rapportPoidsPuissance = null;
-    if (meilleurExo) {
-      let evaluation = '';
-      let couleur = '';
-
-      if (meilleurExo.ratio >= 2.0) {
-        evaluation = 'Excellent';
-        couleur = 'green';
-      } else if (meilleurExo.ratio >= 1.5) {
-        evaluation = 'Très bon';
-        couleur = 'blue';
-      } else if (meilleurExo.ratio >= 1.2) {
-        evaluation = 'Bon';
-        couleur = 'yellow';
-      } else if (meilleurExo.ratio >= 0.9) {
-        evaluation = 'Moyen';
-        couleur = 'orange';
-      } else {
-        evaluation = 'À améliorer';
-        couleur = 'red';
-      }
-
-      rapportPoidsPuissance = {
-        ratio: meilleurExo.ratio,
-        exercice: meilleurExo.exercice,
-        poids_kg: poidsKg,
-        evaluation,
-        couleur,
-      };
-    }
+    
+    // 4. Final Score Calculation
+    const scoreFinal = Math.round((scoreComposition * 0.4) + (scoreForceRelative * 0.6));
 
     return new Response(
       JSON.stringify({
         score: scoreFinal,
-        mode_expert: modeExpert,
-        age: age,
-        age_modificateur: ageModificateur,
-        mini_scores: { composition: miniScoreComposition, force: miniScoreForce },
-        message_id: messageId,
-        cause: causeIndiceBas,
-        details,
-        rapport_poids_puissance: rapportPoidsPuissance,
+        mini_scores: {
+          composition: scoreComposition,
+          force: scoreForceRelative
+        },
+        details: {
+          composition: {
+            mode: compoData.mode,
+            value: Math.round(compoData.value * 10) / 10
+          },
+          force: {
+            score_explosivite: bestExplosiviteScore,
+            score_force_maximale: bestForceMaxScore
+          }
+        }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
-    console.error('Erreur:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('Erreur in get_indice_performance:', error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
