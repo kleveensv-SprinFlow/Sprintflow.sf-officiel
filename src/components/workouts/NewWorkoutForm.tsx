@@ -56,7 +56,7 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
 
   const addMuscu = () => {
     setMuscu([
-      { exercice_id: '', exercice_nom: '', series: '', reps: '', poids: '' },
+      { exercice_id: '', exercice_nom: '', series: 1, reps: 1, poids: 0 },
       ...muscu
     ]);
   };
@@ -68,6 +68,16 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
   const updateMuscu = (index: number, field: keyof WorkoutMuscu, value: any) => {
     const newMuscu = [...muscu];
     newMuscu[index] = { ...newMuscu[index], [field]: value };
+    setMuscu(newMuscu);
+  };
+
+  const handleExerciseChange = (muscuIndex: number, exerciseId: string, exerciseName: string) => {
+    const newMuscu = [...muscu];
+    newMuscu[muscuIndex] = { 
+      ...newMuscu[muscuIndex], 
+      exercice_id: exerciseId, 
+      exercice_nom: exerciseName 
+    };
     setMuscu(newMuscu);
   };
 
@@ -131,10 +141,11 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
           <h3 className="font-semibold text-gray-900 dark:text-white">Informations générales</h3>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="date-seance" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Date de la séance *
             </label>
             <input
+              id="date-seance"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -144,10 +155,11 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="tag-seance" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Type de séance (Tag/Intention) *
             </label>
             <select
+              id="tag-seance"
               value={tagSeance}
               onChange={(e) => setTagSeance(e.target.value as any)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -230,12 +242,12 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
                         <div>
                             <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Exercice *</label>
                             <ExerciseSelector 
-                                onExerciseChange={(exerciceNom) => updateMuscu(index, 'exercice_nom', exerciceNom)}
-                                initialExerciseName={ex.exercice_nom}
+                                onExerciseChange={(id, name) => handleExerciseChange(index, id, name)}
+                                initialExerciseId={ex.exercice_id}
                             />
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="flex flex-wrap gap-2">
                             <NumberSelector
                                 label="Séries *"
                                 value={ex.series}
