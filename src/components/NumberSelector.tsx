@@ -26,7 +26,7 @@ export const NumberSelector: React.FC<NumberSelectorProps> = ({
   };
 
   const handleIncrement = () => {
-    const currentValue = typeof value === 'number' ? value : min;
+    const currentValue = typeof value === 'number' ? value : min - 1;
     if (currentValue < max) {
       onChange(currentValue + 1);
     }
@@ -54,7 +54,7 @@ export const NumberSelector: React.FC<NumberSelectorProps> = ({
           type="button"
           onClick={handleDecrement}
           disabled={value !== '' && value <= min}
-          className="p-2 bg-gray-200 dark:bg-gray-700 rounded-l-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+          className="p-1 sm:p-2 bg-gray-200 dark:bg-gray-700 rounded-l-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
         >
           <Minus size={16} />
         </button>
@@ -64,14 +64,14 @@ export const NumberSelector: React.FC<NumberSelectorProps> = ({
           value={value}
           onChange={handleInputChange}
           placeholder="--"
-          className="w-16 h-10 text-center font-bold text-lg bg-white dark:bg-gray-800 border-t border-b border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-12 sm:w-16 h-10 text-center font-bold text-base sm:text-lg bg-white dark:bg-gray-800 border-t border-b border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <button
           type="button"
           onClick={handleIncrement}
           disabled={value !== '' && value >= max}
-          className="p-2 bg-gray-200 dark:bg-gray-700 rounded-r-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+          className="p-1 sm:p-2 bg-gray-200 dark:bg-gray-700 rounded-r-md hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
         >
           <Plus size={16} />
         </button>
