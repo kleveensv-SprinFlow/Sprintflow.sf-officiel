@@ -17,6 +17,29 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchUserProfile = async (user: User) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    if (error) {
+      console.warn('⚠️ Profil non trouvé, utilisation des métadonnées:', error.message);
+      // Fallback sur les métadonnées si le profil n'existe pas encore
+      return {
+        id: user.id,
+        role: user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
+              user.user_metadata?.role || 'athlete',
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        email: user.email || '',
+        avatar_url: user.user_metadata?.avatar_url || ''
+      };
+    }
+    return data;
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -26,19 +49,10 @@ export function useAuth() {
 
         if (session?.user && mounted) {
           setUser(session.user);
-          
-          // Profil immédiat basé sur l'ID utilisateur
-          const immediateProfile: UserProfile = {
-            id: session.user.id,
-            role: session.user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
-                  session.user.user_metadata?.role || 'athlete',
-            first_name: session.user.user_metadata?.first_name || '',
-            last_name: session.user.user_metadata?.last_name || '',
-            email: session.user.email || '',
-            avatar_url: session.user.user_metadata?.avatar_url || ''
-          };
-          
-          setProfile(immediateProfile);
+          const userProfile = await fetchUserProfile(session.user);
+          if (mounted) {
+            setProfile(userProfile);
+          }
         } else {
           if (mounted) {
             setUser(null);
@@ -62,24 +76,15 @@ export function useAuth() {
 
     initAuth();
 
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       
       if (event === 'SIGNED_IN' && session?.user && mounted) {
         setError(null);
         setUser(session.user);
-        
-        const immediateProfile: UserProfile = {
-          id: session.user.id,
-          role: session.user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
-                session.user.user_metadata?.role || 'athlete',
-          first_name: session.user.user_metadata?.first_name || '',
-          last_name: session.user.user_metadata?.last_name || '',
-          email: session.user.email || '',
-          avatar_url: session.user.user_metadata?.avatar_url || ''
-        };
-        
-        setProfile(immediateProfile);
+        const userProfile = await fetchUserProfile(session.user);
+        if (mounted) {
+          setProfile(userProfile);
+        }
         setLoading(false);
       } else if (event === 'SIGNED_OUT' && mounted) {
         setError(null);
@@ -87,19 +92,11 @@ export function useAuth() {
         setProfile(null);
         setLoading(false);
       } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
-        // Mettre à jour le profil lors du refresh du token
-        const refreshedProfile: UserProfile = {
-          id: session.user.id,
-          role: session.user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
-                session.user.user_metadata?.role || 'athlete',
-          first_name: session.user.user_metadata?.first_name || '',
-          last_name: session.user.user_metadata?.last_name || '',
-          email: session.user.email || '',
-          avatar_url: session.user.user_metadata?.avatar_url || ''
-        };
-        
-        setUser(session.user);
-        setProfile(refreshedProfile);
+        const userProfile = await fetchUserProfile(session.user);
+        if (mounted) {
+          setUser(session.user);
+          setProfile(userProfile);
+        }
       }
     });
 
