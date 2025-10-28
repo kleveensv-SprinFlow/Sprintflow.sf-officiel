@@ -12,11 +12,11 @@ interface ScoreCircleProps {
 }
 
 const ScoreCircle: React.FC<ScoreCircleProps> = ({ score, title, icon: Icon, color, onClick }) => (
-  <button
+  <button 
     onClick={(e) => {
       e.stopPropagation();
       onClick();
-    }}
+    }} 
     className="flex flex-col items-center gap-1.5 sm:gap-2 group transition-transform duration-200 hover:scale-105"
   >
     <div className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 sm:border-8 bg-gray-50 dark:bg-gray-800 ${color} flex items-center justify-center`}>
@@ -62,7 +62,7 @@ export function IndicesPanel({ loading, scoreForme, scorePoidsPuissance }: Indic
           <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
-      <div
+      <div 
         className="flex justify-center items-center cursor-pointer h-32"
         onClick={() => setIsFlipped(!isFlipped)}
         style={{ perspective: '1200px' }}
@@ -90,7 +90,19 @@ export function IndicesPanel({ loading, scoreForme, scorePoidsPuissance }: Indic
           </div>
         </motion.div>
       </div>
-
+      <div className="flex justify-center items-center gap-2 mt-2">
+        <button 
+          onClick={() => setIsFlipped(false)} 
+          className={`w-2 h-2 rounded-full transition-colors duration-300 ${!isFlipped ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'}`} 
+          aria-label="Afficher l'indice de Forme"
+        />
+        <button 
+          onClick={() => setIsFlipped(true)} 
+          className={`w-2 h-2 rounded-full transition-colors duration-300 ${isFlipped ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'}`} 
+          aria-label="Afficher l'indice Poids/Puissance"
+        />
+      </div>
+      
       {modalContent && <AdviceModal content={modalContent} onClose={() => setModalContent(null)} />}
     </div>
   );
