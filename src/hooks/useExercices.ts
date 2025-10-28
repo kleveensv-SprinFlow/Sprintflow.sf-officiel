@@ -1,24 +1,28 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+// Updated interface to match the new DB schema
 export interface ExerciceReference {
   id: string;
-  nom: string;
-  nom_alternatif: string[];
-  categorie: 'halterophilie' | 'muscu_bas' | 'muscu_haut' | 'unilateral';
-  groupe_exercice: string;
-  bareme_intermediaire: number;
-  bareme_avance: number;
-  bareme_elite: number;
-  description?: string;
+  nom_fr: string;
+  categorie: string;
+  groupe_analyse: string | null;
+  qualite_cible: string;
+  unite: string;
+  ratio_base: number | null;
+  ratio_avance: number;
+  ratio_elite: number;
 }
 
+// Updated categories to match the seeded data
 export const CATEGORIES = {
-  halterophilie: 'Haltérophilie',
-  muscu_bas: 'Musculation Bas du Corps',
-  muscu_haut: 'Musculation Haut du Corps',
-  unilateral: 'Unilatéral',
-} as const;
+  'Haltérophilie': 'Haltérophilie',
+  'Muscu. Bas': 'Musculation Bas du Corps',
+  'Muscu. Haut': 'Musculation Haut du Corps',
+  'Unilatéral': 'Unilatéral',
+  'Pliométrie': 'Pliométrie',
+  'Lancers': 'Lancers',
+};
 
 export function useExercices() {
   const [exercices, setExercices] = useState<ExerciceReference[]>([]);
@@ -30,10 +34,11 @@ export function useExercices() {
 
   const loadExercices = async () => {
     try {
+      // Fetches from the new 'exercices_reference' table
       const { data, error } = await supabase
         .from('exercices_reference')
         .select('*')
-        .order('nom');
+        .order('nom_fr');
 
       if (error) throw error;
       setExercices(data || []);
@@ -58,21 +63,17 @@ export function useExercices() {
     if (!normalizedQuery) return filtered;
 
     const results = filtered.filter(ex => {
-      const nomMatch = ex.nom.toLowerCase().includes(normalizedQuery);
-      const altMatch = ex.nom_alternatif.some(alt =>
-        alt.toLowerCase().includes(normalizedQuery)
-      );
-      return nomMatch || altMatch;
+      return ex.nom_fr.toLowerCase().includes(normalizedQuery);
     });
 
     return results.sort((a, b) => {
-      const aStartsWith = a.nom.toLowerCase().startsWith(normalizedQuery);
-      const bStartsWith = b.nom.toLowerCase().startsWith(normalizedQuery);
+      const aStartsWith = a.nom_fr.toLowerCase().startsWith(normalizedQuery);
+      const bStartsWith = b.nom_fr.toLowerCase().startsWith(normalizedQuery);
 
       if (aStartsWith && !bStartsWith) return -1;
       if (!aStartsWith && bStartsWith) return 1;
 
-      return a.nom.localeCompare(b.nom);
+      return a.nom_fr.localeCompare(b.nom_fr);
     });
   };
 
@@ -80,31 +81,14 @@ export function useExercices() {
     return exercices.find(ex => ex.id === id);
   };
 
-  const calculateScore = (exercice: ExerciceReference, charge: number, poidsCorps: number): number => {
-    const ratio = charge / poidsCorps;
-
-    if (ratio >= exercice.bareme_elite) return 100;
-    if (ratio >= exercice.bareme_avance) {
-      const range = exercice.bareme_elite - exercice.bareme_avance;
-      const progress = (ratio - exercice.bareme_avance) / range;
-      return 80 + (progress * 20);
-    }
-    if (ratio >= exercice.bareme_intermediaire) {
-      const range = exercice.bareme_avance - exercice.bareme_intermediaire;
-      const progress = (ratio - exercice.bareme_intermediaire) / range;
-      return 60 + (progress * 20);
-    }
-
-    const progress = ratio / exercice.bareme_intermediaire;
-    return Math.min(progress * 60, 59);
-  };
+  // The calculateScore function is removed, as this logic is now on the backend.
 
   return {
     exercices,
     loading,
+    loadExercices,
     getExercicesByCategorie,
     searchExercices,
     getExerciceById,
-    calculateScore,
   };
 }
