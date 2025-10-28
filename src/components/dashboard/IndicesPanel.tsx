@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Loader2, TrendingUp, Zap, HeartPulse, HelpCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Loader2, Zap, HeartPulse, HelpCircle } from 'lucide-react';
 import AdviceModal from './AdviceModal';
 
 interface ScoreCircleProps {
@@ -11,7 +12,13 @@ interface ScoreCircleProps {
 }
 
 const ScoreCircle: React.FC<ScoreCircleProps> = ({ score, title, icon: Icon, color, onClick }) => (
-  <button onClick={onClick} className="flex flex-col items-center gap-1.5 sm:gap-2 group transition-transform duration-200 hover:scale-105">
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    className="flex flex-col items-center gap-1.5 sm:gap-2 group transition-transform duration-200 hover:scale-105"
+  >
     <div className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 sm:border-8 bg-gray-50 dark:bg-gray-800 ${color} flex items-center justify-center`}>
       <span className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">{score ?? '-'}</span>
     </div>
@@ -26,13 +33,13 @@ interface IndicesPanelProps {
   loading: boolean;
   scoreForme: any;
   scorePoidsPuissance: any;
-  scoreEvolution: any;
 }
 
-export function IndicesPanel({ loading, scoreForme, scorePoidsPuissance, scoreEvolution }: IndicesPanelProps) {
-  const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance' | 'evolution'; data: any } | null>(null);
+export function IndicesPanel({ loading, scoreForme, scorePoidsPuissance }: IndicesPanelProps) {
+  const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance'; data: any } | null>(null);
+  const [isFlipped, setIsFlipped] = useState(false);
 
-  const handleScoreClick = (type: 'forme' | 'poidsPuissance' | 'evolution', data: any) => {
+  const handleScoreClick = (type: 'forme' | 'poidsPuissance', data: any) => {
     if (data && data.indice !== null) {
       setModalContent({ type, data });
     }
@@ -55,12 +62,35 @@ export function IndicesPanel({ loading, scoreForme, scorePoidsPuissance, scoreEv
           <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
-      <div className="flex justify-around items-start gap-2 sm:gap-4">
-        <ScoreCircle score={scoreForme?.indice} title="Forme" icon={HeartPulse} color="border-green-400" onClick={() => handleScoreClick('forme', scoreForme)} />
-        <ScoreCircle score={scorePoidsPuissance?.indice} title="Poids/Puissance" icon={Zap} color="border-blue-400" onClick={() => handleScoreClick('poidsPuissance', scorePoidsPuissance)} />
-        <ScoreCircle score={scoreEvolution?.indice} title="Évolution" icon={TrendingUp} color="border-purple-400" onClick={() => handleScoreClick('evolution', scoreEvolution)} />
+      <div
+        className="flex justify-center items-center cursor-pointer h-32"
+        onClick={() => setIsFlipped(!isFlipped)}
+        style={{ perspective: '1200px' }}
+      >
+        <motion.div
+          style={{ transformStyle: 'preserve-3d', width: '100%', height: '100%' }}
+          initial={false}
+          animate={{ rotateY: isFlipped ? 180 : 0 }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          onDragEnd={(event, info) => {
+            if (info.offset.x > 50) {
+              setIsFlipped(false);
+            } else if (info.offset.x < -50) {
+              setIsFlipped(true);
+            }
+          }}
+        >
+          <div className="absolute w-full h-full flex justify-center items-center" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+            <ScoreCircle score={scoreForme?.indice} title="Forme" icon={HeartPulse} color="border-green-400" onClick={() => handleScoreClick('forme', scoreForme)} />
+          </div>
+          <div className="absolute w-full h-full flex justify-center items-center" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+            <ScoreCircle score={scorePoidsPuissance?.indice} title="Poids/Puissance" icon={Zap} color="border-blue-400" onClick={() => handleScoreClick('poidsPuissance', scorePoidsPuissance)} />
+          </div>
+        </motion.div>
       </div>
-      
+
       {modalContent && <AdviceModal content={modalContent} onClose={() => setModalContent(null)} />}
     </div>
   );
