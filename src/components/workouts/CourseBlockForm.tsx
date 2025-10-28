@@ -26,14 +26,13 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
   const [series, setSeries] = useState(block.series);
   const [reps, setReps] = useState(block.reps);
   const [distance, setDistance] = useState(block.distance);
-  const [restBetweenReps, setRestBetweenReps] = useState(block.restBetweenReps);
   const [restBetweenSeries, setRestBetweenSeries] = useState(block.restBetweenSeries);
   const [chronos, setChronos] = useState<(number | null)[][]>(block.chronos);
 
   // Update parent component when local state changes
   useEffect(() => {
-    onChange(block.id, { id: block.id, series, reps, distance, restBetweenReps, restBetweenSeries, chronos });
-  }, [series, reps, distance, restBetweenReps, restBetweenSeries, chronos, block.id, onChange]);
+    onChange(block.id, { id: block.id, series, reps, distance, restBetweenReps: '0', restBetweenSeries, chronos });
+  }, [series, reps, distance, restBetweenSeries, chronos, block.id, onChange]);
 
   // Adjust the chronos array size when series/reps change
   useEffect(() => {
@@ -81,7 +80,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
 
       <div className="space-y-4">
         {/* Block Structure Inputs */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-x-4 gap-y-4 items-end">
           <NumberSelector
             label="Séries"
             value={series}
@@ -100,11 +99,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
             label="Distance (m)"
             value={distance}
             onChange={setDistance}
-          />
-          <RestTimeSelector
-            label="Repos / Rép"
-            value={parseInt(restBetweenReps, 10) || undefined}
-            onChange={(val) => setRestBetweenReps(val ? val.toString() : '')}
+            className="col-span-1"
           />
           <RestTimeSelector
             label="Repos / Série"
