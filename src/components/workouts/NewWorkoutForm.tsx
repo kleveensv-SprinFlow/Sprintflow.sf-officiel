@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { Workout, WorkoutMuscu } from '../../types';
 import useAuth from '../../hooks/useAuth';
-import { useExercices } from '../../hooks/useExercices';
 import { CourseBlockForm, CourseBlockData } from './CourseBlockForm';
 import { NumberSelector } from '../NumberSelector';
+import ExerciseSelector from './Exercise';
 
 interface NewWorkoutFormProps {
   editingWorkout?: Workout | null;
@@ -14,7 +14,6 @@ interface NewWorkoutFormProps {
 
 export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutFormProps) {
   const { user } = useAuth();
-  const { exercices } = useExercices();
 
   const [date, setDate] = useState(editingWorkout?.date || new Date().toISOString().split('T')[0]);
   const [tagSeance, setTagSeance] = useState<'vitesse_max' | 'lactique_piste' | 'lactique_cote' | 'aerobie' | 'musculation' | ''>(
@@ -29,7 +28,6 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
   const [meteo, setMeteo] = useState(editingWorkout?.meteo || '');
   const [temperature, setTemperature] = useState<number | ''>(editingWorkout?.temperature || '');
   const [saving, setSaving] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
   const generateId = () => `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -73,19 +71,6 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
     setMuscu(newMuscu);
   };
 
-  const selectExercice = (index: number, exerciceId: string) => {
-    const exercice = exercices.find(e => e.id === exerciceId);
-    if (exercice) {
-      const newMuscu = [...muscu];
-      newMuscu[index] = {
-        ...newMuscu[index],
-        exercice_id: exerciceId,
-        exercice_nom: exercice.nom
-      };
-      setMuscu(newMuscu);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -126,13 +111,6 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
       setSaving(false);
     }
   };
-
-  const filteredExercices = searchTerm
-    ? exercices.filter(e =>
-        e.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.categorie.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : exercices;
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-y-auto">
@@ -251,19 +229,10 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
 
                         <div>
                             <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Exercice *</label>
-                            <select
-                            value={ex.exercice_id}
-                            onChange={(e) => selectExercice(index, e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded"
-                            required
-                            >
-                            <option value="">Sélectionner...</option>
-                            {filteredExercices.map(exercice => (
-                                <option key={exercice.id} value={exercice.id}>
-                                {exercice.nom} ({exercice.categorie})
-                                </option>
-                            ))}
-                            </select>
+                            <ExerciseSelector 
+                                onExerciseChange={(exerciceNom) => updateMuscu(index, 'exercice_nom', exerciceNom)}
+                                initialExerciseName={ex.exercice_nom}
+                            />
                         </div>
 
                         <div className="grid grid-cols-3 gap-2">
