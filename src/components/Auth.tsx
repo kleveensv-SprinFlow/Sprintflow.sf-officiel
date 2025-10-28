@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Mail, Lock, UserPlus, LogIn, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Auth() {
+  const { signIn, signUp } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showResendConfirmation, setShowResendConfirmation] = useState(false);
@@ -28,33 +30,18 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        // Connexion
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (error) throw error;
+        await signIn(formData.email, formData.password);
       } else {
-        // Inscription
-        const { data, error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/confirm`,
-            data: {
-              role: formData.role,
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              discipline: formData.discipline,
-              sexe: formData.sexe,
-            }
-          }
-        });
+        const { data, error } = await signUp(
+          formData.email,
+          formData.password,
+          formData.role,
+          formData.firstName,
+          formData.lastName
+        );
 
         if (error) throw error;
 
-        // Créer le profil après inscription
         if (data.user) {
           const { error: profileError } = await supabase
             .from('profiles')
@@ -65,11 +52,12 @@ export default function Auth() {
               last_name: formData.lastName,
               discipline: formData.discipline,
               sexe: formData.sexe,
-              created_at: new Date().toISOString()
+              created_at: new Date().toISOString(),
             });
 
           if (profileError) {
             console.error('Erreur création profil:', profileError);
+            // Gérer l'erreur de création de profil, peut-être en informant l'utilisateur
           }
 
           alert('✅ Inscription réussie !\n\n📧 IMPORTANT : Un email de confirmation a été envoyé à ' + formData.email + '\n\nVous devez cliquer sur le lien dans cet email pour activer votre compte.\n\n⚠️ Vérifiez également vos spams si vous ne voyez pas l\'email dans les 5 minutes.\n\n💡 Si vous ne recevez pas l\'email, vous pourrez le renvoyer depuis l\'écran de connexion.');
