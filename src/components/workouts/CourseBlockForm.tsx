@@ -80,7 +80,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
 
       <div className="space-y-4">
         {/* Block Structure Inputs */}
-        <div className="grid grid-cols-3 gap-x-4 gap-y-4 items-end">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
           <NumberSelector
             label="Séries"
             value={series}
