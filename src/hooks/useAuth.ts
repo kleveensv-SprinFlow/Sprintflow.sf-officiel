@@ -49,33 +49,31 @@ export function useAuth() {
   };
 
   useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
     let mounted = true;
 
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (session?.user) {
+        if (session?.user && mounted) {
           setUser(session.user);
-          const userProfile = await fetchUserProfile(session.user, signal);
-          setProfile(userProfile);
-        } else {
+          const userProfile = await fetchUserProfile(session.user);
+          if (mounted) {
+            setProfile(userProfile);
+          }
+        } else if (mounted) {
           setUser(null);
           setProfile(null);
         }
       } catch (error: any) {
-        if (error.name === 'AbortError') {
-          console.log('Auth fetch aborted.');
-          return;
-        }
         console.warn('⚠️ Erreur auth:', error?.message);
-        setError(error?.message || 'Erreur de connexion');
-        setUser(null);
-        setProfile(null);
+        if (mounted) {
+          setError(error?.message || 'Erreur de connexion');
+          setUser(null);
+          setProfile(null);
+        }
       } finally {
-        if (!signal.aborted) {
+        if (mounted) {
           setLoading(false);
         }
       }
@@ -107,7 +105,6 @@ export function useAuth() {
     });
 
     return () => {
-      controller.abort();
       mounted = false;
       subscription.unsubscribe();
     };
