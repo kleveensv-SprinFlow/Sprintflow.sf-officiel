@@ -52,21 +52,28 @@ export function useAuth() {
     let mounted = true;
 
     const initAuth = async () => {
+      console.log('🔐 [useAuth] Début initAuth...');
       try {
+        console.log('🔐 [useAuth] Appel getSession...');
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('🔐 [useAuth] Session récupérée:', session?.user?.id ? 'User trouvé' : 'Pas de user');
 
         if (session?.user && mounted) {
+          console.log('🔐 [useAuth] Mise à jour user state...');
           setUser(session.user);
+          console.log('🔐 [useAuth] Chargement profil...');
           const userProfile = await fetchUserProfile(session.user);
+          console.log('🔐 [useAuth] Profil chargé:', userProfile);
           if (mounted) {
             setProfile(userProfile);
           }
         } else if (mounted) {
+          console.log('🔐 [useAuth] Pas de session, reset user/profile');
           setUser(null);
           setProfile(null);
         }
       } catch (error: any) {
-        console.warn('⚠️ Erreur auth:', error?.message);
+        console.error('❌ [useAuth] Erreur:', error);
         if (mounted) {
           setError(error?.message || 'Erreur de connexion');
           setUser(null);
@@ -74,6 +81,7 @@ export function useAuth() {
         }
       } finally {
         if (mounted) {
+          console.log('✅ [useAuth] Fin initAuth, setLoading(false)');
           setLoading(false);
         }
       }

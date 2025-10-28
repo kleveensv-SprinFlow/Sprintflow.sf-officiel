@@ -42,6 +42,19 @@ function App() {
   const [editingWorkout, setEditingWorkout] = useState<any>(null);
   const [appError, setAppError] = useState<string | null>(null);
   const [refreshScores, setRefreshScores] = useState<(() => Promise<void>) | null>(null);
+  const [forceShowAuth, setForceShowAuth] = useState(false);
+
+  // Timeout de sécurité : forcer l'affichage après 5 secondes
+  useEffect(() => {
+    console.log('🕐 [App] État loading:', loading);
+    if (loading) {
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ [App] Timeout atteint (5s), forçage affichage auth');
+        setForceShowAuth(true);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading]);
 
   const navigateTo = (view: View) => {
     setNavigationStack([...navigationStack, view]);
@@ -101,12 +114,12 @@ function App() {
   }, [navigationStack]);
 
   // Afficher l'écran de chargement pendant l'initialisation
-  if (loading) {
+  if (loading && !forceShowAuth) {
     return <LoadingScreen message="Initialisation de l'application..." />;
   }
 
   // Afficher l'écran d'authentification si pas d'utilisateur
-  if (!user) {
+  if (!user || forceShowAuth) {
     console.log('🔐 Pas d\'utilisateur - Affichage Auth');
     return <Auth />;
   }
