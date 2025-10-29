@@ -1,39 +1,40 @@
 import React, { useState } from 'react';
-import { Home, Calendar, Users, MessageSquare, BarChart3, Lightbulb, Apple, Plus, Dumbbell, Activity, Weight } from 'lucide-react';
+import { Home, Users, MessageSquare, Lightbulb, Apple, Plus, Dumbbell, Activity, Calendar, Utensils, Bed } from 'lucide-react';
 import { View, Role } from '../../types';
 
 interface TabBarProps {
   currentView: View;
   onViewChange: (view: View) => void;
+  onFabAction: (view: View) => void; // Pour gérer les modales/formulaires
   userRole: Role;
 }
 
-const TabBar: React.FC<TabBarProps> = ({ currentView, onViewChange, userRole }) => {
+const TabBar: React.FC<TabBarProps> = ({ currentView, onViewChange, onFabAction, userRole }) => {
   const [isFabOpen, setIsFabOpen] = useState(false);
 
   const athleteNavItems = [
-    { view: 'records' as View, icon: BarChart3, label: 'Mes Records' },
-    { view: 'nutrition' as View, icon: Apple, label: 'Nutrition' },
+    { view: 'dashboard' as View, icon: Home, label: 'Accueil' },
+    { view: 'workouts' as View, icon: Activity, label: 'Entraînements' },
     null, // Placeholder for the FAB
-    { view: 'planning' as View, icon: Calendar, label: 'Calendrier' },
+    { view: 'nutrition' as View, icon: Apple, label: 'Nutrition' },
     { view: 'ai' as View, icon: Lightbulb, label: 'Conseil' },
   ];
 
   const coachNavItems = [
-    { view: 'dashboard' as View, icon: BarChart3, label: 'Dashboard' },
+    { view: 'dashboard' as View, icon: Home, label: 'Dashboard' },
     { view: 'groups' as View, icon: Users, label: 'Athlètes' },
-    { view: 'planning' as View, icon: Calendar, label: 'Calendrier' },
+    { view: 'planning' as View, icon: Calendar, label: 'Planning' },
     { view: 'chat' as View, icon: MessageSquare, label: 'Chat' },
   ];
-
+  
   const fabActions = [
     { view: 'add-workout' as View, icon: Dumbbell, label: 'Nouvelle Séance' },
-    { view: 'add-record' as View, icon: Activity, label: 'Nouveau Record' },
-    { view: 'add-bodycomp' as View, icon: Weight, label: 'Nouvelle Pesée' },
+    { view: 'add-food' as View, icon: Utensils, label: 'Ajouter Repas' },
+    { view: 'sleep' as View, icon: Bed, label: 'Saisir Sommeil' },
   ];
 
   const handleFabActionClick = (view: View) => {
-    onViewChange(view);
+    onFabAction(view);
     setIsFabOpen(false);
   };
 
