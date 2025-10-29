@@ -49,6 +49,8 @@ export function useAuth() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
     let mounted = true;
 
     const initAuth = async () => {
@@ -62,7 +64,7 @@ export function useAuth() {
           console.log('🔐 [useAuth] Mise à jour user state...');
           setUser(session.user);
           console.log('🔐 [useAuth] Chargement profil...');
-          const userProfile = await fetchUserProfile(session.user);
+          const userProfile = await fetchUserProfile(session.user, signal);
           console.log('🔐 [useAuth] Profil chargé:', userProfile);
           if (mounted) {
             setProfile(userProfile);
@@ -73,6 +75,10 @@ export function useAuth() {
           setProfile(null);
         }
       } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.log('➡️ [useAuth] Fetch annulé, normal.');
+          return;
+        }
         console.error('❌ [useAuth] Erreur:', error);
         if (mounted) {
           setError(error?.message || 'Erreur de connexion');
@@ -114,6 +120,7 @@ export function useAuth() {
 
     return () => {
       mounted = false;
+      controller.abort();
       subscription.unsubscribe();
     };
   }, []);
