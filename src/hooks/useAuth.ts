@@ -101,23 +101,40 @@ export function useAuth() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user && mounted) {
-        setError(null);
-        setUser(session.user);
-        const userProfile = await fetchUserProfile(session.user);
-        if (mounted) {
-          setProfile(userProfile);
+        try {
+          setError(null);
+          setUser(session.user);
+          const userProfile = await fetchUserProfile(session.user);
+          if (mounted) {
+            setProfile(userProfile);
+          }
+        } catch (error: any) {
+          console.error("❌ Erreur critique lors de la récupération du profil:", error);
+          if (mounted) {
+            setError("Impossible de charger le profil utilisateur.");
+            setUser(null);
+            setProfile(null);
+          }
+        } finally {
+          if (mounted) {
+            setLoading(false);
+          }
         }
-        setLoading(false);
       } else if (event === 'SIGNED_OUT' && mounted) {
         setError(null);
         setUser(null);
         setProfile(null);
         setLoading(false);
       } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
-        const userProfile = await fetchUserProfile(session.user);
-        if (mounted) {
-          setUser(session.user);
-          setProfile(userProfile);
+        try {
+          const userProfile = await fetchUserProfile(session.user);
+          if (mounted) {
+            setUser(session.user);
+            setProfile(userProfile);
+          }
+        } catch (error) {
+          console.error("Erreur lors du rafraîchissement du token:", error);
+          // Gérer l'erreur si nécessaire, par exemple en déconnectant l'utilisateur
         }
       }
     });
@@ -188,10 +205,41 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Erreur lors de la déconnexion:', error);
+    console.log('🚪 DÉCONNEXION FORCÉE - Début...');
+    
+    // 1. Nettoyer immédiatement l'état React
+    const currentUserId = user?.id;
+    console.log('🧹 Nettoyage état React pour user:', currentUserId);
+    
+    setUser(null);
+    setProfile(null);
+    setLoading(false);
+    setError(null);
+    
+    // 2. Nettoyer localStorage
+    if (currentUserId) {
+      console.log('🧹 Nettoyage localStorage...');
+      localStorage.removeItem(`profile_${currentUserId}`);
+      localStorage.removeItem(`workouts_${currentUserId}`);
+      localStorage.removeItem(`records_${currentUserId}`);
+      localStorage.removeItem(`bodycomps_${currentUserId}`);
+      localStorage.removeItem(`athlete_groups_${currentUserId}`);
     }
+    
+    // 3. Nettoyer toutes les clés d'auth Supabase
+    console.log('🧹 Nettoyage auth Supabase...');
+    localStorage.removeItem('supabase.auth.token');
+    localStorage.removeItem('sb-ifmoecnlpwnxcthplqra-auth-token');
+    sessionStorage.clear();
+    
+    // 4. Tentative de déconnexion Supabase (en arrière-plan)
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.warn('Erreur Supabase ignorée:', error);
+    }
+    
+    console.log('✅ DÉCONNEXION FORCÉE - Terminée');
   };
 
   return {
