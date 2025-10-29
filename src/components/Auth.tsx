@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, User, Mail, Lock, UserPlus, LogIn, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -21,6 +21,7 @@ export default function Auth() {
   const [resetSent, setResetSent] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -29,10 +30,11 @@ export default function Auth() {
     role: 'athlete' as 'athlete' | 'encadrant',
     role_specifique: '',
     discipline: '',
-    sexe: ''
+    sexe: '',
+    date_de_naissance: '',
+    avatar_file: null as File | null,
   });
 
-  // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
   // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
   const shuffleArray = (array: string[], lastItem?: string): string[] => {
     let currentIndex = array.length, randomIndex;
@@ -88,6 +90,26 @@ export default function Auth() {
       if (isLogin) {
         await signIn(formData.email, formData.password);
       } else {
+        let avatarUrl = '';
+        const tempId = `temp_${Date.now()}`; // ID temporaire pour le chemin
+
+        if (formData.avatar_file) {
+          const file = formData.avatar_file;
+          const fileExt = file.name.split('.').pop();
+          const filePath = `avatars/${tempId}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('profiles')
+            .upload(filePath, file);
+
+          if (uploadError) {
+            throw new Error(`Erreur d'upload de l'avatar: ${uploadError.message}`);
+          }
+          
+          const { data } = supabase.storage.from('profiles').getPublicUrl(filePath);
+          avatarUrl = data.publicUrl;
+        }
+
         const { data, error } = await signUp(
           formData.email,
           formData.password,
@@ -96,6 +118,9 @@ export default function Auth() {
             last_name: formData.lastName,
             role: formData.role,
             role_specifique: formData.role_specifique,
+            date_de_naissance: formData.date_de_naissance,
+            avatar_url: avatarUrl,
+            temp_avatar_path: avatarUrl ? `avatars/${tempId}.${formData.avatar_file?.name.split('.').pop()}` : null
           }
         );
 
@@ -172,10 +197,26 @@ export default function Auth() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setFormData(prev => ({ ...prev, avatar_file: file }));
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setAvatarPreview(null);
+    }
   };
 
   // Interface de renvoi d'email de confirmation
@@ -185,7 +226,7 @@ export default function Auth() {
         {videos.map((video, index) => (
           <video
             key={video}
-            id={`video-${index}`}
+            id={`video-player-${index}`}
             className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
             src={video}
             autoPlay
@@ -284,7 +325,7 @@ export default function Auth() {
         {videos.map((video, index) => (
           <video
             key={video}
-            id={`video-${index}`}
+            id={`video-player-${index}`}
             className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
             src={video}
             autoPlay
@@ -379,7 +420,7 @@ export default function Auth() {
       {videos.map((video, index) => (
         <video
           key={video}
-          id={`video-${index}`}
+          id={`video-player-${index}`}
           className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
           src={video}
           autoPlay
@@ -435,6 +476,21 @@ export default function Auth() {
                     placeholder="Votre nom"
                   />
                 </div>
+              </div>
+              
+              <div>
+                <label htmlFor="date-naissance-input" className="block text-sm font-medium text-white/80 mb-2">
+                  Date de naissance
+                </label>
+                <input
+                  id="date-naissance-input"
+                  type="date"
+                  name="date_de_naissance"
+                  value={formData.date_de_naissance}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                />
               </div>
 
               <div>
@@ -507,6 +563,25 @@ export default function Auth() {
                   <option value="homme">Homme</option>
                   <option value="femme">Femme</option>
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="avatar-input" className="block text-sm font-medium text-white/80 mb-2">
+                  Photo de profil (optionnel)
+                </label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="avatar-input"
+                    type="file"
+                    name="avatar_file"
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    className="w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
+                  />
+                  {avatarPreview && (
+                    <img src={avatarPreview} alt="Aperçu" className="w-16 h-16 rounded-full object-cover border-2 border-white/50" />
+                  )}
+                </div>
               </div>
             </>
           )}
