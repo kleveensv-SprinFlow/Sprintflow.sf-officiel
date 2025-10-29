@@ -1,11 +1,15 @@
 import React from 'react';
-import { Dumbbell, Calendar, MapPin, Clock, Loader2 } from 'lucide-react';
+import { Dumbbell, Calendar, MapPin, Clock, Loader2, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useWorkouts } from '../../hooks/useWorkouts';
 import { formatTime, formatDistance } from '../../utils/formatters';
 
-export function RecentWorkouts() {
+interface RecentWorkoutsProps {
+  onNavigate: () => void;
+}
+
+export function RecentWorkouts({ onNavigate }: RecentWorkoutsProps) {
   const { workouts, loading } = useWorkouts();
 
   const recentWorkouts = workouts
@@ -22,7 +26,15 @@ export function RecentWorkouts() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Derniers entraînements</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Derniers entraînements</h2>
+        <button
+          onClick={onNavigate}
+          className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          Voir tout <ChevronRight className="w-4 h-4 ml-1" />
+        </button>
+      </div>
       {recentWorkouts.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 p-8 rounded-lg text-center shadow-lg border border-gray-200 dark:border-gray-700">
           <Dumbbell className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
