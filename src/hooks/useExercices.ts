@@ -1,27 +1,26 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Updated interface to match the new DB schema
 export interface ExerciceReference {
   id: string;
-  nom_fr: string;
+  nom: string;
+  nom_alternatif: string[] | null;
   categorie: string;
-  groupe_analyse: string | null;
-  qualite_cible: string;
-  unite: string;
-  ratio_base: number | null;
-  ratio_avance: number;
-  ratio_elite: number;
+  groupe_exercice: string | null;
+  bareme_intermediaire: number | null;
+  bareme_avance: number | null;
+  bareme_elite: number | null;
+  description: string | null;
+  created_at: string;
 }
 
-// Updated categories to match the seeded data
 export const CATEGORIES = {
-  'Haltérophilie': 'Haltérophilie',
-  'Muscu. Bas': 'Musculation Bas du Corps',
-  'Muscu. Haut': 'Musculation Haut du Corps',
-  'Unilatéral': 'Unilatéral',
-  'Pliométrie': 'Pliométrie',
-  'Lancers': 'Lancers',
+  'halterophilie': 'Haltérophilie',
+  'muscu_bas': 'Musculation Bas du Corps',
+  'muscu_haut': 'Musculation Haut du Corps',
+  'unilateral': 'Unilatéral',
+  'pliometrie': 'Pliométrie',
+  'lancers': 'Lancers',
 };
 
 export function useExercices() {
@@ -34,11 +33,10 @@ export function useExercices() {
 
   const loadExercices = async () => {
     try {
-      // Fetches from the new 'exercices_reference' table
       const { data, error } = await supabase
         .from('exercices_reference')
         .select('*')
-        .order('nom_fr');
+        .order('nom');
 
       if (error) throw error;
       setExercices(data || []);
@@ -63,17 +61,21 @@ export function useExercices() {
     if (!normalizedQuery) return filtered;
 
     const results = filtered.filter(ex => {
-      return ex.nom_fr.toLowerCase().includes(normalizedQuery);
+      const matchesNom = ex.nom.toLowerCase().includes(normalizedQuery);
+      const matchesAlternatif = ex.nom_alternatif?.some(alt =>
+        alt.toLowerCase().includes(normalizedQuery)
+      );
+      return matchesNom || matchesAlternatif;
     });
 
     return results.sort((a, b) => {
-      const aStartsWith = a.nom_fr.toLowerCase().startsWith(normalizedQuery);
-      const bStartsWith = b.nom_fr.toLowerCase().startsWith(normalizedQuery);
+      const aStartsWith = a.nom.toLowerCase().startsWith(normalizedQuery);
+      const bStartsWith = b.nom.toLowerCase().startsWith(normalizedQuery);
 
       if (aStartsWith && !bStartsWith) return -1;
       if (!aStartsWith && bStartsWith) return 1;
 
-      return a.nom_fr.localeCompare(b.nom_fr);
+      return a.nom.localeCompare(b.nom);
     });
   };
 

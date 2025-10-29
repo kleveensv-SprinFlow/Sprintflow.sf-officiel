@@ -34,7 +34,7 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
     setSelectedExerciceId(exerciceId);
     const exercice = getExerciceById(exerciceId);
     if (exercice) {
-      setExerciceName(exercice.nom_fr);
+      setExerciceName(exercice.nom);
     }
   };
   
@@ -165,7 +165,7 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
                       <option value="">Sélectionner un exercice</option>
                       {filteredExercices.map((ex) => (
                         <option key={ex.id} value={ex.id}>
-                          {ex.nom_fr}
+                          {ex.nom}
                         </option>
                       ))}
                     </select>
