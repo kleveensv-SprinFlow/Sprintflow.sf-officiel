@@ -26,14 +26,18 @@ export function useAuth() {
     if (signal) {
       query = query.abortSignal(signal);
     }
-    
-    const { data, error } = await query.single();
-    
+
+    const { data, error } = await query.maybeSingle();
+
     if (error) {
       if (error.name === 'AbortError') {
         throw error;
       }
-      console.warn('⚠️ Profil non trouvé, utilisation des métadonnées:', error.message);
+      console.warn('⚠️ Erreur lors du chargement du profil:', error.message);
+    }
+
+    if (!data) {
+      console.warn('⚠️ Profil non trouvé, utilisation des métadonnées');
       // Fallback sur les métadonnées si le profil n'existe pas encore
       return {
         id: user.id,
