@@ -14,14 +14,12 @@ export interface ExerciceReference {
   created_at: string;
 }
 
-export const CATEGORIES = {
-  'halterophilie': 'Haltérophilie',
-  'muscu_bas': 'Musculation Bas du Corps',
-  'muscu_haut': 'Musculation Haut du Corps',
-  'unilateral': 'Unilatéral',
-  'pliometrie': 'Pliométrie',
-  'lancers': 'Lancers',
-};
+import { EXERCISE_CATEGORIES } from '../data/categories';
+
+// This is for backwards compatibility for now, we'll phase it out.
+export const CATEGORIES = Object.fromEntries(
+  EXERCISE_CATEGORIES.map(cat => [cat.key, cat.label])
+);
 
 export function useExercices() {
   const [exercices, setExercices] = useState<ExerciceReference[]>([]);
