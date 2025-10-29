@@ -21,25 +21,25 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/sign/logo/icon-logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85NThiYWE3MC0xZTJiLTQ4NjgtODE2MS04MGNjNjM1OWE2ZDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2ljb24tbG9nby5wbmciLCJpYXQiOjE3NjE2NjU1NTcsImV4cCI6NDkxNTI2NTU1N30.X-jaqomwL0dBIxf7oEY-qM_iGGOVYuX30XrXj_QhjiA',
+            src: '/logo sans fond.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/sign/logo/icon-logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85NThiYWE3MC0xZTJiLTQ4NjgtODE2MS04MGNjNjM1OWE2ZDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2ljb24tbG9nby5wbmciLCJpYXQiOjE3NjE2NjU1NTcsImV4cCI6NDkxNTI2NTU1N30.X-jaqomwL0dBIxf7oEY-qM_iGGOVYuX30XrXj_QhjiA',
+            src: '/logo sans fond.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/sign/logo/icon-logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85NThiYWE3MC0xZTJiLTQ4NjgtODE2MS04MGNjNjM1OWE2ZDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2ljb24tbG9nby5wbmciLCJpYXQiOjE3NjE2NjU1NTcsImV4cCI6NDkxNTI2NTU1N30.X-jaqomwL0dBIxf7oEY-qM_iGGOVYuX30XrXj_QhjiA',
+            src: '/logo sans fond.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: 'https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/sign/logo/icon-logo.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85NThiYWE3MC0xZTJiLTQ4NjgtODE2MS04MGNjNjM1OWE2ZDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2ljb24tbG9nby5wbmciLCJpYXQiOjE3NjE2NjU1NTcsImV4cCI6NDkxNTI2NTU1N30.X-jaqomwL0dBIxf7oEY-qM_iGGOVYuX30XrXj_QhjiA',
+            src: '/logo sans fond.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
@@ -50,7 +50,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/kqlzvxfdzandgdkqzggj\.supabase\.co\/.*/i,
+            urlPattern: /^https:\/\/kjmpaytnexdoyjitwzux\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-cache',
