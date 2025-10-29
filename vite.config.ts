@@ -47,10 +47,11 @@ export default defineConfig({
         ]
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 3000000,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/kjmpaytnexdoyjitwzux\.supabase\.co\/.*/i,
+            urlPattern: /^https:\/\/kqlzvxfdzandgdkqzggj\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-cache',
