@@ -142,7 +142,14 @@ export default function Auth() {
       }
     } catch (error: any) {
       console.error('Erreur auth:', error);
-      setAuthError(error.message || 'Une erreur est survenue');
+      if (error.message && error.message.includes('For security purposes')) {
+        setAuthError('Trop de tentatives. Veuillez patienter un moment avant de réessayer.');
+      } else if (error.message && error.message.includes('User already registered')) {
+        setAuthError('Un utilisateur avec cet email existe déjà.');
+      }
+      else {
+        setAuthError(error.message || 'Une erreur est survenue');
+      }
     } finally {
       setLoading(false);
     }
