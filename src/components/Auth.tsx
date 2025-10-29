@@ -3,14 +3,13 @@ import { Eye, EyeOff, User, Mail, Lock, UserPlus, LogIn, ArrowLeft } from 'lucid
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
-const videos = [
-  '/videos/Athlète_en_Starting_Blocks_Tension_Pré_Course.mp4',
-  '/videos/Magnesia_Explosion_in_Slow_Motion.mp4',
-  '/videos/Génération_Vidéo_Piste_d_Athlétisme_Nocturne.mp4',
-];
+// Détection dynamique des vidéos dans le dossier public/videos
+const videoModules = import.meta.glob('/public/videos/*');
+const allVideos = Object.keys(videoModules).map(path => path.replace('/public', ''));
 
 export default function Auth() {
   const { signIn, signUp } = useAuth();
+  const [videos, setVideos] = useState<string[]>([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -31,15 +30,39 @@ export default function Auth() {
     sexe: ''
   });
 
+  // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
+  const shuffleArray = (array: string[]) => {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex], array[currentIndex]];
+    }
+    return array;
+  };
+
   useEffect(() => {
+    setVideos(shuffleArray([...allVideos]));
+  }, []);
+
+  useEffect(() => {
+    if (videos.length === 0) return;
     const videoElement = document.getElementById(`video-${currentVideoIndex}`) as HTMLVideoElement;
     if (videoElement) {
       videoElement.play().catch(error => console.error("Video play failed:", error));
     }
-  }, [currentVideoIndex]);
+  }, [currentVideoIndex, videos]);
 
   const handleVideoEnded = () => {
-    setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length);
+    const nextIndex = (currentVideoIndex + 1);
+    if (nextIndex >= videos.length) {
+      // Si on a joué toutes les vidéos, on re-mélange la liste pour le prochain cycle
+      setVideos(shuffleArray([...allVideos]));
+      setCurrentVideoIndex(0);
+    } else {
+      setCurrentVideoIndex(nextIndex);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
