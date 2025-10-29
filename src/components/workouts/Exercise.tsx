@@ -16,7 +16,6 @@ interface ExerciseSelectorProps {
 
 const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ allExercices, loading, onExerciseChange, initialExerciseId }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<string>(initialExerciseId || '');
 
   const getExerciceName = (id: string) => {
@@ -42,12 +41,14 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ allExercices, loadi
         if (selectedCategory && ex.category !== 'custom') {
           return ex.category === selectedCategory;
         }
-        return true;
-      })
-      .filter(ex => {
-        return ex.name.toLowerCase().includes(searchQuery.toLowerCase());
+        // If no category is selected, show all exercises
+        if (!selectedCategory) {
+            return true;
+        }
+        // Always show custom exercises unless a specific category is selected
+        return ex.category === 'custom';
       });
-  }, [allExercices, selectedCategory, searchQuery]);
+  }, [allExercices, selectedCategory]);
 
   return (
     <div className="space-y-2">
@@ -61,14 +62,6 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ allExercices, loadi
           <option key={key} value={key}>{label}</option>
         ))}
       </select>
-
-      <input
-        type="text"
-        placeholder="Rechercher un exercice..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full px-2 py-1 text-sm border rounded"
-      />
       
       <select
         value={selectedExercise}
