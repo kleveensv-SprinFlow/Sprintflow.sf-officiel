@@ -4,9 +4,13 @@ import { useSleep } from '../../hooks/useSleep';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Loader } from 'lucide-react';
+import { Loader, ChevronRight } from 'lucide-react';
 
-export const SleepAnalysis: React.FC = () => {
+interface SleepAnalysisProps {
+  onNavigate: () => void;
+}
+
+export const SleepAnalysis: React.FC<SleepAnalysisProps> = ({ onNavigate }) => {
   const { sleepData, loading } = useSleep();
 
   const last7DaysData = useMemo(() => {
@@ -48,9 +52,15 @@ export const SleepAnalysis: React.FC = () => {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
-        Analyse de Sommeil (7 derniers jours)
-      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Analyse de Sommeil</h2>
+        <button
+          onClick={onNavigate}
+          className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          Voir tout <ChevronRight className="w-4 h-4 ml-1" />
+        </button>
+      </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={last7DaysData}>
