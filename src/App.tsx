@@ -29,7 +29,8 @@ import { PartnershipsList } from './components/PartnershipsList';
 import { DeveloperPanel } from './components/developer/DeveloperPanel';
 import { NotificationDisplay } from './components/NotificationDisplay';
 import { NutritionModule } from './components/nutrition/NutritionModule';
-import { SleepForm } from './components/sleep/SleepForm';
+import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
+import { SleepTracker } from './components/sleep/SleepTracker';
 import { getViewTitle } from './utils/navigation';
 
 function App() {
@@ -309,13 +310,20 @@ function App() {
         {currentView === 'nutrition' && (
           <NutritionModule />
         )}
+        {currentView === 'add-food' && (
+          <FoodSearchModal 
+            onClose={navigateBack}
+            onFoodSelected={(food) => {
+              // TODO: Handle food selection logic
+              console.log('Nourriture sélectionnée:', food);
+              navigateBack();
+            }}
+          />
+        )}
 
         {/* Sleep */}
-        {currentView === 'add-sleep' && (
-          <SleepForm 
-            onSave={handleSleepSave}
-            onCancel={navigateBack}
-          />
+        {currentView === 'sleep' && (
+          <SleepTracker />
         )}
 
         {/* Developer Panel */}
@@ -328,6 +336,7 @@ function App() {
       <TabBar
         currentView={currentView}
         onViewChange={(view) => setNavigationStack([view])}
+        onFabAction={navigateTo}
         userRole={effectiveRole}
       />
       
