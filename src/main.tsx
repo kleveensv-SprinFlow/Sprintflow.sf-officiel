@@ -4,12 +4,6 @@ import App from './App.tsx';
 import './index.css';
 import { registerSW } from 'virtual:pwa-register';
 
-// Nettoyer TOUT le cache au démarrage pour forcer un reset complet
-console.log('🧹 NETTOYAGE COMPLET DU CACHE...');
-localStorage.clear();
-sessionStorage.clear();
-console.log('✅ Cache vidé, démarrage propre');
-
 // Enregistrer le service worker pour PWA
 const updateSW = registerSW({
   onNeedRefresh() {
