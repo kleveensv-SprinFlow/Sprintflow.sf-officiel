@@ -27,6 +27,7 @@ export default function Auth() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
     role: 'athlete' as 'athlete' | 'encadrant',
@@ -93,6 +94,12 @@ export default function Auth() {
       if (isLogin) {
         await signIn(formData.email, formData.password);
       } else {
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error("Les mots de passe ne correspondent pas.");
+        }
+        if (formData.password.length < 6) {
+          throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
+        }
         let avatarUrl = '';
         const tempId = `temp_${Date.now()}`; // ID temporaire pour le chemin
 
@@ -510,9 +517,10 @@ export default function Auth() {
                   <CardCarousel
                     options={[
                       { value: 'Coach', label: 'Coach' },
-                      { value: 'Kinésithérapeute', label: 'Kinésithérapeute' },
+                      { value: 'Kinesitherapeute', label: 'Kinésithérapeute' },
                       { value: 'Nutritionniste', label: 'Nutritionniste' },
-                      { value: 'Préparateur Physique', label: 'Prép. Physique' },
+                      { value: 'Preparateur Physique', label: 'Prép. Physique' },
+                      { value: 'Preparateur Mental', label: 'Prép. Mental' },
                     ]}
                     selectedValue={formData.role_specifique}
                     onSelect={value => setFormData(prev => ({ ...prev, role_specifique: value }))}
@@ -524,19 +532,24 @@ export default function Auth() {
                 <CardCarousel
                   options={[
                     { value: 'sprint', label: 'Sprint' },
+                    { value: 'haies', label: 'Haies' },
                     { value: 'sauts', label: 'Sauts' },
                     { value: 'lancers', label: 'Lancers' },
-                    { value: 'demi-fond', label: 'Demi-fond' },
+                    { value: 'demi-fond', label: 'Demi-fond / Fond' },
+                    { value: 'marche', label: 'Marche Athlétique' },
+                    { value: 'combinees', label: 'Épreuves Combinées' },
                   ]}
+
                   selectedValue={formData.discipline}
                   onSelect={value => setFormData(prev => ({ ...prev, discipline: value }))}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-2">Sexe</label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <SelectionCard label="Homme" isSelected={formData.sexe === 'homme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'homme' }))} />
                   <SelectionCard label="Femme" isSelected={formData.sexe === 'femme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'femme' }))} />
+                  <SelectionCard label="Autre" isSelected={formData.sexe === 'autre'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'autre' }))} />
                 </div>
               </div>
 
@@ -606,7 +619,30 @@ export default function Auth() {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+            {!isLogin && <p className="text-xs text-white/70 mt-2 ml-1">6 caractères minimum</p>}
           </div>
+
+          {/* Confirmation Mot de passe */}
+          {!isLogin && (
+            <div>
+              <label htmlFor="confirm-password-input" className="block text-sm font-medium text-white/80 mb-2">
+                Confirmez le mot de passe
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
+                <input
+                  id="confirm-password-input"
+                  type={showPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full pl-10 pr-12 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Affichage de l'erreur */}
           {authError && (
