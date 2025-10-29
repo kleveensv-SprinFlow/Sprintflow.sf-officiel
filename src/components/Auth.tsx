@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, ArrowLeft, User, Briefcase, Heart, Dna, Weight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { SelectionCard } from './common/SelectionCard';
+import { CardCarousel } from './common/CardCarousel';
 
 // Détection dynamique des vidéos dans le dossier public/videos
 const videoModules = import.meta.glob('/public/videos/*');
@@ -35,6 +37,7 @@ export default function Auth() {
     avatar_file: null as File | null,
   });
 
+  // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
   // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
   const shuffleArray = (array: string[], lastItem?: string): string[] => {
     let currentIndex = array.length, randomIndex;
@@ -226,7 +229,7 @@ export default function Auth() {
         {videos.map((video, index) => (
           <video
             key={video}
-            id={`video-player-${index}`}
+            id={`video-${index}`}
             className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
             src={video}
             autoPlay
@@ -325,7 +328,7 @@ export default function Auth() {
         {videos.map((video, index) => (
           <video
             key={video}
-            id={`video-player-${index}`}
+            id={`video-${index}`}
             className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
             src={video}
             autoPlay
@@ -420,7 +423,7 @@ export default function Auth() {
       {videos.map((video, index) => (
         <video
           key={video}
-          id={`video-player-${index}`}
+          id={`video-${index}`}
           className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
           src={video}
           autoPlay
@@ -494,75 +497,47 @@ export default function Auth() {
               </div>
 
               <div>
-                <label htmlFor="role-select" className="block text-sm font-medium text-white/80 mb-2">
-                  Je suis...
-                </label>
-                <select
-                  id="role-select"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                >
-                  <option value="athlete">Un(e) Athlète</option>
-                  <option value="encadrant">Un(e) Encadrant(e)</option>
-                </select>
+                <label className="block text-sm font-medium text-white/80 mb-2">Je suis...</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <SelectionCard label="Un(e) Athlète" isSelected={formData.role === 'athlete'} onClick={() => setFormData(prev => ({ ...prev, role: 'athlete' }))} icon={<User />} />
+                  <SelectionCard label="Un(e) Encadrant(e)" isSelected={formData.role === 'encadrant'} onClick={() => setFormData(prev => ({ ...prev, role: 'encadrant' }))} icon={<Briefcase />} />
+                </div>
               </div>
 
               {formData.role === 'encadrant' && (
                 <div>
-                  <label htmlFor="role-specifique-select" className="block text-sm font-medium text-white/80 mb-2">
-                    Spécialité
-                  </label>
-                  <select
-                    id="role-specifique-select"
-                    name="role_specifique"
-                    value={formData.role_specifique}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                  >
-                    <option value="">Sélectionnez votre spécialité...</option>
-                    <option value="Coach">Coach</option>
-                    <option value="Kinésithérapeute">Kinésithérapeute</option>
-                    <option value="Nutritionniste">Nutritionniste</option>
-                    <option value="Préparateur Physique">Préparateur Physique</option>
-                  </select>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Spécialité</label>
+                  <CardCarousel
+                    options={[
+                      { value: 'Coach', label: 'Coach' },
+                      { value: 'Kinésithérapeute', label: 'Kinésithérapeute' },
+                      { value: 'Nutritionniste', label: 'Nutritionniste' },
+                      { value: 'Préparateur Physique', label: 'Prép. Physique' },
+                    ]}
+                    selectedValue={formData.role_specifique}
+                    onSelect={value => setFormData(prev => ({ ...prev, role_specifique: value }))}
+                  />
                 </div>
               )}
               <div>
-                <label htmlFor="discipline-select" className="block text-sm font-medium text-white/80 mb-2">
-                  Discipline
-                </label>
-                <select
-                  id="discipline-select"
-                  name="discipline"
-                  value={formData.discipline}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                >
-                  <option value="">Non spécifiée</option>
-                  <option value="sprint">Sprint</option>
-                  <option value="sauts">Sauts</option>
-                  <option value="lancers">Lancers</option>
-                  <option value="demi-fond">Demi-fond / Fond</option>
-                </select>
+                <label className="block text-sm font-medium text-white/80 mb-2">Discipline</label>
+                <CardCarousel
+                  options={[
+                    { value: 'sprint', label: 'Sprint' },
+                    { value: 'sauts', label: 'Sauts' },
+                    { value: 'lancers', label: 'Lancers' },
+                    { value: 'demi-fond', label: 'Demi-fond' },
+                  ]}
+                  selectedValue={formData.discipline}
+                  onSelect={value => setFormData(prev => ({ ...prev, discipline: value }))}
+                />
               </div>
               <div>
-                <label htmlFor="sexe-select" className="block text-sm font-medium text-white/80 mb-2">
-                  Sexe
-                </label>
-                <select
-                  id="sexe-select"
-                  name="sexe"
-                  value={formData.sexe}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                >
-                  <option value="">Non spécifié</option>
-                  <option value="homme">Homme</option>
-                  <option value="femme">Femme</option>
-                </select>
+                <label className="block text-sm font-medium text-white/80 mb-2">Sexe</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <SelectionCard label="Homme" isSelected={formData.sexe === 'homme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'homme' }))} />
+                  <SelectionCard label="Femme" isSelected={formData.sexe === 'femme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'femme' }))} />
+                </div>
               </div>
 
               <div>
@@ -576,7 +551,7 @@ export default function Auth() {
                     name="avatar_file"
                     onChange={handleFileChange}
                     accept="image/*"
-                    className="w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
+                    className="w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 active:file:bg-blue-700 active:file:scale-95 transition-transform duration-100"
                   />
                   {avatarPreview && (
                     <img src={avatarPreview} alt="Aperçu" className="w-16 h-16 rounded-full object-cover border-2 border-white/50" />
