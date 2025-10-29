@@ -146,30 +146,14 @@ export function useAuth() {
     }
   };
 
-  const signUp = async (
-    email: string,
-    password: string,
-    role: 'athlete' | 'coach' = 'athlete',
-    firstName?: string,
-    lastName?: string,
-    discipline?: string,
-    sexe?: string
-  ) => {
-    const actualRole = role;
-
+  const signUp = async (email: string, password: string, metaData: object) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/confirm`,
-          data: {
-            role: actualRole,
-            first_name: firstName || '',
-            last_name: lastName || '',
-            discipline: discipline || '',
-            sexe: sexe || ''
-          }
+          data: metaData
         }
       });
 
