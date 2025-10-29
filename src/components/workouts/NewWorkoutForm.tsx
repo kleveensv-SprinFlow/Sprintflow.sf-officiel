@@ -32,7 +32,7 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
   }, []);
   
   const allExercices = useMemo(() => {
-    const formattedRef = refExercices.map(ex => ({ id: ex.id, name: ex.nom_fr, category: ex.categorie }));
+    const formattedRef = refExercices.map(ex => ({ id: ex.id, name: ex.nom, category: ex.categorie }));
     const formattedCustom = customExercices.map(ex => ({ id: ex.id, name: ex.name, category: 'custom' }));
     return [...formattedRef, ...formattedCustom];
   }, [refExercices, customExercices]);
