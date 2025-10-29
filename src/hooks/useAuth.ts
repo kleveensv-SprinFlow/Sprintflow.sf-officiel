@@ -56,6 +56,7 @@ export function useAuth() {
     const controller = new AbortController();
     const signal = controller.signal;
     let mounted = true;
+    let authChangeHandled = false;
 
     const initAuth = async () => {
       console.log('🔐 [useAuth] Début initAuth...');
@@ -90,7 +91,7 @@ export function useAuth() {
           setProfile(null);
         }
       } finally {
-        if (mounted) {
+        if (mounted && !authChangeHandled) {
           console.log('✅ [useAuth] Fin initAuth, setLoading(false)');
           setLoading(false);
         }
@@ -100,6 +101,9 @@ export function useAuth() {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 [useAuth] Auth state change:', event);
+      authChangeHandled = true;
+
       if (event === 'SIGNED_IN' && session?.user && mounted) {
         try {
           setError(null);
@@ -107,6 +111,7 @@ export function useAuth() {
           const userProfile = await fetchUserProfile(session.user);
           if (mounted) {
             setProfile(userProfile);
+            setLoading(false);
           }
         } catch (error: any) {
           console.error("❌ Erreur critique lors de la récupération du profil:", error);
@@ -114,9 +119,6 @@ export function useAuth() {
             setError("Impossible de charger le profil utilisateur.");
             setUser(null);
             setProfile(null);
-          }
-        } finally {
-          if (mounted) {
             setLoading(false);
           }
         }
@@ -134,9 +136,11 @@ export function useAuth() {
           }
         } catch (error) {
           console.error("Erreur lors du rafraîchissement du token:", error);
-          // Gérer l'erreur si nécessaire, par exemple en déconnectant l'utilisateur
         }
       }
+
+      // Reset le flag pour permettre à initAuth de gérer le loading si nécessaire
+      setTimeout(() => { authChangeHandled = false; }, 100);
     });
 
     return () => {
