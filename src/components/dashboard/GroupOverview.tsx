@@ -1,9 +1,13 @@
 // src/components/dashboard/GroupOverview.tsx
 import React from 'react';
 import { useGroups } from '../../hooks/useGroups';
-import { Loader, Users, Crown } from 'lucide-react';
+import { Loader, Users, Crown, ChevronRight } from 'lucide-react';
 
-export const GroupOverview: React.FC = () => {
+interface GroupOverviewProps {
+  onNavigate: () => void;
+}
+
+export const GroupOverview: React.FC<GroupOverviewProps> = ({ onNavigate }) => {
   const { groups, loading } = useGroups();
 
   if (loading) {
@@ -35,9 +39,15 @@ export const GroupOverview: React.FC = () => {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
-        {group.name}
-      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">{group.name}</h2>
+        <button
+          onClick={onNavigate}
+          className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          Voir tout <ChevronRight className="w-4 h-4 ml-1" />
+        </button>
+      </div>
       <div className="relative flex flex-col items-center justify-center p-4 h-48">
         {coach && (
           <div className="relative z-10 flex flex-col items-center text-center">
