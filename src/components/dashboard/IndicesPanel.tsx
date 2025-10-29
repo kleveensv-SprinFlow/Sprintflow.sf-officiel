@@ -32,15 +32,19 @@ const ScoreCircle: React.FC<ScoreCircleProps> = ({ score, title, icon: Icon, col
 interface IndicesPanelProps {
   loading: boolean;
   scoreForme: any;
-  scorePoidsPuissance: any;
+  scorePerformance: any;
+  scoreEvolution: any;
+  onNavigate: () => void;
 }
 
-export function IndicesPanel({ loading, scoreForme, scorePoidsPuissance }: IndicesPanelProps) {
-  const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance'; data: any } | null>(null);
+export function IndicesPanel({ loading, scoreForme, scorePerformance, scoreEvolution, onNavigate }: IndicesPanelProps) {
+  const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance' | 'evolution'; data: any } | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const handleScoreClick = (type: 'forme' | 'poidsPuissance', data: any) => {
-    if (data && data.indice !== null) {
+  const handleScoreClick = (type: 'forme' | 'poidsPuissance' | 'evolution', data: any) => {
+    if (type === 'forme' && data?.indice) {
+      onNavigate();
+    } else if (data && data.indice !== null) {
       setModalContent({ type, data });
     }
   };
@@ -86,7 +90,7 @@ export function IndicesPanel({ loading, scoreForme, scorePoidsPuissance }: Indic
             <ScoreCircle score={scoreForme?.indice} title="Forme" icon={HeartPulse} color="border-green-400" onClick={() => handleScoreClick('forme', scoreForme)} />
           </div>
           <div className="absolute w-full h-full flex justify-center items-center" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-            <ScoreCircle score={scorePoidsPuissance?.indice} title="Poids/Puissance" icon={Zap} color="border-blue-400" onClick={() => handleScoreClick('poidsPuissance', scorePoidsPuissance)} />
+            <ScoreCircle score={scorePerformance?.indice} title="Poids/Puissance" icon={Zap} color="border-blue-400" onClick={() => handleScoreClick('poidsPuissance', scorePerformance)} />
           </div>
         </motion.div>
       </div>
