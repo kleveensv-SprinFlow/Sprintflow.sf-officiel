@@ -20,45 +20,59 @@ export default function Auth() {
   const [resendEmail, setResendEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resendSent, setResendSent] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     firstName: '',
     lastName: '',
-    role: 'athlete' as 'athlete' | 'coach',
+    role: 'athlete' as 'athlete' | 'encadrant',
+    role_specifique: '',
     discipline: '',
     sexe: ''
   });
 
   // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
-  const shuffleArray = (array: string[]) => {
+  // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
+  const shuffleArray = (array: string[], lastItem?: string): string[] => {
     let currentIndex = array.length, randomIndex;
+    const newArray = [...array];
+
     while (currentIndex !== 0) {
       randomIndex = Math.floor(Math.random() * currentIndex);
       currentIndex--;
-      [array[currentIndex], array[randomIndex]] = [
-        array[randomIndex], array[currentIndex]];
+      [newArray[currentIndex], newArray[randomIndex]] = [
+        newArray[randomIndex], newArray[currentIndex]];
     }
-    return array;
+
+    // S'assure que le premier élément de la nouvelle liste n'est pas le même que le dernier de l'ancienne
+    if (lastItem && newArray[0] === lastItem && newArray.length > 1) {
+      const firstElement = newArray.shift();
+      if (firstElement) {
+        newArray.push(firstElement);
+      }
+    }
+    
+    return newArray;
   };
 
   useEffect(() => {
-    setVideos(shuffleArray([...allVideos]));
+    setVideos(shuffleArray(allVideos));
   }, []);
 
   useEffect(() => {
     if (videos.length === 0) return;
-    const videoElement = document.getElementById(`video-${currentVideoIndex}`) as HTMLVideoElement;
+    const videoElement = document.getElementById(`video-player-${currentVideoIndex}`) as HTMLVideoElement;
     if (videoElement) {
       videoElement.play().catch(error => console.error("Video play failed:", error));
     }
   }, [currentVideoIndex, videos]);
 
   const handleVideoEnded = () => {
-    const nextIndex = (currentVideoIndex + 1);
+    const nextIndex = currentVideoIndex + 1;
     if (nextIndex >= videos.length) {
-      // Si on a joué toutes les vidéos, on re-mélange la liste pour le prochain cycle
-      setVideos(shuffleArray([...allVideos]));
+      const lastVideo = videos[videos.length - 1];
+      setVideos(shuffleArray(allVideos, lastVideo));
       setCurrentVideoIndex(0);
     } else {
       setCurrentVideoIndex(nextIndex);
@@ -68,6 +82,7 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setAuthError(null);
 
     try {
       if (isLogin) {
@@ -76,37 +91,23 @@ export default function Auth() {
         const { data, error } = await signUp(
           formData.email,
           formData.password,
-          formData.role,
-          formData.firstName,
-          formData.lastName
+          {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            role: formData.role,
+            role_specifique: formData.role_specifique,
+          }
         );
 
         if (error) throw error;
 
         if (data.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              role: formData.role,
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              discipline: formData.discipline,
-              sexe: formData.sexe,
-              created_at: new Date().toISOString(),
-            });
-
-          if (profileError) {
-            console.error('Erreur création profil:', profileError);
-            // Gérer l'erreur de création de profil, peut-être en informant l'utilisateur
-          }
-
           alert('✅ Inscription réussie !\n\n📧 IMPORTANT : Un email de confirmation a été envoyé à ' + formData.email + '\n\nVous devez cliquer sur le lien dans cet email pour activer votre compte.\n\n⚠️ Vérifiez également vos spams si vous ne voyez pas l\'email dans les 5 minutes.\n\n💡 Si vous ne recevez pas l\'email, vous pourrez le renvoyer depuis l\'écran de connexion.');
         }
       }
     } catch (error: any) {
       console.error('Erreur auth:', error);
-      alert(error.message || 'Une erreur est survenue');
+      setAuthError(error.message || 'Une erreur est survenue');
     } finally {
       setLoading(false);
     }
@@ -405,10 +406,11 @@ export default function Auth() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">
+                  <label htmlFor="firstName-input" className="block text-sm font-medium text-white/80 mb-2">
                     Prénom
                   </label>
                   <input
+                    id="firstName-input"
                     type="text"
                     name="firstName"
                     value={formData.firstName}
@@ -419,10 +421,11 @@ export default function Auth() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">
+                  <label htmlFor="lastName-input" className="block text-sm font-medium text-white/80 mb-2">
                     Nom
                   </label>
                   <input
+                    id="lastName-input"
                     type="text"
                     name="lastName"
                     value={formData.lastName}
@@ -435,24 +438,48 @@ export default function Auth() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
-                  Rôle
+                <label htmlFor="role-select" className="block text-sm font-medium text-white/80 mb-2">
+                  Je suis...
                 </label>
                 <select
+                  id="role-select"
                   name="role"
                   value={formData.role}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent"
                 >
-                  <option value="athlete">Athlète</option>
-                  <option value="coach">Coach</option>
+                  <option value="athlete">Un(e) Athlète</option>
+                  <option value="encadrant">Un(e) Encadrant(e)</option>
                 </select>
               </div>
+
+              {formData.role === 'encadrant' && (
+                <div>
+                  <label htmlFor="role-specifique-select" className="block text-sm font-medium text-white/80 mb-2">
+                    Spécialité
+                  </label>
+                  <select
+                    id="role-specifique-select"
+                    name="role_specifique"
+                    value={formData.role_specifique}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  >
+                    <option value="">Sélectionnez votre spécialité...</option>
+                    <option value="Coach">Coach</option>
+                    <option value="Kinésithérapeute">Kinésithérapeute</option>
+                    <option value="Nutritionniste">Nutritionniste</option>
+                    <option value="Préparateur Physique">Préparateur Physique</option>
+                  </select>
+                </div>
+              )}
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
+                <label htmlFor="discipline-select" className="block text-sm font-medium text-white/80 mb-2">
                   Discipline
                 </label>
                 <select
+                  id="discipline-select"
                   name="discipline"
                   value={formData.discipline}
                   onChange={handleInputChange}
@@ -466,10 +493,11 @@ export default function Auth() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
+                <label htmlFor="sexe-select" className="block text-sm font-medium text-white/80 mb-2">
                   Sexe
                 </label>
                 <select
+                  id="sexe-select"
                   name="sexe"
                   value={formData.sexe}
                   onChange={handleInputChange}
@@ -485,12 +513,13 @@ export default function Auth() {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">
+            <label htmlFor="email-input" className="block text-sm font-medium text-white/80 mb-2">
               Email
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
               <input
+                id="email-input"
                 type="email"
                 name="email"
                 value={formData.email}
@@ -504,12 +533,13 @@ export default function Auth() {
 
           {/* Mot de passe */}
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">
+            <label htmlFor="password-input" className="block text-sm font-medium text-white/80 mb-2">
               Mot de passe
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
               <input
+                id="password-input"
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
@@ -527,6 +557,13 @@ export default function Auth() {
               </button>
             </div>
           </div>
+
+          {/* Affichage de l'erreur */}
+          {authError && (
+            <div className="text-red-400 text-center text-sm font-medium p-2 mb-4 bg-red-900/50 rounded-lg">
+              {authError}
+            </div>
+          )}
 
           {/* Bouton submit */}
           <button
