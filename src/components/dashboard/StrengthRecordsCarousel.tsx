@@ -7,9 +7,11 @@ import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { Record } from '../../types';
 import { Loader, ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 
-const FALLBACK_WIDTH = 250;
+interface StrengthRecordsCarouselProps {
+  onNavigate: () => void;
+}
 
-export const StrengthRecordsCarousel: React.FC = () => {
+export const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = ({ onNavigate }) => {
   const { records, loading: recordsLoading } = useRecords();
   const { lastWeight, loading: weightLoading } = useBodycomp();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -81,9 +83,15 @@ export const StrengthRecordsCarousel: React.FC = () => {
 
   return (
     <div className="relative w-full">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
-        Mes Records de Force
-      </h2>
+      <div className="flex justify-between items-center mb-4 px-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Records de Force</h2>
+        <button
+          onClick={onNavigate}
+          className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          Voir tout <ChevronRight className="w-4 h-4 ml-1" />
+        </button>
+      </div>
       <div className="relative h-64 w-full overflow-hidden">
         <motion.ul
             ref={containerRef}
