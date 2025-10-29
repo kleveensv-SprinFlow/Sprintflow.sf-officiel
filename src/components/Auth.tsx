@@ -23,6 +23,7 @@ export default function Auth() {
   const [resetSent, setResetSent] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
@@ -120,7 +121,7 @@ export default function Auth() {
           avatarUrl = data.publicUrl;
         }
 
-        const { data, error } = await signUp(
+        const signUpData = await signUp(
           formData.email,
           formData.password,
           {
@@ -134,10 +135,8 @@ export default function Auth() {
           }
         );
 
-        if (error) throw error;
-
-        if (data.user) {
-          alert('✅ Inscription réussie !\n\n📧 IMPORTANT : Un email de confirmation a été envoyé à ' + formData.email + '\n\nVous devez cliquer sur le lien dans cet email pour activer votre compte.\n\n⚠️ Vérifiez également vos spams si vous ne voyez pas l\'email dans les 5 minutes.\n\n💡 Si vous ne recevez pas l\'email, vous pourrez le renvoyer depuis l\'écran de connexion.');
+        if (signUpData) {
+          setSignupSuccess(true);
         }
       }
     } catch (error: any) {
@@ -427,6 +426,49 @@ export default function Auth() {
               </button>
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+  // Interface de confirmation d'inscription
+  if (signupSuccess) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+        {videos.map((video, index) => (
+          <video
+            key={video}
+            id={`video-${index}`}
+            className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
+            src={video}
+            autoPlay
+            muted
+            onEnded={handleVideoEnded}
+            playsInline
+          />
+        ))}
+        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20 text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-4">Inscription Réussie !</h1>
+            <p className="text-white/80 mb-6 text-lg">
+              Un email de confirmation a été envoyé à <strong>{formData.email}</strong>.
+            </p>
+            <p className="text-white/90 mb-8">
+              Veuillez cliquer sur le lien dans cet email pour activer votre compte. Pensez à vérifier votre dossier de spams.
+            </p>
+            <button
+              onClick={() => {
+                setSignupSuccess(false);
+                setIsLogin(true);
+                setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+              }}
+              className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-orange-600 focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-black/20 flex items-center justify-center transition-all duration-300 transform hover:scale-105"
+            >
+              <LogIn className="w-5 h-5 mr-2" />
+              Retour à la connexion
+            </button>
         </div>
       </div>
     );
