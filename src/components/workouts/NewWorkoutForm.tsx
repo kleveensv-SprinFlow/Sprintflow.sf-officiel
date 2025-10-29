@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { Workout, WorkoutMuscu } from '../../types';
 import useAuth from '../../hooks/useAuth';
@@ -51,6 +51,13 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
   const [meteo, setMeteo] = useState(editingWorkout?.meteo || '');
   const [temperature, setTemperature] = useState<number | ''>(editingWorkout?.temperature || '');
   const [saving, setSaving] = useState(false);
+  const lastExerciseRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (lastExerciseRef.current) {
+      lastExerciseRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [muscu.length]);
 
   const generateId = () => `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -79,8 +86,8 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
 
   const addMuscu = () => {
     setMuscu([
+      ...muscu,
       { exercice_id: '', exercice_nom: '', series: 1, reps: 1, poids: 0 },
-      ...muscu
     ]);
   };
 
@@ -230,7 +237,7 @@ export function NewWorkoutForm({ editingWorkout, onSave, onCancel }: NewWorkoutF
                 ) : (
                     <div className="space-y-3">
                     {muscu.map((ex, index) => (
-                        <div key={index} className="border rounded-lg p-3 space-y-2">
+                        <div key={index} ref={index === muscu.length - 1 ? lastExerciseRef : null} className="border rounded-lg p-3 space-y-2">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-medium">Exercice {index + 1}</span>
                                 <button type="button" onClick={() => removeMuscu(index)} className="p-1 text-red-600 rounded">
