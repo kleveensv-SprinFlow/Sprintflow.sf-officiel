@@ -55,7 +55,6 @@ export function EditAthleticDataModal({ currentProfileData, onClose, onSaved }: 
       if (!user) throw new Error('Non authentifié');
 
       const updates: any = {
-        date_de_naissance: formData.dateNaissance || null,
         sexe: formData.sexe || null,
         discipline: formData.discipline || null,
       };
@@ -107,10 +106,6 @@ export function EditAthleticDataModal({ currentProfileData, onClose, onSaved }: 
                 <option value="homme">Homme</option>
                 <option value="femme">Femme</option>
               </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de naissance</label>
-              <input type="date" name="dateNaissance" value={formData.dateNaissance} onChange={handleInputChange} className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
           
