@@ -146,7 +146,15 @@ export function useAuth() {
     }
   };
 
-  const signUp = async (email: string, password: string, role: 'athlete' | 'coach' = 'athlete', firstName?: string, lastName?: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    role: 'athlete' | 'coach' = 'athlete',
+    firstName?: string,
+    lastName?: string,
+    discipline?: string,
+    sexe?: string
+  ) => {
     const actualRole = role;
 
     try {
@@ -158,7 +166,9 @@ export function useAuth() {
           data: {
             role: actualRole,
             first_name: firstName || '',
-            last_name: lastName || ''
+            last_name: lastName || '',
+            discipline: discipline || '',
+            sexe: sexe || ''
           }
         }
       });

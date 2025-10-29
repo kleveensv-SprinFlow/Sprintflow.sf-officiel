@@ -37,29 +37,14 @@ export default function Auth() {
           formData.password,
           formData.role,
           formData.firstName,
-          formData.lastName
+          formData.lastName,
+          formData.discipline,
+          formData.sexe
         );
 
         if (error) throw error;
 
         if (data.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              role: formData.role,
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              discipline: formData.discipline,
-              sexe: formData.sexe,
-              created_at: new Date().toISOString(),
-            });
-
-          if (profileError) {
-            console.error('Erreur création profil:', profileError);
-            // Gérer l'erreur de création de profil, peut-être en informant l'utilisateur
-          }
-
           alert('✅ Inscription réussie !\n\n📧 IMPORTANT : Un email de confirmation a été envoyé à ' + formData.email + '\n\nVous devez cliquer sur le lien dans cet email pour activer votre compte.\n\n⚠️ Vérifiez également vos spams si vous ne voyez pas l\'email dans les 5 minutes.\n\n💡 Si vous ne recevez pas l\'email, vous pourrez le renvoyer depuis l\'écran de connexion.');
         }
       }
