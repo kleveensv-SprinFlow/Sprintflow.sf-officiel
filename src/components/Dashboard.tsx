@@ -1,9 +1,13 @@
+// src/components/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { CoachDashboard } from './dashboard/CoachDashboard';
 import { IndicesPanel } from './dashboard/IndicesPanel';
 import { RecentWorkouts } from './dashboard/RecentWorkouts';
-import { QuickActions } from './dashboard/QuickActions';
+import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';
+import { StrengthRecordsCarousel } from './dashboard/StrengthRecordsCarousel';
+import { SleepAnalysis } from './dashboard/SleepAnalysis';
+import { GroupOverview } from './dashboard/GroupOverview';
 
 interface DashboardProps {
   userRole?: 'athlete' | 'coach' | 'developer';
@@ -77,8 +81,11 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
         scoreEvolution={scores.evolution}
       />
       
-      <QuickActions onViewChange={onViewChange} />
-      
+      <TrackRecordsCarousel />
+      <StrengthRecordsCarousel />
+      <SleepAnalysis />
+      <GroupOverview />
+
       <RecentWorkouts />
     </div>
   );
