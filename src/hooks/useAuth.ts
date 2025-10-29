@@ -188,41 +188,10 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    console.log('🚪 DÉCONNEXION FORCÉE - Début...');
-    
-    // 1. Nettoyer immédiatement l'état React
-    const currentUserId = user?.id;
-    console.log('🧹 Nettoyage état React pour user:', currentUserId);
-    
-    setUser(null);
-    setProfile(null);
-    setLoading(false);
-    setError(null);
-    
-    // 2. Nettoyer localStorage
-    if (currentUserId) {
-      console.log('🧹 Nettoyage localStorage...');
-      localStorage.removeItem(`profile_${currentUserId}`);
-      localStorage.removeItem(`workouts_${currentUserId}`);
-      localStorage.removeItem(`records_${currentUserId}`);
-      localStorage.removeItem(`bodycomps_${currentUserId}`);
-      localStorage.removeItem(`athlete_groups_${currentUserId}`);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Erreur lors de la déconnexion:', error);
     }
-    
-    // 3. Nettoyer toutes les clés d'auth Supabase
-    console.log('🧹 Nettoyage auth Supabase...');
-    localStorage.removeItem('supabase.auth.token');
-    localStorage.removeItem('sb-ifmoecnlpwnxcthplqra-auth-token');
-    sessionStorage.clear();
-    
-    // 4. Tentative de déconnexion Supabase (en arrière-plan)
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.warn('Erreur Supabase ignorée:', error);
-    }
-    
-    console.log('✅ DÉCONNEXION FORCÉE - Terminée');
   };
 
   return {
