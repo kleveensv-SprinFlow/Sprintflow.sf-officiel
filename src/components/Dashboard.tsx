@@ -79,14 +79,15 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
         scoreForme={scores.forme}
         scorePerformance={scores.performance}
         scoreEvolution={scores.evolution}
+        onNavigate={() => onViewChange('ai')}
       />
       
-      <TrackRecordsCarousel />
-      <StrengthRecordsCarousel />
-      <SleepAnalysis />
-      <GroupOverview />
+      <TrackRecordsCarousel onNavigate={() => onViewChange('records')} />
+      <StrengthRecordsCarousel onNavigate={() => onViewChange('records')} />
+      <SleepAnalysis onNavigate={() => onViewChange('sleep')} />
+      <GroupOverview onNavigate={() => onViewChange('groups')} />
 
-      <RecentWorkouts />
+      <RecentWorkouts onNavigate={() => onViewChange('workouts')} />
     </div>
   );
 }
