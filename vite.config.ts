@@ -75,15 +75,26 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+      }
+    },
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           charts: ['recharts'],
-          utils: ['date-fns', 'lucide-react']
+          utils: ['date-fns', 'lucide-react'],
+          supabase: ['@supabase/supabase-js'],
+          motion: ['framer-motion']
         }
       }
-    }
+    },
+    chunkSizeWarningLimit: 1000
   },
   base: './',
   server: {
