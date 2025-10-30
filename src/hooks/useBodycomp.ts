@@ -1,13 +1,15 @@
-// src/hooks/useBodycomp.ts
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 
 export interface BodycompData {
-  id?: number;
-  user_id: string;
+  id?: string;
+  athlete_id: string;
   date: string;
-  weight_kg: number;
+  poids_kg: number;
+  masse_grasse_pct?: number;
+  masse_musculaire_kg?: number;
+  muscle_squelettique_kg?: number;
 }
 
 export const useBodycomp = () => {
@@ -26,28 +28,23 @@ export const useBodycomp = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('bodycomp')
-        .select('weight_kg')
-        .eq('user_id', user.id)
+        .from('donnees_corporelles')
+        .select('poids_kg')
+        .eq('athlete_id', user.id)
         .order('date', { ascending: false })
         .limit(1)
-        .single();
-      
+        .maybeSingle();
+
       if (error) {
-        // Si aucune pesée n'est trouvée, initialiser avec un poids par défaut (ex: 75kg)
-        if (error.code === 'PGRST116') {
-          setLastWeight({ weight: 75 });
-        } else {
-          throw error;
-        }
+        console.error('Error fetching last weight:', error);
+        setLastWeight({ weight: 75 });
       } else if (data) {
-        setLastWeight({ weight: data.weight_kg });
+        setLastWeight({ weight: data.poids_kg });
       } else {
         setLastWeight({ weight: 75 });
       }
     } catch (error) {
       console.error('Error fetching last weight:', error);
-      // Fallback à un poids par défaut en cas d'erreur
       setLastWeight({ weight: 75 });
     } finally {
       setLoading(false);

@@ -116,39 +116,48 @@ export function useGroups() {
   const loadMembersForGroups = async (groupsData: any[]) => {
     try {
       console.log('👥 Chargement des membres pour', groupsData.length, 'groupes');
-      const groupIds = groupsData.map(g => g.id);
 
-      const { data: allMembersData } = await supabase
-        .from('group_members')
-        .select('id, group_id, athlete_id, joined_at')
-        .in('group_id', groupIds);
+      // Charger les membres pour chaque groupe via RPC
+      const membersPromises = groupsData.map(async (group) => {
+        const { data, error } = await supabase
+          .rpc('get_group_members_with_profiles', { group_id_param: group.id });
 
-      if (allMembersData) {
-        const athleteIds = allMembersData.map(m => m.athlete_id);
-        const { data: profiles, error: profilesError } = await supabase.rpc('get_user_profiles_by_ids', { user_ids: athleteIds });
-
-        if (profilesError) {
-          console.error('Erreur récupération profils membres (coach):', profilesError);
-          return;
+        if (error) {
+          console.error(`Erreur chargement membres groupe ${group.id}:`, error);
+          return { groupId: group.id, members: [] };
         }
 
-        const membersByGroup = allMembersData.reduce((acc: Record<string, any[]>, member) => {
-          if (!acc[member.group_id]) {
-            acc[member.group_id] = [];
+        const formattedMembers = (data || []).map((m: any) => ({
+          id: m.id,
+          group_id: m.group_id,
+          athlete_id: m.athlete_id,
+          joined_at: m.joined_at,
+          athlete: {
+            id: m.athlete_id,
+            first_name: m.athlete_first_name,
+            last_name: m.athlete_last_name,
+            email: m.athlete_email,
+            avatar_url: m.athlete_photo_url,
+            role: m.athlete_role
           }
-          const profile = profiles.find(p => p.id === member.athlete_id);
-          acc[member.group_id].push({ ...member, athlete: profile || null });
-          return acc;
-        }, {});
+        }));
 
-        setGroups(prev => prev.map(group => ({
-          ...group,
-          members: membersByGroup[group.id] || []
-        })));
-      }
+        return { groupId: group.id, members: formattedMembers };
+      });
+
+      const results = await Promise.all(membersPromises);
+
+      const membersByGroup: Record<string, any[]> = {};
+      results.forEach(result => {
+        membersByGroup[result.groupId] = result.members;
+      });
+
+      setGroups(prev => prev.map(group => ({
+        ...group,
+        members: membersByGroup[group.id] || []
+      })));
     } catch (error) {
-      console.error('⚠️ Erreur chargement membres:', error)
-      // Ne pas bloquer si le chargement des membres échoue
+      console.error('⚠️ Erreur chargement membres:', error);
     }
   }
 
@@ -158,82 +167,48 @@ export function useGroups() {
     setLoading(true)
 
     try {
-      // Charger directement les groupes rejoints par l'athlète
-      const { data: membershipData, error: membershipError } = await supabase
-        .from('group_members')
-        .select(`
-          *,
-          groups!inner(
-            id,
-            name,
-            description,
-            group_photo_url,
-            coach_id,
-            invitation_code,
-            created_at,
-            profiles!groups_coach_id_fkey(
-              id,
-              first_name,
-              last_name,
-              avatar_url,
-              role
-            )
-          )
-        `)
-        .eq('athlete_id', user.id)
+      // Utiliser la fonction RPC pour charger les groupes avec les infos du coach
+      const { data: groupsData, error: groupsError } = await supabase
+        .rpc('get_athlete_groups_with_coach', { athlete_id_param: user.id });
 
-      if (membershipError) {
-        console.error('Erreur chargement groupes athlète:', membershipError.message)
-        setGroups([])
-        return
+      if (groupsError) {
+        console.error('Erreur chargement groupes athlète:', groupsError.message);
+        setGroups([]);
+        return;
       }
 
-      if (!membershipData || membershipData.length === 0) {
-        setGroups([])
-        return
+      if (!groupsData || groupsData.length === 0) {
+        setGroups([]);
+        return;
       }
 
       // Transformer les données en format attendu
-      const groupsWithDetails = membershipData.map(membership => ({
-        ...membership.groups,
-        coach: membership.groups.profiles,
+      const groupsWithDetails = groupsData.map((g: any) => ({
+        id: g.id,
+        name: g.name,
+        description: g.description,
+        group_photo_url: g.group_photo_url,
+        coach_id: g.coach_id,
+        invitation_code: g.invitation_code,
+        max_members: g.max_members,
+        created_at: g.created_at,
+        updated_at: g.updated_at,
+        coach: {
+          id: g.coach_id,
+          first_name: g.coach_first_name,
+          last_name: g.coach_last_name,
+          avatar_url: g.coach_photo_url,
+          role: 'coach'
+        },
         members: []
-      }))
+      }));
 
-      setGroups(groupsWithDetails)
-      localStorage.setItem(`athlete_groups_${user.id}`, JSON.stringify(groupsWithDetails))
+      setGroups(groupsWithDetails);
+      localStorage.setItem(`athlete_groups_${user.id}`, JSON.stringify(groupsWithDetails));
 
-      // Charger les membres de chaque groupe
-      const groupIds = groupsWithDetails.map(g => g.id)
-      if (groupIds.length > 0) {
-        const { data: allMembersData } = await supabase
-          .from('group_members')
-          .select('id, group_id, athlete_id, joined_at')
-          .in('group_id', groupIds);
-        
-        if (allMembersData) {
-          const athleteIds = allMembersData.map(m => m.athlete_id);
-          const { data: profiles, error: profilesError } = await supabase.rpc('get_user_profiles_by_ids', { user_ids: athleteIds });
-
-          if (profilesError) {
-            console.error('Erreur récupération profils membres:', profilesError);
-            return;
-          }
-
-          const membersByGroup = allMembersData.reduce((acc: Record<string, any[]>, member) => {
-            if (!acc[member.group_id]) {
-              acc[member.group_id] = [];
-            }
-            const profile = profiles.find(p => p.id === member.athlete_id);
-            acc[member.group_id].push({ ...member, athlete: profile || null });
-            return acc;
-          }, {});
-
-          setGroups(prev => prev.map(group => ({
-            ...group,
-            members: membersByGroup[group.id] || []
-          })));
-        }
+      // Charger les membres de chaque groupe en arrière-plan
+      if (groupsWithDetails.length > 0) {
+        loadMembersForGroups(groupsWithDetails);
       }
 
     } catch (error) {
