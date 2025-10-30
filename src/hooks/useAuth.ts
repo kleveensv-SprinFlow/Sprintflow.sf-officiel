@@ -58,101 +58,55 @@ export function useAuth() {
     let mounted = true;
     let authChangeHandled = false;
 
-    const initAuth = async () => {
-      console.log('🔐 [useAuth] Début initAuth...');
-      try {
-        console.log('🔐 [useAuth] Appel getSession...');
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('🔐 [useAuth] Session récupérée:', session?.user?.id ? 'User trouvé' : 'Pas de user');
-
-        if (session?.user && mounted) {
-          console.log('🔐 [useAuth] Mise à jour user state...');
-          setUser(session.user);
-          console.log('🔐 [useAuth] Chargement profil...');
-          const userProfile = await fetchUserProfile(session.user, signal);
-          console.log('🔐 [useAuth] Profil chargé:', userProfile);
-          if (mounted) {
-            setProfile(userProfile);
-          }
-        } else if (mounted) {
-          console.log('🔐 [useAuth] Pas de session, reset user/profile');
-          setUser(null);
-          setProfile(null);
-        }
-      } catch (error: any) {
-        if (error.name === 'AbortError') {
-          console.log('➡️ [useAuth] Fetch annulé, normal.');
-          return;
-        }
-        console.error('❌ [useAuth] Erreur:', error);
-        if (mounted) {
-          setError(error?.message || 'Erreur de connexion');
-          setUser(null);
-          setProfile(null);
-        }
-      } finally {
-        if (mounted && !authChangeHandled) {
-          console.log('✅ [useAuth] Fin initAuth, setLoading(false)');
-          setLoading(false);
-        }
-      }
-    };
-
-    initAuth();
+    // onAuthStateChange gère maintenant l'état initial,
+    // donc initAuth peut être retiré pour éviter la redondance.
+    // Le setLoading(false) est garanti par le `finally` dans le listener.
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 [useAuth] Auth state change:', event);
       authChangeHandled = true;
-
-      if (event === 'SIGNED_IN' && session?.user && mounted) {
-        try {
-          if (!session.user.email_confirmed_at) {
-            console.warn('⚠️ Email non confirmé, déconnexion...');
-            await supabase.auth.signOut();
+      
+      try {
+        switch (event) {
+          case 'SIGNED_IN':
+          case 'TOKEN_REFRESHED':
+          case 'USER_UPDATED':
+            if (session?.user && mounted) {
+              setUser(session.user);
+              const userProfile = await fetchUserProfile(session.user);
+              if (mounted) {
+                setProfile(userProfile);
+                setError(null);
+              }
+            }
+            break;
+          
+          case 'SIGNED_OUT':
             if (mounted) {
-              setError("Veuillez confirmer votre email avant de vous connecter.");
               setUser(null);
               setProfile(null);
-              setLoading(false);
+              setError(null);
             }
-            return;
-          }
-
-          setError(null);
-          setUser(session.user);
-          const userProfile = await fetchUserProfile(session.user);
-          if (mounted) {
-            setProfile(userProfile);
-            setLoading(false);
-          }
-        } catch (error: any) {
-          console.error("❌ Erreur critique lors de la récupération du profil:", error);
-          if (mounted) {
-            setError("Impossible de charger le profil utilisateur.");
-            setUser(null);
-            setProfile(null);
-            setLoading(false);
-          }
+            break;
+            
+          default:
+            // Pour les autres événements (e.g., INITIAL_SESSION), on ne fait rien de spécial
+            // mais le finally s'assurera que le chargement est terminé.
+            break;
         }
-      } else if (event === 'SIGNED_OUT' && mounted) {
-        setError(null);
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
-      } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
-        try {
-          const userProfile = await fetchUserProfile(session.user);
-          if (mounted) {
-            setUser(session.user);
-            setProfile(userProfile);
-          }
-        } catch (error) {
-          console.error("Erreur lors du rafraîchissement du token:", error);
+      } catch (error: any) {
+        console.error("❌ Erreur dans onAuthStateChange:", error);
+        if (mounted) {
+          setError(error?.message || "Impossible de mettre à jour la session.");
+          setUser(null);
+          setProfile(null);
+        }
+      } finally {
+        // Quoi qu'il arrive, on arrête de charger.
+        if (mounted) {
+          setLoading(false);
         }
       }
-
-      // Reset le flag pour permettre à initAuth de gérer le loading si nécessaire
-      setTimeout(() => { authChangeHandled = false; }, 100);
     });
 
     return () => {
