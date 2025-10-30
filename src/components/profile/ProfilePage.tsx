@@ -125,15 +125,45 @@ export function ProfilePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
+
+      // Supprimer toutes les anciennes photos (tous les formats)
+      const extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      await Promise.all(
+        extensions.map(ext =>
+          supabase.storage
+            .from('profiles')
+            .remove([`avatars/${user.id}.${ext}`])
+        )
+      );
+
+      // Uploader la nouvelle photo
       const fileExt = file.name.split('.').pop();
       const filePath = `avatars/${user.id}.${fileExt}`;
-      await supabase.storage.from('profiles').upload(filePath, file, { upsert: true });
-      const { data: { publicUrl } } = supabase.storage.from('profiles').getPublicUrl(filePath);
+      const { error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Récupérer l'URL publique avec cache buster
+      const { data: { publicUrl } } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(filePath);
       const urlWithCacheBuster = `${publicUrl}?t=${new Date().getTime()}`;
-      await supabase.from('profiles').update({ photo_url: urlWithCacheBuster }).eq('id', user.id);
-      loadProfile();
-    } catch (err) {
+
+      // Mettre à jour la base de données
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ photo_url: urlWithCacheBuster })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Recharger le profil
+      await loadProfile();
+    } catch (err: any) {
       console.error('Erreur upload photo:', err);
+      alert(`Erreur lors de l'upload: ${err.message || 'Veuillez réessayer'}`);
     } finally {
       setUploadingPhoto(false);
     }
