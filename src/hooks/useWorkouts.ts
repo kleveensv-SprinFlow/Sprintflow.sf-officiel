@@ -53,8 +53,8 @@ export function useWorkouts() {
             tag_seance: workout.tag_seance,
             courses_json: workout.courses_json || [],
             muscu_json: workout.muscu_json || [],
-            sauts_json: workout.sauts_json || [],
-            lancers_json: workout.lancers_json || [],
+            sauts_json: [],
+            lancers_json: [],
             autres_activites: workout.autres_activites,
             echelle_effort: workout.echelle_effort,
             notes: workout.notes,
@@ -63,11 +63,11 @@ export function useWorkouts() {
             duration_minutes: workout.duration_minutes,
             created_at: workout.created_at,
             updated_at: workout.updated_at,
-            runs: workout.runs ? (typeof workout.runs === 'string' ? JSON.parse(workout.runs) : workout.runs) : [],
-            jumps: workout.jumps ? (typeof workout.jumps === 'string' ? JSON.parse(workout.jumps) : workout.jumps) : [],
-            throws: workout.throws ? (typeof workout.throws === 'string' ? JSON.parse(workout.throws) : workout.throws) : [],
-            stairs: workout.stairs ? (typeof workout.stairs === 'string' ? JSON.parse(workout.stairs) : workout.stairs) : [],
-            exercises: workout.exercises ? (typeof workout.exercises === 'string' ? JSON.parse(workout.exercises) : workout.exercises) : [],
+            runs: [],
+            jumps: [],
+            throws: [],
+            stairs: [],
+            exercises: [],
           }
           return mapped
         })
@@ -104,19 +104,12 @@ export function useWorkouts() {
       tag_seance: workout.tag_seance,
       courses_json: workout.courses_json || [],
       muscu_json: workout.muscu_json || [],
-      sauts_json: workout.sauts_json || [],
-      lancers_json: workout.lancers_json || [],
       autres_activites: workout.autres_activites,
       echelle_effort: workout.echelle_effort,
       notes: workout.notes,
       meteo: workout.meteo,
       temperature: workout.temperature,
-      duration_minutes: workout.duration_minutes || 60,
-      runs: JSON.stringify(workout.runs || []),
-      jumps: JSON.stringify(workout.jumps || []),
-      throws: JSON.stringify(workout.throws || []),
-      stairs: JSON.stringify(workout.stairs || []),
-      exercises: JSON.stringify(workout.exercises || [])
+      duration_minutes: workout.duration_minutes || 60
     }
 
     try {
@@ -145,8 +138,8 @@ export function useWorkouts() {
         date: data.date,
         title: data.title,
         tag_seance: data.tag_seance,
-        courses_json: workout.courses_json || [],
-        muscu_json: workout.muscu_json || [],
+        courses_json: data.courses_json || [],
+        muscu_json: data.muscu_json || [],
         sauts_json: workout.sauts_json || [],
         lancers_json: workout.lancers_json || [],
         autres_activites: data.autres_activites,

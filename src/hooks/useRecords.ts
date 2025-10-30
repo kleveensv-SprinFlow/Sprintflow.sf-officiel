@@ -55,7 +55,7 @@ export function useRecords() {
                 item.exercise_name.toLowerCase().includes('saut') ? 'jump' as const :
                 item.exercise_name.toLowerCase().includes('lancer') ? 'throw' as const : 'exercise' as const,
           name: item.exercise_name,
-          value: item.value,
+          value: item.weight_kg,
           unit: (item.exercise_name.includes('m') &&
                  !item.exercise_name.toLowerCase().includes('saut') &&
                  !item.exercise_name.toLowerCase().includes('lancer') &&
@@ -66,8 +66,7 @@ export function useRecords() {
                 (item.exercise_name.toLowerCase().includes('saut') ||
                  item.exercise_name.toLowerCase().includes('lancer')) ? 'm' : 'kg',
           date: item.date,
-          // Récupérer le shoe_type depuis Supabase si disponible
-          ...(item.shoe_type && { shoe_type: item.shoe_type })
+          exercice_reference_id: item.exercice_id
         })) || []
         setRecords(mappedRecords)
         
@@ -99,10 +98,10 @@ export function useRecords() {
     const recordData = {
       user_id: user.id,
       exercise_name: record.name,
-      value: record.value,
+      weight_kg: record.value,
+      reps: 1,
       date: record.date,
-      ...(record.shoe_type && { shoe_type: record.shoe_type }),
-      ...(record.exercice_id && { exercice_id: record.exercice_id })
+      ...(record.exercice_reference_id && { exercice_id: record.exercice_reference_id })
     }
     
     try {
@@ -126,16 +125,10 @@ export function useRecords() {
         id: data.id,
         type: record.type,
         name: data.exercise_name,
-        value: parseFloat(data.value),
+        value: parseFloat(data.weight_kg),
         unit: record.unit,
         date: data.date,
-        // Garder les métadonnées dans l'état local seulement
-        ...(record.timing_method && { timing_method: record.timing_method }),
-        ...(record.distance_method && { distance_method: record.distance_method }),
-        ...(record.wind_speed !== undefined && { wind_speed: record.wind_speed }),
-        ...(record.shoe_type && { shoe_type: record.shoe_type }),
-        ...(record.is_hill !== undefined && { is_hill: record.is_hill }),
-        ...(record.hill_location && { hill_location: record.hill_location })
+        exercice_reference_id: data.exercice_id
       }
       
       // Mettre à jour l'état local
