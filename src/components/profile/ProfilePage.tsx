@@ -130,7 +130,7 @@ export function ProfilePage() {
       await supabase.storage.from('profiles').upload(filePath, file, { upsert: true });
       const { data: { publicUrl } } = supabase.storage.from('profiles').getPublicUrl(filePath);
       const urlWithCacheBuster = `${publicUrl}?t=${new Date().getTime()}`;
-      await supabase.from('profiles').update({ avatar_url: urlWithCacheBuster }).eq('id', user.id);
+      await supabase.from('profiles').update({ photo_url: urlWithCacheBuster }).eq('id', user.id);
       loadProfile();
     } catch (err) {
       console.error('Erreur upload photo:', err);
