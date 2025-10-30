@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Lightbulb, HeartPulse, Zap, TrendingUp, Loader2, RefreshCw, ChevronRight } from 'lucide-react';
+import { Lightbulb, HeartPulse, Zap, TrendingUp, Loader2, RefreshCw, ChevronRight, ScanEye } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { FormeAdvice } from './FormeAdvice';
 import { PoidsPuissanceAdvice } from './PoidsPuissanceAdvice';
 import { EvolutionAdvice } from './EvolutionAdvice';
+import { VideoAnalysis } from './VideoAnalysis';
 
-type AdviceView = 'menu' | 'forme' | 'poids-puissance' | 'evolution';
+type AdviceView = 'menu' | 'forme' | 'poids-puissance' | 'evolution' | 'video-analysis';
 
 interface ScoresData {
   forme: any;
@@ -77,6 +78,10 @@ export function AdvicePanel() {
     return <EvolutionAdvice data={scores.evolution} onBack={() => setCurrentView('menu')} onRefresh={loadScores} />;
   }
 
+  if (currentView === 'video-analysis') {
+    return <VideoAnalysis onBack={() => setCurrentView('menu')} />;
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
@@ -125,6 +130,15 @@ export function AdvicePanel() {
           color="purple"
           onClick={() => setCurrentView('evolution')}
         />
+
+        <MenuCard
+          icon={<ScanEye className="w-8 h-8" />}
+          title="Analyse Vidéo"
+          description="Analysez la technique de vos mouvements"
+          score={null}
+          color="orange"
+          onClick={() => setCurrentView('video-analysis')}
+        />
       </div>
     </div>
   );
@@ -135,7 +149,7 @@ interface MenuCardProps {
   title: string;
   description: string;
   score: number | null | undefined;
-  color: 'green' | 'blue' | 'purple';
+  color: 'green' | 'blue' | 'purple' | 'orange';
   onClick: () => void;
 }
 
@@ -144,6 +158,7 @@ function MenuCard({ icon, title, description, score, color, onClick }: MenuCardP
     green: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
     blue: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
     purple: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800',
+    orange: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800',
   };
 
   return (
