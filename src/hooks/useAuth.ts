@@ -20,6 +20,11 @@ export function useAuth() {
   const fetchUserProfile = async (user: User, signal?: AbortSignal) => {
     console.log('📡 [fetchUserProfile] Début chargement pour user:', user.id);
 
+    // TIMEOUT de 2 secondes pour éviter le blocage infini
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout')), 2000);
+    });
+
     let query = supabase
       .from('profiles')
       .select('*')
@@ -30,20 +35,44 @@ export function useAuth() {
     }
 
     console.log('📡 [fetchUserProfile] Envoi requête Supabase...');
-    const { data, error } = await query.maybeSingle();
-    console.log('📡 [fetchUserProfile] Réponse reçue - data:', !!data, 'error:', error?.message);
 
-    if (error) {
-      if (error.name === 'AbortError') {
-        console.log('📡 [fetchUserProfile] Requête annulée (AbortError)');
-        throw error;
+    try {
+      const { data, error } = await Promise.race([query.maybeSingle(), timeoutPromise]) as any;
+      console.log('📡 [fetchUserProfile] Réponse reçue - data:', !!data, 'error:', error?.message);
+
+      if (error) {
+        if (error.name === 'AbortError') {
+          console.log('📡 [fetchUserProfile] Requête annulée (AbortError)');
+          throw error;
+        }
+        console.warn('⚠️ Erreur lors du chargement du profil:', error.message);
       }
-      console.warn('⚠️ Erreur lors du chargement du profil:', error.message);
-    }
 
-    if (!data) {
-      console.warn('⚠️ Profil non trouvé, utilisation des métadonnées');
-      // Fallback sur les métadonnées si le profil n'existe pas encore
+      if (!data) {
+        console.warn('⚠️ Profil non trouvé, utilisation des métadonnées');
+        const fallback = {
+          id: user.id,
+          role: (user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
+                user.user_metadata?.role || 'athlete') as 'coach' | 'athlete' | 'developer',
+          first_name: user.user_metadata?.first_name || '',
+          last_name: user.user_metadata?.last_name || '',
+          email: user.email || '',
+          avatar_url: user.user_metadata?.avatar_url || ''
+        };
+        console.log('📡 [fetchUserProfile] Retour fallback:', fallback);
+        return fallback;
+      }
+
+      const profile = {
+        ...data,
+        avatar_url: data.photo_url || data.avatar_url
+      };
+      console.log('📡 [fetchUserProfile] Retour profile DB:', profile);
+      return profile;
+
+    } catch (timeoutError: any) {
+      // Si timeout ou erreur, utiliser fallback
+      console.warn('⚠️ [fetchUserProfile] Timeout ou erreur:', timeoutError.message);
       const fallback = {
         id: user.id,
         role: (user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
@@ -53,16 +82,9 @@ export function useAuth() {
         email: user.email || '',
         avatar_url: user.user_metadata?.avatar_url || ''
       };
-      console.log('📡 [fetchUserProfile] Retour fallback:', fallback);
+      console.log('📡 [fetchUserProfile] Retour fallback (timeout):', fallback);
       return fallback;
     }
-
-    const profile = {
-      ...data,
-      avatar_url: data.photo_url || data.avatar_url // Compatibilité photo_url/avatar_url
-    };
-    console.log('📡 [fetchUserProfile] Retour profile DB:', profile);
-    return profile;
   };
 
   useEffect(() => {
