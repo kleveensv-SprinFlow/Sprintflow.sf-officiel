@@ -129,7 +129,8 @@ export function ProfilePage() {
       const filePath = `avatars/${user.id}.${fileExt}`;
       await supabase.storage.from('profiles').upload(filePath, file, { upsert: true });
       const { data: { publicUrl } } = supabase.storage.from('profiles').getPublicUrl(filePath);
-      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+      const urlWithCacheBuster = `${publicUrl}?t=${new Date().getTime()}`;
+      await supabase.from('profiles').update({ avatar_url: urlWithCacheBuster }).eq('id', user.id);
       loadProfile();
     } catch (err) {
       console.error('Erreur upload photo:', err);
@@ -190,9 +191,9 @@ export function ProfilePage() {
         <div className="space-y-6">
           {/* Informations Personnelles */}
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-shrink-0"><User className="w-5 h-5" />Informations Personnelles</h2>
-              <button onClick={() => setShowEditInfoModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm ml-auto"><Edit className="w-4 h-4" />Modifier</button>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><User className="w-5 h-5" />Informations Personnelles</h2>
+              <button onClick={() => setShowEditInfoModal(true)} className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"><Edit className="w-4 h-4" />Modifier</button>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -212,9 +213,9 @@ export function ProfilePage() {
 
           {/* Données Athlétiques */}
           <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-shrink-0"><Target className="w-5 h-5" />Données Athlétiques</h2>
-              <button onClick={() => setShowEditAthleticModal(true)} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm ml-auto"><Edit className="w-4 h-4" />Mettre à jour</button>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Target className="w-5 h-5" />Données Athlétiques</h2>
+              <button onClick={() => setShowEditAthleticModal(true)} className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm"><Edit className="w-4 h-4" />Mettre à jour</button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="col-span-2"><p className="text-sm text-gray-600 dark:text-gray-400">Discipline principale</p><p className="text-lg font-medium text-gray-900 dark:text-white">{profile.discipline || 'Non renseigné'}</p></div>
