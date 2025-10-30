@@ -347,3 +347,6 @@ function App() {
       <NotificationDisplay />
     </div>
   );
+}
+
+export default App;
