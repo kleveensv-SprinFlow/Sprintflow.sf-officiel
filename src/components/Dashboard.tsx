@@ -1,13 +1,14 @@
 // src/components/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { CoachDashboard } from './dashboard/CoachDashboard';
+import { CoachDashboard } from './coach/CoachDashboard';
 import { IndicesPanel } from './dashboard/IndicesPanel';
 import { RecentWorkouts } from './dashboard/RecentWorkouts';
 import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';
 import { StrengthRecordsCarousel } from './dashboard/StrengthRecordsCarousel';
 import { SleepAnalysis } from './dashboard/SleepAnalysis';
 import { GroupOverview } from './dashboard/GroupOverview';
+import { WellnessCheckinCard } from './dashboard/WellnessCheckinCard';
 
 interface DashboardProps {
   userRole?: 'athlete' | 'coach' | 'developer';
@@ -63,11 +64,13 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
   };
   
   if (userRole === 'coach' || userRole === 'developer') {
-    return <CoachDashboard />;
+    return <CoachDashboard onNavigate={onViewChange} />;
   }
 
   return (
     <div className="space-y-6">
+      <WellnessCheckinCard />
+
       <div className="text-center py-4">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
           Bienvenue sur <span className="text-blue-600 dark:text-blue-400">Sprintflow</span>
