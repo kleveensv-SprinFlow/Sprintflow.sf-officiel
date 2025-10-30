@@ -270,7 +270,7 @@ function App() {
           />
         )}
         
-        {/* Advice Panel */}
+        {/* Detailed Analysis */}
         {currentView === 'ai' && (
           <AdvicePanel />
         )}
