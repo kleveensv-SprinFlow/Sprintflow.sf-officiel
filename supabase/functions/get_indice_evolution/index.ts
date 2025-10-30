@@ -13,19 +13,27 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase configuration");
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("Missing authorization header");
+    }
+    
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user } } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (!user) {
+    if (authError || !user) {
       throw new Error("Unauthorized");
     }
 
-    // --- 1. Fetch all records for the user ---
     const { data: allRecords, error: recordsError } = await supabase
       .from("records")
       .select("exercice_id, value, date")
@@ -33,7 +41,10 @@ Deno.serve(async (req: Request) => {
       .not("exercice_id", "is", null)
       .order("date", { ascending: false });
       
-    if (recordsError) throw recordsError;
+    if (recordsError) {
+      console.error("Records error:", recordsError);
+      throw new Error(`Database error: ${recordsError.message}`);
+    }
 
     if (!allRecords || allRecords.length === 0) {
       return new Response(JSON.stringify({
@@ -42,21 +53,20 @@ Deno.serve(async (req: Request) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     
-    // --- 2. Group records by exercise and find recent/best ---
-    const exerciseData: Record<string, { recent: number; best: number; name?: string }> = {};
+    const exerciseData: Record<string, { recent: number; best: number }> = {};
 
     for (const record of allRecords) {
       const { exercice_id, value, date } = record;
+      if (!exercice_id || !value) continue;
+      
       if (!exerciseData[exercice_id]) {
         exerciseData[exercice_id] = { recent: 0, best: 0 };
       }
 
-      // Update best record
       if (value > exerciseData[exercice_id].best) {
         exerciseData[exercice_id].best = value;
       }
       
-      // Update recent record if it's within the last 90 days and the first one we find (since they are sorted by date)
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
       if (new Date(date) > ninetyDaysAgo && exerciseData[exercice_id].recent === 0) {
@@ -64,11 +74,9 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // --- 3. Calculate evolution scores ---
     const evolutionScores: { exercice_id: string; score: number }[] = [];
     for (const exId in exerciseData) {
       const data = exerciseData[exId];
-      // Use the best record if no recent one is available for a baseline
       const recent = data.recent > 0 ? data.recent : data.best;
       
       if (data.best > 0) {
@@ -84,22 +92,23 @@ Deno.serve(async (req: Request) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // --- 4. Fetch exercise names for context ---
     const { data: exercices, error: exercicesError } = await supabase
       .from("exercices_reference")
       .select("id, name")
       .in('id', evolutionScores.map(s => s.exercice_id));
       
-    if (exercicesError) throw exercicesError;
-    const exMap = new Map(exercices.map(e => [e.id, e.name]));
+    if (exercicesError) {
+      console.error("Exercices error:", exercicesError);
+    }
+    
+    const exMap = new Map((exercices || []).map(e => [e.id, e.name]));
 
-    // --- 5. Final Calculation and Contextual Data ---
     const totalScore = evolutionScores.reduce((sum, s) => sum + s.score, 0);
     const indice = Math.round(totalScore / evolutionScores.length);
     
     const sortedByScore = evolutionScores.sort((a, b) => b.score - a.score);
-    const topProgress = sortedByScore.slice(0, 3).map(s => ({ name: exMap.get(s.exercice_id), score: s.score }));
-    const bottomProgress = sortedByScore.slice(-3).map(s => ({ name: exMap.get(s.exercice_id), score: s.score }));
+    const topProgress = sortedByScore.slice(0, 3).map(s => ({ name: exMap.get(s.exercice_id) || 'Inconnu', score: s.score }));
+    const bottomProgress = sortedByScore.slice(-3).map(s => ({ name: exMap.get(s.exercice_id) || 'Inconnu', score: s.score }));
 
     return new Response(
       JSON.stringify({
@@ -113,8 +122,9 @@ Deno.serve(async (req: Request) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
+    console.error("Function error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -7,14 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-// --- Helper Functions ---
-
-// US Navy Body Fat Formula
 const calculateNavyBodyFat = (gender: 'male' | 'female', heightCm: number, waistCm: number, neckCm: number, hipCm?: number): number => {
   if (gender === 'male') {
     return 86.010 * Math.log10(waistCm - neckCm) - 70.041 * Math.log10(heightCm) + 36.76;
   } else {
-    if (!hipCm) return 0; // Hip measurement is required for females
+    if (!hipCm) return 0;
     return 163.205 * Math.log10(waistCm + hipCm - neckCm) - 97.684 * Math.log10(heightCm) - 78.387;
   }
 };
@@ -42,34 +39,43 @@ const getDisciplineWeights = (discipline: string | null) => {
   }
 };
 
-// --- Main Function ---
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase configuration");
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("Missing authorization header");
+    }
+    
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user } } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (!user) {
+    if (authError || !user) {
       throw new Error("Unauthorized");
     }
 
-    // --- 1. Fetch Data ---
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("taille_cm, sexe, tour_taille_cm, tour_cou_cm, tour_hanches_cm, discipline")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error("Profile error:", profileError);
+      throw new Error(`Database error: ${profileError.message}`);
+    }
 
     const { data: latestCorpo, error: corpoError } = await supabase
       .from("donnees_corporelles")
@@ -77,10 +83,11 @@ Deno.serve(async (req: Request) => {
       .eq("athlete_id", user.id)
       .order("date", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
     
-    // Allow for no body data to be present
-    if (corpoError && corpoError.code !== 'PGRST116') throw corpoError;
+    if (corpoError && corpoError.code !== 'PGRST116') {
+      console.error("Body composition error:", corpoError);
+    }
     
     const { data: records, error: recordsError } = await supabase
       .from("records")
@@ -88,19 +95,24 @@ Deno.serve(async (req: Request) => {
       .eq("user_id", user.id)
       .not("exercice_id", "is", null);
 
-    if (recordsError) throw recordsError;
+    if (recordsError) {
+      console.error("Records error:", recordsError);
+      throw new Error(`Database error: ${recordsError.message}`);
+    }
 
     const { data: exercices, error: exercicesError } = await supabase
       .from("exercices_reference")
       .select("*");
       
-    if (exercicesError) throw exercicesError;
+    if (exercicesError) {
+      console.error("Exercices error:", exercicesError);
+      throw new Error(`Database error: ${exercicesError.message}`);
+    }
 
-    // --- 2. Calculate Composition Score ---
     let scoreCompo = 50;
     let compoMethod = 'default';
-    const poids = latestCorpo?.poids_kg || 75; // Default to 75kg if no data
-    const taille = (profile.taille_cm || 175) / 100; // Default to 175cm
+    const poids = latestCorpo?.poids_kg || 75;
+    const taille = ((profile?.taille_cm || 175) / 100);
 
     const masseGrasse = latestCorpo?.masse_grasse_pct;
     
@@ -113,8 +125,14 @@ Deno.serve(async (req: Request) => {
       else if (masseGrasse <= 18) scoreCompo = 65;
       else if (masseGrasse <= 20) scoreCompo = 50;
       else scoreCompo = Math.max(30, 50 - (masseGrasse - 20) * 2);
-    } else if (profile.sexe && profile.tour_cou_cm && profile.tour_taille_cm && profile.taille_cm) {
-      const estimatedFat = calculateNavyBodyFat(profile.sexe, profile.taille_cm, profile.tour_taille_cm, profile.tour_cou_cm, profile.tour_hanches_cm);
+    } else if (profile?.sexe && profile?.tour_cou_cm && profile?.tour_taille_cm && profile?.taille_cm) {
+      const estimatedFat = calculateNavyBodyFat(
+        profile.sexe as 'male' | 'female', 
+        profile.taille_cm, 
+        profile.tour_taille_cm, 
+        profile.tour_cou_cm, 
+        profile.tour_hanches_cm || undefined
+      );
       compoMethod = 'Formule Navy (Estimation)';
       if (estimatedFat <= 10) scoreCompo = 100;
       else if (estimatedFat <= 12) scoreCompo = 95;
@@ -133,13 +151,12 @@ Deno.serve(async (req: Request) => {
       else scoreCompo = Math.max(30, 60 - (imc - 26) * 5);
     }
 
-    // --- 3. Calculate Strength Score ---
-    const exMap = new Map(exercices.map(e => [e.id, e]));
+    const exMap = new Map((exercices || []).map(e => [e.id, e]));
     const allScores: Record<string, number[]> = {};
 
     for (const rec of records || []) {
       const ex = exMap.get(rec.exercice_id);
-      if (!ex) continue;
+      if (!ex || !rec.value) continue;
 
       const ratio = rec.value / poids;
       let score = 0;
@@ -160,12 +177,12 @@ Deno.serve(async (req: Request) => {
     const categorieScores: Record<string, number> = {};
     for (const cat in allScores) {
       const sortedScores = allScores[cat].sort((a, b) => b - a);
-      const topScores = sortedScores.slice(0, 2); // Take top 2 scores
+      const topScores = sortedScores.slice(0, 2);
       const avgScore = topScores.reduce((sum, s, i) => sum + s * (i === 0 ? 0.7 : 0.3), 0) / (topScores.length > 1 ? 1.0 : 0.7);
       categorieScores[cat] = Math.round(avgScore);
     }
 
-    const weights = getDisciplineWeights(profile.discipline);
+    const weights = getDisciplineWeights(profile?.discipline || null);
     let scoreForce = 0;
     let totalWeight = 0;
 
@@ -180,7 +197,6 @@ Deno.serve(async (req: Request) => {
       scoreForce /= totalWeight;
     }
 
-    // --- 4. Final Calculation ---
     const indice = Math.round(scoreCompo * 0.4 + scoreForce * 0.6);
 
     return new Response(
@@ -193,14 +209,15 @@ Deno.serve(async (req: Request) => {
           poids, 
           masseGrasse,
           compoMethod,
-          discipline: profile.discipline || 'Non spécifiée' 
+          discipline: profile?.discipline || 'Non spécifiée' 
         },
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
+    console.error("Function error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
