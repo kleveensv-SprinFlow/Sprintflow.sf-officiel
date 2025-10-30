@@ -66,11 +66,15 @@ export function ProfilePage() {
 
       if (!data) {
         console.log('Profil non trouvé, création en cours...');
+        const firstName = user.user_metadata?.first_name || '';
+        const lastName = user.user_metadata?.last_name || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+
         const newProfile = {
           id: user.id,
-          first_name: user.user_metadata?.first_name || '',
-          last_name: user.user_metadata?.last_name || '',
-          full_name: user.user_metadata?.full_name || '',
+          first_name: firstName,
+          last_name: lastName,
+          full_name: fullName,
         };
 
         const { data: createdProfile, error: createError } = await supabase
