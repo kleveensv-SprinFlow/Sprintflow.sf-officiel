@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { FormeAdvice } from './FormeAdvice';
 import { PoidsPuissanceAdvice } from './PoidsPuissanceAdvice';
 import { EvolutionAdvice } from './EvolutionAdvice';
-import { VideoAnalysis } from './VideoAnalysis';
+import { VideoAnalysisFlow } from '../video_analysis/VideoAnalysisFlow';
 
 type AdviceView = 'menu' | 'forme' | 'poids-puissance' | 'evolution' | 'video-analysis';
 
@@ -79,7 +79,7 @@ export function AdvicePanel() {
   }
 
   if (currentView === 'video-analysis') {
-    return <VideoAnalysis onBack={() => setCurrentView('menu')} />;
+    return <VideoAnalysisFlow onBack={() => setCurrentView('menu')} />;
   }
 
   return (

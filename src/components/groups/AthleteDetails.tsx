@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Trophy, User, Dumbbell, Calendar, Clock, MapPin, Weight, Target, Trash2, TrendingUp, TrendingDown, Minus, Filter } from 'lucide-react'
+import { ArrowLeft, Trophy, User, Dumbbell, Calendar, Clock, MapPin, Weight, Target, Trash2, TrendingUp, TrendingDown, Minus, Filter, ScanEye } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import useAuth from '../../hooks/useAuth'
 import { AthleteWorkoutCalendar } from './AthleteWorkoutCalendar'
+import { AthleteVideoAnalysisList } from './AthleteVideoAnalysisList'
 
 interface AthleteDetailsProps {
   athlete: {
@@ -61,7 +62,7 @@ export const AthleteDetails: React.FC<AthleteDetailsProps> = ({ athlete, onBack 
   const [records, setRecords] = useState<AthleteRecord[]>([])
   const [workouts, setWorkouts] = useState<AthleteWorkout[]>([])
   const [bodyComps, setBodyComps] = useState<AthleteBodyComp[]>([])
-  const [activeTab, setActiveTab] = useState<'records' | 'workouts' | 'bodycomp'>('records')
+  const [activeTab, setActiveTab] = useState<'records' | 'workouts' | 'bodycomp' | 'video_analysis'>('records')
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'run' | 'jump' | 'throw' | 'exercise'>('all')
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
@@ -375,6 +376,20 @@ export const AthleteDetails: React.FC<AthleteDetailsProps> = ({ athlete, onBack 
             <div className="flex items-center space-x-1 sm:space-x-2">
               <User className="h-4 w-4" />
               <span>Composition corporelle</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('video_analysis')}
+            className={`py-3 px-4 border-b-2 font-medium text-sm transition-colors w-full sm:w-auto rounded-t-lg button-3d ${
+              activeTab === 'video_analysis'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <ScanEye className="h-4 w-4" />
+              <span>Analyses Vidéo</span>
             </div>
           </button>
         </nav>
@@ -746,6 +761,10 @@ export const AthleteDetails: React.FC<AthleteDetailsProps> = ({ athlete, onBack 
             </>
           )}
         </div>
+      )}
+
+      {activeTab === 'video_analysis' && (
+        <AthleteVideoAnalysisList athleteId={athlete.id} />
       )}
     </div>
   )
