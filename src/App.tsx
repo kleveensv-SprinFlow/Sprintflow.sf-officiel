@@ -17,7 +17,7 @@ import { RecordsList } from './components/records/RecordsList';
 import { RecordsForm } from './components/records/RecordsForm';
 import { BodyCompCharts } from './components/bodycomp/BodyCompCharts';
 import { BodyCompForm } from './components/bodycomp/BodyCompForm';
-import { DetailedAnalysis } from './components/advice/DetailedAnalysis';
+import { AdvicePanel } from './components/advice/AdvicePanel';
 import { AthleteGroupView } from './components/groups/AthleteGroupView';
 import { GroupManagement } from './components/groups/GroupManagement';
 import { CoachPlanning } from './components/planning/CoachPlanning';
@@ -270,9 +270,9 @@ function App() {
           />
         )}
         
-        {/* Detailed Analysis */}
+        {/* Advice Panel */}
         {currentView === 'ai' && (
-          <DetailedAnalysis />
+          <AdvicePanel />
         )}
         
         {/* Groups */}
