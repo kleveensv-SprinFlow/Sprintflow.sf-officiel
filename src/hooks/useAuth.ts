@@ -118,10 +118,29 @@ export function useAuth() {
 
               console.log('✅ Email confirmé, chargement du profil...');
               setUser(session.user);
-              const userProfile = await fetchUserProfile(session.user);
-              if (mounted) {
-                setProfile(userProfile);
-                setError(null);
+              try {
+                // Ne pas passer de signal ici pour éviter l'annulation
+                const userProfile = await fetchUserProfile(session.user);
+                console.log('👤 Profil récupéré:', userProfile);
+                if (mounted) {
+                  setProfile(userProfile);
+                  setError(null);
+                  console.log('✅ User et profile définis dans le state');
+                }
+              } catch (profileError: any) {
+                console.error('❌ Erreur lors du chargement du profil:', profileError);
+                if (mounted && profileError.name !== 'AbortError') {
+                  // Utiliser les métadonnées comme fallback
+                  const fallbackProfile = {
+                    id: session.user.id,
+                    role: session.user.user_metadata?.role || 'athlete',
+                    first_name: session.user.user_metadata?.first_name || '',
+                    last_name: session.user.user_metadata?.last_name || '',
+                    email: session.user.email || '',
+                  };
+                  setProfile(fallbackProfile as UserProfile);
+                  console.log('⚠️ Profil fallback utilisé:', fallbackProfile);
+                }
               }
             }
             break;

@@ -1,4 +1,3 @@
-import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
@@ -15,8 +14,8 @@ const updateSW = registerSW({
   immediate: true
 });
 
+// StrictMode désactivé car il cause des problèmes avec onAuthStateChange de Supabase
+// qui est appelé plusieurs fois et crée des boucles infinies
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <App />
 );
