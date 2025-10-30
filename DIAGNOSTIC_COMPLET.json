@@ -1,0 +1,242 @@
+{
+  "diagnostic_date": "2025-10-30",
+  "resume": {
+    "total_problemes": 5,
+    "critiques": 2,
+    "majeurs": 2,
+    "mineurs": 1
+  },
+  "problemes": [
+    {
+      "id": 1,
+      "titre": "Table 'bodycomp' inexistante",
+      "severite": "CRITIQUE",
+      "type": "DATABASE_SCHEMA_MISMATCH",
+      "description": "Le hook useBodycomp.ts tente d'accéder à une table 'bodycomp' qui n'existe pas dans la base de données. La table réelle s'appelle 'donnees_corporelles'.",
+      "cause_racine": "Incohérence entre le nom de table utilisé dans le code et le schéma de base de données réel",
+      "fichiers_affectes": [
+        "src/hooks/useBodycomp.ts"
+      ],
+      "erreur_observee": "404 - Table or view not found: bodycomp",
+      "impact": "Impossible de charger le dernier poids de l'utilisateur, ce qui bloque certaines fonctionnalités comme le calcul de l'indice poids/puissance",
+      "correction_proposee": {
+        "action": "Renommer les références de table dans le code",
+        "details": "Remplacer .from('bodycomp') par .from('donnees_corporelles') et adapter les noms de colonnes (weight_kg -> poids_kg)",
+        "fichiers_a_modifier": [
+          "src/hooks/useBodycomp.ts"
+        ],
+        "code_avant": ".from('bodycomp').select('weight_kg')",
+        "code_apres": ".from('donnees_corporelles').select('poids_kg')"
+      },
+      "verification": {
+        "table_existe": false,
+        "table_correcte": "donnees_corporelles",
+        "colonnes_correctes": ["id", "athlete_id", "date", "poids_kg", "masse_grasse_pct", "masse_musculaire_kg", "muscle_squelettique_kg", "created_at"]
+      }
+    },
+    {
+      "id": 2,
+      "titre": "Edge Functions retournent 500",
+      "severite": "CRITIQUE",
+      "type": "EDGE_FUNCTION_ERROR",
+      "description": "Les Edge Functions (get_indice_evolution, get_indice_performance, get_indice_poids_puissance, get_score_forme) retournent des erreurs 500 lors de leur appel",
+      "cause_racine": "Les Edge Functions tentent probablement d'accéder à la table 'bodycomp' qui n'existe pas, ou utilisent des noms de colonnes incorrects",
+      "fonctions_affectees": [
+        "get_indice_evolution",
+        "get_indice_performance",
+        "get_indice_poids_puissance",
+        "get_score_forme"
+      ],
+      "erreur_observee": "500 Internal Server Error",
+      "impact": "Les indices de performance, d'évolution et le score de forme ne peuvent pas être calculés, privant l'utilisateur de données analytiques importantes",
+      "correction_proposee": {
+        "action": "Corriger les références de tables dans les Edge Functions",
+        "details": "Mettre à jour toutes les références de 'bodycomp' vers 'donnees_corporelles' et adapter les noms de colonnes dans les 4 Edge Functions concernées",
+        "fichiers_a_modifier": [
+          "supabase/functions/get_indice_evolution/index.ts",
+          "supabase/functions/get_indice_performance/index.ts",
+          "supabase/functions/get_indice_poids_puissance/index.ts",
+          "supabase/functions/get_score_forme/index.ts"
+        ],
+        "verification_necessaire": "Tester chaque fonction après modification pour s'assurer qu'elle retourne les données attendues"
+      },
+      "verification": {
+        "fonctions_deployees": true,
+        "fonctions_actives": true,
+        "jwt_verification": true,
+        "probleme_probable": "Référence à table inexistante"
+      }
+    },
+    {
+      "id": 3,
+      "titre": "Erreur 400 sur group_members",
+      "severite": "MAJEUR",
+      "type": "RLS_POLICY_ISSUE",
+      "description": "Requête sur la table group_members échoue avec un code 400, probablement due à une violation de politique RLS ou à une requête mal formée",
+      "cause_racine": "La requête dans useGroups.ts utilise probablement une jointure ou un select imbriqué qui ne respecte pas les politiques RLS en place",
+      "fichiers_affectes": [
+        "src/hooks/useGroups.ts"
+      ],
+      "erreur_observee": "400 Bad Request sur group_members",
+      "impact": "Impossible de charger les membres d'un groupe, ce qui empêche les coachs de voir leurs athlètes et les athlètes de voir leurs groupes",
+      "correction_proposee": {
+        "action": "Simplifier la requête ou ajuster les politiques RLS",
+        "details": "Deux options possibles:\n1. Créer une fonction RPC pour charger les membres avec leurs profils (recommandé)\n2. Modifier la requête pour éviter les jointures complexes et faire deux requêtes séparées",
+        "fichiers_a_modifier": [
+          "src/hooks/useGroups.ts"
+        ],
+        "option_recommandee": "Créer une fonction RPC 'get_group_members_with_profiles' qui gère la jointure côté serveur"
+      },
+      "verification": {
+        "table_existe": true,
+        "rls_active": true,
+        "policies": [
+          {
+            "name": "Users can read group members",
+            "command": "SELECT",
+            "condition": "athlete_id = auth.uid() OR coach owns group"
+          },
+          {
+            "name": "Coaches can manage group members",
+            "command": "ALL",
+            "condition": "coach owns group"
+          }
+        ],
+        "probleme_probable": "Requête SELECT imbriquée trop complexe pour les politiques RLS"
+      }
+    },
+    {
+      "id": 4,
+      "titre": "Images 404 (erreurs non bloquantes)",
+      "severite": "MINEUR",
+      "type": "ASSET_NOT_FOUND",
+      "description": "Erreurs 404 sur les URLs d'images '/api/storage/blobs/...' - ces URLs semblent provenir d'un système de stockage externe (Rails/ActiveStorage)",
+      "cause_racine": "Le LoadingScreen.tsx utilise une image hébergée sur GitHub qui fonctionne, mais d'autres composants tentent probablement de charger des images depuis un système de stockage qui n'est pas configuré ou qui utilise des URLs invalides",
+      "fichiers_affectes": [
+        "Probablement des composants de profil ou de groupes"
+      ],
+      "erreurs_observees": [
+        "/api/storage/blobs/eyJ...//image.png - 404",
+        "/api/storage/blobs/eyJ...//image%20copy.png - 404",
+        "/api/storage/blobs/eyJ...//PhotoRoom-20250915_123950.png - 404"
+      ],
+      "impact": "Les images de profil ou de groupe ne s'affichent pas, mais cela n'empêche pas l'application de fonctionner",
+      "correction_proposee": {
+        "action": "Identifier et corriger les URLs d'images",
+        "details": "1. Rechercher tous les composants qui utilisent des URLs '/api/storage/blobs/'\n2. Remplacer par des URLs Supabase Storage correctes ou des placeholders\n3. Ou configurer Supabase Storage pour stocker les images",
+        "note": "Ces erreurs ne sont PAS la cause des problèmes de connexion - ce sont des effets secondaires visuels uniquement"
+      },
+      "verification": {
+        "images_publiques_fonctionnent": true,
+        "probleme": "URLs invalides ou système de stockage non configuré",
+        "non_bloquant": true
+      }
+    },
+    {
+      "id": 5,
+      "titre": "Boucle infinie de connexion après déconnexion/reconnexion",
+      "severite": "MAJEUR",
+      "type": "STATE_MANAGEMENT_ISSUE",
+      "description": "Après une déconnexion puis reconnexion, l'événement SIGNED_IN se déclenche plusieurs fois, créant une boucle et empêchant le chargement du profil",
+      "cause_racine": "Combinaison de plusieurs facteurs:\n1. StrictMode désactivé mais cache navigateur conserve ancienne version\n2. Les corrections apportées à signOut et INITIAL_SESSION ne sont pas encore actives dans l'environnement de test\n3. Possible persistence de multiples listeners onAuthStateChange",
+      "fichiers_affectes": [
+        "src/hooks/useAuth.ts",
+        "src/main.tsx"
+      ],
+      "erreur_observee": "Logs 'SIGNED_IN' répétés 4 fois, timeout atteint, affichage Auth au lieu du Dashboard",
+      "impact": "Impossible de se reconnecter après une déconnexion dans une session normale du navigateur (fonctionne en mode privé)",
+      "correction_proposee": {
+        "action": "DÉJÀ CORRIGÉ - Nécessite hard refresh du navigateur",
+        "details": "Les corrections suivantes ont été appliquées:\n1. StrictMode désactivé dans main.tsx\n2. INITIAL_SESSION ajouté au switch case pour gérer la persistance de session\n3. Fonction signOut réécrite pour nettoyer complètement le localStorage Supabase\n4. Logs détaillés ajoutés partout",
+        "action_utilisateur_requise": "OBLIGATOIRE: Hard refresh du navigateur (Ctrl+Shift+R) ou mode Incognito pour charger la nouvelle version",
+        "verification": "Après hard refresh, vérifier dans les logs que SIGNED_IN n'apparaît qu'UNE SEULE FOIS"
+      },
+      "verification": {
+        "corrections_appliquees": true,
+        "build_reussi": true,
+        "probleme_actuel": "Cache navigateur ou environnement StackBlitz n'a pas rechargé les nouveaux fichiers",
+        "solution_immediate": "Hard refresh (Ctrl+Shift+R) ou mode Incognito"
+      }
+    }
+  ],
+  "ordre_correction_recommande": [
+    {
+      "etape": 1,
+      "probleme_id": 1,
+      "titre": "Corriger la table bodycomp",
+      "priorite": "CRITIQUE",
+      "temps_estime": "5 minutes",
+      "dependances": []
+    },
+    {
+      "etape": 2,
+      "probleme_id": 2,
+      "titre": "Corriger les Edge Functions",
+      "priorite": "CRITIQUE",
+      "temps_estime": "15 minutes",
+      "dependances": [1],
+      "note": "Dépend de la correction de bodycomp"
+    },
+    {
+      "etape": 3,
+      "probleme_id": 3,
+      "titre": "Corriger group_members",
+      "priorite": "MAJEUR",
+      "temps_estime": "20 minutes",
+      "dependances": []
+    },
+    {
+      "etape": 4,
+      "probleme_id": 5,
+      "titre": "Forcer hard refresh du navigateur",
+      "priorite": "MAJEUR",
+      "temps_estime": "1 minute",
+      "dependances": [],
+      "action": "UTILISATEUR - Hard refresh (Ctrl+Shift+R) ou /force-reset.html"
+    },
+    {
+      "etape": 5,
+      "probleme_id": 4,
+      "titre": "Corriger les images manquantes",
+      "priorite": "MINEUR",
+      "temps_estime": "10 minutes",
+      "dependances": [],
+      "note": "Peut être fait en dernier, non bloquant"
+    }
+  ],
+  "actions_immediates": [
+    {
+      "action": "Hard refresh navigateur",
+      "commande": "Ctrl+Shift+R ou Cmd+Shift+R (Mac)",
+      "ou": "Ouvrir /force-reset.html et cliquer sur RESET COMPLET",
+      "pourquoi": "Charger les corrections déjà appliquées pour la boucle de connexion"
+    },
+    {
+      "action": "Corriger useBodycomp.ts",
+      "fichier": "src/hooks/useBodycomp.ts",
+      "changements": "bodycomp -> donnees_corporelles, weight_kg -> poids_kg, user_id -> athlete_id"
+    },
+    {
+      "action": "Redéployer les 4 Edge Functions",
+      "fichiers": [
+        "supabase/functions/get_indice_evolution/index.ts",
+        "supabase/functions/get_indice_performance/index.ts",
+        "supabase/functions/get_indice_poids_puissance/index.ts",
+        "supabase/functions/get_score_forme/index.ts"
+      ],
+      "changements": "bodycomp -> donnees_corporelles avec adaptation des colonnes"
+    }
+  ],
+  "estimation_totale": {
+    "temps_correction": "50 minutes",
+    "temps_test": "20 minutes",
+    "total": "70 minutes (1h10)"
+  },
+  "notes_importantes": [
+    "Le problème de boucle de connexion (problème #5) est DÉJÀ CORRIGÉ dans le code, mais nécessite un hard refresh du navigateur pour être actif",
+    "Les erreurs 404 sur les images ne causent PAS les problèmes de connexion - ce sont deux problèmes séparés",
+    "Les erreurs 500 sur les Edge Functions sont une conséquence directe de la table bodycomp manquante",
+    "Après correction de bodycomp, les Edge Functions devraient fonctionner automatiquement",
+    "La table group_members fonctionne mais la requête doit être simplifiée ou une RPC fonction doit être créée"
+  ]
+}
