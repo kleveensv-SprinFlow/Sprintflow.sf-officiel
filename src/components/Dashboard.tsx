@@ -1,7 +1,7 @@
 // src/components/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { CoachDashboard } from './coach/CoachDashboard';
+import { CoachDashboard } from './dashboard/CoachDashboard';
 import { IndicesPanel } from './dashboard/IndicesPanel';
 import { RecentWorkouts } from './dashboard/RecentWorkouts';
 import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { ArrowLeft, Film, Upload, Info, Loader2, Dumbbell, Wind, Disc, ChevronsUp, Barbell } from 'lucide-react';
+import { ArrowLeft, Film, Upload, Info, Loader2, Dumbbell, Wind, Disc, ChevronsUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FilmingGuideModal from './FilmingGuideModal';
 import AnalysisReport from './AnalysisReport';
@@ -9,7 +9,7 @@ import { videoAnalysisMovements, MovementCategory, Movement } from '../../data/v
 import { analyzeSquatPose } from '../../services/poseAnalysis';
 
 const iconMap: { [key: string]: React.ElementType } = {
-  Dumbbell, Wind, Disc, ChevronsUp, Barbell
+  Dumbbell, Wind, Disc, ChevronsUp
 };
 
 interface VideoAnalysisProps {
