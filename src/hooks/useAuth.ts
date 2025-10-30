@@ -18,6 +18,8 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchUserProfile = async (user: User, signal?: AbortSignal) => {
+    console.log('📡 [fetchUserProfile] Début chargement pour user:', user.id);
+
     let query = supabase
       .from('profiles')
       .select('*')
@@ -27,10 +29,13 @@ export function useAuth() {
       query = query.abortSignal(signal);
     }
 
+    console.log('📡 [fetchUserProfile] Envoi requête Supabase...');
     const { data, error } = await query.maybeSingle();
+    console.log('📡 [fetchUserProfile] Réponse reçue - data:', !!data, 'error:', error?.message);
 
     if (error) {
       if (error.name === 'AbortError') {
+        console.log('📡 [fetchUserProfile] Requête annulée (AbortError)');
         throw error;
       }
       console.warn('⚠️ Erreur lors du chargement du profil:', error.message);
@@ -39,17 +44,25 @@ export function useAuth() {
     if (!data) {
       console.warn('⚠️ Profil non trouvé, utilisation des métadonnées');
       // Fallback sur les métadonnées si le profil n'existe pas encore
-      return {
+      const fallback = {
         id: user.id,
-        role: user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
-              user.user_metadata?.role || 'athlete',
+        role: (user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
+              user.user_metadata?.role || 'athlete') as 'coach' | 'athlete' | 'developer',
         first_name: user.user_metadata?.first_name || '',
         last_name: user.user_metadata?.last_name || '',
         email: user.email || '',
         avatar_url: user.user_metadata?.avatar_url || ''
       };
+      console.log('📡 [fetchUserProfile] Retour fallback:', fallback);
+      return fallback;
     }
-    return data;
+
+    const profile = {
+      ...data,
+      avatar_url: data.photo_url || data.avatar_url // Compatibilité photo_url/avatar_url
+    };
+    console.log('📡 [fetchUserProfile] Retour profile DB:', profile);
+    return profile;
   };
 
   useEffect(() => {
