@@ -110,10 +110,13 @@ export function useAuth() {
 
       try {
         switch (event) {
+          case 'INITIAL_SESSION':
           case 'SIGNED_IN':
           case 'TOKEN_REFRESHED':
           case 'USER_UPDATED':
             if (session?.user && mounted) {
+              console.log(`🔄 [${event}] Traitement de la session...`);
+
               // Vérifier si l'email est confirmé
               if (!session.user.email_confirmed_at) {
                 console.warn('⚠️ Email non confirmé, déconnexion...');
@@ -125,14 +128,13 @@ export function useAuth() {
                   setProfile(null);
                   setLoading(false);
                 }
-                setTimeout(() => { isSigningOut = false; }, 1000); // Réinitialiser après 1 seconde
+                setTimeout(() => { isSigningOut = false; }, 1000);
                 return;
               }
 
               console.log('✅ Email confirmé, chargement du profil...');
               setUser(session.user);
               try {
-                // Ne pas passer de signal ici pour éviter l'annulation
                 const userProfile = await fetchUserProfile(session.user);
                 console.log('👤 Profil récupéré:', userProfile);
                 if (mounted) {
@@ -143,7 +145,6 @@ export function useAuth() {
               } catch (profileError: any) {
                 console.error('❌ Erreur lors du chargement du profil:', profileError);
                 if (mounted && profileError.name !== 'AbortError') {
-                  // Utiliser les métadonnées comme fallback
                   const fallbackProfile = {
                     id: session.user.id,
                     role: session.user.user_metadata?.role || 'athlete',
@@ -155,10 +156,17 @@ export function useAuth() {
                   console.log('⚠️ Profil fallback utilisé:', fallbackProfile);
                 }
               }
+            } else if (!session && mounted && event === 'INITIAL_SESSION') {
+              // Pas de session au démarrage = utilisateur non connecté
+              console.log('ℹ️ Aucune session existante');
+              setUser(null);
+              setProfile(null);
+              setError(null);
             }
             break;
 
           case 'SIGNED_OUT':
+            console.log('🚪 [SIGNED_OUT] Événement de déconnexion reçu');
             if (mounted) {
               setUser(null);
               setProfile(null);
@@ -167,8 +175,7 @@ export function useAuth() {
             break;
 
           default:
-            // Pour les autres événements (e.g., INITIAL_SESSION), on ne fait rien de spécial
-            // mais le finally s'assurera que le chargement est terminé.
+            console.log('ℹ️ Événement non géré:', event);
             break;
         }
       } catch (error: any) {
@@ -260,41 +267,43 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    console.log('🚪 DÉCONNEXION FORCÉE - Début...');
-    
-    // 1. Nettoyer immédiatement l'état React
-    const currentUserId = user?.id;
-    console.log('🧹 Nettoyage état React pour user:', currentUserId);
-    
+    console.log('🚪 [signOut] Début de la déconnexion...');
+
+    // 1. Déconnexion Supabase d'abord (pour éviter les événements onAuthStateChange)
+    try {
+      console.log('🔓 [signOut] Déconnexion Supabase...');
+      await supabase.auth.signOut({ scope: 'local' });
+      console.log('✅ [signOut] Déconnexion Supabase réussie');
+    } catch (error: any) {
+      console.error('❌ [signOut] Erreur déconnexion Supabase:', error);
+    }
+
+    // 2. Nettoyer TOUTES les clés Supabase du localStorage
+    console.log('🧹 [signOut] Nettoyage localStorage Supabase...');
+    const allKeys = Object.keys(localStorage);
+    const supabaseKeys = allKeys.filter(key =>
+      key.includes('supabase') ||
+      key.includes('sb-kqlzvxfdzandgdkqzggj') ||
+      key.includes('sb-ifmoecnlpwnxcthplqra')
+    );
+
+    supabaseKeys.forEach(key => {
+      console.log('  🗑️ Suppression:', key);
+      localStorage.removeItem(key);
+    });
+
+    // 3. Nettoyer sessionStorage
+    console.log('🧹 [signOut] Nettoyage sessionStorage...');
+    sessionStorage.clear();
+
+    // 4. Nettoyer l'état React APRÈS Supabase
+    console.log('🧹 [signOut] Nettoyage état React...');
     setUser(null);
     setProfile(null);
-    setLoading(false);
     setError(null);
-    
-    // 2. Nettoyer localStorage
-    if (currentUserId) {
-      console.log('🧹 Nettoyage localStorage...');
-      localStorage.removeItem(`profile_${currentUserId}`);
-      localStorage.removeItem(`workouts_${currentUserId}`);
-      localStorage.removeItem(`records_${currentUserId}`);
-      localStorage.removeItem(`bodycomps_${currentUserId}`);
-      localStorage.removeItem(`athlete_groups_${currentUserId}`);
-    }
-    
-    // 3. Nettoyer toutes les clés d'auth Supabase
-    console.log('🧹 Nettoyage auth Supabase...');
-    localStorage.removeItem('supabase.auth.token');
-    localStorage.removeItem('sb-ifmoecnlpwnxcthplqra-auth-token');
-    sessionStorage.clear();
-    
-    // 4. Tentative de déconnexion Supabase (en arrière-plan)
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.warn('Erreur Supabase ignorée:', error);
-    }
-    
-    console.log('✅ DÉCONNEXION FORCÉE - Terminée');
+    setLoading(false);
+
+    console.log('✅ [signOut] Déconnexion complète terminée');
   };
 
   return {
