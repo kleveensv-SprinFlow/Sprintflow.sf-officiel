@@ -16,13 +16,18 @@ export interface CourseBlockData {
   chronos: (number | null)[][]; // Array of series, each containing an array of rep times
 }
 
+import { useBlockTemplates } from '../../hooks/useBlockTemplates';
+import { MoreVertical } from 'lucide-react';
+
 interface CourseBlockFormProps {
   block: CourseBlockData;
   onChange: (id: string, newBlockData: CourseBlockData) => void;
   onRemove: (id:string) => void;
+  userId: string;
 }
 
-export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange, onRemove }) => {
+export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange, onRemove, userId }) => {
+  const { createTemplate: createBlockTemplate } = useBlockTemplates(userId);
   const [series, setSeries] = useState(block.series);
   const [reps, setReps] = useState(block.reps);
   const [distance, setDistance] = useState(block.distance);
@@ -70,9 +75,19 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
     setChronos(newChronos);
   };
 
+  const handleSaveCourseBlock = async () => {
+    const templateName = prompt("Quel nom voulez-vous donner à ce bloc de course ?");
+    if (templateName) {
+      await createBlockTemplate(templateName, 'course', block);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm relative">
-      <div className="absolute top-2 right-2">
+      <div className="absolute top-2 right-2 flex items-center gap-1">
+        <button type="button" onClick={handleSaveCourseBlock} className="p-1 text-gray-500 rounded hover:bg-gray-100">
+            <MoreVertical className="w-5 h-5" />
+        </button>
         <button type="button" onClick={() => onRemove(block.id)} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded">
           <Trash2 className="w-5 h-5" />
         </button>
