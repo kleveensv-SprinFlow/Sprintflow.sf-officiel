@@ -1,0 +1,53 @@
+# =========================================
+# REDIRECT URLs À AJOUTER DANS SUPABASE
+# =========================================
+#
+# Allez sur: https://supabase.com/dashboard
+# 1. Sélectionnez votre projet: kqlzvxfdzandgdkqzggj
+# 2. Allez dans: Authentication → URL Configuration
+# 3. Dans "Redirect URLs", ajoutez TOUTES ces URLs:
+#
+# =========================================
+
+# DÉVELOPPEMENT LOCAL
+http://localhost:5173/**
+http://localhost:4173/**
+http://localhost:3000/**
+http://127.0.0.1:5173/**
+
+# CONFIRMATION D'EMAIL (LOCAL)
+http://localhost:5173/auth/confirm
+http://localhost:4173/auth/confirm
+
+# PRODUCTION (À REMPLACER PAR VOTRE VRAIE URL!)
+# Remplacez "votre-app" par le nom réel de votre app
+
+# Netlify
+https://votre-app.netlify.app/**
+https://votre-app.netlify.app/auth/confirm
+
+# Vercel
+https://votre-app.vercel.app/**
+https://votre-app.vercel.app/auth/confirm
+
+# Custom Domain (si vous en avez un)
+https://votre-domaine.com/**
+https://votre-domaine.com/auth/confirm
+
+# =========================================
+# EXEMPLE RÉEL:
+# =========================================
+# Si votre app s'appelle "sprintflow-app" sur Netlify:
+# https://sprintflow-app.netlify.app/**
+# https://sprintflow-app.netlify.app/auth/confirm
+#
+# Si votre app s'appelle "sprintflow" sur Vercel:
+# https://sprintflow.vercel.app/**
+# https://sprintflow.vercel.app/auth/confirm
+# =========================================
+
+# ⚠️ IMPORTANT:
+# - N'oubliez PAS les "/**" à la fin!
+# - Ajoutez l'URL de confirmation "/auth/confirm" aussi
+# - Après avoir ajouté, attendez 2-3 minutes
+# - Testez l'inscription/connexion sur mobile
