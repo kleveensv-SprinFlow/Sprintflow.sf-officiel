@@ -1,6 +1,7 @@
 // src/components/dashboard/TrackRecordsCarousel.tsx
 import React, { useMemo, useState, useRef } from 'react';
 import { useRecords } from '../../hooks/useRecords';
+import useAuth from '../../hooks/useAuth';
 import { motion, useSpring, useMotionValue } from 'framer-motion';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatTime } from '../../utils/formatters';
@@ -9,10 +10,12 @@ import { Loader, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TrackRecordsCarouselProps {
   onNavigate: () => void;
+  userId?: string;
 }
 
-export const TrackRecordsCarousel: React.FC<TrackRecordsCarouselProps> = ({ onNavigate }) => {
-  const { records, loading } = useRecords();
+export const TrackRecordsCarousel: React.FC<TrackRecordsCarouselProps> = ({ onNavigate, userId }) => {
+  const { user } = useAuth();
+  const { records, loading } = useRecords(userId || user?.id);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const containerRef = useRef<HTMLUListElement>(null);
