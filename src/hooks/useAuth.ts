@@ -106,6 +106,18 @@ export function useAuth() {
 
       if (event === 'SIGNED_IN' && session?.user && mounted) {
         try {
+          if (!session.user.email_confirmed_at) {
+            console.warn('⚠️ Email non confirmé, déconnexion...');
+            await supabase.auth.signOut();
+            if (mounted) {
+              setError("Veuillez confirmer votre email avant de vous connecter.");
+              setUser(null);
+              setProfile(null);
+              setLoading(false);
+            }
+            return;
+          }
+
           setError(null);
           setUser(session.user);
           const userProfile = await fetchUserProfile(session.user);
@@ -158,7 +170,15 @@ export function useAuth() {
       });
 
       if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          throw new Error('Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte mail.');
+        }
         throw new Error('Email ou mot de passe incorrect');
+      }
+
+      if (data.user && !data.user.email_confirmed_at) {
+        await supabase.auth.signOut();
+        throw new Error('Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte mail.');
       }
 
       return data;

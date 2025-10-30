@@ -440,9 +440,14 @@ export default function Auth() {
             <p className="text-white/80 mb-6 text-lg">
               Un email de confirmation a été envoyé à <strong>{formData.email}</strong>.
             </p>
-            <p className="text-white/90 mb-8">
+            <p className="text-white/90 mb-4">
               Veuillez cliquer sur le lien dans cet email pour activer votre compte. Pensez à vérifier votre dossier de spams.
             </p>
+            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 mb-6">
+              <p className="text-yellow-300 text-sm font-medium">
+                ⚠️ Vous devez confirmer votre email avant de pouvoir vous connecter
+              </p>
+            </div>
             <button
               onClick={() => {
                 setSignupSuccess(false);
