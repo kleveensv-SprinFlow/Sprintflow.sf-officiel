@@ -70,8 +70,10 @@ export function useAuth() {
     const signal = controller.signal;
     let mounted = true;
     let authChangeHandled = false;
-    let isSigningOut = false; // Protection contre la boucle infinie
-    let hasCheckedInitialSession = false; // Pour éviter de vérifier plusieurs fois
+    let isSigningOut = false;
+    let hasCheckedInitialSession = false;
+    let isProcessingAuth = false; // NOUVEAU : Empêcher traitement concurrent
+    let lastProcessedSessionId: string | null = null; // NOUVEAU : Éviter retraitement même session
 
     // Nettoyer la session initiale si elle est corrompue ou invalide
     const checkInitialSession = async () => {
@@ -148,6 +150,18 @@ export function useAuth() {
         return;
       }
 
+      // NOUVEAU : Ignorer si déjà en train de traiter
+      if (isProcessingAuth) {
+        console.log('⏭️ Événement ignoré (traitement en cours)');
+        return;
+      }
+
+      // NOUVEAU : Ignorer si même session déjà traitée
+      if (session?.access_token && session.access_token === lastProcessedSessionId) {
+        console.log('⏭️ Session déjà traitée, ignoré');
+        return;
+      }
+
       try {
         switch (event) {
           case 'INITIAL_SESSION':
@@ -157,10 +171,15 @@ export function useAuth() {
             if (session?.user && mounted) {
               console.log(`🔄 [${event}] Traitement de la session...`);
 
+              // NOUVEAU : Marquer comme en cours de traitement
+              isProcessingAuth = true;
+              lastProcessedSessionId = session.access_token;
+
               // Vérifier si l'email est confirmé
               if (!session.user.email_confirmed_at) {
                 console.warn('⚠️ Email non confirmé, déconnexion...');
                 isSigningOut = true;
+                isProcessingAuth = false;
                 await supabase.auth.signOut();
                 if (mounted) {
                   setError("Veuillez confirmer votre email avant de vous connecter.");
@@ -173,11 +192,12 @@ export function useAuth() {
               }
 
               console.log('✅ Email confirmé, chargement du profil...');
-              setUser(session.user);
               try {
-                const userProfile = await fetchUserProfile(session.user);
+                const userProfile = await fetchUserProfile(session.user, signal);
                 console.log('👤 Profil récupéré:', userProfile);
                 if (mounted) {
+                  // IMPORTANT : Définir user ET profile en MÊME TEMPS
+                  setUser(session.user);
                   setProfile(userProfile);
                   setError(null);
                   console.log('✅ User et profile définis dans le state');
@@ -192,9 +212,13 @@ export function useAuth() {
                     last_name: session.user.user_metadata?.last_name || '',
                     email: session.user.email || '',
                   };
+                  setUser(session.user);
                   setProfile(fallbackProfile as UserProfile);
                   console.log('⚠️ Profil fallback utilisé:', fallbackProfile);
                 }
+              } finally {
+                // NOUVEAU : Libérer le verrou
+                isProcessingAuth = false;
               }
             } else if (!session && mounted && event === 'INITIAL_SESSION') {
               // Pas de session au démarrage = utilisateur non connecté
