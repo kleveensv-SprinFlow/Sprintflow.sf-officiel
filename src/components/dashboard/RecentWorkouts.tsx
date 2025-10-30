@@ -1,16 +1,19 @@
 import React from 'react';
-import { Dumbbell, Calendar, MapPin, Clock, Loader2, ChevronRight } from 'lucide-react';
+import { Dumbbell, Calendar, MapPin, Loader2, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useWorkouts } from '../../hooks/useWorkouts';
+import useAuth from '../../hooks/useAuth';
 import { formatTime, formatDistance } from '../../utils/formatters';
 
 interface RecentWorkoutsProps {
   onNavigate: () => void;
+  userId?: string;
 }
 
-export function RecentWorkouts({ onNavigate }: RecentWorkoutsProps) {
-  const { workouts, loading } = useWorkouts();
+export function RecentWorkouts({ onNavigate, userId }: RecentWorkoutsProps) {
+  const { user } = useAuth();
+  const { workouts, loading } = useWorkouts(userId || user?.id);
 
   const recentWorkouts = workouts
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -49,24 +52,30 @@ export function RecentWorkouts({ onNavigate }: RecentWorkoutsProps) {
                   <Calendar className="h-4 w-4" />
                   <span>{format(new Date(workout.date), 'EEEE d MMMM yyyy', { locale: fr })}</span>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {workout.runs.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-500 mb-2 flex items-center"><MapPin className="h-4 w-4 mr-1" />Courses ({workout.runs.length})</h4>
-                    {workout.runs.slice(0, 2).map(run => (
-                      <p key={run.id} className="text-sm text-gray-700 dark:text-gray-300">{formatDistance(run.distance)} en {formatTime(run.time)}</p>
-                    ))}
-                    {workout.runs.length > 2 && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">+{workout.runs.length - 2} autre(s)</p>}
+                {workout.wellness_log && workout.wellness_log.length > 0 && workout.wellness_log[0].rpe_difficulty && (
+                  <div className="flex items-center gap-2 font-bold">
+                    <span>RPE:</span>
+                    <span className="text-red-500">{workout.wellness_log[0].rpe_difficulty}/10</span>
                   </div>
                 )}
-                {workout.exercises.length > 0 && (
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {workout.courses_json && workout.courses_json.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-purple-500 mb-2 flex items-center"><Dumbbell className="h-4 w-4 mr-1" />Exercices ({workout.exercises.length})</h4>
-                    {workout.exercises.slice(0, 2).map(ex => (
-                      <p key={ex.id} className="text-sm text-gray-700 dark:text-gray-300">{ex.name}: {ex.sets}x{ex.reps} @{ex.weight}kg</p>
+                    <h4 className="text-sm font-medium text-blue-500 mb-2 flex items-center"><MapPin className="h-4 w-4 mr-1" />Courses ({workout.courses_json.length})</h4>
+                    {workout.courses_json.slice(0, 2).map(run => (
+                      <p key={run.id} className="text-sm text-gray-700 dark:text-gray-300">{run.reps}x{run.distance}m</p>
                     ))}
-                    {workout.exercises.length > 2 && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">+{workout.exercises.length - 2} autre(s)</p>}
+                    {workout.courses_json.length > 2 && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">+{workout.courses_json.length - 2} autre(s)</p>}
+                  </div>
+                )}
+                {workout.muscu_json && workout.muscu_json.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-purple-500 mb-2 flex items-center"><Dumbbell className="h-4 w-4 mr-1" />Exercices ({workout.muscu_json.length})</h4>
+                    {workout.muscu_json.slice(0, 2).map((ex, idx) => (
+                      <p key={idx} className="text-sm text-gray-700 dark:text-gray-300">{ex.exercice_nom}: {ex.series}x{ex.reps} @{ex.poids}kg</p>
+                    ))}
+                    {workout.muscu_json.length > 2 && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">+{workout.muscu_json.length - 2} autre(s)</p>}
                   </div>
                 )}
               </div>
