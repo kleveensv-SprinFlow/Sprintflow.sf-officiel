@@ -113,8 +113,9 @@ export default function Auth() {
             last_name: formData.lastName,
             role: formData.role,
             role_specifique: formData.role_specifique,
-            // S'assurer que la date est nulle si elle est vide, pour éviter les erreurs de type dans Supabase
             date_de_naissance: formData.date_de_naissance || null,
+            discipline: formData.discipline,
+            sexe: formData.sexe,
             avatar_url: null, // Pas d'avatar à l'inscription
             temp_avatar_path: null,
           }
