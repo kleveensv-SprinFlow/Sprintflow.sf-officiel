@@ -10,7 +10,7 @@ const videoModules = import.meta.glob('/public/videos/*');
 const allVideos = Object.keys(videoModules).map(path => path.replace('/public', ''));
 
 export default function Auth() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resendConfirmationEmail } = useAuth();
   const [videos, setVideos] = useState<string[]>([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isLogin, setIsLogin] = useState(true);
@@ -172,16 +172,7 @@ export default function Auth() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: resendEmail,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`
-        }
-      });
-
-      if (error) throw error;
-
+      await resendConfirmationEmail(resendEmail);
       setResendSent(true);
     } catch (error: any) {
       console.error('Erreur renvoi confirmation:', error);
@@ -667,8 +658,21 @@ export default function Auth() {
 
           {/* Affichage de l'erreur */}
           {authError && (
-            <div className="text-red-400 text-center text-sm font-medium p-2 mb-4 bg-red-900/50 rounded-lg">
-              {authError}
+            <div className="text-center text-sm font-medium p-3 mb-4 bg-red-900/50 rounded-lg">
+              <p className="text-red-400">{authError}</p>
+              {authError.includes('confirmer votre email') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthError(null);
+                    setResendEmail(formData.email);
+                    setShowResendConfirmation(true);
+                  }}
+                  className="mt-2 text-orange-400 hover:text-orange-300 font-semibold underline transition-colors"
+                >
+                  Renvoyer l'email de confirmation
+                </button>
+              )}
             </div>
           )}
 
