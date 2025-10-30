@@ -73,22 +73,62 @@ export function useAuth() {
     let isSigningOut = false; // Protection contre la boucle infinie
     let hasCheckedInitialSession = false; // Pour éviter de vérifier plusieurs fois
 
-    // Nettoyer la session initiale si l'email n'est pas confirmé
+    // Nettoyer la session initiale si elle est corrompue ou invalide
     const checkInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('🔍 [checkInitialSession] Vérification session au démarrage...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        // Si erreur lors de la récupération de la session, nettoyer
+        if (error) {
+          console.error('❌ [checkInitialSession] Erreur getSession:', error);
+          console.log('🧹 [checkInitialSession] Nettoyage session corrompue...');
+
+          // Nettoyer localStorage
+          Object.keys(localStorage)
+            .filter(key => key.includes('supabase') || key.includes('sb-'))
+            .forEach(key => localStorage.removeItem(key));
+
+          sessionStorage.clear();
+
+          if (mounted) {
+            setError("Session corrompue détectée. Veuillez vous reconnecter.");
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Vérifier si l'email est confirmé
         if (session?.user && !session.user.email_confirmed_at) {
-          console.warn('⚠️ Session existante avec email non confirmé, nettoyage...');
+          console.warn('⚠️ [checkInitialSession] Session avec email non confirmé, nettoyage...');
+
+          // Nettoyer localStorage
+          Object.keys(localStorage)
+            .filter(key => key.includes('supabase') || key.includes('sb-'))
+            .forEach(key => localStorage.removeItem(key));
+
+          sessionStorage.clear();
           await supabase.auth.signOut();
+
           if (mounted) {
             setError("Veuillez confirmer votre email avant de vous connecter.");
             setUser(null);
             setProfile(null);
             setLoading(false);
           }
+          return;
         }
+
+        console.log('✅ [checkInitialSession] Session valide ou absente');
       } catch (error) {
-        console.error('Erreur lors de la vérification de la session initiale:', error);
+        console.error('❌ [checkInitialSession] Erreur inattendue:', error);
+        // En cas d'erreur, nettoyer par sécurité
+        Object.keys(localStorage)
+          .filter(key => key.includes('supabase') || key.includes('sb-'))
+          .forEach(key => localStorage.removeItem(key));
+        sessionStorage.clear();
       }
     };
 
@@ -269,22 +309,12 @@ export function useAuth() {
   const signOut = async () => {
     console.log('🚪 [signOut] Début de la déconnexion...');
 
-    // 1. Déconnexion Supabase d'abord (pour éviter les événements onAuthStateChange)
-    try {
-      console.log('🔓 [signOut] Déconnexion Supabase...');
-      await supabase.auth.signOut({ scope: 'local' });
-      console.log('✅ [signOut] Déconnexion Supabase réussie');
-    } catch (error: any) {
-      console.error('❌ [signOut] Erreur déconnexion Supabase:', error);
-    }
-
-    // 2. Nettoyer TOUTES les clés Supabase du localStorage
+    // 1. Nettoyer TOUTES les clés Supabase du localStorage EN PREMIER
     console.log('🧹 [signOut] Nettoyage localStorage Supabase...');
     const allKeys = Object.keys(localStorage);
     const supabaseKeys = allKeys.filter(key =>
       key.includes('supabase') ||
-      key.includes('sb-kqlzvxfdzandgdkqzggj') ||
-      key.includes('sb-ifmoecnlpwnxcthplqra')
+      key.includes('sb-')
     );
 
     supabaseKeys.forEach(key => {
@@ -292,18 +322,32 @@ export function useAuth() {
       localStorage.removeItem(key);
     });
 
-    // 3. Nettoyer sessionStorage
+    // 2. Nettoyer sessionStorage
     console.log('🧹 [signOut] Nettoyage sessionStorage...');
     sessionStorage.clear();
 
-    // 4. Nettoyer l'état React APRÈS Supabase
+    // 3. Déconnexion Supabase
+    try {
+      console.log('🔓 [signOut] Déconnexion Supabase...');
+      await supabase.auth.signOut({ scope: 'local' });
+      console.log('✅ [signOut] Déconnexion Supabase réussie');
+    } catch (error: any) {
+      console.error('❌ [signOut] Erreur déconnexion Supabase:', error);
+      // Continuer même en cas d'erreur
+    }
+
+    // 4. Nettoyer l'état React
     console.log('🧹 [signOut] Nettoyage état React...');
     setUser(null);
     setProfile(null);
     setError(null);
     setLoading(false);
 
-    console.log('✅ [signOut] Déconnexion complète terminée');
+    // 5. FORCER le rechargement complet de la page pour réinitialiser tout
+    console.log('🔄 [signOut] Rechargement de la page...');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
   };
 
   return {
