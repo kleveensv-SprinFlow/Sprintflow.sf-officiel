@@ -2,6 +2,7 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { useRecords } from '../../hooks/useRecords';
 import { useBodycomp } from '../../hooks/useBodycomp';
+import useAuth from '../../hooks/useAuth';
 import { motion, useSpring, useMotionValue } from 'framer-motion';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { Record } from '../../types';
@@ -9,11 +10,13 @@ import { Loader, ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 
 interface StrengthRecordsCarouselProps {
   onNavigate: () => void;
+  userId?: string;
 }
 
-export const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = ({ onNavigate }) => {
-  const { records, loading: recordsLoading } = useRecords();
-  const { lastWeight, loading: weightLoading } = useBodycomp();
+export const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = ({ onNavigate, userId }) => {
+  const { user } = useAuth();
+  const { records, loading: recordsLoading } = useRecords(userId || user?.id);
+  const { lastWeight, loading: weightLoading } = useBodycomp(userId || user?.id);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const containerRef = useRef<HTMLUListElement>(null);
