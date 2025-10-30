@@ -57,21 +57,66 @@ export function useAuth() {
     const signal = controller.signal;
     let mounted = true;
     let authChangeHandled = false;
+    let isSigningOut = false; // Protection contre la boucle infinie
+    let hasCheckedInitialSession = false; // Pour éviter de vérifier plusieurs fois
+
+    // Nettoyer la session initiale si l'email n'est pas confirmé
+    const checkInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && !session.user.email_confirmed_at) {
+          console.warn('⚠️ Session existante avec email non confirmé, nettoyage...');
+          await supabase.auth.signOut();
+          if (mounted) {
+            setError("Veuillez confirmer votre email avant de vous connecter.");
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de la session initiale:', error);
+      }
+    };
+
+    checkInitialSession();
 
     // onAuthStateChange gère maintenant l'état initial,
     // donc initAuth peut être retiré pour éviter la redondance.
     // Le setLoading(false) est garanti par le `finally` dans le listener.
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 [useAuth] Auth state change:', event);
+      console.log('🔐 [useAuth] Auth state change:', event, session?.user?.email);
       authChangeHandled = true;
-      
+
+      // Ignorer les événements pendant qu'on se déconnecte
+      if (isSigningOut && event === 'SIGNED_IN') {
+        console.log('⏭️ Événement SIGNED_IN ignoré (déconnexion en cours)');
+        return;
+      }
+
       try {
         switch (event) {
           case 'SIGNED_IN':
           case 'TOKEN_REFRESHED':
           case 'USER_UPDATED':
             if (session?.user && mounted) {
+              // Vérifier si l'email est confirmé
+              if (!session.user.email_confirmed_at) {
+                console.warn('⚠️ Email non confirmé, déconnexion...');
+                isSigningOut = true;
+                await supabase.auth.signOut();
+                if (mounted) {
+                  setError("Veuillez confirmer votre email avant de vous connecter.");
+                  setUser(null);
+                  setProfile(null);
+                  setLoading(false);
+                }
+                setTimeout(() => { isSigningOut = false; }, 1000); // Réinitialiser après 1 seconde
+                return;
+              }
+
+              console.log('✅ Email confirmé, chargement du profil...');
               setUser(session.user);
               const userProfile = await fetchUserProfile(session.user);
               if (mounted) {
@@ -80,7 +125,7 @@ export function useAuth() {
               }
             }
             break;
-          
+
           case 'SIGNED_OUT':
             if (mounted) {
               setUser(null);
@@ -88,7 +133,7 @@ export function useAuth() {
               setError(null);
             }
             break;
-            
+
           default:
             // Pour les autres événements (e.g., INITIAL_SESSION), on ne fait rien de spécial
             // mais le finally s'assurera que le chargement est terminé.

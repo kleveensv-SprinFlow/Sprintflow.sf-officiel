@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyer la session Supabase</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin: 10px 0;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🧹 Nettoyage de session Supabase</h1>
+
+        <div class="info">
+            <strong>ℹ️ À quoi sert cette page ?</strong>
+            <p>Cette page permet de nettoyer complètement votre session Supabase locale. Utilisez-la si vous rencontrez des problèmes de connexion ou de boucle infinie.</p>
+        </div>
+
+        <div id="status"></div>
+
+        <button onclick="checkSession()">🔍 Vérifier la session actuelle</button>
+        <button onclick="clearSupabaseSession()">🧹 Nettoyer la session Supabase</button>
+        <button onclick="clearAllStorage()">🗑️ Tout supprimer (Storage + Cookies)</button>
+        <button onclick="window.location.href='/'">🏠 Retour à l'application</button>
+
+        <div class="warning">
+            <strong>⚠️ Attention</strong>
+            <p>Le nettoyage vous déconnectera complètement. Vous devrez vous reconnecter.</p>
+        </div>
+    </div>
+
+    <script>
+        function showMessage(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="${type}"><strong>${message}</strong></div>`;
+        }
+
+        function checkSession() {
+            const keys = Object.keys(localStorage);
+            const supabaseKeys = keys.filter(k => k.includes('supabase') || k.includes('sb-'));
+
+            if (supabaseKeys.length === 0) {
+                showMessage('✅ Aucune session Supabase trouvée', 'success');
+            } else {
+                showMessage(`📋 ${supabaseKeys.length} clé(s) Supabase trouvée(s) :<br><pre>${supabaseKeys.join('\n')}</pre>`, 'warning');
+            }
+        }
+
+        function clearSupabaseSession() {
+            const keys = Object.keys(localStorage);
+            const supabaseKeys = keys.filter(k => k.includes('supabase') || k.includes('sb-'));
+
+            supabaseKeys.forEach(key => {
+                localStorage.removeItem(key);
+            });
+
+            sessionStorage.clear();
+
+            showMessage(`✅ ${supabaseKeys.length} clé(s) Supabase supprimée(s). Rechargez la page.`, 'success');
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        }
+
+        function clearAllStorage() {
+            // Supprimer tout le localStorage
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Supprimer tous les cookies
+            document.cookie.split(";").forEach((c) => {
+                document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+
+            showMessage('✅ Tout a été supprimé. Redirection vers l\'accueil...', 'success');
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+
+        // Vérifier automatiquement au chargement
+        window.addEventListener('load', checkSession);
+    </script>
+</body>
+</html>
