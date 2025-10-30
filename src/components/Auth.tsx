@@ -101,25 +101,9 @@ export default function Auth() {
         if (formData.password.length < 6) {
           throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
         }
-        let avatarUrl = '';
-        const tempId = `temp_${Date.now()}`; // ID temporaire pour le chemin
-
-        if (formData.avatar_file) {
-          const file = formData.avatar_file;
-          const fileExt = file.name.split('.').pop();
-          const filePath = `avatars/${tempId}.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('profiles')
-            .upload(filePath, file);
-
-          if (uploadError) {
-            throw new Error(`Erreur d'upload de l'avatar: ${uploadError.message}`);
-          }
-          
-          const { data } = supabase.storage.from('profiles').getPublicUrl(filePath);
-          avatarUrl = data.publicUrl;
-        }
+        // La logique d'upload d'avatar a été retirée de l'inscription car elle ne peut pas fonctionner
+        // de manière sécurisée sans que l'utilisateur soit déjà authentifié. L'upload sera possible
+        // depuis la page de profil une fois le compte créé et confirmé.
 
         const signUpData = await signUp(
           formData.email,
@@ -129,9 +113,10 @@ export default function Auth() {
             last_name: formData.lastName,
             role: formData.role,
             role_specifique: formData.role_specifique,
-            date_de_naissance: formData.date_de_naissance,
-            avatar_url: avatarUrl,
-            temp_avatar_path: avatarUrl ? `avatars/${tempId}.${formData.avatar_file?.name.split('.').pop()}` : null
+            // S'assurer que la date est nulle si elle est vide, pour éviter les erreurs de type dans Supabase
+            date_de_naissance: formData.date_de_naissance || null,
+            avatar_url: null, // Pas d'avatar à l'inscription
+            temp_avatar_path: null,
           }
         );
 
@@ -493,8 +478,8 @@ export default function Auth() {
         {/* Logo et titre */}
         <div className="text-center mb-8">
           <img src="/logo%20sans%20fond.png" alt="SprintFlow Logo" className="w-24 h-24 mx-auto mb-4" />
-          <h1 className="text-4xl font-bold text-white tracking-wider">SprintFlow</h1>
-          <p className="text-white/80 mt-2">
+          <h1 className="text-4xl font-bold text-white tracking-wider [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">SprintFlow</h1>
+          <p className="text-white/80 mt-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
             {isLogin ? 'Connectez-vous à votre compte' : 'Créez votre compte'}
           </p>
         </div>
@@ -602,24 +587,6 @@ export default function Auth() {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="avatar-input" className="block text-sm font-medium text-white/80 mb-2">
-                  Photo de profil (optionnel)
-                </label>
-                <div className="flex items-center gap-4">
-                  <input
-                    id="avatar-input"
-                    type="file"
-                    name="avatar_file"
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    className="w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600 active:file:bg-blue-700 active:file:scale-95 transition-transform duration-100"
-                  />
-                  {avatarPreview && (
-                    <img src={avatarPreview} alt="Aperçu" className="w-16 h-16 rounded-full object-cover border-2 border-white/50" />
-                  )}
-                </div>
-              </div>
             </>
           )}
 
