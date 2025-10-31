@@ -30,41 +30,18 @@ const JoinGroupModal: React.FC<JoinGroupModalProps> = ({ onClose }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
 
-      const { data: group, error: groupError } = await supabase
-        .from('groups')
-        .select('id, coach_id')
-        .eq('invitation_code', inviteCode.trim().toUpperCase())
-        .maybeSingle();
+      const { data, error: rpcError } = await supabase.rpc('join_group_with_invite_code', {
+        p_invite_code: inviteCode.trim().toUpperCase(),
+      });
 
-      if (groupError || !group) {
-        setError('Code d\'invitation invalide');
-        setLoading(false);
-        return;
+      if (rpcError) {
+        console.error('Erreur RPC:', rpcError);
+        throw new Error('Une erreur technique est survenue.');
       }
 
-      const { data: existingMember } = await supabase
-        .from('group_members')
-        .select('id')
-        .eq('group_id', group.id)
-        .eq('athlete_id', user.id)
-        .maybeSingle();
-
-      if (existingMember) {
-        setError('Vous êtes déjà membre de ce groupe');
-        setLoading(false);
-        return;
-      }
-
-      const { error: memberError } = await supabase
-        .from('group_members')
-        .insert({
-          group_id: group.id,
-          athlete_id: user.id,
-        });
-
-      if (memberError) {
-        console.error('Erreur ajout membre:', memberError);
-        setError('Erreur lors de l\'ajout au groupe');
+      const [result] = data;
+      if (result.status === 'error') {
+        setError(result.message);
         setLoading(false);
         return;
       }
