@@ -31,20 +31,33 @@ export function useAuth() {
 
   /**
    * Récupère le profil de l'utilisateur depuis la base de données.
+   * Utilise maybeSingle() et retry pour gérer le délai de création du profil par le trigger.
    */
-  const fetchUserProfile = useCallback(async (user: User) => {
+  const fetchUserProfile = useCallback(async (user: User, retryCount = 0): Promise<UserProfile> => {
     console.log('📡 [fetchUserProfile] Chargement du profil pour:', user.id);
     const { data, error } = await supabase
       .from('profiles')
       .select('id, full_name, first_name, last_name, role, avatar_url')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('❌ [fetchUserProfile] Erreur critique:', error);
       throw new Error("Impossible de charger votre profil. Une erreur est survenue.");
     }
-    
+
+    // Si le profil n'existe pas encore (trigger en cours), attendre et réessayer
+    if (!data && retryCount < 3) {
+      console.log(`⏳ [fetchUserProfile] Profil pas encore créé, retry ${retryCount + 1}/3...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return fetchUserProfile(user, retryCount + 1);
+    }
+
+    if (!data) {
+      console.error('❌ [fetchUserProfile] Profil introuvable après 3 tentatives');
+      throw new Error("Votre profil n'a pas pu être créé. Veuillez contacter le support.");
+    }
+
     console.log('✅ [fetchUserProfile] Profil chargé:', data);
     return data as UserProfile;
   }, []);
