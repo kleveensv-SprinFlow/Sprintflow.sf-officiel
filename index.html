@@ -26,8 +26,26 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Console de debug mobile (Eruda) - Activé uniquement sur mobile -->
+    <script>
+      // Détecter si on est sur mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // Charger Eruda (console de debug mobile)
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+        script.onload = function() {
+          eruda.init();
+          console.log('🔧 Console de debug mobile activée. Appuyez sur l\'icône en bas à droite.');
+        };
+        document.head.appendChild(script);
+      }
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
-    
+
     <!-- Service Worker Registration -->
     <script>
       if ('serviceWorker' in navigator) {
