@@ -114,8 +114,37 @@ Le build est déjà optimisé avec:
 
 ## Dépannage
 
+### ❌ Erreur "Failed to fetch" en production
+
+**Cause**: Les variables d'environnement Supabase ne sont pas configurées sur la plateforme de déploiement.
+
+**Solution**:
+
+#### Sur Netlify
+1. Allez dans **Site settings** > **Environment variables**
+2. Ajoutez:
+   - `VITE_SUPABASE_URL` = `https://kqlzvxfdzandgdkqzggj.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxbHp2eGZkemFuZGdka3F6Z2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NTM2ODcsImV4cCI6MjA3NzIyOTY4N30.sOpb5fL1l7-yli2_Lrptz_L7ihGkZxzbGSoW2tYRn_E`
+3. **IMPORTANT**: Redéployez le site après avoir ajouté les variables
+
+#### Sur Vercel
+1. Allez dans **Settings** > **Environment Variables**
+2. Ajoutez les mêmes variables que ci-dessus
+3. Redéployez depuis le dashboard
+
+#### Sur d'autres plateformes
+Cherchez la section "Environment Variables" ou "Build Environment" et ajoutez:
+```
+VITE_SUPABASE_URL=https://kqlzvxfdzandgdkqzggj.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxbHp2eGZkemFuZGdka3F6Z2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NTM2ODcsImV4cCI6MjA3NzIyOTY4N30.sOpb5fL1l7-yli2_Lrptz_L7ihGkZxzbGSoW2tYRn_E
+```
+
+**Vérification**: Ouvrez la console du navigateur (F12) et regardez les logs:
+- ✅ Vous devriez voir: `🔧 [useAuth] Config: { hasUrl: true, hasKey: true, url: "https://kqlzvxfdzandgdkqzggj..." }`
+- ❌ Si vous voyez: `hasUrl: false` → les variables ne sont pas configurées
+
 ### L'app ne se charge pas
-- Vérifiez les variables d'environnement
+- Vérifiez les variables d'environnement (voir ci-dessus)
 - Consultez la console du navigateur (F12)
 - Vérifiez que Supabase est accessible
 
