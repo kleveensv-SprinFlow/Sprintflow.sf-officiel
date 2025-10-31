@@ -9,7 +9,11 @@ import { CardCarousel } from './common/CardCarousel';
 const videoModules = import.meta.glob('/public/videos/*');
 const allVideos = Object.keys(videoModules).map(path => path.replace('/public', ''));
 
-export default function Auth() {
+interface AuthProps {
+  initialError?: string | null;
+}
+
+export default function Auth({ initialError }: AuthProps = {}) {
   const { signIn, signUp, resendConfirmationEmail } = useAuth();
   const [videos, setVideos] = useState<string[]>([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -22,7 +26,7 @@ export default function Auth() {
   const [resendEmail, setResendEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resendSent, setResendSent] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(initialError || null);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({

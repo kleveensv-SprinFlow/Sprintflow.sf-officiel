@@ -122,7 +122,7 @@ function App() {
   // Afficher l'écran d'authentification si pas d'utilisateur
   if (!user || forceShowAuth) {
     console.log('🔐 Pas d\'utilisateur - Affichage Auth');
-    return <Auth />;
+    return <Auth initialError={error} />;
   }
 
   // Déterminer le rôle avec fallback sécurisé

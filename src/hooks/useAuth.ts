@@ -49,18 +49,8 @@ export function useAuth() {
       }
 
       if (!data) {
-        console.warn('⚠️ Profil non trouvé, utilisation des métadonnées');
-        const fallback = {
-          id: user.id,
-          role: (user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
-                user.user_metadata?.role || 'athlete') as 'coach' | 'athlete' | 'developer',
-          first_name: user.user_metadata?.first_name || '',
-          last_name: user.user_metadata?.last_name || '',
-          email: user.email || '',
-          avatar_url: user.user_metadata?.avatar_url || ''
-        };
-        console.log('📡 [fetchUserProfile] Retour fallback:', fallback);
-        return fallback;
+        console.warn('⚠️ Profil non trouvé en base de données');
+        throw new Error('PROFILE_NOT_FOUND');
       }
 
       const profile = {
@@ -71,19 +61,8 @@ export function useAuth() {
       return profile;
 
     } catch (timeoutError: any) {
-      // Si timeout ou erreur, utiliser fallback
       console.warn('⚠️ [fetchUserProfile] Timeout ou erreur:', timeoutError.message);
-      const fallback = {
-        id: user.id,
-        role: (user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' ? 'developer' :
-              user.user_metadata?.role || 'athlete') as 'coach' | 'athlete' | 'developer',
-        first_name: user.user_metadata?.first_name || '',
-        last_name: user.user_metadata?.last_name || '',
-        email: user.email || '',
-        avatar_url: user.user_metadata?.avatar_url || ''
-      };
-      console.log('📡 [fetchUserProfile] Retour fallback (timeout):', fallback);
-      return fallback;
+      throw timeoutError;
     }
   };
 
@@ -218,7 +197,6 @@ export function useAuth() {
                 const userProfile = await fetchUserProfile(session.user, signal);
                 console.log('👤 Profil récupéré:', userProfile);
                 if (mounted) {
-                  // IMPORTANT : Définir user ET profile en MÊME TEMPS
                   setUser(session.user);
                   setProfile(userProfile);
                   setError(null);
@@ -226,20 +204,30 @@ export function useAuth() {
                 }
               } catch (profileError: any) {
                 console.error('❌ Erreur lors du chargement du profil:', profileError);
+
+                // Si le profil n'existe pas ou timeout, déconnecter l'utilisateur
                 if (mounted && profileError.name !== 'AbortError') {
-                  const fallbackProfile = {
-                    id: session.user.id,
-                    role: session.user.user_metadata?.role || 'athlete',
-                    first_name: session.user.user_metadata?.first_name || '',
-                    last_name: session.user.user_metadata?.last_name || '',
-                    email: session.user.email || '',
-                  };
-                  setUser(session.user);
-                  setProfile(fallbackProfile as UserProfile);
-                  console.log('⚠️ Profil fallback utilisé:', fallbackProfile);
+                  console.warn('⚠️ Profil introuvable ou erreur critique, déconnexion...');
+                  isSigningOut = true;
+                  isProcessingAuth = false;
+                  await supabase.auth.signOut();
+
+                  // Nettoyer localStorage
+                  Object.keys(localStorage)
+                    .filter(key => key.includes('supabase') || key.includes('sb-'))
+                    .forEach(key => localStorage.removeItem(key));
+                  sessionStorage.clear();
+
+                  if (mounted) {
+                    setError("Impossible de charger votre profil. Veuillez vous reconnecter.");
+                    setUser(null);
+                    setProfile(null);
+                    setLoading(false);
+                  }
+                  setTimeout(() => { isSigningOut = false; }, 1000);
+                  return;
                 }
               } finally {
-                // NOUVEAU : Libérer le verrou
                 isProcessingAuth = false;
               }
             } else if (!session && mounted && event === 'INITIAL_SESSION') {
