@@ -64,6 +64,7 @@ export function useAuth() {
 
   /**
    * Effet principal qui écoute les changements d'état d'authentification.
+   * IMPORTANT: Ne pas mettre fetchUserProfile dans les dépendances pour éviter la boucle infinie
    */
   useEffect(() => {
     setLoading(true);
@@ -71,9 +72,27 @@ export function useAuth() {
       console.log('🔐 [useAuth] Événement:', event);
       try {
         if (session?.user) {
-          const userProfile = await fetchUserProfile(session.user);
+          // Appel direct pour éviter la dépendance sur fetchUserProfile
+          console.log('📡 [fetchUserProfile] Chargement du profil pour:', session.user.id);
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, first_name, last_name, role, avatar_url')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (error) {
+            console.error('❌ [fetchUserProfile] Erreur:', error);
+            throw new Error("Impossible de charger votre profil.");
+          }
+
+          if (!data) {
+            console.error('❌ [fetchUserProfile] Profil introuvable');
+            throw new Error("Votre profil n'existe pas. Veuillez contacter le support.");
+          }
+
+          console.log('✅ [fetchUserProfile] Profil chargé:', data);
           setUser(session.user);
-          setProfile(userProfile);
+          setProfile(data as UserProfile);
         } else {
           setUser(null);
           setProfile(null);
@@ -93,7 +112,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, []); // Pas de dépendances pour éviter les re-souscriptions
 
   /**
    * Gère la connexion de l'utilisateur.
