@@ -96,7 +96,8 @@ export function useAuth() {
   };
 
   /**
-   * Gère l'inscription et la création de profil de manière atomique.
+   * Gère l'inscription et la mise à jour du profil.
+   * Le profil est créé automatiquement par un trigger, on le met juste à jour avec les données.
    */
   const signUp = async (email: string, password: string, metaData: SignUpMetadata) => {
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -116,10 +117,13 @@ export function useAuth() {
     }
     console.log('✅ [signUp] Utilisateur créé dans Auth:', authData.user.id);
 
+    // Attendre que le trigger crée le profil (petit délai)
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Mettre à jour le profil avec les données complètes
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        id: authData.user.id,
+      .update({
         first_name: metaData.first_name,
         last_name: metaData.last_name,
         full_name: `${metaData.first_name} ${metaData.last_name}`.trim(),
@@ -128,14 +132,15 @@ export function useAuth() {
         date_de_naissance: metaData.date_de_naissance,
         discipline: metaData.discipline,
         sexe: metaData.sexe,
-      });
+      })
+      .eq('id', authData.user.id);
 
     if (profileError) {
-      console.error("❌ ERREUR CRITIQUE [signUp]: L'utilisateur a été créé dans Auth mais pas le profil.", profileError);
+      console.error("❌ ERREUR CRITIQUE [signUp]: Impossible de mettre à jour le profil.", profileError);
       throw new Error("Une erreur est survenue lors de la finalisation de votre profil. Veuillez réessayer.");
     }
 
-    console.log('✅ [signUp] Profil créé en base de données.');
+    console.log('✅ [signUp] Profil mis à jour en base de données.');
   };
 
   /**
