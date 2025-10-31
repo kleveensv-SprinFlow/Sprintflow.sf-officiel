@@ -63,76 +63,95 @@ export function useAuth() {
   }, []);
 
   /**
-   * Effet principal qui écoute les changements d'état d'authentification.
-   * IMPORTANT: Ne pas mettre fetchUserProfile dans les dépendances pour éviter la boucle infinie
+   * Effet principal qui charge la session initiale puis écoute les changements.
    */
   useEffect(() => {
-    setLoading(true);
-    let isLoadingProfile = false;
+    let mounted = true;
+    let isProcessing = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 [useAuth] Événement:', event);
-
-      // Ignorer les événements pendant qu'on charge déjà un profil
-      if (isLoadingProfile) {
-        console.log('⏭️ [useAuth] Événement ignoré (chargement en cours)');
-        return;
-      }
-
+    // 1. Charger la session existante au démarrage
+    const initAuth = async () => {
+      console.log('🔄 [useAuth] Initialisation...');
       try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+
+        if (error) {
+          console.error('❌ [useAuth] Erreur getSession:', error);
+          setLoading(false);
+          return;
+        }
+
         if (session?.user) {
-          isLoadingProfile = true;
-          console.log('📡 [fetchUserProfile] Chargement du profil pour:', session.user.id);
-          console.log('📡 [fetchUserProfile] Session complète:', session);
-
-          // Timeout de 3 secondes pour la requête
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout lors du chargement du profil')), 3000)
-          );
-
-          const fetchPromise = supabase
+          console.log('📡 [useAuth] Session existante trouvée:', session.user.id);
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('id, full_name, first_name, last_name, role, avatar_url')
             .eq('id', session.user.id)
             .maybeSingle();
 
-          console.log('📡 [fetchUserProfile] Requête envoyée...');
-          const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
-          console.log('📡 [fetchUserProfile] Réponse reçue:', { data, error });
+          if (!mounted) return;
 
-          if (error) {
-            console.error('❌ [fetchUserProfile] Erreur:', error);
-            throw new Error("Impossible de charger votre profil.");
+          if (profileError) {
+            console.error('❌ [useAuth] Erreur profil:', profileError);
+          } else if (profileData) {
+            console.log('✅ [useAuth] Profil chargé:', profileData);
+            setUser(session.user);
+            setProfile(profileData as UserProfile);
           }
+        }
+      } catch (e: any) {
+        console.error('❌ [useAuth] Erreur init:', e);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
-          if (!data) {
-            console.error('❌ [fetchUserProfile] Profil introuvable');
-            throw new Error("Votre profil n'existe pas. Veuillez contacter le support.");
-          }
+    initAuth();
 
-          console.log('✅ [fetchUserProfile] Profil chargé:', data);
-          setUser(session.user);
-          setProfile(data as UserProfile);
-        } else {
+    // 2. Écouter les changements d'état
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 [useAuth] Événement:', event);
+
+      if (!mounted || isProcessing) {
+        console.log('⏭️ [useAuth] Ignoré (mounted=' + mounted + ', processing=' + isProcessing + ')');
+        return;
+      }
+
+      isProcessing = true;
+
+      try {
+        if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
+        } else if (session?.user) {
+          console.log('📡 [useAuth] Chargement profil:', session.user.id);
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, first_name, last_name, role, avatar_url')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (mounted) {
+            if (error) {
+              console.error('❌ [useAuth] Erreur profil:', error);
+            } else if (data) {
+              console.log('✅ [useAuth] Profil chargé:', data);
+              setUser(session.user);
+              setProfile(data as UserProfile);
+            }
+          }
         }
-        setError(null);
       } catch (e: any) {
-        console.error("❌ Erreur dans onAuthStateChange:", e);
-        console.error("❌ Stack trace:", e.stack);
-        setError(e.message || "Une erreur d'authentification est survenue.");
-        await supabase.auth.signOut();
-        setUser(null);
-        setProfile(null);
+        console.error('❌ [useAuth] Erreur:', e);
       } finally {
-        console.log('🔓 [useAuth] Libération du flag isLoadingProfile');
-        isLoadingProfile = false;
-        setLoading(false);
+        isProcessing = false;
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
