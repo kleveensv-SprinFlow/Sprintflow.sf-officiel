@@ -96,7 +96,7 @@ function SelectionScreen({ onMovementSelected, onBack }: { onMovementSelected: (
             {selectedMovement ? (
               selectedMovement.guide.split('. ').map((tip, index) => tip && <li key={index}>{tip}</li>)
             ) : (
-              <li>Veuillez d'abord s�lectionner un exercice.</li>
+              <li>Veuillez d'abord sélectionner un exercice.</li>
             )}
           </ul>
         </div>
@@ -123,9 +123,9 @@ function SelectionScreen({ onMovementSelected, onBack }: { onMovementSelected: (
         </button>
 
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Analyse Vid�o</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Analyse Vidéo</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {selectedMovement ? `Pr�t � analyser : ${selectedMovement.name}` : "Choisissez une cat�gorie pour commencer"}
+            {selectedMovement ? `Prêt à analyser : ${selectedMovement.name}` : "Choisissez une catégorie pour commencer"}
           </p>
         </div>
 
@@ -154,7 +154,7 @@ function SelectionScreen({ onMovementSelected, onBack }: { onMovementSelected: (
             disabled={!selectedMovement}
             className="flex items-center justify-center gap-3 p-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-all disabled:bg-gray-300 dark:disabled:bg-gray-700 cursor-not-allowed"
           >
-            <Film className="w-6 h-6" /> Filmer (Bient�t)
+            <Film className="w-6 h-6" /> Filmer (Bientôt)
           </button>
           <button
             onClick={handleImportClick}
@@ -174,15 +174,15 @@ function ErrorScreen({ message, onRetry }: { message: string, onRetry: () => voi
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 flex flex-col items-center justify-center text-center h-full">
       <AlertTriangle className="w-16 h-16 text-red-500 mb-6" />
-      <h2 className="text-2xl font-semibold text-red-600">Analyse �chou�e</h2>
+      <h2 className="text-2xl font-semibold text-red-600">Analyse échouée</h2>
       <p className="text-gray-600 dark:text-gray-400 mt-2 mb-8 max-w-md">
-        {message || "Une erreur inattendue est survenue. Veuillez r�essayer."}
+        {message || "Une erreur inattendue est survenue. Veuillez réessayer."}
       </p>
       <button
         onClick={onRetry}
         className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
       >
-        R�essayer
+        Réessayer
       </button>
     </div>
   );
@@ -226,7 +226,7 @@ export function VideoAnalysisFlow({ onBack }: VideoAnalysisFlowProps) {
         setAnalysisResult(result);
         setCurrentStep('report');
       } else {
-        throw new Error(analysisHookError || "L'analyse a �chou�. Veuillez v�rifier le cadrage de votre vid�o.");
+        throw new Error(analysisHookError || "L'analyse a échoué. Veuillez vérifier le cadrage de votre vidéo.");
       }
 
     } catch (e: any) {
@@ -241,7 +241,7 @@ export function VideoAnalysisFlow({ onBack }: VideoAnalysisFlowProps) {
   const handleShare = async () => {
     if (currentLog) {
       await shareWithCoach(currentLog.id);
-      alert('Analyse partag�e avec votre coach !');
+      alert('Analyse partagée avec votre coach !');
     }
   };
 
@@ -258,7 +258,7 @@ export function VideoAnalysisFlow({ onBack }: VideoAnalysisFlowProps) {
     return (
       <div className="flex flex-col items-center justify-center text-center p-8 h-full">
         <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
-        <h2 className="text-xl font-semibold mt-6">Chargement du mod�le IA...</h2>
+        <h2 className="text-xl font-semibold mt-6">Chargement du modèle IA...</h2>
         <p className="text-gray-600 dark:text-gray-400 mt-2">Cela peut prendre quelques instants.</p>
       </div>
     );
