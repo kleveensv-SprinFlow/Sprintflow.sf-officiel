@@ -68,11 +68,20 @@ export function useAuth() {
    */
   useEffect(() => {
     setLoading(true);
+    let isLoadingProfile = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 [useAuth] Événement:', event);
+
+      // Ignorer les événements pendant qu'on charge déjà un profil
+      if (isLoadingProfile) {
+        console.log('⏭️ [useAuth] Événement ignoré (chargement en cours)');
+        return;
+      }
+
       try {
         if (session?.user) {
-          // Appel direct pour éviter la dépendance sur fetchUserProfile
+          isLoadingProfile = true;
           console.log('📡 [fetchUserProfile] Chargement du profil pour:', session.user.id);
           const { data, error } = await supabase
             .from('profiles')
@@ -105,6 +114,7 @@ export function useAuth() {
         setUser(null);
         setProfile(null);
       } finally {
+        isLoadingProfile = false;
         setLoading(false);
       }
     });
@@ -112,7 +122,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []); // Pas de dépendances pour éviter les re-souscriptions
+  }, []);
 
   /**
    * Gère la connexion de l'utilisateur.
