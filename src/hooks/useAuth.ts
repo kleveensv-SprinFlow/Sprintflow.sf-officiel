@@ -1,14 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
+// Définition du type pour le profil utilisateur, plus précis.
 type UserProfile = {
   id: string;
   role: 'coach' | 'athlete' | 'developer';
+  full_name: string;
   first_name?: string;
   last_name?: string;
-  email?: string;
   avatar_url?: string;
+};
+
+// Définition du type pour les métadonnées à l'inscription.
+type SignUpMetadata = {
+  first_name: string;
+  last_name: string;
+  role: 'athlete' | 'encadrant';
+  role_specifique: string;
+  date_de_naissance: string | null;
+  discipline: string;
+  sexe: string;
 };
 
 export function useAuth() {
@@ -17,371 +29,133 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUserProfile = async (user: User, signal?: AbortSignal) => {
-    console.log('📡 [fetchUserProfile] Début chargement pour user:', user.id);
-
-    // TIMEOUT de 2 secondes pour éviter le blocage infini
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Timeout')), 2000);
-    });
-
-    let query = supabase
+  /**
+   * Récupère le profil de l'utilisateur depuis la base de données.
+   */
+  const fetchUserProfile = useCallback(async (user: User) => {
+    console.log('📡 [fetchUserProfile] Chargement du profil pour:', user.id);
+    const { data, error } = await supabase
       .from('profiles')
-      .select('*')
-      .eq('id', user.id);
+      .select('id, full_name, first_name, last_name, role, avatar_url')
+      .eq('id', user.id)
+      .single();
 
-    if (signal) {
-      query = query.abortSignal(signal);
+    if (error) {
+      console.error('❌ [fetchUserProfile] Erreur critique:', error);
+      throw new Error("Impossible de charger votre profil. Une erreur est survenue.");
     }
+    
+    console.log('✅ [fetchUserProfile] Profil chargé:', data);
+    return data as UserProfile;
+  }, []);
 
-    console.log('📡 [fetchUserProfile] Envoi requête Supabase...');
-
-    try {
-      const { data, error } = await Promise.race([query.maybeSingle(), timeoutPromise]) as any;
-      console.log('📡 [fetchUserProfile] Réponse reçue - data:', !!data, 'error:', error?.message);
-
-      if (error) {
-        if (error.name === 'AbortError') {
-          console.log('📡 [fetchUserProfile] Requête annulée (AbortError)');
-          throw error;
-        }
-        console.warn('⚠️ Erreur lors du chargement du profil:', error.message);
-      }
-
-      if (!data) {
-        console.warn('⚠️ Profil non trouvé en base de données');
-        throw new Error('PROFILE_NOT_FOUND');
-      }
-
-      const profile = {
-        ...data,
-        avatar_url: data.photo_url || data.avatar_url
-      };
-      console.log('📡 [fetchUserProfile] Retour profile DB:', profile);
-      return profile;
-
-    } catch (timeoutError: any) {
-      console.warn('⚠️ [fetchUserProfile] Timeout ou erreur:', timeoutError.message);
-      throw timeoutError;
-    }
-  };
-
+  /**
+   * Effet principal qui écoute les changements d'état d'authentification.
+   */
   useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
-    let mounted = true;
-    let authChangeHandled = false;
-    let isSigningOut = false;
-    let hasCheckedInitialSession = false;
-    let isProcessingAuth = false; // NOUVEAU : Empêcher traitement concurrent
-    let lastProcessedSessionId: string | null = null; // NOUVEAU : Éviter retraitement même session
-
-    // Nettoyer la session initiale si elle est corrompue ou invalide
-    const checkInitialSession = async () => {
-      try {
-        console.log('🔍 [checkInitialSession] Vérification session au démarrage...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        // Si erreur lors de la récupération de la session, nettoyer
-        if (error) {
-          console.error('❌ [checkInitialSession] Erreur getSession:', error);
-          console.log('🧹 [checkInitialSession] Nettoyage session corrompue...');
-
-          // Nettoyer localStorage
-          Object.keys(localStorage)
-            .filter(key => key.includes('supabase') || key.includes('sb-'))
-            .forEach(key => localStorage.removeItem(key));
-
-          sessionStorage.clear();
-
-          if (mounted) {
-            setError("Session corrompue détectée. Veuillez vous reconnecter.");
-            setUser(null);
-            setProfile(null);
-            setLoading(false);
-          }
-          return;
-        }
-
-        // Vérifier si l'email est confirmé
-        if (session?.user && !session.user.email_confirmed_at) {
-          console.warn('⚠️ [checkInitialSession] Session avec email non confirmé, nettoyage...');
-
-          // Nettoyer localStorage
-          Object.keys(localStorage)
-            .filter(key => key.includes('supabase') || key.includes('sb-'))
-            .forEach(key => localStorage.removeItem(key));
-
-          sessionStorage.clear();
-          await supabase.auth.signOut();
-
-          if (mounted) {
-            setError("Veuillez confirmer votre email avant de vous connecter.");
-            setUser(null);
-            setProfile(null);
-            setLoading(false);
-          }
-          return;
-        }
-
-        console.log('✅ [checkInitialSession] Session valide ou absente');
-      } catch (error) {
-        console.error('❌ [checkInitialSession] Erreur inattendue:', error);
-        // En cas d'erreur, nettoyer par sécurité
-        Object.keys(localStorage)
-          .filter(key => key.includes('supabase') || key.includes('sb-'))
-          .forEach(key => localStorage.removeItem(key));
-        sessionStorage.clear();
-      }
-    };
-
-    checkInitialSession();
-
-    // onAuthStateChange gère maintenant l'état initial,
-    // donc initAuth peut être retiré pour éviter la redondance.
-    // Le setLoading(false) est garanti par le `finally` dans le listener.
-
+    setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 [useAuth] Auth state change:', event, session?.user?.email);
-      authChangeHandled = true;
-
-      // Ignorer les événements pendant qu'on se déconnecte
-      if (isSigningOut && event === 'SIGNED_IN') {
-        console.log('⏭️ Événement SIGNED_IN ignoré (déconnexion en cours)');
-        return;
-      }
-
-      // NOUVEAU : Ignorer si déjà en train de traiter
-      if (isProcessingAuth) {
-        console.log('⏭️ Événement ignoré (traitement en cours)');
-        return;
-      }
-
-      // NOUVEAU : Ignorer si même session déjà traitée
-      if (session?.access_token && session.access_token === lastProcessedSessionId) {
-        console.log('⏭️ Session déjà traitée, ignoré');
-        return;
-      }
-
+      console.log('🔐 [useAuth] Événement:', event);
       try {
-        switch (event) {
-          case 'INITIAL_SESSION':
-          case 'SIGNED_IN':
-          case 'TOKEN_REFRESHED':
-          case 'USER_UPDATED':
-            if (session?.user && mounted) {
-              console.log(`🔄 [${event}] Traitement de la session...`);
-
-              // NOUVEAU : Marquer comme en cours de traitement
-              isProcessingAuth = true;
-              lastProcessedSessionId = session.access_token;
-
-              // Vérifier si l'email est confirmé
-              if (!session.user.email_confirmed_at) {
-                console.warn('⚠️ Email non confirmé, déconnexion...');
-                isSigningOut = true;
-                isProcessingAuth = false;
-                await supabase.auth.signOut();
-                if (mounted) {
-                  setError("Veuillez confirmer votre email avant de vous connecter.");
-                  setUser(null);
-                  setProfile(null);
-                  setLoading(false);
-                }
-                setTimeout(() => { isSigningOut = false; }, 1000);
-                return;
-              }
-
-              console.log('✅ Email confirmé, chargement du profil...');
-              try {
-                const userProfile = await fetchUserProfile(session.user, signal);
-                console.log('👤 Profil récupéré:', userProfile);
-                if (mounted) {
-                  setUser(session.user);
-                  setProfile(userProfile);
-                  setError(null);
-                  console.log('✅ User et profile définis dans le state');
-                }
-              } catch (profileError: any) {
-                console.error('❌ Erreur lors du chargement du profil:', profileError);
-
-                // Si le profil n'existe pas ou timeout, déconnecter l'utilisateur
-                if (mounted && profileError.name !== 'AbortError') {
-                  console.warn('⚠️ Profil introuvable ou erreur critique, déconnexion...');
-                  isSigningOut = true;
-                  isProcessingAuth = false;
-                  await supabase.auth.signOut();
-
-                  // Nettoyer localStorage
-                  Object.keys(localStorage)
-                    .filter(key => key.includes('supabase') || key.includes('sb-'))
-                    .forEach(key => localStorage.removeItem(key));
-                  sessionStorage.clear();
-
-                  if (mounted) {
-                    setError("Impossible de charger votre profil. Veuillez vous reconnecter.");
-                    setUser(null);
-                    setProfile(null);
-                    setLoading(false);
-                  }
-                  setTimeout(() => { isSigningOut = false; }, 1000);
-                  return;
-                }
-              } finally {
-                isProcessingAuth = false;
-              }
-            } else if (!session && mounted && event === 'INITIAL_SESSION') {
-              // Pas de session au démarrage = utilisateur non connecté
-              console.log('ℹ️ Aucune session existante');
-              setUser(null);
-              setProfile(null);
-              setError(null);
-            }
-            break;
-
-          case 'SIGNED_OUT':
-            console.log('🚪 [SIGNED_OUT] Événement de déconnexion reçu');
-            if (mounted) {
-              setUser(null);
-              setProfile(null);
-              setError(null);
-            }
-            break;
-
-          default:
-            console.log('ℹ️ Événement non géré:', event);
-            break;
-        }
-      } catch (error: any) {
-        console.error("❌ Erreur dans onAuthStateChange:", error);
-        if (mounted) {
-          setError(error?.message || "Impossible de mettre à jour la session.");
+        if (session?.user) {
+          const userProfile = await fetchUserProfile(session.user);
+          setUser(session.user);
+          setProfile(userProfile);
+        } else {
           setUser(null);
           setProfile(null);
         }
+        setError(null);
+      } catch (e: any) {
+        console.error("❌ Erreur dans onAuthStateChange:", e);
+        setError(e.message || "Une erreur d'authentification est survenue.");
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
       } finally {
-        // Quoi qu'il arrive, on arrête de charger.
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     });
 
     return () => {
-      mounted = false;
-      controller.abort();
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserProfile]);
 
+  /**
+   * Gère la connexion de l'utilisateur.
+   */
   const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        if (error.message.includes('Email not confirmed')) {
-          throw new Error('Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte mail.');
-        }
-        throw new Error('Email ou mot de passe incorrect');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      if (error.message.includes('Invalid login credentials')) {
+        throw new Error('Email ou mot de passe incorrect.');
       }
-
-      if (data.user && !data.user.email_confirmed_at) {
-        await supabase.auth.signOut();
-        throw new Error('Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte mail.');
-      }
-
-      return data;
-    } catch (error) {
-      throw error;
+      throw new Error(error.message || 'Erreur lors de la connexion.');
     }
   };
 
-  const signUp = async (email: string, password: string, metaData: object) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
-          data: metaData
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const resendConfirmationEmail = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      return { success: true, message: 'Email de confirmation renvoyé avec succès' };
-    } catch (error: any) {
-      throw new Error(error.message || 'Erreur lors du renvoi de l\'email');
-    }
-  };
-
-  const signOut = async () => {
-    console.log('🚪 [signOut] Début de la déconnexion...');
-
-    // 1. Nettoyer TOUTES les clés Supabase du localStorage EN PREMIER
-    console.log('🧹 [signOut] Nettoyage localStorage Supabase...');
-    const allKeys = Object.keys(localStorage);
-    const supabaseKeys = allKeys.filter(key =>
-      key.includes('supabase') ||
-      key.includes('sb-')
-    );
-
-    supabaseKeys.forEach(key => {
-      console.log('  🗑️ Suppression:', key);
-      localStorage.removeItem(key);
+  /**
+   * Gère l'inscription et la création de profil de manière atomique.
+   */
+  const signUp = async (email: string, password: string, metaData: SignUpMetadata) => {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
     });
 
-    // 2. Nettoyer sessionStorage
-    console.log('🧹 [signOut] Nettoyage sessionStorage...');
-    sessionStorage.clear();
-
-    // 3. Déconnexion Supabase
-    try {
-      console.log('🔓 [signOut] Déconnexion Supabase...');
-      await supabase.auth.signOut({ scope: 'local' });
-      console.log('✅ [signOut] Déconnexion Supabase réussie');
-    } catch (error: any) {
-      console.error('❌ [signOut] Erreur déconnexion Supabase:', error);
-      // Continuer même en cas d'erreur
+    if (authError) {
+      if (authError.message.includes('User already registered')) {
+        throw new Error('Un utilisateur avec cet email existe déjà.');
+      }
+      throw authError;
     }
 
-    // 4. Nettoyer l'état React
-    console.log('🧹 [signOut] Nettoyage état React...');
-    setUser(null);
-    setProfile(null);
-    setError(null);
-    setLoading(false);
+    if (!authData.user) {
+      throw new Error("L'inscription a échoué, aucun utilisateur n'a été créé.");
+    }
+    console.log('✅ [signUp] Utilisateur créé dans Auth:', authData.user.id);
 
-    // 5. FORCER le rechargement complet de la page pour réinitialiser tout
-    console.log('🔄 [signOut] Rechargement de la page...');
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 100);
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: authData.user.id,
+        first_name: metaData.first_name,
+        last_name: metaData.last_name,
+        full_name: `${metaData.first_name} ${metaData.last_name}`.trim(),
+        role: metaData.role,
+        role_specifique: metaData.role_specifique, // CORRECTION : Ajout du champ manquant
+        date_de_naissance: metaData.date_de_naissance,
+        discipline: metaData.discipline,
+        sexe: metaData.sexe,
+      });
+
+    if (profileError) {
+      console.error("❌ ERREUR CRITIQUE [signUp]: L'utilisateur a été créé dans Auth mais pas le profil.", profileError);
+      throw new Error("Une erreur est survenue lors de la finalisation de votre profil. Veuillez réessayer.");
+    }
+
+    console.log('✅ [signUp] Profil créé en base de données.');
+  };
+
+  /**
+   * Gère la déconnexion.
+   */
+  const signOut = async () => {
+    console.log('🚪 [signOut] Déconnexion...');
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  };
+  
+  /**
+   * Permet de renvoyer l'email de confirmation.
+   */
+  const resendConfirmationEmail = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+    if (error) throw error;
   };
 
   return {
