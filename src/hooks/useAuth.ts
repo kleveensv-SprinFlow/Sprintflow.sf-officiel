@@ -99,9 +99,22 @@ export function useAuth() {
    * Gère l'inscription et la création du profil.
    */
   const signUp = async (email: string, password: string, metaData: SignUpMetadata) => {
+    // Envoyer les métadonnées dans le champ 'data' de signUp
+    // Le trigger PostgreSQL créera automatiquement le profil
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          first_name: metaData.first_name,
+          last_name: metaData.last_name,
+          role: metaData.role,
+          role_specifique: metaData.role_specifique,
+          date_de_naissance: metaData.date_de_naissance,
+          discipline: metaData.discipline,
+          sexe: metaData.sexe,
+        }
+      }
     });
 
     if (authError) {
@@ -114,45 +127,9 @@ export function useAuth() {
     if (!authData.user) {
       throw new Error("L'inscription a échoué, aucun utilisateur n'a été créé.");
     }
+
     console.log('✅ [signUp] Utilisateur créé dans Auth:', authData.user.id);
-
-    // Vérifier que la session est bien établie
-    if (!authData.session) {
-      throw new Error("La session n'a pas pu être établie.");
-    }
-
-    // IMPORTANT: Définir explicitement la session dans le client Supabase
-    // pour que le token JWT soit disponible pour les requêtes suivantes
-    await supabase.auth.setSession({
-      access_token: authData.session.access_token,
-      refresh_token: authData.session.refresh_token,
-    });
-
-    // Mapper 'encadrant' vers 'coach' pour correspondre à la contrainte DB
-    const dbRole = metaData.role === 'encadrant' ? 'coach' : 'athlete';
-
-    // Créer le profil (full_name est généré automatiquement)
-    // La session est maintenant active dans le client, auth.uid() sera disponible pour RLS
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: authData.user.id,
-        first_name: metaData.first_name,
-        last_name: metaData.last_name,
-        role: dbRole,
-        role_specifique: metaData.role_specifique,
-        date_de_naissance: metaData.date_de_naissance,
-        discipline: metaData.discipline,
-        sexe: metaData.sexe,
-        email: email,
-      });
-
-    if (profileError) {
-      console.error("❌ ERREUR CRITIQUE [signUp]: Impossible de créer le profil.", profileError);
-      throw new Error("Une erreur est survenue lors de la finalisation de votre profil. Veuillez réessayer.");
-    }
-
-    console.log('✅ [signUp] Profil créé en base de données.');
+    console.log('✅ [signUp] Le profil sera créé automatiquement par le trigger PostgreSQL');
   };
 
   /**
