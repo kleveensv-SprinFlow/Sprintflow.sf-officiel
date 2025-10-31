@@ -73,23 +73,6 @@ export function useAuth() {
     const initAuth = async () => {
       console.log('🔄 [useAuth] Initialisation...');
 
-      // Vérifier que les variables d'environnement sont définies
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      console.log('🔧 [useAuth] Config:', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseKey,
-        url: supabaseUrl?.substring(0, 30) + '...'
-      });
-
-      if (!supabaseUrl || !supabaseKey || supabaseUrl === 'https://placeholder.supabase.co') {
-        console.error('❌ [useAuth] Variables Supabase non configurées en production!');
-        setError('Configuration Supabase manquante. Vérifiez vos variables d\'environnement.');
-        setLoading(false);
-        return;
-      }
-
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         console.log('🔄 [useAuth] getSession terminé:', { hasSession: !!session, hasUser: !!session?.user, error });
