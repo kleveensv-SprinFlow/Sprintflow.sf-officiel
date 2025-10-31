@@ -85,20 +85,44 @@ export function useAuth() {
 
         if (session?.user) {
           console.log('📡 [useAuth] Session existante trouvée:', session.user.id);
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, full_name, first_name, last_name, role, avatar_url')
-            .eq('id', session.user.id)
-            .maybeSingle();
+          console.log('📡 [useAuth] Token:', session.access_token?.substring(0, 20) + '...');
 
-          if (!mounted) return;
+          // Utiliser fetch directement pour contourner les problèmes du client Supabase
+          try {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=id,full_name,first_name,last_name,role,avatar_url`,
+              {
+                headers: {
+                  'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                }
+              }
+            );
 
-          if (profileError) {
-            console.error('❌ [useAuth] Erreur profil:', profileError);
-          } else if (profileData) {
-            console.log('✅ [useAuth] Profil chargé:', profileData);
-            setUser(session.user);
-            setProfile(profileData as UserProfile);
+            console.log('📡 [useAuth] Réponse fetch:', response.status);
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('❌ [useAuth] Erreur fetch:', response.status, errorText);
+              throw new Error(`Erreur ${response.status}: ${errorText}`);
+            }
+
+            const profileData = await response.json();
+            console.log('📡 [useAuth] Données reçues:', profileData);
+
+            if (!mounted) return;
+
+            if (profileData && profileData.length > 0) {
+              console.log('✅ [useAuth] Profil chargé:', profileData[0]);
+              setUser(session.user);
+              setProfile(profileData[0] as UserProfile);
+            } else {
+              console.warn('⚠️ [useAuth] Aucun profil trouvé');
+            }
+          } catch (fetchError: any) {
+            console.error('❌ [useAuth] Erreur fetch profil:', fetchError);
           }
         }
       } catch (e: any) {
