@@ -120,6 +120,9 @@ export function useAuth() {
     // Attendre que le trigger crée le profil (petit délai)
     await new Promise(resolve => setTimeout(resolve, 500));
 
+    // Mapper 'encadrant' vers 'coach' pour correspondre à la contrainte DB
+    const dbRole = metaData.role === 'encadrant' ? 'coach' : 'athlete';
+
     // Mettre à jour le profil avec les données complètes
     const { error: profileError } = await supabase
       .from('profiles')
@@ -127,7 +130,7 @@ export function useAuth() {
         first_name: metaData.first_name,
         last_name: metaData.last_name,
         full_name: `${metaData.first_name} ${metaData.last_name}`.trim(),
-        role: metaData.role,
+        role: dbRole,
         role_specifique: metaData.role_specifique,
         date_de_naissance: metaData.date_de_naissance,
         discipline: metaData.discipline,
