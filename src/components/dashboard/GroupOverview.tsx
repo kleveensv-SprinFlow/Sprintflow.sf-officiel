@@ -1,14 +1,155 @@
 // src/components/dashboard/GroupOverview.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useGroups } from '../../hooks/useGroups';
-import { Loader, Users, Crown, ChevronRight } from 'lucide-react';
+import { Loader, Users, Crown, ChevronRight, UserPlus, X, Link as LinkIcon } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface GroupOverviewProps {
   onNavigate: () => void;
 }
 
+interface JoinGroupModalProps {
+  onClose: () => void;
+}
+
+const JoinGroupModal: React.FC<JoinGroupModalProps> = ({ onClose }) => {
+  const [inviteCode, setInviteCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleJoinGroup = async () => {
+    if (!inviteCode.trim()) {
+      setError('Veuillez entrer un code d\'invitation');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Non authentifié');
+
+      const { data: link, error: linkError } = await supabase
+        .from('coach_athlete_links')
+        .select('coach_id, used')
+        .eq('invite_code', inviteCode.trim())
+        .maybeSingle();
+
+      if (linkError || !link) {
+        setError('Code d\'invitation invalide');
+        setLoading(false);
+        return;
+      }
+
+      if (link.used) {
+        setError('Ce code d\'invitation a déjà été utilisé');
+        setLoading(false);
+        return;
+      }
+
+      const { data: groups, error: groupError } = await supabase
+        .from('groups')
+        .select('id')
+        .eq('coach_id', link.coach_id)
+        .limit(1);
+
+      if (groupError || !groups || groups.length === 0) {
+        setError('Aucun groupe trouvé pour ce coach');
+        setLoading(false);
+        return;
+      }
+
+      const groupId = groups[0].id;
+
+      const { error: memberError } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: groupId,
+          athlete_id: user.id,
+        });
+
+      if (memberError) {
+        console.error('Erreur ajout membre:', memberError);
+        setError('Erreur lors de l\'ajout au groupe');
+        setLoading(false);
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from('coach_athlete_links')
+        .update({ used: true, athlete_id: user.id })
+        .eq('invite_code', inviteCode.trim());
+
+      if (updateError) {
+        console.error('Erreur mise à jour lien:', updateError);
+      }
+
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Erreur:', err);
+      setError(err.message || 'Une erreur est survenue');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <LinkIcon size={24} className="text-blue-600" />
+            Rejoindre un groupe
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Entrez le code d'invitation fourni par votre coach
+        </p>
+
+        <input
+          type="text"
+          value={inviteCode}
+          onChange={(e) => setInviteCode(e.target.value)}
+          placeholder="Code d'invitation"
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white mb-4"
+        />
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleJoinGroup}
+            disabled={loading}
+            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors font-semibold"
+          >
+            {loading ? 'Rejoindre...' : 'Rejoindre'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const GroupOverview: React.FC<GroupOverviewProps> = ({ onNavigate }) => {
   const { groups, loading } = useGroups();
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   if (loading) {
     return (
@@ -26,10 +167,23 @@ export const GroupOverview: React.FC<GroupOverviewProps> = ({ onNavigate }) => {
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
           Mon Groupe
         </h2>
-        <div className="text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-          <Users className="mx-auto text-gray-400" size={40}/>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Vous n'êtes dans aucun groupe.</p>
+        <div className="text-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+          <Users className="mx-auto text-gray-400 mb-3" size={48}/>
+          <p className="text-gray-600 dark:text-gray-400 mb-4 font-medium">
+            Vous n'êtes dans aucun groupe
+          </p>
+          <button
+            onClick={() => setShowJoinModal(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-lg hover:shadow-xl"
+          >
+            <UserPlus size={20} />
+            Rejoindre un groupe
+          </button>
         </div>
+
+        {showJoinModal && (
+          <JoinGroupModal onClose={() => setShowJoinModal(false)} />
+        )}
       </div>
     );
   }
