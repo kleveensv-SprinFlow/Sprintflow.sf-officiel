@@ -83,11 +83,22 @@ export function useAuth() {
         if (session?.user) {
           isLoadingProfile = true;
           console.log('📡 [fetchUserProfile] Chargement du profil pour:', session.user.id);
-          const { data, error } = await supabase
+          console.log('📡 [fetchUserProfile] Session complète:', session);
+
+          // Timeout de 3 secondes pour la requête
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout lors du chargement du profil')), 3000)
+          );
+
+          const fetchPromise = supabase
             .from('profiles')
             .select('id, full_name, first_name, last_name, role, avatar_url')
             .eq('id', session.user.id)
             .maybeSingle();
+
+          console.log('📡 [fetchUserProfile] Requête envoyée...');
+          const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+          console.log('📡 [fetchUserProfile] Réponse reçue:', { data, error });
 
           if (error) {
             console.error('❌ [fetchUserProfile] Erreur:', error);
@@ -109,11 +120,13 @@ export function useAuth() {
         setError(null);
       } catch (e: any) {
         console.error("❌ Erreur dans onAuthStateChange:", e);
+        console.error("❌ Stack trace:", e.stack);
         setError(e.message || "Une erreur d'authentification est survenue.");
         await supabase.auth.signOut();
         setUser(null);
         setProfile(null);
       } finally {
+        console.log('🔓 [useAuth] Libération du flag isLoadingProfile');
         isLoadingProfile = false;
         setLoading(false);
       }
