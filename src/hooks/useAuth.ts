@@ -74,11 +74,18 @@ export function useAuth() {
       console.log('🔄 [useAuth] Initialisation...');
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('🔄 [useAuth] getSession terminé:', { hasSession: !!session, hasUser: !!session?.user, error });
 
         if (!mounted) return;
 
         if (error) {
           console.error('❌ [useAuth] Erreur getSession:', error);
+          setLoading(false);
+          return;
+        }
+
+        if (!session) {
+          console.log('ℹ️ [useAuth] Pas de session au démarrage');
           setLoading(false);
           return;
         }
@@ -151,19 +158,29 @@ export function useAuth() {
           setProfile(null);
         } else if (session?.user) {
           console.log('📡 [useAuth] Chargement profil:', session.user.id);
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id, full_name, first_name, last_name, role, avatar_url')
-            .eq('id', session.user.id)
-            .maybeSingle();
+
+          // Utiliser fetch directement
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=id,full_name,first_name,last_name,role,avatar_url`,
+            {
+              headers: {
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
 
           if (mounted) {
-            if (error) {
-              console.error('❌ [useAuth] Erreur profil:', error);
-            } else if (data) {
-              console.log('✅ [useAuth] Profil chargé:', data);
-              setUser(session.user);
-              setProfile(data as UserProfile);
+            if (!response.ok) {
+              console.error('❌ [useAuth] Erreur profil:', response.status);
+            } else {
+              const profileData = await response.json();
+              if (profileData && profileData.length > 0) {
+                console.log('✅ [useAuth] Profil chargé:', profileData[0]);
+                setUser(session.user);
+                setProfile(profileData[0] as UserProfile);
+              }
             }
           }
         }
