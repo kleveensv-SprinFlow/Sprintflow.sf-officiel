@@ -7,8 +7,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['manifest.json'],
+      injectRegister: 'auto',
       manifest: {
         name: 'Sprintflow - Suivi d\'entraînement',
         short_name: 'Sprintflow',

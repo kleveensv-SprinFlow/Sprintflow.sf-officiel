@@ -6,7 +6,9 @@ import { registerSW } from 'virtual:pwa-register';
 // Enregistrer le service worker pour PWA
 const updateSW = registerSW({
   onNeedRefresh() {
-    console.log('🔄 Nouvelle version disponible');
+    console.log('🔄 Nouvelle version disponible - Rechargement automatique...');
+    // Forcer le rechargement immédiat pour appliquer la mise à jour
+    updateSW(true);
   },
   onOfflineReady() {
     console.log('📱 Application prête hors ligne');
