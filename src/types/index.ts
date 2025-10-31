@@ -33,23 +33,29 @@ export type TextBlock = {
 
 export type Workout = {
   id: string;
-  user_id: string;
-  date: string;
+  user_id: string; // L'athlète qui a réalisé la séance
+  date: string; // La date de réalisation effective
   title: string;
-  tag_seance: string;
-  courses_json: CourseBlockData[];
-  muscu_json: WorkoutMuscu[];
-  sauts_json: []; // To be defined
-  lancers_json: []; // To be defined
-  autres_activites?: string;
-  echelle_effort?: number;
+
+  // Données de la séance
+  workout_data: { blocs: any[] }; // Performances réelles de l'athlète
+  planned_data?: { blocs: any[] }; // Plan initial du coach
+
+  // Métadonnées de planification
+  status: 'planned' | 'completed';
+  scheduled_date?: string; // Date prévue par le coach
+  coach_id?: string; // Coach qui a planifié
+  assigned_to_user_id?: string; // Si assigné à un athlète
+  assigned_to_group_id?: string; // Si assigné à un groupe
+
+  // Feedback
+  rpe?: number; // RPE de l'athlète
   notes?: string;
-  meteo?: string;
-  temperature?: number;
+
+  // Champs techniques
   duration_minutes?: number;
   created_at?: string;
   updated_at?: string;
-  wellness_log?: { rpe_difficulty: number }[];
 };
 
 // Generic Profile type based on what the app uses
