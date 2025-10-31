@@ -119,14 +119,13 @@ export function useAuth() {
     // Mapper 'encadrant' vers 'coach' pour correspondre à la contrainte DB
     const dbRole = metaData.role === 'encadrant' ? 'coach' : 'athlete';
 
-    // Créer le profil avec les données complètes
+    // Créer le profil (full_name est généré automatiquement)
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: authData.user.id,
         first_name: metaData.first_name,
         last_name: metaData.last_name,
-        full_name: `${metaData.first_name} ${metaData.last_name}`.trim(),
         role: dbRole,
         role_specifique: metaData.role_specifique,
         date_de_naissance: metaData.date_de_naissance,
