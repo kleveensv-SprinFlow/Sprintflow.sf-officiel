@@ -17,7 +17,6 @@ type SignUpMetadata = {
   first_name: string;
   last_name: string;
   role: 'athlete' | 'encadrant';
-  role_specifique: string;
   date_de_naissance: string | null;
   discipline: string;
   sexe: string;
@@ -124,7 +123,6 @@ export function useAuth() {
         last_name: metaData.last_name,
         full_name: `${metaData.first_name} ${metaData.last_name}`.trim(),
         role: metaData.role,
-        role_specifique: metaData.role_specifique, // CORRECTION : Ajout du champ manquant
         date_de_naissance: metaData.date_de_naissance,
         discipline: metaData.discipline,
         sexe: metaData.sexe,

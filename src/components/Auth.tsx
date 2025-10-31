@@ -34,7 +34,6 @@ export default function Auth({ initialError }: AuthProps = {}) {
     firstName: '',
     lastName: '',
     role: 'athlete' as 'athlete' | 'encadrant',
-    role_specifique: '',
     discipline: '',
     sexe: '',
     date_de_naissance: '',
@@ -110,7 +109,6 @@ export default function Auth({ initialError }: AuthProps = {}) {
             first_name: formData.firstName,
             last_name: formData.lastName,
             role: formData.role,
-            role_specifique: formData.role_specifique,
             date_de_naissance: formData.date_de_naissance || null,
             discipline: formData.discipline,
             sexe: formData.sexe,
@@ -383,9 +381,6 @@ export default function Auth({ initialError }: AuthProps = {}) {
                 <SelectionCard label="Athlète" isSelected={formData.role === 'athlete'} onClick={() => setFormData(prev => ({ ...prev, role: 'athlete' }))} icon={<User />} />
                 <SelectionCard label="Encadrant" isSelected={formData.role === 'encadrant'} onClick={() => setFormData(prev => ({ ...prev, role: 'encadrant' }))} icon={<Briefcase />} />
               </div>
-              {formData.role === 'encadrant' && (
-                  <CardCarousel options={[{ value: 'Coach', label: 'Coach' }, { value: 'Kinesitherapeute', label: 'Kinésithérapeute' }, { value: 'Nutritionniste', label: 'Nutritionniste' }, { value: 'Preparateur Physique', label: 'Prép. Physique' }, { value: 'Preparateur Mental', label: 'Prép. Mental' }]} selectedValue={formData.role_specifique} onSelect={value => setFormData(prev => ({ ...prev, role_specifique: value }))} />
-              )}
               <CardCarousel options={[{ value: 'sprint', label: 'Sprint' }, { value: 'haies', label: 'Haies' }, { value: 'sauts', label: 'Sauts' }, { value: 'lancers', label: 'Lancers' }, { value: 'demi-fond', label: 'Demi-fond / Fond' }, { value: 'marche', label: 'Marche' }, { value: 'combinees', label: 'Combinées' }]} selectedValue={formData.discipline} onSelect={value => setFormData(prev => ({ ...prev, discipline: value }))} />
               <div className="grid grid-cols-3 gap-4">
                 <SelectionCard label="Homme" isSelected={formData.sexe === 'homme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'homme' }))} />
