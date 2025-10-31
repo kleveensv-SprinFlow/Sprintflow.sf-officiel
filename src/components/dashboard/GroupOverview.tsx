@@ -30,42 +30,35 @@ const JoinGroupModal: React.FC<JoinGroupModalProps> = ({ onClose }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
 
-      const { data: link, error: linkError } = await supabase
-        .from('coach_athlete_links')
-        .select('coach_id, used')
-        .eq('invite_code', inviteCode.trim())
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .select('id, coach_id')
+        .eq('invitation_code', inviteCode.trim().toUpperCase())
         .maybeSingle();
 
-      if (linkError || !link) {
+      if (groupError || !group) {
         setError('Code d\'invitation invalide');
         setLoading(false);
         return;
       }
 
-      if (link.used) {
-        setError('Ce code d\'invitation a déjà été utilisé');
-        setLoading(false);
-        return;
-      }
-
-      const { data: groups, error: groupError } = await supabase
-        .from('groups')
+      const { data: existingMember } = await supabase
+        .from('group_members')
         .select('id')
-        .eq('coach_id', link.coach_id)
-        .limit(1);
+        .eq('group_id', group.id)
+        .eq('athlete_id', user.id)
+        .maybeSingle();
 
-      if (groupError || !groups || groups.length === 0) {
-        setError('Aucun groupe trouvé pour ce coach');
+      if (existingMember) {
+        setError('Vous êtes déjà membre de ce groupe');
         setLoading(false);
         return;
       }
-
-      const groupId = groups[0].id;
 
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({
-          group_id: groupId,
+          group_id: group.id,
           athlete_id: user.id,
         });
 
@@ -74,15 +67,6 @@ const JoinGroupModal: React.FC<JoinGroupModalProps> = ({ onClose }) => {
         setError('Erreur lors de l\'ajout au groupe');
         setLoading(false);
         return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('coach_athlete_links')
-        .update({ used: true, athlete_id: user.id })
-        .eq('invite_code', inviteCode.trim());
-
-      if (updateError) {
-        console.error('Erreur mise à jour lien:', updateError);
       }
 
       window.location.reload();
