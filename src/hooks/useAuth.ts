@@ -116,10 +116,16 @@ export function useAuth() {
     }
     console.log('✅ [signUp] Utilisateur créé dans Auth:', authData.user.id);
 
+    // Vérifier que la session est bien établie
+    if (!authData.session) {
+      throw new Error("La session n'a pas pu être établie.");
+    }
+
     // Mapper 'encadrant' vers 'coach' pour correspondre à la contrainte DB
     const dbRole = metaData.role === 'encadrant' ? 'coach' : 'athlete';
 
     // Créer le profil (full_name est généré automatiquement)
+    // La session est active, donc auth.uid() sera disponible pour la politique RLS
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
