@@ -121,11 +121,18 @@ export function useAuth() {
       throw new Error("La session n'a pas pu être établie.");
     }
 
+    // IMPORTANT: Définir explicitement la session dans le client Supabase
+    // pour que le token JWT soit disponible pour les requêtes suivantes
+    await supabase.auth.setSession({
+      access_token: authData.session.access_token,
+      refresh_token: authData.session.refresh_token,
+    });
+
     // Mapper 'encadrant' vers 'coach' pour correspondre à la contrainte DB
     const dbRole = metaData.role === 'encadrant' ? 'coach' : 'athlete';
 
     // Créer le profil (full_name est généré automatiquement)
-    // La session est active, donc auth.uid() sera disponible pour la politique RLS
+    // La session est maintenant active dans le client, auth.uid() sera disponible pour RLS
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
