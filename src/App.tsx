@@ -3,7 +3,6 @@ import { View } from './types';
 import useAuth from './hooks/useAuth';
 import { useWorkouts } from './hooks/useWorkouts';
 import { useRecords } from './hooks/useRecords';
-import { useBodyComposition } from './hooks/useBodyComposition';
 
 // Components
 import Auth from './components/Auth';
@@ -15,9 +14,6 @@ import { WorkoutsList } from './components/workouts/WorkoutsList';
 import { NewWorkoutForm } from './components/workouts/NewWorkoutForm';
 import { RecordsList } from './components/records/RecordsList';
 import { RecordsForm } from './components/records/RecordsForm';
-import { BodyCompCharts } from './components/bodycomp/BodyCompCharts';
-import { BodyCompForm } from './components/bodycomp/BodyCompForm';
-import { AdvicePanel } from './components/advice/AdvicePanel';
 import { AthleteGroupView } from './components/groups/AthleteGroupView';
 import { GroupManagement } from './components/groups/GroupManagement';
 import { CoachPlanning } from './components/planning/CoachPlanning';
@@ -37,7 +33,6 @@ function App() {
   const { user, profile, loading, error } = useAuth();
   const { workouts, saveWorkout, updateWorkout } = useWorkouts();
   const { records, saveRecord } = useRecords();
-  const { bodyComps, saveBodyComposition } = useBodyComposition();
   const [navigationStack, setNavigationStack] = useState<View[]>(['dashboard']);
   const currentView = navigationStack[navigationStack.length - 1];
   const [editingWorkout, setEditingWorkout] = useState<any>(null);
@@ -164,17 +159,6 @@ function App() {
     }
   };
 
-  const handleBodyCompSave = async (bodyCompData: any) => {
-    try {
-      await saveBodyComposition(bodyCompData);
-      navigateBack();
-      if (refreshScores) {
-        await refreshScores();
-      }
-    } catch (error) {
-      console.error('Erreur sauvegarde body comp:', error);
-    }
-  };
 
   const handleSleepSave = async () => {
     try {
@@ -261,18 +245,16 @@ function App() {
         
         {/* Body Composition */}
         {currentView === 'bodycomp' && (
-          <BodyCompCharts onAddEntry={() => navigateTo('add-bodycomp')} />
+          <div className="p-4 text-center">
+            <p className="text-gray-500">Module composition corporelle en développement</p>
+          </div>
         )}
-        {currentView === 'add-bodycomp' && (
-          <BodyCompForm 
-            onSave={handleBodyCompSave}
-            onCancel={navigateBack}
-          />
-        )}
-        
+
         {/* Detailed Analysis */}
         {currentView === 'ai' && (
-          <AdvicePanel />
+          <div className="p-4 text-center">
+            <p className="text-gray-500">Module conseils en développement</p>
+          </div>
         )}
         
         {/* Groups */}
