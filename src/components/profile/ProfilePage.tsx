@@ -68,13 +68,12 @@ export function ProfilePage() {
         console.log('Profil non trouvé, création en cours...');
         const firstName = user.user_metadata?.first_name || '';
         const lastName = user.user_metadata?.last_name || '';
-        const fullName = `${firstName} ${lastName}`.trim();
 
         const newProfile = {
           id: user.id,
           first_name: firstName,
           last_name: lastName,
-          full_name: fullName,
+          role: user.user_metadata?.role || 'athlete',
           discipline: user.user_metadata?.discipline,
           sexe: user.user_metadata?.sexe,
           date_de_naissance: user.user_metadata?.date_de_naissance,
