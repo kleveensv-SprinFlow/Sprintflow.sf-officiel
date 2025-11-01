@@ -56,10 +56,11 @@ export const DailyPlanCarousel: React.FC<DailyPlanCarouselProps> = ({ workouts, 
 
   return (
     <div className="relative w-full h-[300px] flex items-center justify-center">
-      {/* Effet de fondu sur les côtés */}
-      <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-r from-gray-100 dark:from-gray-900 via-transparent to-gray-100 dark:to-gray-900" />
-      
-      <div className="w-full h-full overflow-hidden" style={{ perspective: '1200px' }}>
+      {/* Effet de fondu sur les côtés (CORRIGÉ) */}
+      <div className="absolute left-0 inset-y-0 w-16 z-10 pointer-events-none bg-gradient-to-r from-gray-100 dark:from-gray-900 to-transparent" />
+      <div className="absolute right-0 inset-y-0 w-16 z-10 pointer-events-none bg-gradient-to-l from-gray-100 dark:from-gray-900 to-transparent" />
+
+      <div className="w-full h-full" style={{ perspective: '1200px' }}>
         <motion.div
           drag="x"
           dragConstraints={{ left: -(dates.length - 1) * (CARD_WIDTH + GAP), right: 0 }}
