@@ -48,10 +48,10 @@ export const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({ isOpen
               {groups.map(group => (
                 <li key={group.id}>
                   <button
-                    onClick={() => onSelect({ id: group.id, name: group.nom })}
+                    onClick={() => onSelect({ id: group.id, name: group.name })}
                     className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    {group.nom}
+                    {group.name}
                   </button>
                 </li>
               ))}

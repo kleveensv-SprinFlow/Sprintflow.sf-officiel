@@ -6,14 +6,14 @@ import { Profile } from '../types';
 export interface Group {
   id: string;
   coach_id: string;
-  nom: string;
+  name: string;
   created_at: string;
   members: GroupMember[];
 }
 
 export interface GroupMember {
   group_id: string;
-  user_id: string;
+  athlete_id: string;
   profile?: Profile;
 }
 
@@ -36,7 +36,13 @@ export function useGroups() {
       if (profile.role === 'coach') {
         const { data: groupsData, error: groupsError } = await supabase
           .from('groups')
-          .select('*, members:group_members(*, profile:profiles(*))')
+          .select(`
+            *,
+            members:group_members(
+              *,
+              profile:profiles!group_members_athlete_id_fkey(*)
+            )
+          `)
           .eq('coach_id', user.id);
 
         if (groupsError) throw groupsError;
@@ -46,7 +52,7 @@ export function useGroups() {
         const { data: memberData, error: memberError } = await supabase
           .from('group_members')
           .select('group:groups(*)')
-          .eq('user_id', user.id);
+          .eq('athlete_id', user.id);
 
         if (memberError) throw memberError;
 
@@ -54,7 +60,13 @@ export function useGroups() {
         if (groupIds.length > 0) {
             const { data: groupsData, error: groupsError } = await supabase
                 .from('groups')
-                .select('*, members:group_members(*, profile:profiles(*))')
+                .select(`
+                  *,
+                  members:group_members(
+                    *,
+                    profile:profiles!group_members_athlete_id_fkey(*)
+                  )
+                `)
                 .in('id', groupIds);
 
             if (groupsError) throw groupsError;
@@ -77,13 +89,13 @@ export function useGroups() {
 
   const coachAthletes = useMemo(() => {
     if (profile?.role !== 'coach' || !groups) return [];
-    
+
     const allMembers = groups.flatMap(g => g.members);
     const uniqueAthletes = new Map<string, Profile>();
 
     allMembers.forEach(member => {
-      if (member.profile && !uniqueAthletes.has(member.user_id)) {
-        uniqueAthletes.set(member.user_id, member.profile);
+      if (member.profile && !uniqueAthletes.has(member.athlete_id)) {
+        uniqueAthletes.set(member.athlete_id, member.profile);
       }
     });
 
@@ -96,7 +108,7 @@ export function useGroups() {
 
     const { data, error } = await supabase
       .from('groups')
-      .insert({ nom: name, coach_id: user.id })
+      .insert({ name: name, coach_id: user.id })
       .select()
       .single();
 

@@ -2,12 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useGroups } from '../../hooks/useGroups';
 import { X, Search } from 'lucide-react';
 
-type Athlete = {
-  id: string;
-  prenom: string;
-  nom: string;
-};
-
 interface AthleteSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -20,9 +14,14 @@ export const AthleteSelectionModal: React.FC<AthleteSelectionModalProps> = ({ is
 
   const filteredAthletes = useMemo(() => {
     if (!coachAthletes) return [];
-    return coachAthletes.filter(athlete =>
-      `${athlete.prenom} ${athlete.nom}`.toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a, b) => `${a.prenom} ${a.nom}`.localeCompare(`${b.prenom} ${b.nom}`));
+    return coachAthletes.filter(athlete => {
+      const fullName = `${athlete.first_name || ''} ${athlete.last_name || ''}`.trim();
+      return fullName.toLowerCase().includes(searchTerm.toLowerCase());
+    }).sort((a, b) => {
+      const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
+      const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
+      return nameA.localeCompare(nameB);
+    });
   }, [coachAthletes, searchTerm]);
 
   useEffect(() => {
@@ -72,16 +71,19 @@ export const AthleteSelectionModal: React.FC<AthleteSelectionModalProps> = ({ is
             <p className="text-center py-8">Chargement...</p>
           ) : filteredAthletes.length > 0 ? (
             <ul className="space-y-2">
-              {filteredAthletes.map(athlete => (
-                <li key={athlete.id}>
-                  <button
-                    onClick={() => onSelect({ id: athlete.id, name: `${athlete.prenom} ${athlete.nom}` })}
-                    className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    {athlete.prenom} {athlete.nom}
-                  </button>
-                </li>
-              ))}
+              {filteredAthletes.map(athlete => {
+                const fullName = `${athlete.first_name || ''} ${athlete.last_name || ''}`.trim();
+                return (
+                  <li key={athlete.id}>
+                    <button
+                      onClick={() => onSelect({ id: athlete.id, name: fullName })}
+                      className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      {fullName}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-center text-gray-500 py-8">Aucun athlète trouvé.</p>
