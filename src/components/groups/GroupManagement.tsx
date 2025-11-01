@@ -13,7 +13,7 @@ const ManageMembersModal: React.FC<{
   onRemoveMember: (groupId: string, userId: string) => void;
 }> = ({ group, allAthletes, onClose, onAddMember, onRemoveMember }) => {
 
-  const memberIds = useMemo(() => new Set(group.members.map(m => m.user_id)), [group.members]);
+  const memberIds = useMemo(() => new Set(group.members.map(m => m.athlete_id)), [group.members]);
 
   const handleMemberToggle = (athleteId: string) => {
     if (memberIds.has(athleteId)) {

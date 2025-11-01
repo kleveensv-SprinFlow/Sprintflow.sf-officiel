@@ -40,7 +40,7 @@ export function useGroups() {
             *,
             members:group_members(
               athlete_id,
-              profile:profiles!inner(id, first_name, last_name, avatar_url, date_of_birth, discipline)
+              profile:profiles!inner(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
             )
           `)
           .eq('coach_id', user.id);
@@ -64,7 +64,7 @@ export function useGroups() {
                   *,
                   members:group_members(
                     athlete_id,
-                    profile:profiles!inner(id, first_name, last_name, avatar_url, date_of_birth, discipline)
+                    profile:profiles!inner(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
                   )
                 `)
                 .in('id', groupIds);
@@ -129,17 +129,40 @@ export function useGroups() {
     if (error) throw error;
     setGroups(prev => prev.filter(g => g.id !== groupId));
   };
-  
-  // ... (le reste des fonctions createGroup, etc. ne change pas)
+
+  const addMemberToGroup = async (groupId: string, athleteId: string) => {
+    if (!user || profile?.role !== 'coach') throw new Error('Seuls les coachs peuvent ajouter des membres.');
+
+    const { error } = await supabase
+      .from('group_members')
+      .insert({ group_id: groupId, athlete_id: athleteId });
+
+    if (error) throw error;
+    await fetchGroups();
+  };
+
+  const removeMemberFromGroup = async (groupId: string, athleteId: string) => {
+    if (!user || profile?.role !== 'coach') throw new Error('Seuls les coachs peuvent retirer des membres.');
+
+    const { error } = await supabase
+      .from('group_members')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('athlete_id', athleteId);
+
+    if (error) throw error;
+    await fetchGroups();
+  };
 
   return {
     groups,
-    coachAthletes, // La liste des athlètes est maintenant exposée
+    coachAthletes,
     loading,
     error,
     createGroup,
     deleteGroup,
-    // ... addMember etc.
+    addMemberToGroup,
+    removeMemberFromGroup,
     refresh: fetchGroups
   };
 }
