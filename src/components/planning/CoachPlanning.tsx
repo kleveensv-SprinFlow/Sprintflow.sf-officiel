@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users, User, Filter } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users, User, Filter, Plus } from 'lucide-react';
+import { format, eachDayOfInterval, startOfWeek, endOfWeek, isSameDay, addDays, subDays, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 import { useWorkouts } from '../../hooks/useWorkouts';
@@ -25,7 +25,7 @@ export const CoachPlanning: React.FC = () => {
   const { groups, loading: loadingGroups } = useGroups();
   const { linkedAthletes, loading: loadingAthletes } = useCoachLinks(user?.id);
 
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>({ type: 'all', id: null, name: 'Tous les athlètes' });
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
@@ -33,11 +33,9 @@ export const CoachPlanning: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [initialWorkoutData, setInitialWorkoutData] = useState<any>(null);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+  const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   const filteredWorkouts = useMemo(() => {
@@ -139,17 +137,20 @@ export const CoachPlanning: React.FC = () => {
             </select>
         </div>
         <div className="flex items-center gap-4">
-            <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft /></button>
-            <h2 className="text-lg font-semibold w-32 text-center">{format(currentMonth, 'MMMM yyyy', { locale: fr })}</h2>
-            <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight /></button>
+          <button onClick={() => setCurrentDate(subDays(currentDate, 7))}><ChevronLeft /></button>
+          <h2 className="text-lg font-semibold w-48 text-center">
+            {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'd MMM', { locale: fr })} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'd MMM yyyy', { locale: fr })}
+          </h2>
+          <button onClick={() => setCurrentDate(addDays(currentDate, 7))}><ChevronRight /></button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 bg-white dark:bg-gray-800 p-2 rounded-lg shadow">
-        {weekDays.map(day => <div key={day} className="text-center font-bold text-sm">{day}</div>)}
+      <div className="hidden md:grid grid-cols-7 gap-2 text-center font-bold mb-2">
+        {weekDays.map(day => <div key={day}>{day}</div>)}
+      </div>
 
-        {days.map(day => {
-          const isCurrentMonth = isSameMonth(day, currentMonth);
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+        {days.map((day, index) => {
           const isToday = isSameDay(day, new Date());
 
           const workoutsForDay = filteredWorkouts.filter(w => {
@@ -160,27 +161,38 @@ export const CoachPlanning: React.FC = () => {
           return (
             <div
               key={day.toString()}
-              className={`h-32 border rounded-lg p-1 flex flex-col ${isCurrentMonth ? '' : 'bg-gray-100 dark:bg-gray-700 opacity-50'} ${isToday ? 'border-primary-500' : ''}`}
-              onClick={() => handleDateClick(day)}
+              className={`min-h-[12rem] rounded-lg p-2 flex flex-col relative transition-shadow hover:shadow-lg ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-white dark:bg-gray-800'}`}
             >
-              <span className={`font-semibold ${isToday ? 'text-primary-500' : ''}`}>{format(day, 'd')}</span>
-              <div className="flex-grow overflow-y-auto text-xs space-y-1 mt-1">
+              <div className="flex justify-between items-center mb-2">
+                <span className={`font-bold md:hidden ${isToday ? 'text-primary-600' : ''}`}>{weekDays[index]}</span>
+                <span className={`font-semibold text-lg ${isToday ? 'text-primary-500' : ''}`}>{format(day, 'd')}</span>
+              </div>
+              
+              <div className="flex-grow overflow-y-auto text-sm space-y-2">
                 {workoutsForDay.map(w => {
                   const isPlanned = w.status === 'planned';
                   return (
                     <div
                       key={w.id}
-                      className={`p-1 rounded-md truncate ${isPlanned ? 'bg-blue-100 dark:bg-blue-900' : 'bg-green-100 dark:bg-green-900'}`}
+                      className={`p-2 rounded-lg shadow-sm truncate ${isPlanned ? 'bg-blue-100 dark:bg-blue-900' : 'bg-green-100 dark:bg-green-900'}`}
                       title={w.title}
                     >
-                      {w.title}
+                      <p className="font-semibold">{w.title}</p>
+                      <p className="text-xs opacity-80">{w.type === 'guidé' ? 'Séance Guidée' : 'Manuscrit'}</p>
                       {!isPlanned && w.rpe && (
-                        <span className="font-bold ml-1">(RPE: {w.rpe})</span>
+                        <p className="font-bold text-xs mt-1">RPE: {w.rpe}</p>
                       )}
                     </div>
                   );
                 })}
               </div>
+              <button 
+                onClick={() => handleDateClick(day)}
+                className="absolute bottom-2 right-2 flex items-center justify-center w-8 h-8 rounded-full bg-primary-500 text-white shadow-lg hover:bg-primary-600 transition-colors"
+                aria-label="Ajouter une séance"
+              >
+                <Plus size={20} />
+              </button>
             </div>
           );
         })}
