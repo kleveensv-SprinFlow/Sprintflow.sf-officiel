@@ -10,21 +10,29 @@ export const WellnessCheckinCard = () => {
   const [fatigue, setFatigue] = useState(3);
   const [submitted, setSubmitted] = useState(false);
 
+  if (!user) {
+    return null;
+  }
+
   const today = new Date().toISOString().split('T')[0];
-  const hasSubmittedToday = wellnessData.some(log => log.date === today && log.sleep_quality);
+  const hasSubmittedToday = wellnessData?.some(log => log.date === today && log.sleep_quality) || false;
 
   if (hasSubmittedToday || submitted) {
-    return null; // Don't show if already submitted
+    return null;
   }
 
   const handleSubmit = async () => {
-    await logDailyCheckin({
-      date: today,
-      sleep_quality: sleep,
-      stress_level: stress,
-      muscle_fatigue: fatigue,
-    });
-    setSubmitted(true);
+    try {
+      await logDailyCheckin({
+        date: today,
+        sleep_quality: sleep,
+        stress_level: stress,
+        muscle_fatigue: fatigue,
+      });
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Erreur lors de la soumission du check-in:', error);
+    }
   };
 
   return (
