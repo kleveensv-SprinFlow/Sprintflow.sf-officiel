@@ -39,8 +39,8 @@ export function useGroups() {
           .select(`
             *,
             members:group_members(
-              *,
-              profile:profiles!group_members_athlete_id_fkey(*)
+              athlete_id,
+              profile:profiles!inner(id, first_name, last_name, avatar_url, date_of_birth, discipline)
             )
           `)
           .eq('coach_id', user.id);
@@ -63,8 +63,8 @@ export function useGroups() {
                 .select(`
                   *,
                   members:group_members(
-                    *,
-                    profile:profiles!group_members_athlete_id_fkey(*)
+                    athlete_id,
+                    profile:profiles!inner(id, first_name, last_name, avatar_url, date_of_birth, discipline)
                   )
                 `)
                 .in('id', groupIds);
