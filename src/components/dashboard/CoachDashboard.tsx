@@ -93,14 +93,14 @@ export const CoachDashboard: React.FC = () => {
   const renderContent = () => {
     if (!selection) {
       return (
-        <div className="text-center py-16 px-4 bg-white dark:bg-gray-800 rounded-lg shadow-neumorphic-extrude">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Bienvenue, {profile?.prenom} !</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
+        <div className="text-center py-16 px-4 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-100 text-shadow">Bienvenue, {profile?.prenom} !</h2>
+          <p className="text-gray-300 mb-6 text-shadow">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
           <div className="flex justify-center gap-4">
-            <button onClick={() => setAthleteModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105">
+            <button onClick={() => setAthleteModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/20 text-white font-semibold rounded-lg shadow-lg hover:bg-white/30 transition-all transform hover:scale-105 border border-white/30">
               <User /> Athlète
             </button>
-            <button onClick={() => setGroupModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105">
+            <button onClick={() => setGroupModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/20 text-white font-semibold rounded-lg shadow-lg hover:bg-white/30 transition-all transform hover:scale-105 border border-white/30">
               <Users /> Groupe
             </button>
           </div>
@@ -120,7 +120,7 @@ export const CoachDashboard: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 bg-gray-100 dark:bg-gray-900 min-h-screen relative">
+      <div className="p-4 sm:p-6 bg-transparent min-h-screen relative">
         <div className="max-w-7xl mx-auto">
           {/* Menu flottant pour changer la vue */}
           <div className="absolute top-6 right-6 z-20">
