@@ -103,7 +103,7 @@ export const CoachGroupChat: React.FC = () => {
                       {group.name}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {group.members?.length || 0} membre{(group.members?.length || 0) > 1 ? 's' : ''}
+                      {group.group_members?.length || 0} membre{(group.group_members?.length || 0) > 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>

@@ -8,11 +8,11 @@ export interface Group {
   coach_id: string;
   name: string;
   created_at: string;
-  members: GroupMember[];
+  group_members: GroupMember[];
 }
 
 export interface GroupMember {
-  group_id: string;
+  group_id?: string;
   athlete_id: string;
   profile?: Profile;
 }
@@ -38,7 +38,7 @@ export function useGroups() {
           .from('groups')
           .select(`
             *,
-            members:group_members(
+            group_members(
               athlete_id,
               group_id,
               profile:profiles(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
@@ -65,7 +65,7 @@ export function useGroups() {
                 .from('groups')
                 .select(`
                   *,
-                  members:group_members(
+                  group_members(
                     athlete_id,
                     group_id,
                     profile:profiles(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
@@ -95,7 +95,7 @@ export function useGroups() {
   const coachAthletes = useMemo(() => {
     if (profile?.role !== 'coach' || !groups) return [];
 
-    const allMembers = groups.flatMap(g => g.members);
+    const allMembers = groups.flatMap(g => g.group_members);
     const uniqueAthletes = new Map<string, Profile>();
 
     allMembers.forEach(member => {
@@ -120,7 +120,7 @@ export function useGroups() {
     if (error) throw error;
 
     if (data) {
-        const newGroup: Group = { ...data, members: [] };
+        const newGroup: Group = { ...data, group_members: [] };
         setGroups(prev => [newGroup, ...prev]);
     }
     return data;

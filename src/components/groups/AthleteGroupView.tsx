@@ -245,7 +245,7 @@ export const AthleteGroupView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Membres total</span>
                   <span className="font-medium text-gray-900 dark:text-white text-sm sm:text-base">
-                    {(group.members?.length || 0) + (group.coach ? 1 : 0)}
+                    {(group.group_members?.length || 0) + (group.coach ? 1 : 0)}
                   </span>
                 </div>
 
@@ -258,7 +258,7 @@ export const AthleteGroupView: React.FC = () => {
                     className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white transition-colors text-xs sm:text-sm"
                   >
                     <Eye className="h-4 w-4" />
-                    <span>Membres ({(group.members?.length || 0) + (group.coach ? 1 : 0)})</span>
+                    <span>Membres ({(group.group_members?.length || 0) + (group.coach ? 1 : 0)})</span>
                   </button>
 
                   <button
