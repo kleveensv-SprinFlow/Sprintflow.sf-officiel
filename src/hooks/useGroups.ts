@@ -40,12 +40,15 @@ export function useGroups() {
             *,
             members:group_members(
               athlete_id,
-              profile:profiles!inner(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
+              group_id,
+              profile:profiles(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
             )
           `)
           .eq('coach_id', user.id);
 
         if (groupsError) throw groupsError;
+
+        console.log('📦 Groups data from Supabase:', JSON.stringify(groupsData, null, 2));
         setGroups(groupsData || []);
 
       } else if (profile.role === 'athlete') {
@@ -64,12 +67,14 @@ export function useGroups() {
                   *,
                   members:group_members(
                     athlete_id,
-                    profile:profiles!inner(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
+                    group_id,
+                    profile:profiles(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
                   )
                 `)
                 .in('id', groupIds);
 
             if (groupsError) throw groupsError;
+            console.log('📦 Groups data from Supabase (athlete):', JSON.stringify(groupsData, null, 2));
             setGroups(groupsData || []);
         } else {
             setGroups([]);
