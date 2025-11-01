@@ -40,6 +40,7 @@ export type Workout = {
   // Données de la séance
   workout_data: { blocs: any[] }; // Performances réelles de l'athlète
   planned_data?: { blocs: any[] }; // Plan initial du coach
+  type: 'guidé' | 'manuscrit'; // Type de séance
 
   // Métadonnées de planification
   status: 'planned' | 'completed';

@@ -3,17 +3,21 @@ import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 import { Workout } from '../types';
 
-export function useWorkouts(viewUserId?: string) {
+type Selection = {
+  type: 'athlete' | 'group';
+  id: string;
+} | null;
+
+export function useWorkouts(selection?: Selection) {
   const { user, profile } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const effectiveUserId = viewUserId || user?.id;
-
   const fetchWorkouts = useCallback(async () => {
-    if (!effectiveUserId || !profile) {
+    if (profile?.role === 'coach' && !selection) {
       setWorkouts([]);
+      setLoading(false);
       return;
     }
 
@@ -23,19 +27,29 @@ export function useWorkouts(viewUserId?: string) {
     try {
       let query = supabase.from('workouts').select('*');
 
-      if (profile.role === 'coach') {
-        query = query.or(`coach_id.eq.${user?.id},user_id.eq.${effectiveUserId}`);
-      } else {
-        const { data: groupMemberships } = await supabase
+      if (profile?.role === 'coach' && selection) {
+        if (selection.type === 'athlete') {
+          query = query.eq('user_id', selection.id);
+        } else if (selection.type === 'group') {
+          query = query.eq('assigned_to_group_id', selection.id);
+        }
+      } else if (user) {
+         const { data: groupMemberships } = await supabase
             .from('group_members')
             .select('group_id')
-            .eq('user_id', effectiveUserId);
+            .eq('user_id', user.id);
 
         const groupIds = groupMemberships?.map(m => m.group_id) || [];
 
-        query = query.or(
-            `user_id.eq.${effectiveUserId},assigned_to_user_id.eq.${effectiveUserId},assigned_to_group_id.in.(${groupIds.join(',')})`
-        );
+        let filter = `user_id.eq.${user.id}`;
+        if (groupIds.length > 0) {
+          filter += `,assigned_to_group_id.in.(${groupIds.join(',')})`;
+        }
+        query = query.or(filter);
+      } else {
+        setLoading(false);
+        setWorkouts([]);
+        return;
       }
 
       const { data, error } = await query.order('date', { ascending: false });
@@ -49,7 +63,7 @@ export function useWorkouts(viewUserId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [effectiveUserId, profile, user?.id]);
+  }, [selection, user, profile]);
 
   useEffect(() => {
     fetchWorkouts();
@@ -58,8 +72,10 @@ export function useWorkouts(viewUserId?: string) {
   const planWorkout = async (
     planning: {
       title: string;
-      planned_data: { blocs: any[] };
-      scheduled_date: string;
+      date: string;
+      type: 'guidé' | 'manuscrit';
+      notes?: string;
+      planned_data?: { blocs: any[] };
       assigned_to_user_id?: string;
       assigned_to_group_id?: string;
     }
@@ -72,13 +88,14 @@ export function useWorkouts(viewUserId?: string) {
         ...planning,
         coach_id: user.id,
         status: 'planned',
+        user_id: planning.assigned_to_user_id,
       })
       .select()
       .single();
 
     if (error) throw error;
     if (data) {
-        setWorkouts(prev => [data, ...prev]);
+        setWorkouts(prev => [data, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
     return data;
   };

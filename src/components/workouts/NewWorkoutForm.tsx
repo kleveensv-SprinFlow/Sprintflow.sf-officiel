@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, FileText, ListChecks } from 'lucide-react';
 import { Workout } from '../../types';
 import { CourseBlockForm, CourseBlockData } from './CourseBlockForm';
 import { NumberSelector } from '../NumberSelector';
@@ -16,9 +16,19 @@ export type WorkoutBlock = {
 };
 
 interface NewWorkoutFormProps {
-  onSave: (payload: { title: string; blocs: Omit<WorkoutBlock, 'id'>[] }) => Promise<void>;
+  onSave: (payload: {
+    title: string;
+    blocs: Omit<WorkoutBlock, 'id'>[];
+    type: 'guidé' | 'manuscrit';
+    notes?: string;
+  }) => Promise<void>;
   onCancel: () => void;
-  initialData?: { title: string; blocs: Omit<WorkoutBlock, 'id'>[] };
+  initialData?: {
+    title: string;
+    blocs: Omit<WorkoutBlock, 'id'>[];
+    type?: 'guidé' | 'manuscrit';
+    notes?: string;
+  };
 }
 
 export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutFormProps) {
@@ -29,6 +39,9 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   const [blocs, setBlocs] = useState<WorkoutBlock[]>(
     initialData?.blocs.map(b => ({ ...b, id: `bloc_${Math.random()}` })) || []
   );
+
+  const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit'>(initialData?.type || 'guidé');
+  const [notes, setNotes] = useState(initialData?.notes || '');
 
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
@@ -85,12 +98,17 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
       alert('Le titre de la séance est obligatoire.');
       return;
     }
+    if (workoutType === 'manuscrit' && !notes.trim()) {
+      alert('Les notes sont obligatoires pour une séance manuscrite.');
+      return;
+    }
     setSaving(true);
 
-    const blocsToSave = blocs.map(({ id, ...rest }) => rest);
+    const blocsToSave = workoutType === 'guidé' ? blocs.map(({ id, ...rest }) => rest) : [];
+    const notesToSave = workoutType === 'manuscrit' ? notes : undefined;
 
     try {
-      if (saveAsTemplate && profile?.role === 'coach') {
+      if (saveAsTemplate && profile?.role === 'coach' && workoutType === 'guidé') {
         if (!templateName.trim()) {
           alert('Veuillez donner un nom à votre modèle.');
           setSaving(false);
@@ -99,7 +117,12 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
         await createTemplate(templateName, { blocs: blocsToSave });
       }
 
-      await onSave({ title, blocs: blocsToSave });
+      await onSave({
+        title,
+        blocs: blocsToSave,
+        type: workoutType,
+        notes: notesToSave,
+      });
 
     } catch (error: any) {
       alert(`❌ Erreur lors de la sauvegarde: ${error?.message || 'Erreur inconnue'}`);
@@ -177,19 +200,69 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
           />
         </div>
 
-        {blocs.map(renderBlock)}
-        <div ref={lastBlockRef}></div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4 flex flex-wrap gap-4 justify-center">
-            <button type="button" onClick={() => addBlock('course')} className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <Plus className="w-4 h-4" /> Course
+        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Type de séance
+          </label>
+          <div className="flex rounded-lg shadow-sm">
+            <button
+              type="button"
+              onClick={() => setWorkoutType('guidé')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-l-lg transition-colors ${
+                workoutType === 'guidé'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              <ListChecks className="w-5 h-5" />
+              Guidée
             </button>
-            <button type="button" onClick={() => addBlock('muscu')} className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
-                <Plus className="w-4 h-4" /> Musculation
+            <button
+              type="button"
+              onClick={() => setWorkoutType('manuscrit')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-r-lg transition-colors ${
+                workoutType === 'manuscrit'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              Manuscrite
             </button>
+          </div>
         </div>
 
-        {profile?.role === 'coach' && (
+        {workoutType === 'guidé' ? (
+          <>
+            {blocs.map(renderBlock)}
+            <div ref={lastBlockRef}></div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg border p-4 flex flex-wrap gap-4 justify-center">
+                <button type="button" onClick={() => addBlock('course')} className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <Plus className="w-4 h-4" /> Course
+                </button>
+                <button type="button" onClick={() => addBlock('muscu')} className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <Plus className="w-4 h-4" /> Musculation
+                </button>
+            </div>
+          </>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+            <label htmlFor="workout-notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Contenu de la séance
+            </label>
+            <textarea
+              id="workout-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 min-h-[200px]"
+              placeholder="Décrivez ici la séance complète..."
+              required={workoutType === 'manuscrit'}
+            />
+          </div>
+        )}
+
+        {profile?.role === 'coach' && workoutType === 'guidé' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border p-4 space-y-3">
             <h3 className="font-semibold">Options</h3>
             <div className="flex items-center gap-3">
