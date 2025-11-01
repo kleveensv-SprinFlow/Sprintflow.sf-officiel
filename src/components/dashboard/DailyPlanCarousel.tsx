@@ -25,6 +25,7 @@ export const DailyPlanCarousel: React.FC<DailyPlanCarouselProps> = ({ workouts, 
 
   const todayIndex = useMemo(() => dates.findIndex(isToday), [dates]);
   const [index, setIndex] = useState(todayIndex !== -1 ? todayIndex : 7);
+  const [containerWidth, setContainerWidth] = useState(window.innerWidth);
 
   const workoutsByDate = useMemo(() => {
     const map = new Map<string, Workout>();
@@ -40,6 +41,15 @@ export const DailyPlanCarousel: React.FC<DailyPlanCarouselProps> = ({ workouts, 
       setIndex(todayIndex);
     }
   }, [todayIndex]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setContainerWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const { offset, velocity } = info;
@@ -58,7 +68,7 @@ export const DailyPlanCarousel: React.FC<DailyPlanCarouselProps> = ({ workouts, 
   }, [dates.length]);
 
   const calculateOffset = (currentIndex: number) => {
-    return -(currentIndex * (CARD_WIDTH + GAP)) + (window.innerWidth / 2) - (CARD_WIDTH / 2);
+    return -(currentIndex * (CARD_WIDTH + GAP)) + (containerWidth / 2) - (CARD_WIDTH / 2);
   };
 
   return (
