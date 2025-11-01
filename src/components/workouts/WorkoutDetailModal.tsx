@@ -35,7 +35,7 @@ export function WorkoutDetailModal({ workout, onClose, onEdit, onDelete }: Worko
   const formattedDate = workout.date ? format(new Date(workout.date), 'EEEE d MMMM yyyy', { locale: fr }) : '';
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-md dark:backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -55,7 +55,7 @@ export function WorkoutDetailModal({ workout, onClose, onEdit, onDelete }: Worko
               </div>
               <div className="flex items-center gap-2">
                 {workout.echelle_effort && (
-                  <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                  <div className="bg-white/20 backdrop-blur-md dark:backdrop-blur-sm px-4 py-2 rounded-lg">
                     <div className="flex items-center gap-2 text-white">
                       <Activity className="w-5 h-5" />
                       <span className="text-2xl font-bold">{workout.echelle_effort}</span>

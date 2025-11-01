@@ -152,7 +152,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
               setShoeFilter('all');
             }
           }}
-          className="px-3 py-2 bg-white/20 dark:bg-black/20 border border-white/30 rounded-lg text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-sm"
+          className="px-3 py-2 bg-white/20 dark:bg-black/20 border border-white/30 rounded-lg text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-md dark:backdrop-blur-sm"
         >
           <option value="all">🏆 Tous les records ({records?.length || 0})</option>
           <option value="run">🏃 Courses ({categoryStats.run})</option>
@@ -166,7 +166,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
           <select
             value={shoeFilter}
             onChange={(e) => setShoeFilter(e.target.value as any)}
-            className="px-3 py-2 bg-white/20 dark:bg-black/20 border border-white/30 rounded-lg text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-sm"
+            className="px-3 py-2 bg-white/20 dark:bg-black/20 border border-white/30 rounded-lg text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-md dark:backdrop-blur-sm"
           >
             <option value="all">👟 Tous les types</option>
             <option value="spikes">👟 Pointes uniquement</option>
@@ -176,7 +176,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
       </div>
 
       {!records || records.length === 0 ? (
-        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-8 text-center">
+        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-8 text-center">
           <Trophy className="h-16 w-16 text-gray-700 dark:text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-medium text-gray-800 dark:text-white mb-2 text-shadow-light dark:text-shadow-dark">Aucun résultat</h3>
           <p className="text-gray-700 dark:text-gray-300 mb-6 text-shadow-light dark:text-shadow-dark">Enregistrez vos performances pour suivre vos progrès.</p>
@@ -188,7 +188,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
           </button>
         </div>
       ) : Object.keys(groupedRecords).length === 0 ? (
-        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-8 text-center">
+        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-8 text-center">
           <Filter className="h-16 w-16 text-gray-700 dark:text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-medium text-gray-800 dark:text-white mb-2 text-shadow-light dark:text-shadow-dark">
             Aucun record dans cette catégorie
@@ -268,7 +268,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
             return (
               <motion.div 
                 key={key} 
-                className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-6"
+                className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}

@@ -42,7 +42,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workout, isActive, onPla
   };
 
   return (
-    <div className={`w-full h-full rounded-2xl p-4 flex flex-col justify-between shadow-lg transition-all duration-300 backdrop-blur-xl border
+    <div className={`w-full h-full rounded-2xl p-4 flex flex-col justify-between shadow-lg transition-all duration-300 backdrop-blur-md dark:backdrop-blur-sm border
       ${isActive
         ? 'bg-primary-500/20 dark:bg-primary-400/20 text-white border-primary-500/30'
         : 'bg-white/10 dark:bg-black/10 text-gray-800 dark:text-gray-200 border-white/20'}`

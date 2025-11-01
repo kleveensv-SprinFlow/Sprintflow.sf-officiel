@@ -146,7 +146,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
       return (
         <motion.div 
           key={bloc.id} 
-          className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-3 space-y-2"
+          className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-3 space-y-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -182,7 +182,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   return (
     <div className="fixed inset-0 bg-transparent z-50 overflow-y-auto">
-      <div className="sticky top-0 bg-white/10 dark:bg-black/10 backdrop-blur-xl border-b border-white/20 z-10">
+      <div className="sticky top-0 bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm border-b border-white/20 z-10">
         <div className="p-4 flex items-center justify-between max-w-3xl mx-auto">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white text-shadow-light dark:text-shadow-dark">Éditeur de séance</h2>
           <button onClick={onCancel} className="p-2 hover:bg-white/20 dark:hover:bg-black/20 rounded-full">
@@ -192,7 +192,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4 max-w-3xl mx-auto pb-40">
-        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-4">
+        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-4">
           <label htmlFor="workout-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Titre de la séance *
           </label>
@@ -206,7 +206,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
           />
         </div>
 
-        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-4">
+        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Type de séance
           </label>
@@ -243,7 +243,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
             {blocs.map(renderBlock)}
             <div ref={lastBlockRef}></div>
 
-            <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-4 flex flex-wrap gap-4 justify-center">
+            <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-4 flex flex-wrap gap-4 justify-center">
                 <button type="button" onClick={() => addBlock('course')} className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-500/80 text-white rounded-lg hover:bg-blue-500/90">
                     <Plus className="w-4 h-4" /> Course
                 </button>
@@ -253,7 +253,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
             </div>
           </>
         ) : (
-          <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-4">
+          <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-4">
             <label htmlFor="workout-notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Contenu de la séance
             </label>
@@ -269,7 +269,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
         )}
 
         {profile?.role === 'coach' && workoutType === 'guidé' && (
-          <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-4 space-y-3">
+          <div className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg p-4 space-y-3">
             <h3 className="font-semibold text-gray-800 dark:text-white">Options</h3>
             <div className="flex items-center gap-3">
               <input
@@ -298,7 +298,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
           </div>
         )}
 
-        <div className="fixed bottom-0 left-0 right-0 bg-white/10 dark:bg-black/10 backdrop-blur-xl border-t border-white/20 p-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm border-t border-white/20 p-4">
             <div className="max-w-3xl mx-auto flex gap-3">
                 <button type="button" onClick={onCancel} className="flex-1 px-6 py-3 bg-white/20 dark:bg-black/20 text-gray-800 dark:text-white font-semibold rounded-lg shadow-lg hover:bg-white/30 dark:hover:bg-black/30 transition-all transform hover:scale-105 border border-white/30" disabled={saving}>
                     Annuler

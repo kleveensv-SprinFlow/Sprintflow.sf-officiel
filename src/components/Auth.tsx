@@ -194,8 +194,8 @@ export default function Auth({ initialError }: AuthProps = {}) {
             playsInline
             />
         ))}
-        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
+        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
             <div className="flex items-center mb-6">
             <button
                 onClick={resetResendState}
@@ -280,8 +280,8 @@ export default function Auth({ initialError }: AuthProps = {}) {
             playsInline
             />
         ))}
-        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
+        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
             <div className="flex items-center mb-6">
             <button
                 onClick={resetForgotPasswordState}
@@ -363,8 +363,8 @@ export default function Auth({ initialError }: AuthProps = {}) {
           playsInline
         />
       ))}
-      <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-sm"></div>
-      <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-white/20">
+      <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
+      <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
         <div className="text-center mb-8">
           <img src="/logo%20sans%20fond.png" alt="SprintFlow Logo" className="w-24 h-24 mx-auto mb-4" />
           <h1 className="text-4xl font-bold text-white tracking-wider [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">SprintFlow</h1>

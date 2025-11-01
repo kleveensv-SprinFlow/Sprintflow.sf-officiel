@@ -94,7 +94,7 @@ export const CoachDashboard: React.FC = () => {
     if (!selection) {
       return (
         <motion.div 
-          className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg"
+          className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
@@ -131,7 +131,7 @@ export const CoachDashboard: React.FC = () => {
           <div className="absolute top-6 right-6 z-20">
             <button
               onClick={() => setMenuOpen(!isMenuOpen)}
-              className="p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg"
+              className="p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md dark:backdrop-blur-sm rounded-full shadow-lg"
             >
               <Settings2 size={20} className="text-gray-700 dark:text-gray-300" />
             </button>

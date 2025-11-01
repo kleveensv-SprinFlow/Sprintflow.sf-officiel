@@ -118,7 +118,7 @@ export function WorkoutsList({ onAddWorkout, onEditWorkout }: WorkoutsListProps)
       </div>
 
       {workouts.length === 0 ? (
-        <div className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg">
+        <div className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg">
           <div className="max-w-md mx-auto">
             <div className="text-6xl mb-4">🏃‍♂️</div>
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 text-shadow-light dark:text-shadow-dark">Aucun entraînement</h3>
@@ -152,7 +152,7 @@ export function WorkoutsList({ onAddWorkout, onEditWorkout }: WorkoutsListProps)
             return (
               <motion.div
                 key={workout.id}
-                className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg overflow-hidden group cursor-pointer"
+                className="bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg overflow-hidden group cursor-pointer"
                 onClick={() => setSelectedWorkout(workout)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

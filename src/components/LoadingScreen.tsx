@@ -142,7 +142,7 @@ export function LoadingScreen({
         </p>
 
         {/* Citation inspirante */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md dark:backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50">
           <blockquote className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mb-3 italic">
             "{currentQuote.quote}"
           </blockquote>

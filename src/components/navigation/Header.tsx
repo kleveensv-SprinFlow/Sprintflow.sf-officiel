@@ -23,7 +23,7 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
   };
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 backdrop-blur-md bg-opacity-90 dark:bg-opacity-90 overflow-hidden header-3d">
+    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 backdrop-blur-md dark:backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90 overflow-hidden header-3d">
       <div className="px-4 py-3 flex items-center justify-between min-w-0">
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
           {canGoBack && (
