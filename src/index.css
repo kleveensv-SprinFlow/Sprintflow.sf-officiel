@@ -163,19 +163,21 @@ body::before {
   background-attachment: fixed;
   
   /* Superposition et filtre pour le thème clair */
-  background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_Claire.jpg');
-  filter: blur(4px) brightness(1.1);
+  background-image: url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_Claire.jpg');
+  filter: brightness(0.9) saturate(0.9);
 }
 
-body.dark {
-  background-color: #111827; /* bg-gray-900 */
-  color: #f9fafb; /* text-gray-50 */
-}
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #111827; /* bg-gray-900 */
+    color: #f9fafb; /* text-gray-50 */
+  }
 
-body.dark::before {
-  /* Superposition et filtre pour le thème sombre */
-  background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_sombre.jpg');
-  filter: blur(4px) brightness(0.8);
+  body::before {
+    /* Superposition et filtre pour le thème sombre */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_sombre.jpg');
+    filter: blur(4px) brightness(0.8);
+  }
 }
 
 code {
