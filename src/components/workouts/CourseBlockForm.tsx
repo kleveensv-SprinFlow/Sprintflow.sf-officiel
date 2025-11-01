@@ -18,16 +18,17 @@ export interface CourseBlockData {
 
 import { useBlockTemplates } from '../../hooks/useBlockTemplates';
 import { MoreVertical } from 'lucide-react';
+import useAuth from '../../hooks/useAuth';
 
 interface CourseBlockFormProps {
   block: CourseBlockData;
   onChange: (id: string, newBlockData: CourseBlockData) => void;
   onRemove: (id:string) => void;
-  userId: string;
 }
 
-export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange, onRemove, userId }) => {
-  const { createTemplate: createBlockTemplate } = useBlockTemplates(userId);
+export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange, onRemove }) => {
+  const { user } = useAuth();
+  const { createTemplate: createBlockTemplate } = useBlockTemplates(user?.id);
   const [series, setSeries] = useState(block.series);
   const [reps, setReps] = useState(block.reps);
   const [distance, setDistance] = useState(block.distance);
