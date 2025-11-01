@@ -1,7 +1,7 @@
 // src/components/dashboard/CoachDashboard.tsx
 import React, { useState } from 'react';
 import { useLocalStorage } from 'react-use';
-import { Loader, AlertTriangle, Users, User, ChevronDown } from 'lucide-react';
+import { Loader, AlertTriangle, Users, User, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DailyPlanCarousel } from './DailyPlanCarousel';
@@ -120,51 +120,43 @@ export const CoachDashboard: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 bg-gray-100 dark:bg-gray-900 min-h-screen">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <header className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-neumorphic-extrude">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Planification
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {selection ? `Affichage pour : ${selection.name}` : "Aucune sélection"}
-              </p>
-            </div>
-            
-            <div className="relative">
-              <button
-                onClick={() => setMenuOpen(!isMenuOpen)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
-                Changer
-                <ChevronDown size={16} className={`transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <AnimatePresence>
-                {isMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-lg border dark:border-gray-600 z-10"
+      <div className="p-4 sm:p-6 bg-gray-100 dark:bg-gray-900 min-h-screen relative">
+        <div className="max-w-7xl mx-auto">
+          {/* Menu flottant pour changer la vue */}
+          <div className="absolute top-6 right-6 z-20">
+            <button
+              onClick={() => setMenuOpen(!isMenuOpen)}
+              className="p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg"
+            >
+              <Settings2 size={20} className="text-gray-700 dark:text-gray-300" />
+            </button>
+            <AnimatePresence>
+              {isMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-xl border dark:border-gray-600 origin-top-right"
+                >
+                  <p className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b dark:border-gray-600">Changer de vue</p>
+                  <button
+                    onClick={() => { setAthleteModalOpen(true); setMenuOpen(false); }}
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                   >
-                    <button
-                      onClick={() => { setAthleteModalOpen(true); setMenuOpen(false); }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg"
-                    >
-                      Voir un athlète
-                    </button>
-                    <button
-                      onClick={() => { setGroupModalOpen(true); setMenuOpen(false); }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg"
-                    >
-                      Voir un groupe
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </header>
+                    <User size={16} /> Athlète
+                  </button>
+                  <button
+                    onClick={() => { setGroupModalOpen(true); setMenuOpen(false); }}
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  >
+                    <Users size={16} /> Groupe
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {renderContent()}
         </div>
 
