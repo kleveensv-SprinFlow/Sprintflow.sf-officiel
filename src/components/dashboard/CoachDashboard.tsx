@@ -93,7 +93,7 @@ export const CoachDashboard: React.FC = () => {
   const renderContent = () => {
     if (!selection) {
       return (
-        <div className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg">
+        <div className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100 text-shadow-light dark:text-shadow-dark">Bienvenue, {profile?.prenom} !</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6 text-shadow-light dark:text-shadow-dark">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
           <div className="flex justify-center gap-4">
