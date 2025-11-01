@@ -93,14 +93,14 @@ export const CoachDashboard: React.FC = () => {
   const renderContent = () => {
     if (!selection) {
       return (
-        <div className="text-center py-16 px-4 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-100 text-shadow">Bienvenue, {profile?.prenom} !</h2>
-          <p className="text-gray-300 mb-6 text-shadow">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
+        <div className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100 text-shadow-light dark:text-shadow-dark">Bienvenue, {profile?.prenom} !</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 text-shadow-light dark:text-shadow-dark">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
           <div className="flex justify-center gap-4">
-            <button onClick={() => setAthleteModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/20 text-white font-semibold rounded-lg shadow-lg hover:bg-white/30 transition-all transform hover:scale-105 border border-white/30">
+            <button onClick={() => setAthleteModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/20 dark:bg-black/20 text-gray-800 dark:text-white font-semibold rounded-lg shadow-lg hover:bg-white/30 dark:hover:bg-black/30 transition-all transform hover:scale-105 border border-white/30">
               <User /> Athlète
             </button>
-            <button onClick={() => setGroupModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/20 text-white font-semibold rounded-lg shadow-lg hover:bg-white/30 transition-all transform hover:scale-105 border border-white/30">
+            <button onClick={() => setGroupModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-white/20 dark:bg-black/20 text-gray-800 dark:text-white font-semibold rounded-lg shadow-lg hover:bg-white/30 dark:hover:bg-black/30 transition-all transform hover:scale-105 border border-white/30">
               <Users /> Groupe
             </button>
           </div>
