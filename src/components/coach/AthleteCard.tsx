@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Profile, Workout, WellnessLog } from '../../types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Avatar } from '../common/Avatar';
 
 interface AthleteCardProps {
   athlete: Profile;
@@ -54,16 +55,27 @@ export const AthleteCard: React.FC<AthleteCardProps> = ({ athlete, onSelect }) =
   };
 
   return (
-    <div 
+    <div
       onClick={() => onSelect(athlete)}
-      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700 cursor-pointer"
+      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow"
     >
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-semibold">{athlete.first_name} {athlete.last_name}</h3>
-          <p className="text-sm text-gray-500">{athlete.email}</p>
+      <div className="flex items-start gap-3">
+        <Avatar
+          src={athlete.avatar_url}
+          alt={`${athlete.first_name} ${athlete.last_name}`}
+          size="lg"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                {athlete.first_name} {athlete.last_name}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{athlete.email}</p>
+            </div>
+            <span className="text-2xl ml-2">{getWellnessEmoji()}</span>
+          </div>
         </div>
-        <span className="text-2xl">{getWellnessEmoji()}</span>
       </div>
       <div className="mt-4 text-xs text-gray-600 dark:text-gray-400">
         {loading ? <p>Chargement...</p> : (
