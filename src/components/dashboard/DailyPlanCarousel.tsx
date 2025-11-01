@@ -98,11 +98,18 @@ export const DailyPlanCarousel: React.FC<DailyPlanCarouselProps> = ({ workouts, 
             <motion.div
               key={date.toISOString()}
               className="w-72 h-48 shrink-0 cursor-grab active:cursor-grabbing"
+              initial={{ opacity: 0, y: 20 }}
               animate={{
-                scale: index === i ? 1.05 : 0.92,
                 opacity: distance > 2 ? 0.3 : (index === i ? 1 : 0.7),
+                scale: index === i ? 1.05 : 0.92,
+                y: 0,
               }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ 
+                type: 'spring', 
+                stiffness: 300, 
+                damping: 25,
+                delay: i * 0.05 // Stagger effect
+              }}
               onTap={() => setIndex(i)}
             >
               <DayCard
