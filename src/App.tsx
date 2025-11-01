@@ -27,8 +27,6 @@ import { NotificationDisplay } from './components/NotificationDisplay';
 import { NutritionModule } from './components/nutrition/NutritionModule';
 import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 import { SleepTracker } from './components/sleep/SleepTracker';
-import { SettingsPage } from './components/static/SettingsPage';
-import { ContactPage } from './components/static/ContactPage';
 import { getViewTitle } from './utils/navigation';
 
 function App() {
@@ -314,10 +312,6 @@ function App() {
         {currentView === 'developer' && user && user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' && (
           <DeveloperPanel />
         )}
-
-        {/* Static Pages */}
-        {currentView === 'settings' && <SettingsPage />}
-        {currentView === 'contact' && <ContactPage />}
       </main>
       
       {/* Navigation Components */}
