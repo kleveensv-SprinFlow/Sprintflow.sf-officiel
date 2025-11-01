@@ -69,7 +69,7 @@ export type Profile = {
 };
 
 // App-wide navigation view types
-export type View = 
+export type View =
   | 'dashboard'
   | 'workouts'
   | 'add-workout'
@@ -87,4 +87,6 @@ export type View =
   | 'nutrition'
   | 'add-food'
   | 'sleep'
-  | 'developer';
+  | 'developer'
+  | 'settings'
+  | 'contact';

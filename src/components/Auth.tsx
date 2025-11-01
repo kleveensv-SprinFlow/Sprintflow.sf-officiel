@@ -38,6 +38,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
     discipline: '',
     sexe: '',
     date_de_naissance: '',
+    height: '',
   });
 
   // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
@@ -114,6 +115,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
             date_de_naissance: formData.date_de_naissance || null,
             discipline: formData.discipline,
             sexe: formData.sexe,
+            height: formData.height ? parseInt(formData.height, 10) : null,
           }
         );
       }
@@ -386,7 +388,12 @@ export default function Auth({ initialError }: AuthProps = {}) {
               {formData.role === 'encadrant' && (
                   <CardCarousel options={[{ value: 'Coach', label: 'Coach' }, { value: 'Kinesitherapeute', label: 'Kinésithérapeute' }, { value: 'Nutritionniste', label: 'Nutritionniste' }, { value: 'Preparateur Physique', label: 'Prép. Physique' }, { value: 'Preparateur Mental', label: 'Prép. Mental' }]} selectedValue={formData.role_specifique} onSelect={value => setFormData(prev => ({ ...prev, role_specifique: value }))} />
               )}
-              <CardCarousel options={[{ value: 'sprint', label: 'Sprint' }, { value: 'haies', label: 'Haies' }, { value: 'sauts', label: 'Sauts' }, { value: 'lancers', label: 'Lancers' }, { value: 'demi-fond', label: 'Demi-fond / Fond' }, { value: 'marche', label: 'Marche' }, { value: 'combinees', label: 'Combinées' }]} selectedValue={formData.discipline} onSelect={value => setFormData(prev => ({ ...prev, discipline: value }))} />
+              {formData.role === 'athlete' && (
+                <>
+                  <input type="number" name="height" value={formData.height} onChange={handleInputChange} className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white" placeholder="Taille (cm)" />
+                  <CardCarousel options={[{ value: 'sprint', label: 'Sprint' }, { value: 'haies', label: 'Haies' }, { value: 'sauts', label: 'Sauts' }, { value: 'lancers', label: 'Lancers' }, { value: 'demi-fond', label: 'Demi-fond / Fond' }, { value: 'marche', label: 'Marche' }, { value: 'combinees', label: 'Combinées' }]} selectedValue={formData.discipline} onSelect={value => setFormData(prev => ({ ...prev, discipline: value }))} />
+                </>
+              )}
               <div className="grid grid-cols-3 gap-4">
                 <SelectionCard label="Homme" isSelected={formData.sexe === 'homme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'homme' }))} />
                 <SelectionCard label="Femme" isSelected={formData.sexe === 'femme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'femme' }))} />
