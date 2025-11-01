@@ -1,13 +1,16 @@
+// src/components/dashboard/CoachDashboard.tsx
 import React, { useState } from 'react';
 import { useLocalStorage } from 'react-use';
-import { Loader, AlertTriangle, Users, User } from 'lucide-react';
+import { Loader, AlertTriangle, Users, User, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DailyPlanCarousel } from './DailyPlanCarousel';
 import { AthleteSelectionModal } from './AthleteSelectionModal';
 import { GroupSelectionModal } from './GroupSelectionModal';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { useWorkouts } from '../../hooks/useWorkouts';
 import useAuth from '../../hooks/useAuth';
+import { Workout } from '../../types';
 
 type Selection = {
   type: 'athlete' | 'group';
@@ -27,6 +30,7 @@ export const CoachDashboard: React.FC = () => {
 
   const [isAthleteModalOpen, setAthleteModalOpen] = useState(false);
   const [isGroupModalOpen, setGroupModalOpen] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
   const [formState, setFormState] = useState<FormState>({ isOpen: false });
 
   const { workouts, loading, error, planWorkout, updateWorkout } = useWorkouts(selection || undefined);
@@ -90,7 +94,7 @@ export const CoachDashboard: React.FC = () => {
     if (!selection) {
       return (
         <div className="text-center py-16 px-4 bg-white dark:bg-gray-800 rounded-lg shadow-neumorphic-extrude">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Bienvenue, {profile?.first_name} !</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Bienvenue, {profile?.prenom} !</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
           <div className="flex justify-center gap-4">
             <button onClick={() => setAthleteModalOpen(true)} className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105">
@@ -120,12 +124,45 @@ export const CoachDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto space-y-6">
           <header className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-neumorphic-extrude">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Planification</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{selection ? `Affichage pour : ${selection.name}` : "Aucune sélection"}</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Planification
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {selection ? `Affichage pour : ${selection.name}` : "Aucune sélection"}
+              </p>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setAthleteModalOpen(true)} className="px-4 py-2 text-sm font-medium bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600">Individuel</button>
-              <button onClick={() => setGroupModalOpen(true)} className="px-4 py-2 text-sm font-medium bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600">Groupe</button>
+            
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen(!isMenuOpen)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600"
+              >
+                Changer
+                <ChevronDown size={16} className={`transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {isMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-lg border dark:border-gray-600 z-10"
+                  >
+                    <button
+                      onClick={() => { setAthleteModalOpen(true); setMenuOpen(false); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t-lg"
+                    >
+                      Voir un athlète
+                    </button>
+                    <button
+                      onClick={() => { setGroupModalOpen(true); setMenuOpen(false); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b-lg"
+                    >
+                      Voir un groupe
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </header>
           {renderContent()}
