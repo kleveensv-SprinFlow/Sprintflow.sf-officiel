@@ -22,7 +22,7 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, onViewChange, onFabAction,
 
   const coachNavItems = [
     { view: 'dashboard' as View, icon: Home, label: 'Dashboard' },
-    { view: 'groups' as View, icon: Users, label: 'Athlètes' },
+    { view: 'groups' as View, icon: Users, label: 'Mes Groupes' },
     { view: 'planning' as View, icon: Calendar, label: 'Planning' },
     { view: 'chat' as View, icon: MessageSquare, label: 'Chat' },
   ];
