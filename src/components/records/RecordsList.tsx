@@ -126,10 +126,10 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Résultats</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white text-shadow-light dark:text-shadow-dark">Résultats</h1>
         <button
           onClick={onAddRecord}
-          className="flex items-center space-x-2 px-4 py-2 bg-secondary-500 hover:bg-secondary-600 rounded-lg text-white transition-all duration-200 shadow-lg"
+          className="btn-primary flex items-center gap-2"
         >
           <Plus className="h-5 w-5" />
           <span>Nouveau résultat</span>
@@ -139,7 +139,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
       {/* Filtre compact par catégorie */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
         <div className="flex items-center space-x-2">
-          <Filter className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          <Filter className="h-5 w-5 text-gray-700 dark:text-gray-300" />
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Catégorie :
           </label>
@@ -152,7 +152,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
               setShoeFilter('all');
             }
           }}
-          className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className="px-3 py-2 bg-white/20 dark:bg-black/20 border border-white/30 rounded-lg text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-sm"
         >
           <option value="all">🏆 Tous les records ({records?.length || 0})</option>
           <option value="run">🏃 Courses ({categoryStats.run})</option>
@@ -166,7 +166,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
           <select
             value={shoeFilter}
             onChange={(e) => setShoeFilter(e.target.value as any)}
-            className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="px-3 py-2 bg-white/20 dark:bg-black/20 border border-white/30 rounded-lg text-gray-800 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent backdrop-blur-sm"
           >
             <option value="all">👟 Tous les types</option>
             <option value="spikes">👟 Pointes uniquement</option>
@@ -176,35 +176,35 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
       </div>
 
       {!records || records.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center shadow-lg border border-gray-200 dark:border-gray-700">
-          <Trophy className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Aucun résultat</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">Enregistrez vos performances pour suivre vos progrès.</p>
+        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-8 text-center">
+          <Trophy className="h-16 w-16 text-gray-700 dark:text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-800 dark:text-white mb-2 text-shadow-light dark:text-shadow-dark">Aucun résultat</h3>
+          <p className="text-gray-700 dark:text-gray-300 mb-6 text-shadow-light dark:text-shadow-dark">Enregistrez vos performances pour suivre vos progrès.</p>
           <button
             onClick={onAddRecord}
-            className="px-6 py-3 bg-secondary-500 hover:bg-secondary-600 rounded-lg text-white font-medium transition-all duration-200 shadow-lg"
+            className="btn-primary"
           >
             Premier résultat
           </button>
         </div>
       ) : Object.keys(groupedRecords).length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center shadow-lg border border-gray-200 dark:border-gray-700">
-          <Filter className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+        <div className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-8 text-center">
+          <Filter className="h-16 w-16 text-gray-700 dark:text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-800 dark:text-white mb-2 text-shadow-light dark:text-shadow-dark">
             Aucun record dans cette catégorie
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-700 dark:text-gray-300 mb-6 text-shadow-light dark:text-shadow-dark">
             Sélectionnez une autre catégorie ou ajoutez un nouveau record.
           </p>
           <button
             onClick={() => setSelectedCategory('all')}
-            className="px-4 py-2 bg-primary-500 hover:bg-primary-600 rounded-lg text-white transition-colors mr-3"
+            className="btn-primary mr-3"
           >
             Voir tous les records
           </button>
           <button
             onClick={onAddRecord}
-            className="px-4 py-2 bg-secondary-500 hover:bg-secondary-600 rounded-lg text-white transition-colors"
+            className="btn-primary"
           >
             Ajouter un record
           </button>
@@ -266,15 +266,21 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
             };
 
             return (
-              <div key={key} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+              <motion.div 
+                key={key} 
+                className="bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg p-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     {getRecordIcon()}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-white text-shadow-light dark:text-shadow-dark">
                         {firstRecord.name}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 text-shadow-light dark:text-shadow-dark">
                         {recordsGroup.length} tentative{recordsGroup.length > 1 ? 's' : ''}
                       </p>
                     </div>
@@ -402,14 +408,14 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
                     if (!bestRecord) return null;
                     
                     return (
-                      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-700 flex items-center justify-between p-3 rounded-lg border transition-all duration-200">
+                      <div className="bg-yellow-500/10 border-yellow-500/20 flex items-center justify-between p-3 rounded-lg border">
                         <div className="flex items-center space-x-3">
-                          <Trophy className="h-5 w-5 text-yellow-500" />
-                          <div className="text-gray-600 dark:text-gray-400">
+                          <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                          <div className="text-gray-800 dark:text-gray-300">
                             <div className="font-medium text-sm">
                               Record Personnel
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-gray-700 dark:text-gray-400">
                               {format(new Date(bestRecord.date), 'd MMM yyyy', { locale: fr })}
                               {bestRecord.wind_speed !== undefined && (
                                 <span className="ml-2">
@@ -425,15 +431,15 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className="font-bold text-green-600 dark:text-green-400 text-lg">
+                          <span className="font-bold text-green-700 dark:text-green-400 text-lg">
                             {formatValue(bestRecord.value)}
                           </span>
-                          <span className="text-xs text-yellow-600 dark:text-yellow-400 font-bold bg-yellow-100 dark:bg-yellow-900/20 px-2 py-1 rounded">
+                          <span className="text-xs text-yellow-700 dark:text-yellow-300 font-bold bg-yellow-500/20 px-2 py-1 rounded">
                             RP
                           </span>
                           <button
                             onClick={(e) => handleDelete(bestRecord.id, e)}
-                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
+                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-500/20 rounded transition-colors"
                             title="Supprimer ce record"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -447,7 +453,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
                   {recordsGroup.length > 1 && (
                     <button
                       onClick={() => toggleGroupExpansion(key)}
-                      className="w-full mt-2 px-4 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-700 transition-colors"
+                      className="w-full mt-2 px-4 py-2 text-sm text-primary-700 dark:text-primary-300 bg-primary-500/10 hover:bg-primary-500/20 rounded-lg border border-primary-500/20 transition-colors"
                     >
                       {isExpanded ? 'Masquer les détails' : `Voir tous les temps (${recordsGroup.length})`}
                     </button>
@@ -460,13 +466,13 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
                         .filter(r => r.value !== bestValue)
                         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                         .map((record) => (
-                          <div key={record.id} className="bg-gray-50 dark:bg-gray-700 flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                          <div key={record.id} className="bg-black/10 flex items-center justify-between p-3 rounded-lg border border-white/20">
                             <div className="flex items-center space-x-3">
-                              <div className="text-gray-600 dark:text-gray-400">
+                              <div className="text-gray-800 dark:text-gray-300">
                                 <div className="font-medium text-sm">
                                   {format(new Date(record.date), 'd MMM yyyy', { locale: fr })}
                                 </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                <div className="text-xs text-gray-700 dark:text-gray-400">
                                   {record.wind_speed !== undefined && (
                                     <span className="mr-2">
                                       💨 {record.wind_speed > 0 ? '+' : ''}{record.wind_speed.toFixed(1)} m/s
@@ -481,12 +487,12 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <span className="font-bold text-gray-700 dark:text-gray-300">
+                              <span className="font-bold text-gray-800 dark:text-gray-200">
                                 {formatValue(record.value)}
                               </span>
                               <button
                                 onClick={(e) => handleDelete(record.id, e)}
-                                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
+                                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-500/20 rounded transition-colors"
                                 title="Supprimer ce record"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -497,7 +503,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
