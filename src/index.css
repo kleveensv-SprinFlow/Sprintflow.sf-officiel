@@ -109,7 +109,11 @@
     @apply shadow-md;
   }
 
-  .text-shadow {
+  .text-shadow-light {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .text-shadow-dark {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
 }
@@ -138,9 +142,22 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1a1a1a;
-  background-image: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
-  color: #ffffff;
+
+  /* Propriétés communes aux deux thèmes */
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  /* Theme Clair par défaut */
+  background-image: url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_Claire.jpg');
+  color: #1f2937; /* Correspond à text-gray-800 */
+}
+
+.dark body {
+  /* Theme Sombre */
+  background-image: url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_sombre.jpg');
+  color: #f9fafb; /* Correspond à text-gray-50 */
 }
 
 code {
