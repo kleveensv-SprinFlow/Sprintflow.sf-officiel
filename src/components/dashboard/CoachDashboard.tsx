@@ -10,7 +10,10 @@ import { GroupSelectionModal } from './GroupSelectionModal';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { useWorkouts } from '../../hooks/useWorkouts';
 import useAuth from '../../hooks/useAuth';
-import { Workout } from '../../types';
+import { useGroups } from '../../hooks/useGroups';
+import { AthleteMarquee } from './AthleteMarquee';
+import { AthleteDetails } from '../groups/AthleteDetails';
+import { Workout, Profile } from '../../types';
 
 type Selection = {
   type: 'athlete' | 'group';
@@ -33,11 +36,21 @@ export const CoachDashboard: React.FC = () => {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [formState, setFormState] = useState<FormState>({ isOpen: false });
 
+  const { coachAthletes, loading: athletesLoading } = useGroups();
+  const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
+
   const { workouts, loading, error, planWorkout, updateWorkout } = useWorkouts(selection || undefined);
 
   const handleSelectAthlete = (athlete: { id: string; name: string }) => {
     setSelection({ type: 'athlete', ...athlete });
     setAthleteModalOpen(false);
+  };
+
+  const handleAthleteMarqueeClick = (athleteId: string) => {
+    const athlete = coachAthletes?.find(a => a.id === athleteId);
+    if (athlete) {
+      setSelectedAthlete(athlete);
+    }
   };
 
   const handleSelectGroup = (group: { id: string; name: string }) => {
@@ -94,7 +107,7 @@ export const CoachDashboard: React.FC = () => {
     if (!selection) {
       return (
         <motion.div 
-          className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg"
+          className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
@@ -123,6 +136,10 @@ export const CoachDashboard: React.FC = () => {
     return <DailyPlanCarousel workouts={workouts} onPlanClick={handlePlanClick} onEditClick={handleEditClick} />;
   };
 
+  if (selectedAthlete) {
+    return <AthleteDetails athlete={selectedAthlete} onBack={() => setSelectedAthlete(null)} />;
+  }
+
   return (
     <>
       <div className="p-4 sm:p-6 bg-transparent min-h-screen relative">
@@ -131,7 +148,7 @@ export const CoachDashboard: React.FC = () => {
           <div className="absolute top-6 right-6 z-20">
             <button
               onClick={() => setMenuOpen(!isMenuOpen)}
-              className="p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md dark:backdrop-blur-sm rounded-full shadow-lg"
+              className="p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg"
             >
               <Settings2 size={20} className="text-gray-700 dark:text-gray-300" />
             </button>
@@ -161,8 +178,13 @@ export const CoachDashboard: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
+          
+          <div className="space-y-8">
+            {renderContent()}
+            
+            <AthleteMarquee athletes={coachAthletes || []} onAthleteClick={handleAthleteMarqueeClick} />
+          </div>
 
-          {renderContent()}
         </div>
 
         <AthleteSelectionModal isOpen={isAthleteModalOpen} onClose={() => setAthleteModalOpen(false)} onSelect={handleSelectAthlete} />
