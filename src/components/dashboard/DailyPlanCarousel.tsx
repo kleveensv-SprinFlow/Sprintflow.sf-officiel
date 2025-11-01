@@ -56,9 +56,9 @@ export const DailyPlanCarousel: React.FC<DailyPlanCarouselProps> = ({ workouts, 
 
   return (
     <div className="relative w-full h-[300px] flex items-center justify-center">
-      {/* Effet de fondu sur les côtés (CORRIGÉ) */}
-      <div className="absolute left-0 inset-y-0 w-16 z-10 pointer-events-none bg-gradient-to-r from-gray-100 dark:from-gray-900 to-transparent" />
-      <div className="absolute right-0 inset-y-0 w-16 z-10 pointer-events-none bg-gradient-to-l from-gray-100 dark:from-gray-900 to-transparent" />
+      {/* Effet de fondu sur les côtés (CORRIGÉ ET ADOUCI) */}
+      <div className="absolute left-0 inset-y-0 w-24 z-10 pointer-events-none bg-gradient-to-r from-gray-100 dark:from-gray-900 to-transparent" />
+      <div className="absolute right-0 inset-y-0 w-24 z-10 pointer-events-none bg-gradient-to-l from-gray-100 dark:from-gray-900 to-transparent" />
 
       <div className="w-full h-full" style={{ perspective: '1200px' }}>
         <motion.div
@@ -70,7 +70,8 @@ export const DailyPlanCarousel: React.FC<DailyPlanCarouselProps> = ({ workouts, 
           animate={{
             x: `calc(50% - ${index * (CARD_WIDTH + GAP)}px - ${CARD_WIDTH / 2}px)`,
           }}
-          transition={{ type: 'spring', stiffness: 300, damping: 35, mass: 1 }}
+          // Animation adoucie
+          transition={{ type: 'spring', stiffness: 200, damping: 40, mass: 1 }}
         >
           {dates.map((date, i) => {
             const dateKey = format(startOfDay(date), 'yyyy-MM-dd');
@@ -86,7 +87,8 @@ export const DailyPlanCarousel: React.FC<DailyPlanCarouselProps> = ({ workouts, 
                   opacity: Math.abs(index - i) > 2 ? 0 : (index === i ? 1 : 0.6),
                   zIndex: dates.length - Math.abs(index - i),
                 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                 // Animation adoucie
+                transition={{ type: 'spring', stiffness: 200, damping: 30 }}
                 onTap={() => setIndex(i)}
               >
                 <DayCard 
