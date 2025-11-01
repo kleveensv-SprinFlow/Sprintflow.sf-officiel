@@ -142,22 +142,40 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: relative; /* Nécessaire pour le z-index du pseudo-élément */
 
-  /* Propriétés communes aux deux thèmes */
+  /* Couleur de fond de secours */
+  background-color: #f9fafb; /* bg-gray-50 */
+  color: #1f2937; /* text-gray-800 */
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-
-  /* Theme Clair par défaut */
-  background-image: url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_Claire.jpg');
-  color: #1f2937; /* Correspond à text-gray-800 */
+  
+  /* Superposition et filtre pour le thème clair */
+  background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_Claire.jpg');
+  filter: blur(4px) brightness(1.1);
 }
 
-.dark body {
-  /* Theme Sombre */
-  background-image: url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_sombre.jpg');
-  color: #f9fafb; /* Correspond à text-gray-50 */
+body.dark {
+  background-color: #111827; /* bg-gray-900 */
+  color: #f9fafb; /* text-gray-50 */
+}
+
+body.dark::before {
+  /* Superposition et filtre pour le thème sombre */
+  background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Theme_sombre.jpg');
+  filter: blur(4px) brightness(0.8);
 }
 
 code {
