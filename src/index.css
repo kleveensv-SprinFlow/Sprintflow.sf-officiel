@@ -224,3 +224,12 @@ code {
 .border-secondary-200 {
   border-color: var(--secondary-200);
 }
+
+/* CSS pour masquer la barre de défilement */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
