@@ -129,8 +129,19 @@ export const AthleteMarquee: React.FC<AthleteMarqueeProps> = ({ athletes = [], o
     };
   }, [isPaused]);
 
-  if (!data || data.length === 0) {
-    return null;
+  if (!isPreview && (!data || data.length === 0)) {
+    return (
+      <div className="py-8" data-testid="empty-marquee">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 px-4 sm:px-6 text-shadow-light dark:text-shadow-dark">À la une</h2>
+        <div className="px-4 sm:px-6">
+          <div className="relative w-full md:w-auto md:max-w-md h-64 rounded-2xl p-6 flex flex-col justify-center items-center bg-black/20 backdrop-blur-lg border border-white/20 shadow-lg text-center">
+            <User size={48} className="text-white/50 mb-4" />
+            <h3 className="font-bold text-lg text-white text-shadow-dark">Aucun athlète à afficher</h3>
+            <p className="text-sm text-gray-300 mt-2">Invitez des athlètes dans vos groupes pour les voir apparaître ici.</p>
+          </div>
+        </div>
+      </div>
+    );
   }
   
   const cardWidth = window.innerWidth * 0.45 + 16; // 45vw + 1rem gap
