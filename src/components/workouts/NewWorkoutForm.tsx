@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown, Run, Dumbbell, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown, Dumbbell, Zap, Activity } from 'lucide-react';
 import { Workout } from '../../types';
 import { CourseBlockForm, CourseBlockData } from './CourseBlockForm';
 import { NumberSelector } from '../NumberSelector';
@@ -56,11 +56,6 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit'>(initialData?.type || 'guidé');
   const [notes, setNotes] = useState(initialData?.notes || '');
-
-  useEffect(() => {
-    console.log('[NewWorkoutForm] workoutType:', workoutType);
-    console.log('[NewWorkoutForm] initialData?.type:', initialData?.type);
-  }, [workoutType, initialData]);
 
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
@@ -162,7 +157,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   };
 
   const renderBlockSummary = (bloc: WorkoutBlock) => {
-    const Icon = bloc.type === 'course' ? Activity : bloc.type === 'muscu' ? Dumbbell : Zap;
+    const Icon = bloc.type === 'course' ? Run : bloc.type === 'muscu' ? Dumbbell : Zap;
     let summary = '';
     switch(bloc.type) {
       case 'course':
@@ -199,6 +194,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
                 block={bloc.data}
                 onChange={(newData) => updateBlock(bloc.id, newData)}
                 onRemove={() => removeBlock(bloc.id)}
+                onDone={() => toggleBlockEditing(bloc.id)}
                 />
             );
         }
@@ -268,7 +264,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-4 cursor-pointer"
-            onClick={() => !bloc.isEditing && toggleBlockEditing(bloc.id)}
+            onClick={() => toggleBlockEditing(bloc.id)}
         >
             {renderBlockSummary(bloc)}
             <AnimatePresence>
@@ -289,37 +285,6 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   return (
     <div className="fixed inset-0 bg-gray-100 dark:bg-gray-900 z-50 overflow-y-auto">
-      {isFabOpen && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]" onClick={() => setIsFabOpen(false)}></div>}
-
-      {workoutType === 'guidé' && (
-      <div className="fixed bottom-24 right-4 z-[70]">
-        <AnimatePresence>
-          {isFabOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="flex flex-col items-center gap-3 mb-3"
-            >
-              <button onClick={() => { addBlock('course'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Activity /></button>
-              <button onClick={() => { addBlock('muscu'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Dumbbell /></button>
-              <button onClick={() => { addBlock('escalier'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-yellow-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Zap /></button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <motion.button
-          onClick={() => setIsFabOpen(!isFabOpen)}
-          className="w-16 h-16 rounded-full bg-primary-500 text-white flex items-center justify-center shadow-xl"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          animate={{ rotate: isFabOpen ? 45 : 0 }}
-        >
-          <Plus size={28} />
-        </motion.button>
-      </div>
-      )}
-
-
       <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
         <div className="p-4 flex items-center justify-between max-w-3xl mx-auto">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Éditeur de séance</h2>
@@ -376,6 +341,17 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
               {blocs.map(renderBlock)}
             </AnimatePresence>
             <div ref={lastBlockRef}></div>
+            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-4 flex flex-wrap gap-4 justify-center sticky bottom-20">
+                <button type="button" onClick={() => addBlock('course')} className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <Plus className="w-4 h-4" /> Course
+                </button>
+                <button type="button" onClick={() => addBlock('muscu')} className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <Plus className="w-4 h-4" /> Musculation
+                </button>
+                <button type="button" onClick={() => addBlock('escalier')} className="flex items-center gap-2 px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                    <Plus className="w-4 h-4" /> Escalier
+                </button>
+            </div>
           </div>
         )}
 
