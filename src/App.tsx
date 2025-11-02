@@ -26,6 +26,7 @@ import { NutritionModule } from './components/nutrition/NutritionModule';
 import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 import { SleepTracker } from './components/sleep/SleepTracker';
 import { getViewTitle } from './utils/navigation';
+import { NewWorkoutForm } from './components/workouts/WorkoutForm'; // LIGNE MODIFIÉE/AJOUTÉE
 
 function App() {
   const { user, profile, loading, error } = useAuth();
@@ -98,6 +99,43 @@ function App() {
     }
   };
 
+  // Note: La prop 'editingWorkout' passée à NewWorkoutForm a été mise à jour 
+  // pour correspondre à ce que le composant attend ('initialData')
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return <Dashboard onViewChange={navigateTo} userRole={userRole} onScoresLoad={(fn) => setRefreshScores(() => fn)} />;
+      case 'workouts':
+        return <WorkoutsList onAddWorkout={() => navigateTo('add-workout')} onEditWorkout={(workout) => { setEditingWorkout(workout); navigateTo('add-workout'); }} />;
+      case 'add-workout':
+        return <NewWorkoutForm initialData={editingWorkout} onSave={handleWorkoutSave} onCancel={() => { setEditingWorkout(null); navigateBack(); }} />;
+      case 'records':
+        return <RecordsList onAddRecord={() => navigateTo('add-record')} />;
+      case 'add-record':
+        return <RecordsForm records={records || []} onSave={handleRecordSave} onCancel={navigateBack} />;
+      case 'groups':
+        return userRole === 'athlete' ? <AthleteGroupView /> : <GroupManagement />;
+      case 'chat':
+        return userRole === 'coach' ? <ChatManager /> : null;
+      case 'planning':
+        return userRole === 'athlete' ? <AthletePlanning /> : <CoachPlanning />;
+      case 'profile':
+        return <ProfilePage />;
+      case 'partnerships':
+        return <PartnershipsList />;
+      case 'nutrition':
+        return <NutritionModule />;
+      case 'add-food':
+        return <FoodSearchModal onClose={navigateBack} onFoodSelected={(food) => { console.log('Nourriture sélectionnée:', food); navigateBack(); }} />;
+      case 'sleep':
+        return <SleepTracker />;
+      case 'developer':
+        return profile?.role === 'developer' ? <DeveloperPanel /> : null;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-transparent">
       <Header
@@ -113,22 +151,7 @@ function App() {
       />
 
       <main className="p-4 md:p-6 pb-24">
-        {currentView === 'dashboard' && <Dashboard onViewChange={navigateTo} userRole={userRole} onScoresLoad={(fn) => setRefreshScores(() => fn)} />}
-        {currentView === 'workouts' && <WorkoutsList onAddWorkout={() => navigateTo('add-workout')} onEditWorkout={(workout) => { setEditingWorkout(workout); navigateTo('add-workout'); }} />}
-        {currentView === 'add-workout' && <NewWorkoutForm editingWorkout={editingWorkout} onSave={handleWorkoutSave} onCancel={() => { setEditingWorkout(null); navigateBack(); }} />}
-        {currentView === 'records' && <RecordsList onAddRecord={() => navigateTo('add-record')} />}
-        {currentView === 'add-record' && <RecordsForm records={records || []} onSave={handleRecordSave} onCancel={navigateBack} />}
-        {currentView === 'groups' && userRole === 'athlete' && <AthleteGroupView />}
-        {currentView === 'groups' && userRole === 'coach' && <GroupManagement />}
-        {currentView === 'chat' && userRole === 'coach' && <ChatManager />}
-        {currentView === 'planning' && userRole === 'athlete' && <AthletePlanning />}
-        {currentView === 'planning' && userRole === 'coach' && <CoachPlanning />}
-        {currentView === 'profile' && <ProfilePage />}
-        {currentView === 'partnerships' && <PartnershipsList />}
-        {currentView === 'nutrition' && <NutritionModule />}
-        {currentView === 'add-food' && <FoodSearchModal onClose={navigateBack} onFoodSelected={(food) => { console.log('Nourriture sélectionnée:', food); navigateBack(); }} />}
-        {currentView === 'sleep' && <SleepTracker />}
-        {currentView === 'developer' && profile?.role === 'developer' && <DeveloperPanel />}
+        {renderCurrentView()}
       </main>
 
       <TabBar
