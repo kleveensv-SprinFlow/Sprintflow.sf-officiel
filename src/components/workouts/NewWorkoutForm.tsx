@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown, Dumbbell, Zap, Run } from 'lucide-react';
+import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown, Dumbbell, Zap, Activity } from 'lucide-react';
 import { Workout } from '../../types';
 import { CourseBlockForm, CourseBlockData } from './CourseBlockForm';
 import { NumberSelector } from '../NumberSelector';
@@ -157,7 +157,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   };
 
   const renderBlockSummary = (bloc: WorkoutBlock) => {
-    const Icon = bloc.type === 'course' ? Run : bloc.type === 'muscu' ? Dumbbell : Zap;
+    const Icon = bloc.type === 'course' ? Activity : bloc.type === 'muscu' ? Dumbbell : Zap;
     let summary = '';
     switch(bloc.type) {
       case 'course':
@@ -294,7 +294,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
               exit={{ opacity: 0, y: 10 }}
               className="flex flex-col items-center gap-3 mb-3"
             >
-              <button onClick={() => { addBlock('course'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg"><Run /></button>
+              <button onClick={() => { addBlock('course'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg"><Activity /></button>
               <button onClick={() => { addBlock('muscu'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg"><Dumbbell /></button>
               <button onClick={() => { addBlock('escalier'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-yellow-500 text-white flex items-center justify-center shadow-lg"><Zap /></button>
             </motion.div>

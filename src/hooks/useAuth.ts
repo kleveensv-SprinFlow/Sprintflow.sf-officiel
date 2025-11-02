@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
-// Définition du type pour le profil utilisateur, plus précis.
 type UserProfile = {
   id: string;
   role: 'coach' | 'athlete' | 'developer';
@@ -12,7 +11,6 @@ type UserProfile = {
   avatar_url?: string;
 };
 
-// Définition du type pour les métadonnées à l'inscription.
 type SignUpMetadata = {
   first_name: string;
   last_name: string;
@@ -29,12 +27,8 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Récupère le profil de l'utilisateur depuis la base de données.
-   * Utilise maybeSingle() et retry pour gérer le délai de création du profil par le trigger.
-   */
   const fetchUserProfile = useCallback(async (user: User, retryCount = 0): Promise<UserProfile> => {
-    console.log('📡 [fetchUserProfile] Chargement du profil pour:', user.id);
+    console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
     const { data, error } = await supabase
       .from('profiles')
       .select('id, full_name, first_name, last_name, role, avatar_url')
@@ -42,182 +36,66 @@ export function useAuth() {
       .maybeSingle();
 
     if (error) {
-      console.error('❌ [fetchUserProfile] Erreur critique:', error);
+      console.error('❌ [useAuth] Erreur critique lors du chargement du profil:', error);
       throw new Error("Impossible de charger votre profil. Une erreur est survenue.");
     }
 
-    // Si le profil n'existe pas encore (trigger en cours), attendre et réessayer
     if (!data && retryCount < 3) {
-      console.log(`⏳ [fetchUserProfile] Profil pas encore créé, retry ${retryCount + 1}/3...`);
+      console.warn(`⏳ [useAuth] Profil non trouvé, nouvel essai dans 1s (essai ${retryCount + 1}/3)`);
       await new Promise(resolve => setTimeout(resolve, 1000));
       return fetchUserProfile(user, retryCount + 1);
     }
 
     if (!data) {
-      console.error('❌ [fetchUserProfile] Profil introuvable après 3 tentatives');
-      throw new Error("Votre profil n'a pas pu être créé. Veuillez contacter le support.");
+      console.error('❌ [useAuth] Profil introuvable après 3 tentatives.');
+      throw new Error("Votre profil n'a pas pu être créé ou trouvé. Veuillez contacter le support.");
     }
 
-    console.log('✅ [fetchUserProfile] Profil chargé:', data);
+    console.log('✅ [useAuth] Profil chargé:', data);
     return data as UserProfile;
   }, []);
 
-  /**
-   * Effet principal qui charge la session initiale puis écoute les changements.
-   */
   useEffect(() => {
     let mounted = true;
-    let isProcessing = false;
+    console.log('🔄 [useAuth] Initialisation du listener...');
 
-    // 1. Charger la session existante au démarrage
-    const initAuth = async () => {
-      console.log('🔄 [useAuth] Initialisation...');
-
-      // Vérifier que les variables d'environnement sont définies
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      console.log('🔧 [useAuth] Config:', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseKey,
-        url: supabaseUrl?.substring(0, 30) + '...'
-      });
-
-      if (!supabaseUrl || !supabaseKey || supabaseUrl === 'https://placeholder.supabase.co') {
-        console.error('❌ [useAuth] Variables Supabase non configurées en production!');
-        setError('Configuration Supabase manquante. Vérifiez vos variables d\'environnement.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('🔄 [useAuth] getSession terminé:', { hasSession: !!session, hasUser: !!session?.user, error });
-
-        if (!mounted) return;
-
-        if (error) {
-          console.error('❌ [useAuth] Erreur getSession:', error);
-          setLoading(false);
-          return;
-        }
-
-        if (!session) {
-          console.log('ℹ️ [useAuth] Pas de session au démarrage');
-          setLoading(false);
-          return;
-        }
-
-        if (session?.user) {
-          console.log('📡 [useAuth] Session existante trouvée:', session.user.id);
-          console.log('📡 [useAuth] Token:', session.access_token?.substring(0, 20) + '...');
-
-          // Utiliser fetch directement pour contourner les problèmes du client Supabase
-          try {
-            const response = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=id,full_name,first_name,last_name,role,avatar_url`,
-              {
-                headers: {
-                  'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-                  'Authorization': `Bearer ${session.access_token}`,
-                  'Content-Type': 'application/json',
-                  'Prefer': 'return=representation'
-                }
-              }
-            );
-
-            console.log('📡 [useAuth] Réponse fetch:', response.status);
-
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.error('❌ [useAuth] Erreur fetch:', response.status, errorText);
-              throw new Error(`Erreur ${response.status}: ${errorText}`);
-            }
-
-            const profileData = await response.json();
-            console.log('📡 [useAuth] Données reçues:', profileData);
-
-            if (!mounted) return;
-
-            if (profileData && profileData.length > 0) {
-              console.log('✅ [useAuth] Profil chargé:', profileData[0]);
-              setUser(session.user);
-              setProfile(profileData[0] as UserProfile);
-            } else {
-              console.warn('⚠️ [useAuth] Aucun profil trouvé');
-            }
-          } catch (fetchError: any) {
-            console.error('❌ [useAuth] Erreur fetch profil:', fetchError);
-          }
-        }
-      } catch (e: any) {
-        console.error('❌ [useAuth] Erreur init:', e);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    initAuth();
-
-    // 2. Écouter les changements d'état
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 [useAuth] Événement:', event);
-
-      if (!mounted || isProcessing) {
-        console.log('⏭️ [useAuth] Ignoré (mounted=' + mounted + ', processing=' + isProcessing + ')');
-        return;
-      }
-
-      isProcessing = true;
-
       try {
-        if (event === 'SIGNED_OUT') {
+        if (!mounted) return;
+        console.log(`🔐 [useAuth] Événement reçu: ${event}`);
+
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          const userProfile = await fetchUserProfile(currentUser);
+          if (mounted) setProfile(userProfile);
+        } else {
+          if (mounted) setProfile(null);
+        }
+
+      } catch (e: any) {
+        console.error("❌ [useAuth] Erreur dans le listener d'authentification:", e);
+        if (mounted) {
+          setError(e.message || "Une erreur d'authentification est survenue.");
           setUser(null);
           setProfile(null);
-        } else if (session?.user) {
-          console.log('📡 [useAuth] Chargement profil:', session.user.id);
-
-          // Utiliser fetch directement
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=id,full_name,first_name,last_name,role,avatar_url`,
-            {
-              headers: {
-                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${session.access_token}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-
-          if (mounted) {
-            if (!response.ok) {
-              console.error('❌ [useAuth] Erreur profil:', response.status);
-            } else {
-              const profileData = await response.json();
-              if (profileData && profileData.length > 0) {
-                console.log('✅ [useAuth] Profil chargé:', profileData[0]);
-                setUser(session.user);
-                setProfile(profileData[0] as UserProfile);
-              }
-            }
-          }
         }
-      } catch (e: any) {
-        console.error('❌ [useAuth] Erreur:', e);
       } finally {
-        isProcessing = false;
+        if (mounted) {
+          setLoading(false);
+          console.log('✅ [useAuth] Fin de traitement, chargement terminé.');
+        }
       }
     });
 
     return () => {
+      console.log('🛑 [useAuth] Nettoyage du listener.');
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserProfile]);
 
-  /**
-   * Gère la connexion de l'utilisateur.
-   */
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
@@ -228,12 +106,7 @@ export function useAuth() {
     }
   };
 
-  /**
-   * Gère l'inscription et la création du profil.
-   */
   const signUp = async (email: string, password: string, metaData: SignUpMetadata) => {
-    // Envoyer les métadonnées dans le champ 'data' de signUp
-    // Le trigger PostgreSQL créera automatiquement le profil
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -260,23 +133,13 @@ export function useAuth() {
     if (!authData.user) {
       throw new Error("L'inscription a échoué, aucun utilisateur n'a été créé.");
     }
-
-    console.log('✅ [signUp] Utilisateur créé dans Auth:', authData.user.id);
-    console.log('✅ [signUp] Le profil sera créé automatiquement par le trigger PostgreSQL');
   };
 
-  /**
-   * Gère la déconnexion.
-   */
   const signOut = async () => {
-    console.log('🚪 [signOut] Déconnexion...');
+    console.log('🚪 [useAuth] Déconnexion...');
     await supabase.auth.signOut();
-    window.location.href = '/';
   };
-  
-  /**
-   * Permet de renvoyer l'email de confirmation.
-   */
+
   const resendConfirmationEmail = async (email: string) => {
     const { error } = await supabase.auth.resend({
       type: 'signup',

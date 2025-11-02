@@ -4,7 +4,6 @@ import useAuth from './hooks/useAuth';
 import { useWorkouts } from './hooks/useWorkouts';
 import { useRecords } from './hooks/useRecords';
 
-// Components
 import Auth from './components/Auth';
 import { LoadingScreen } from './components/LoadingScreen';
 import Header from './components/navigation/Header';
@@ -28,7 +27,6 @@ import { NutritionModule } from './components/nutrition/NutritionModule';
 import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 import { SleepTracker } from './components/sleep/SleepTracker';
 import { getViewTitle } from './utils/navigation';
-// import AdvicePanel from './components/advice/AdvicePanel';
 
 function App() {
   const { user, profile, loading, error } = useAuth();
@@ -40,7 +38,7 @@ function App() {
   const [refreshScores, setRefreshScores] = useState<(() => Promise<void>) | null>(null);
 
   const navigateTo = (view: View) => {
-    if (view === currentView) return; // Prevent pushing the same view
+    if (view === currentView) return;
     setNavigationStack(prevStack => [...prevStack, view]);
   };
 
@@ -49,24 +47,21 @@ function App() {
       setNavigationStack(prevStack => prevStack.slice(0, -1));
     }
   };
-  
+
   const navigateToRoot = (view: View) => {
     setNavigationStack([view]);
   };
-  
-  // Affiche l'écran de chargement PENDANT que le hook useAuth détermine l'état de la session.
+
   if (loading) {
     console.log('🕐 [App] Initialisation en cours...');
     return <LoadingScreen message="Vérification de la session..." />;
   }
 
-  // Affiche l'écran d'authentification si le chargement est terminé et qu'il n'y a PAS d'utilisateur.
   if (!user) {
     console.log('🔐 [App] Pas d\'utilisateur, affichage de l\'écran d\'authentification.');
     return <Auth initialError={error} />;
   }
 
-  // Si nous arrivons ici, l'utilisateur est authentifié.
   const userRole = profile?.role || 'athlete';
 
   const handleWorkoutSave = async (workoutData: any) => {
@@ -117,14 +112,13 @@ function App() {
         onBack={navigateBack}
         title={getViewTitle(currentView)}
       />
-      
+
       <main className="p-4 md:p-6 pb-24">
         {currentView === 'dashboard' && <Dashboard onViewChange={navigateTo} userRole={userRole} onScoresLoad={(fn) => setRefreshScores(() => fn)} />}
         {currentView === 'workouts' && <WorkoutsList onAddWorkout={() => navigateTo('add-workout')} onEditWorkout={(workout) => { setEditingWorkout(workout); navigateTo('add-workout'); }} />}
         {currentView === 'add-workout' && <NewWorkoutForm editingWorkout={editingWorkout} onSave={handleWorkoutSave} onCancel={() => { setEditingWorkout(null); navigateBack(); }} />}
         {currentView === 'records' && <RecordsList onAddRecord={() => navigateTo('add-record')} />}
         {currentView === 'add-record' && <RecordsForm records={records || []} onSave={handleRecordSave} onCancel={navigateBack} />}
-        {/* {currentView === 'ai' && <AdvicePanel />} */}
         {currentView === 'groups' && userRole === 'athlete' && <AthleteGroupView />}
         {currentView === 'groups' && userRole === 'coach' && <GroupManagement />}
         {currentView === 'chat' && userRole === 'coach' && <ChatManager />}
@@ -137,14 +131,14 @@ function App() {
         {currentView === 'sleep' && <SleepTracker />}
         {currentView === 'developer' && profile?.role === 'developer' && <DeveloperPanel />}
       </main>
-      
+
       <TabBar
         currentView={currentView}
         onViewChange={navigateToRoot}
         onFabAction={navigateTo}
         userRole={userRole}
       />
-      
+
       <PWAInstallPrompt />
       <NotificationDisplay />
     </div>
