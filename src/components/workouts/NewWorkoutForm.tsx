@@ -8,6 +8,8 @@ import { useExercices } from '../../hooks/useExercices';
 import { supabase } from '../../lib/supabase';
 import { useWorkoutTemplates } from '../../hooks/useWorkoutTemplates';
 import useAuth from '../../hooks/useAuth';
+import { WorkoutTypeSelector } from './WorkoutTypeSelector';
+import { WorkoutType } from '../../hooks/useWorkoutTypes';
 
 export type WorkoutBlock = {
   id: string;
@@ -20,6 +22,7 @@ interface NewWorkoutFormProps {
     title: string;
     blocs: Omit<WorkoutBlock, 'id'>[];
     type: 'guidé' | 'manuscrit';
+    tag_seance: string;
     notes?: string;
   }) => Promise<void>;
   onCancel: () => void;
@@ -35,7 +38,8 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   const { profile } = useAuth();
   const { createTemplate } = useWorkoutTemplates();
 
-  const [title, setTitle] = useState(initialData?.title || `Nouvelle séance du ${new Date().toLocaleDateString('fr-FR')}`);
+  const [selectedWorkoutType, setSelectedWorkoutType] = useState<WorkoutType | null>(null);
+  const [title, setTitle] = useState(initialData?.title || '');
   const [blocs, setBlocs] = useState<WorkoutBlock[]>(
     initialData?.blocs.map(b => ({ ...b, id: `bloc_${Math.random()}` })) || []
   );
@@ -96,8 +100,8 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      alert('Le titre de la séance est obligatoire.');
+    if (!selectedWorkoutType) {
+      alert('Veuillez sélectionner un type de séance.');
       return;
     }
     if (workoutType === 'manuscrit' && !notes.trim()) {
@@ -120,9 +124,10 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
       }
 
       await onSave({
-        title,
+        title: selectedWorkoutType!.name,
         blocs: blocsToSave,
         type: workoutType,
+        tag_seance: selectedWorkoutType!.id,
         notes: notesToSave,
       });
 
@@ -220,19 +225,13 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4 max-w-3xl mx-auto pb-40">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-          <label htmlFor="workout-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Titre de la séance *
-          </label>
-          <input
-            id="workout-title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            required
-          />
-        </div>
+        <WorkoutTypeSelector
+          selectedType={selectedWorkoutType}
+          onSelectType={(type) => {
+            setSelectedWorkoutType(type);
+            setTitle(type.name);
+          }}
+        />
 
         <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

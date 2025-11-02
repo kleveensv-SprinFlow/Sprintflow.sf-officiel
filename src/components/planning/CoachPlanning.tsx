@@ -74,13 +74,16 @@ export const CoachPlanning: React.FC = () => {
     setWorkoutFormOpen(true);
   };
 
-  const handleSaveWorkout = async (payload: { title: string; blocs: any[] }) => {
+  const handleSaveWorkout = async (payload: { title: string; blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
     if (!selectedDate) return;
 
     const planningPayload: any = {
       title: payload.title,
+      type: payload.type,
+      tag_seance: payload.tag_seance,
+      notes: payload.notes,
       planned_data: { blocs: payload.blocs },
-      scheduled_date: format(selectedDate, 'yyyy-MM-dd'),
+      date: format(selectedDate, 'yyyy-MM-dd'),
     };
 
     if (activeFilter.type === 'group' && activeFilter.id) {
@@ -154,7 +157,7 @@ export const CoachPlanning: React.FC = () => {
           const isToday = isSameDay(day, new Date());
 
           const workoutsForDay = filteredWorkouts.filter(w => {
-            const dateToCompare = w.status === 'planned' ? w.scheduled_date! : w.date;
+            const dateToCompare = w.status === 'planned' ? w.date : w.date;
             return isSameDay(parseISO(dateToCompare), day);
           });
 

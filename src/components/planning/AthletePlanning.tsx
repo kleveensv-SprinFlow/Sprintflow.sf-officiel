@@ -22,15 +22,26 @@ const PlannedWorkoutModal: React.FC<{
           <div className="space-y-2 max-h-64 overflow-y-auto bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
             {workout.planned_data?.blocs.map((bloc, index) => {
               let typeLabel = '';
-              switch(bloc.type) {
-                case 'course': typeLabel = 'Course'; break;
-                case 'muscu': typeLabel = 'Musculation'; break;
-                case 'escalier': typeLabel = 'Escalier'; break;
-                default: typeLabel = 'Bloc';
+              let summary = '';
+              switch (bloc.type) {
+                case 'course':
+                  typeLabel = 'Course';
+                  summary = bloc.data.distance ? `${bloc.data.distance}m` : '';
+                  break;
+                case 'muscu':
+                  typeLabel = 'Musculation';
+                  summary = bloc.data.exercice_nom || '';
+                  break;
+                case 'escalier':
+                  typeLabel = 'Escalier';
+                  summary = bloc.data.exercice_nom || (bloc.data.marches ? `${bloc.data.marches} marches` : '');
+                  break;
+                default:
+                  typeLabel = 'Bloc';
               }
               return (
                 <div key={index} className="text-sm">
-                  <p><strong>{typeLabel}:</strong> {bloc.data.exercice_nom || `${bloc.data.distance}m`}</p>
+                  <p><strong>{typeLabel}:</strong> {summary}</p>
                 </div>
               );
             })}
@@ -83,7 +94,7 @@ export const AthletePlanning: React.FC = () => {
     setView('form');
   };
 
-  const handleSaveCompletedWorkout = async (payload: { title: string; blocs: any[] }) => {
+  const handleSaveCompletedWorkout = async (payload: { title: string; blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
     if (!selectedWorkout) return;
     setCompletedWorkoutData({ workout_data: { blocs: payload.blocs } });
     setView('rpe');
@@ -135,7 +146,7 @@ export const AthletePlanning: React.FC = () => {
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const isToday = isSameDay(day, new Date());
 
-          const plannedForDay = planned.filter(w => isSameDay(parseISO(w.scheduled_date!), day));
+          const plannedForDay = planned.filter(w => isSameDay(parseISO(w.date), day));
           const completedForDay = completed.filter(w => isSameDay(parseISO(w.date), day));
 
           return (

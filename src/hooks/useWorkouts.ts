@@ -74,6 +74,7 @@ export function useWorkouts(selection?: Selection) {
       title: string;
       date: string;
       type: 'guidé' | 'manuscrit';
+      tag_seance?: string;
       notes?: string;
       planned_data?: { blocs: any[] };
       assigned_to_user_id?: string;
