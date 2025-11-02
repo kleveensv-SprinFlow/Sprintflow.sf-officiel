@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown, Dumbbell, Zap, Run } from 'lucide-react';
 import { Workout } from '../../types';
 import { CourseBlockForm, CourseBlockData } from './CourseBlockForm';
 import { NumberSelector } from '../NumberSelector';
