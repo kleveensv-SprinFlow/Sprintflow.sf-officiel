@@ -20,11 +20,20 @@ const PlannedWorkoutModal: React.FC<{
         <div className="mb-4">
           <h3 className="font-semibold mb-2">Plan du coach :</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-            {workout.planned_data?.blocs.map((bloc, index) => (
-              <div key={index} className="text-sm">
-                <p><strong>{bloc.type === 'course' ? 'Course' : 'Musculation'}:</strong> {bloc.data.exercice_nom || `${bloc.data.distance}m`}</p>
-              </div>
-            ))}
+            {workout.planned_data?.blocs.map((bloc, index) => {
+              let typeLabel = '';
+              switch(bloc.type) {
+                case 'course': typeLabel = 'Course'; break;
+                case 'muscu': typeLabel = 'Musculation'; break;
+                case 'escalier': typeLabel = 'Escalier'; break;
+                default: typeLabel = 'Bloc';
+              }
+              return (
+                <div key={index} className="text-sm">
+                  <p><strong>{typeLabel}:</strong> {bloc.data.exercice_nom || `${bloc.data.distance}m`}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
         <div className="flex flex-col gap-2">
