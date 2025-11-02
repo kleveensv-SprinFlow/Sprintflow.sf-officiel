@@ -11,7 +11,7 @@ import useAuth from '../../hooks/useAuth';
 
 export type WorkoutBlock = {
   id: string;
-  type: 'course' | 'muscu' | 'texte';
+  type: 'course' | 'muscu' | 'escalier' | 'texte';
   data: any;
 };
 
@@ -74,12 +74,14 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   const generateId = () => `bloc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  const addBlock = (type: 'course' | 'muscu') => {
+  const addBlock = (type: 'course' | 'muscu' | 'escalier') => {
     let newBlockData: any;
     if (type === 'course') {
       newBlockData = { series: 1, reps: 1, distance: 100, restBetweenReps: '60', restBetweenSeries: '180', chronos: [[]] };
-    } else {
+    } else if (type === 'muscu') {
       newBlockData = { exercice_id: '', exercice_nom: '', series: 3, reps: 10, poids: 0 };
+    } else if (type === 'escalier') {
+      newBlockData = { exercice_id: '', exercice_nom: '', series: 1, marches: 100, poids: 0 };
     }
     setBlocs(prev => [...prev, { id: generateId(), type, data: newBlockData }]);
   };
@@ -171,6 +173,38 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
         </div>
       );
     }
+    if (bloc.type === 'escalier') {
+      return (
+        <div key={bloc.id} className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-800">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Bloc Escalier</span>
+            <button type="button" onClick={() => removeBlock(bloc.id)} className="p-1 text-red-500 hover:text-red-700 rounded">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+          <div>
+            <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Exercice *</label>
+            <ExerciseSelector
+              allExercices={allExercices.filter(ex => ex.category === 'custom' || ex.category === undefined)}
+              loading={refLoading || customLoading}
+              onExerciseChange={(id, name) => updateBlock(bloc.id, { ...bloc.data, exercice_id: id, exercice_nom: name })}
+              initialExerciseId={bloc.data.exercice_id}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <NumberSelector label="Séries *" value={bloc.data.series} onChange={(val) => updateBlock(bloc.id, { ...bloc.data, series: val })} min={1} max={20} />
+            <div>
+              <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Marches</label>
+              <input type="number" step="1" value={bloc.data.marches} onChange={(e) => updateBlock(bloc.id, { ...bloc.data, marches: e.target.value === '' ? '' : parseInt(e.target.value)})} className="w-full h-10 px-2 py-1 text-sm border rounded" placeholder="--" />
+            </div>
+            <div>
+              <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Poids (kg)</label>
+              <input type="number" step="0.5" value={bloc.data.poids} onChange={(e) => updateBlock(bloc.id, { ...bloc.data, poids: e.target.value === '' ? '' : parseFloat(e.target.value)})} className="w-full h-10 px-2 py-1 text-sm border rounded" placeholder="--" />
+            </div>
+          </div>
+        </div>
+      );
+    }
     return null;
   };
 
@@ -243,6 +277,9 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
                 </button>
                 <button type="button" onClick={() => addBlock('muscu')} className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
                     <Plus className="w-4 h-4" /> Musculation
+                </button>
+                <button type="button" onClick={() => addBlock('escalier')} className="flex items-center gap-2 px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                    <Plus className="w-4 h-4" /> Escalier
                 </button>
             </div>
           </>
