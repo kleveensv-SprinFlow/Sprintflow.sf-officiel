@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
+// Définition du type pour le profil utilisateur
 type UserProfile = {
   id: string;
   role: 'coach' | 'athlete' | 'developer';
@@ -11,6 +12,7 @@ type UserProfile = {
   avatar_url?: string;
 };
 
+// Définition du type pour les métadonnées à l'inscription
 type SignUpMetadata = {
   first_name: string;
   last_name: string;
@@ -27,34 +29,51 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUserProfile = useCallback(async (user: User, retryCount = 0): Promise<UserProfile> => {
+  /**
+   * Récupère le profil de l'utilisateur en utilisant un fetch direct pour plus de robustesse
+   * dans des environnements comme StackBlitz.
+   */
+  const fetchUserProfile = useCallback(async (user: User, session: any, retryCount = 0): Promise<UserProfile> => {
     console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, full_name, first_name, last_name, role, avatar_url')
-      .eq('id', user.id)
-      .maybeSingle();
+    
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=id,full_name,first_name,last_name,role,avatar_url`,
+      {
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    if (error) {
-      console.error('❌ [useAuth] Erreur critique lors du chargement du profil:', error);
-      throw new Error("Impossible de charger votre profil. Une erreur est survenue.");
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [useAuth] Erreur critique lors du chargement du profil:', errorText);
+        throw new Error("Impossible de charger votre profil. Une erreur est survenue.");
     }
+    
+    const data = await response.json();
+    const userProfile = data?.[0];
 
-    if (!data && retryCount < 3) {
+    if (!userProfile && retryCount < 3) {
       console.warn(`⏳ [useAuth] Profil non trouvé, nouvel essai dans 1s (essai ${retryCount + 1}/3)`);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      return fetchUserProfile(user, retryCount + 1);
+      return fetchUserProfile(user, session, retryCount + 1);
     }
 
-    if (!data) {
+    if (!userProfile) {
       console.error('❌ [useAuth] Profil introuvable après 3 tentatives.');
       throw new Error("Votre profil n'a pas pu être créé ou trouvé. Veuillez contacter le support.");
     }
 
-    console.log('✅ [useAuth] Profil chargé:', data);
-    return data as UserProfile;
+    console.log('✅ [useAuth] Profil chargé:', userProfile);
+    return userProfile as UserProfile;
   }, []);
 
+  /**
+   * Effet principal qui écoute les changements d'état d'authentification.
+   */
   useEffect(() => {
     let mounted = true;
     console.log('🔄 [useAuth] Initialisation du listener...');
@@ -67,8 +86,8 @@ export function useAuth() {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
-        if (currentUser) {
-          const userProfile = await fetchUserProfile(currentUser);
+        if (currentUser && session) {
+          const userProfile = await fetchUserProfile(currentUser, session);
           if (mounted) setProfile(userProfile);
         } else {
           if (mounted) setProfile(null);
@@ -107,45 +126,23 @@ export function useAuth() {
   };
 
   const signUp = async (email: string, password: string, metaData: SignUpMetadata) => {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          first_name: metaData.first_name,
-          last_name: metaData.last_name,
-          role: metaData.role,
-          role_specifique: metaData.role_specifique,
-          date_de_naissance: metaData.date_de_naissance,
-          discipline: metaData.discipline,
-          sexe: metaData.sexe,
-        }
-      }
+      options: { data: metaData }
     });
 
-    if (authError) {
-      if (authError.message.includes('User already registered')) {
+    if (error) {
+      if (error.message.includes('User already registered')) {
         throw new Error('Un utilisateur avec cet email existe déjà.');
       }
-      throw authError;
-    }
-
-    if (!authData.user) {
-      throw new Error("L'inscription a échoué, aucun utilisateur n'a été créé.");
+      throw error;
     }
   };
 
   const signOut = async () => {
     console.log('🚪 [useAuth] Déconnexion...');
     await supabase.auth.signOut();
-  };
-
-  const resendConfirmationEmail = async (email: string) => {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: email,
-    });
-    if (error) throw error;
   };
 
   return {
@@ -156,7 +153,6 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
-    resendConfirmationEmail
   };
 }
 
