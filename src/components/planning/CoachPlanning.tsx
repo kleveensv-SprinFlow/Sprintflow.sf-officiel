@@ -127,7 +127,7 @@ export const CoachPlanning: React.FC = () => {
                 onChange={(e) => {
                     const [type, id] = e.target.value.split(':');
                     const name = e.target.options[e.target.selectedIndex].text;
-                    setActiveFilter({ type, id: id === 'null' ? null : id, name });
+                    setActiveFilter({ type: type as 'all' | 'group' | 'athlete', id: id === 'null' ? null : id, name });
                 }}
             >
                 <option value="all:null">Tous les athlètes</option>
