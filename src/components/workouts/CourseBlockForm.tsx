@@ -24,9 +24,10 @@ interface CourseBlockFormProps {
   block: CourseBlockData;
   onChange: (newBlockData: CourseBlockData) => void;
   onRemove: () => void;
+  onDone: () => void;
 }
 
-export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange, onRemove }) => {
+export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange, onRemove, onDone }) => {
   const { user } = useAuth();
   const { createTemplate: createBlockTemplate } = useBlockTemplates(user?.id);
   const [series, setSeries] = useState(block.series);
@@ -123,7 +124,9 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
             onChange={(val) => setRestBetweenSeries(val ? val.toString() : '')}
           />
         </div>
-
+        <button type="button" onClick={onDone} className="w-full mt-2 py-2 text-sm bg-primary-500 text-white rounded-lg">
+            OK
+        </button>
       </div>
     </div>
   );
