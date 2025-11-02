@@ -38,7 +38,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
   // Update parent component when local state changes
   useEffect(() => {
     onChange({ id: block.id, series, reps, distance, restBetweenReps: '0', restBetweenSeries, chronos });
-  }, [series, reps, distance, restBetweenSeries, chronos, block.id, onChange]);
+  }, [series, reps, distance, restBetweenSeries, block.id, onChange]);
 
   // Adjust the chronos array size when series/reps change
   useEffect(() => {
@@ -124,26 +124,6 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
           />
         </div>
 
-        {/* Chrono Inputs */}
-        <div className="space-y-3 pt-2">
-          <h4 className="font-medium text-sm text-gray-800 dark:text-gray-200">Saisie des chronomètres</h4>
-          {chronos.map((serie, serieIndex) => (
-            <div key={serieIndex} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="mb-2 font-semibold text-xs text-gray-700 dark:text-gray-300">Série {serieIndex + 1}</p>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                {serie.map((chrono, repIndex) => (
-                  <div key={repIndex}>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">Rép {repIndex + 1}</label>
-                    <ChronoInput
-                      value={chrono}
-                      onChange={(val) => handleChronoChange(serieIndex, repIndex, val)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
