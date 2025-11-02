@@ -4,30 +4,9 @@ import { useExercices } from '../../hooks/useExercices';
 import { NumberStepper } from '../common/NumberStepper';
 import { TimePicker } from '../common/TimePicker';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
+import { WorkoutBlock, CourseBlock, MuscuBlock } from '../../types/workout';
 
-// Types based on user request and existing structure
-export type WorkoutBlock = CourseBlock | MuscuBlock;
-
-export interface CourseBlock {
-  type: 'course';
-  id: string;
-  series: number;
-  reps: number;
-  distance: number;
-  restBetweenReps: string; // e.g., "2m"
-  restBetweenSeries: string; // e.g., "8m"
-}
-
-export interface MuscuBlock {
-  type: 'musculation';
-  id: string;
-  exerciceId: string; // from exercices_db
-  exerciceNom: string;
-  series: number;
-  reps: number;
-  poids: number;
-  restTime: string; // e.g., "3m"
-}
+export type { WorkoutBlock, CourseBlock, MuscuBlock };
 
 interface WorkoutBuilderProps {
   blocks: WorkoutBlock[];

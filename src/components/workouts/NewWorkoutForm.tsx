@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
-import { WorkoutBuilder, type WorkoutBlock } from './WorkoutBuilder';
+import { WorkoutBuilder } from './WorkoutBuilder';
+import { WorkoutBlock } from '../../types/workout';
 
-export type { WorkoutBlock } from './WorkoutBuilder';
+export type { WorkoutBlock };
 
 interface NewWorkoutFormProps {
   onSave: (payload: {
