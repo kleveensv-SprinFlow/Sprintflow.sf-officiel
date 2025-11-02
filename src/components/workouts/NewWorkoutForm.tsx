@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
-import { WorkoutBuilder, WorkoutBlock } from '../workouts/WorkoutBuilder';
+import { WorkoutBuilder, WorkoutBlock } from './WorkoutBuilder';
 
-interface QuickWorkoutFormProps {
+export { WorkoutBlock } from './WorkoutBuilder';
+
+interface NewWorkoutFormProps {
   onSave: (payload: {
     title: string;
+    blocs: WorkoutBlock[];
     type: 'guidé' | 'manuscrit';
     notes?: string;
-    blocs: WorkoutBlock[];
   }) => Promise<void>;
   onCancel: () => void;
   initialData?: {
@@ -19,7 +21,7 @@ interface QuickWorkoutFormProps {
   };
 }
 
-export const QuickWorkoutForm: React.FC<QuickWorkoutFormProps> = ({ onSave, onCancel, initialData }) => {
+export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutFormProps) {
   const [title, setTitle] = useState(initialData?.title || `Nouvelle séance du ${new Date().toLocaleDateString('fr-FR')}`);
   const [blocks, setBlocks] = useState<WorkoutBlock[]>(initialData?.blocs || []);
   const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit'>(initialData?.type || 'guidé');
@@ -84,7 +86,7 @@ export const QuickWorkoutForm: React.FC<QuickWorkoutFormProps> = ({ onSave, onCa
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Ex: Sprint + Force, Récupération active"
               required
             />
@@ -100,7 +102,7 @@ export const QuickWorkoutForm: React.FC<QuickWorkoutFormProps> = ({ onSave, onCa
                 onClick={() => setWorkoutType('guidé')}
                 className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all ${
                   workoutType === 'guidé'
-                    ? 'bg-primary-500 text-white shadow-lg'
+                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
@@ -111,7 +113,7 @@ export const QuickWorkoutForm: React.FC<QuickWorkoutFormProps> = ({ onSave, onCa
                 onClick={() => setWorkoutType('manuscrit')}
                 className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all ${
                   workoutType === 'manuscrit'
-                    ? 'bg-primary-500 text-white shadow-lg'
+                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
@@ -122,7 +124,7 @@ export const QuickWorkoutForm: React.FC<QuickWorkoutFormProps> = ({ onSave, onCa
 
           {workoutType === 'guidé' ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                 Contenu de la séance *
               </label>
               <WorkoutBuilder blocks={blocks} onChange={setBlocks} />
@@ -136,18 +138,18 @@ export const QuickWorkoutForm: React.FC<QuickWorkoutFormProps> = ({ onSave, onCa
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={10}
-                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 placeholder="Décrivez la séance en texte libre..."
                 required
               />
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:opacity-50 px-6 py-3 rounded-xl text-white font-medium transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg"
+              className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 rounded-xl text-white font-medium transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/30 active:scale-95"
             >
               <Save className="h-5 w-5" />
               <span>{saving ? 'Enregistrement...' : initialData?.id ? 'Mettre à jour' : 'Enregistrer'}</span>
@@ -155,7 +157,8 @@ export const QuickWorkoutForm: React.FC<QuickWorkoutFormProps> = ({ onSave, onCa
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-gray-700 dark:text-gray-300 transition-colors"
+              disabled={saving}
+              className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-gray-700 dark:text-gray-300 font-medium transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Annuler
             </button>
@@ -164,4 +167,4 @@ export const QuickWorkoutForm: React.FC<QuickWorkoutFormProps> = ({ onSave, onCa
       </div>
     </div>
   );
-};
+}
