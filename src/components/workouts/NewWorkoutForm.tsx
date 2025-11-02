@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, FileText, ListChecks } from 'lucide-react';
+import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown, Run, Dumbbell, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Workout } from '../../types';
 import { CourseBlockForm, CourseBlockData } from './CourseBlockForm';
 import { NumberSelector } from '../NumberSelector';
@@ -15,12 +16,13 @@ export type WorkoutBlock = {
   id: string;
   type: 'course' | 'muscu' | 'escalier' | 'texte';
   data: any;
+  isEditing: boolean;
 };
 
 interface NewWorkoutFormProps {
   onSave: (payload: {
     title: string;
-    blocs: Omit<WorkoutBlock, 'id'>[];
+    blocs: Omit<WorkoutBlock, 'id' | 'isEditing'>[];
     type: 'guidé' | 'manuscrit';
     tag_seance: string;
     notes?: string;
@@ -28,7 +30,7 @@ interface NewWorkoutFormProps {
   onCancel: () => void;
   initialData?: {
     title: string;
-    blocs: Omit<WorkoutBlock, 'id'>[];
+    blocs: Omit<WorkoutBlock, 'id' | 'isEditing'>[];
     type?: 'guidé' | 'manuscrit';
     notes?: string;
   };
@@ -46,6 +48,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
       return {
         ...b,
         id: blockId,
+        isEditing: false, // Start collapsed
         data: b.type === 'course' ? { ...b.data, id: blockId } : b.data
       };
     }) || []
@@ -56,6 +59,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  const [isFabOpen, setIsFabOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const lastBlockRef = useRef<HTMLDivElement>(null);
@@ -88,18 +92,25 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   const addBlock = (type: 'course' | 'muscu' | 'escalier') => {
     const newId = generateId();
     let newBlockData: any;
+
+    const collapseAllBlocks = (b: WorkoutBlock) => ({ ...b, isEditing: false });
+
     if (type === 'course') {
-      newBlockData = { id: newId, series: 1, reps: 1, distance: 100, restBetweenReps: '60', restBetweenSeries: '180', chronos: [[null]] };
+      newBlockData = { id: newId, series: 1, reps: 1, distance: 200, restBetweenReps: '60', restBetweenSeries: '180', chronos: [[null]] };
     } else if (type === 'muscu') {
       newBlockData = { exercice_id: '', exercice_nom: '', series: 3, reps: 10, poids: 0 };
     } else if (type === 'escalier') {
       newBlockData = { exercice_id: '', exercice_nom: '', series: 1, marches: 100, poids: 0 };
     }
-    setBlocs(prev => [...prev, { id: newId, type, data: newBlockData }]);
+    setBlocs(prev => [...prev.map(collapseAllBlocks), { id: newId, type, data: newBlockData, isEditing: true }]);
   };
 
   const updateBlock = (id: string, newData: any) => {
     setBlocs(prev => prev.map(b => (b.id === id ? { ...b, data: newData } : b)));
+  };
+
+  const toggleBlockEditing = (id: string) => {
+    setBlocs(prev => prev.map(b => (b.id === id ? { ...b, isEditing: !b.isEditing } : b)));
   };
 
   const removeBlock = (id: string) => {
@@ -118,8 +129,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     }
     setSaving(true);
 
-    const blocsToSave = workoutType === 'guidé' ? blocs.map(({ id, ...rest }) => rest) : [];
-    const notesToSave = workoutType === 'manuscrit' ? notes : undefined;
+    const blocsToSave = workoutType === 'guidé' ? blocs.map(({ id, isEditing, ...rest }) => rest) : [];
 
     try {
       if (saveAsTemplate && profile?.role === 'coach' && workoutType === 'guidé') {
@@ -136,7 +146,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
         blocs: blocsToSave,
         type: workoutType,
         tag_seance: selectedWorkoutType!.id,
-        notes: notesToSave,
+        notes: notes,
       });
 
     } catch (error: any) {
@@ -146,83 +156,164 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     }
   };
 
-  const renderBlock = (bloc: WorkoutBlock) => {
-    if (bloc.type === 'course') {
-      return (
-        <CourseBlockForm
-          key={bloc.id}
-          block={bloc.data}
-          onChange={(newData) => updateBlock(bloc.id, newData)}
-          onRemove={() => removeBlock(bloc.id)}
-        />
-      );
+  const renderBlockSummary = (bloc: WorkoutBlock) => {
+    const Icon = bloc.type === 'course' ? Run : bloc.type === 'muscu' ? Dumbbell : Zap;
+    let summary = '';
+    switch(bloc.type) {
+      case 'course':
+        summary = `${bloc.data.series}x${bloc.data.reps} ${bloc.data.distance}m`;
+        break;
+      case 'muscu':
+        summary = `${bloc.data.series}x${bloc.data.reps} ${bloc.data.exercice_nom || 'N/A'}`;
+        break;
+      case 'escalier':
+        summary = `${bloc.data.series}x ${bloc.data.marches} marches`;
+        break;
     }
-    if (bloc.type === 'muscu') {
-      return (
-        <div key={bloc.id} className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-800">
-            <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Bloc Musculation</span>
-                <button type="button" onClick={() => removeBlock(bloc.id)} className="p-1 text-red-500 hover:text-red-700 rounded">
+    return (
+        <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+                <Icon className="w-5 h-5 text-gray-500" />
+                <span className="font-semibold">{summary}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                 <button type="button" onClick={(e) => {e.stopPropagation(); removeBlock(bloc.id);}} className="p-2 text-red-500 hover:bg-red-100 rounded-full">
                     <Trash2 className="w-4 h-4" />
                 </button>
+                {bloc.isEditing ? <ChevronUp /> : <ChevronDown />}
             </div>
-            <div>
+        </div>
+    );
+  }
+
+  const renderBlock = (bloc: WorkoutBlock) => {
+    const FormComponent = () => {
+        if (bloc.type === 'course') {
+            return (
+                <CourseBlockForm
+                block={bloc.data}
+                onChange={(newData) => updateBlock(bloc.id, newData)}
+                onRemove={() => removeBlock(bloc.id)}
+                />
+            );
+        }
+        if (bloc.type === 'muscu') {
+          return (
+            <div className="border-t pt-4 mt-4 space-y-2">
+                <div>
+                    <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Exercice *</label>
+                    <ExerciseSelector
+                        allExercices={allExercices}
+                        loading={refLoading || customLoading}
+                        onExerciseChange={(id, name) => updateBlock(bloc.id, { ...bloc.data, exercice_id: id, exercice_nom: name })}
+                        initialExerciseId={bloc.data.exercice_id}
+                    />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <NumberSelector label="Séries *" value={bloc.data.series} onChange={(val) => updateBlock(bloc.id, { ...bloc.data, series: val })} min={1} max={20} />
+                    <NumberSelector label="Reps *" value={bloc.data.reps} onChange={(val) => updateBlock(bloc.id, { ...bloc.data, reps: val })} min={1} max={50} />
+                    <div>
+                        <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Poids (kg)</label>
+                        <input type="number" step="0.5" value={bloc.data.poids} onChange={(e) => updateBlock(bloc.id, { ...bloc.data, poids: e.target.value === '' ? '' : parseFloat(e.target.value)})} className="w-full h-10 px-2 py-1 text-sm border rounded" placeholder="--" />
+                    </div>
+                </div>
+                 <button type="button" onClick={() => toggleBlockEditing(bloc.id)} className="w-full mt-2 py-2 text-sm bg-primary-500 text-white rounded-lg">
+                    OK
+                </button>
+            </div>
+          );
+        }
+        if (bloc.type === 'escalier') {
+          return (
+             <div className="border-t pt-4 mt-4 space-y-2">
+              <div>
                 <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Exercice *</label>
                 <ExerciseSelector
-                    allExercices={allExercices}
-                    loading={refLoading || customLoading}
-                    onExerciseChange={(id, name) => updateBlock(bloc.id, { ...bloc.data, exercice_id: id, exercice_nom: name })}
-                    initialExerciseId={bloc.data.exercice_id}
+                  allExercices={allExercices.filter(ex => ex.category === 'custom' || ex.category === undefined)}
+                  loading={refLoading || customLoading}
+                  onExerciseChange={(id, name) => updateBlock(bloc.id, { ...bloc.data, exercice_id: id, exercice_nom: name })}
+                  initialExerciseId={bloc.data.exercice_id}
                 />
-            </div>
-            <div className="flex flex-wrap gap-2">
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <NumberSelector label="Séries *" value={bloc.data.series} onChange={(val) => updateBlock(bloc.id, { ...bloc.data, series: val })} min={1} max={20} />
-                <NumberSelector label="Reps *" value={bloc.data.reps} onChange={(val) => updateBlock(bloc.id, { ...bloc.data, reps: val })} min={1} max={50} />
                 <div>
-                    <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Poids (kg)</label>
-                    <input type="number" step="0.5" value={bloc.data.poids} onChange={(e) => updateBlock(bloc.id, { ...bloc.data, poids: e.target.value === '' ? '' : parseFloat(e.target.value)})} className="w-full h-10 px-2 py-1 text-sm border rounded" placeholder="--" />
+                  <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Marches</label>
+                  <input type="number" step="1" value={bloc.data.marches} onChange={(e) => updateBlock(bloc.id, { ...bloc.data, marches: e.target.value === '' ? '' : parseInt(e.target.value)})} className="w-full h-10 px-2 py-1 text-sm border rounded" placeholder="--" />
                 </div>
+                <div>
+                  <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Poids (kg)</label>
+                  <input type="number" step="0.5" value={bloc.data.poids} onChange={(e) => updateBlock(bloc.id, { ...bloc.data, poids: e.target.value === '' ? '' : parseFloat(e.target.value)})} className="w-full h-10 px-2 py-1 text-sm border rounded" placeholder="--" />
+                </div>
+              </div>
+               <button type="button" onClick={() => toggleBlockEditing(bloc.id)} className="w-full mt-2 py-2 text-sm bg-primary-500 text-white rounded-lg">
+                    OK
+                </button>
             </div>
-        </div>
-      );
+          );
+        }
+        return null;
     }
-    if (bloc.type === 'escalier') {
-      return (
-        <div key={bloc.id} className="border rounded-lg p-3 space-y-2 bg-white dark:bg-gray-800">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Bloc Escalier</span>
-            <button type="button" onClick={() => removeBlock(bloc.id)} className="p-1 text-red-500 hover:text-red-700 rounded">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-          <div>
-            <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Exercice *</label>
-            <ExerciseSelector
-              allExercices={allExercices.filter(ex => ex.category === 'custom' || ex.category === undefined)}
-              loading={refLoading || customLoading}
-              onExerciseChange={(id, name) => updateBlock(bloc.id, { ...bloc.data, exercice_id: id, exercice_nom: name })}
-              initialExerciseId={bloc.data.exercice_id}
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <NumberSelector label="Séries *" value={bloc.data.series} onChange={(val) => updateBlock(bloc.id, { ...bloc.data, series: val })} min={1} max={20} />
-            <div>
-              <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Marches</label>
-              <input type="number" step="1" value={bloc.data.marches} onChange={(e) => updateBlock(bloc.id, { ...bloc.data, marches: e.target.value === '' ? '' : parseInt(e.target.value)})} className="w-full h-10 px-2 py-1 text-sm border rounded" placeholder="--" />
-            </div>
-            <div>
-              <label className="block text-xs mb-1 text-gray-600 dark:text-gray-400">Poids (kg)</label>
-              <input type="number" step="0.5" value={bloc.data.poids} onChange={(e) => updateBlock(bloc.id, { ...bloc.data, poids: e.target.value === '' ? '' : parseFloat(e.target.value)})} className="w-full h-10 px-2 py-1 text-sm border rounded" placeholder="--" />
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
+
+    return (
+        <motion.div
+            key={bloc.id}
+            layout
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-4 cursor-pointer"
+            onClick={() => !bloc.isEditing && toggleBlockEditing(bloc.id)}
+        >
+            {renderBlockSummary(bloc)}
+            <AnimatePresence>
+                {bloc.isEditing && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <FormComponent />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
   };
 
   return (
     <div className="fixed inset-0 bg-gray-100 dark:bg-gray-900 z-50 overflow-y-auto">
+      {workoutType === 'guidé' && (
+      <div className="fixed bottom-24 right-4 z-30">
+        <AnimatePresence>
+          {isFabOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="flex flex-col items-center gap-3 mb-3"
+            >
+              <button onClick={() => { addBlock('course'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg"><Run /></button>
+              <button onClick={() => { addBlock('muscu'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg"><Dumbbell /></button>
+              <button onClick={() => { addBlock('escalier'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-yellow-500 text-white flex items-center justify-center shadow-lg"><Zap /></button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <motion.button
+          onClick={() => setIsFabOpen(!isFabOpen)}
+          className="w-16 h-16 rounded-full bg-primary-500 text-white flex items-center justify-center shadow-xl"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          animate={{ rotate: isFabOpen ? 45 : 0 }}
+        >
+          <Plus size={28} />
+        </motion.button>
+      </div>
+      )}
+       {isFabOpen && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20" onClick={() => setIsFabOpen(false)}></div>}
+
+
       <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
         <div className="p-4 flex items-center justify-between max-w-3xl mx-auto">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Éditeur de séance</h2>
@@ -273,38 +364,29 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
           </div>
         </div>
 
-        {workoutType === 'guidé' ? (
-          <>
-            {blocs.map(renderBlock)}
+        {workoutType === 'guidé' && (
+          <div className="space-y-4">
+            <AnimatePresence>
+              {blocs.map(renderBlock)}
+            </AnimatePresence>
             <div ref={lastBlockRef}></div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg border p-4 flex flex-wrap gap-4 justify-center">
-                <button type="button" onClick={() => addBlock('course')} className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    <Plus className="w-4 h-4" /> Course
-                </button>
-                <button type="button" onClick={() => addBlock('muscu')} className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
-                    <Plus className="w-4 h-4" /> Musculation
-                </button>
-                <button type="button" onClick={() => addBlock('escalier')} className="flex items-center gap-2 px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                    <Plus className="w-4 h-4" /> Escalier
-                </button>
-            </div>
-          </>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
-            <label htmlFor="workout-notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Contenu de la séance
-            </label>
-            <textarea
-              id="workout-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 min-h-[200px]"
-              placeholder="Décrivez ici la séance complète..."
-              required={workoutType === 'manuscrit'}
-            />
           </div>
         )}
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+            <label htmlFor="workout-notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {workoutType === 'manuscrit' ? 'Contenu de la séance' : 'Notes (optionnel)'}
+            </label>
+            <textarea
+                id="workout-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                style={{ minHeight: workoutType === 'manuscrit' ? '200px' : '100px' }}
+                placeholder={workoutType === 'manuscrit' ? "Décrivez ici la séance complète..." : "Ajoutez des notes sur l'échauffement, la récupération, etc."}
+                required={workoutType === 'manuscrit'}
+            />
+        </div>
 
         {profile?.role === 'coach' && workoutType === 'guidé' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg border p-4 space-y-3">
