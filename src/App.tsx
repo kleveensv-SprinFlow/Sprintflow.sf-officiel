@@ -26,7 +26,6 @@ import { NutritionModule } from './components/nutrition/NutritionModule';
 import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 import { SleepTracker } from './components/sleep/SleepTracker';
 import { getViewTitle } from './utils/navigation';
-import { NewWorkoutForm } from './components/workouts/WorkoutForm'; // LIGNE MODIFIÉE/AJOUTÉE
 
 function App() {
   const { user, profile, loading, error } = useAuth();

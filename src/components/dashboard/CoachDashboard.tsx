@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DailyPlanCarousel } from './DailyPlanCarousel';
 import { AthleteSelectionModal } from './AthleteSelectionModal';
 import { GroupSelectionModal } from './GroupSelectionModal';
+import { QuickWorkoutForm } from './QuickWorkoutForm';
 import { useWorkouts } from '../../hooks/useWorkouts';
 import useAuth from '../../hooks/useAuth';
-import { NewWorkoutForm } from '../workouts/WorkoutForm'; // LIGNE AJOUTÉE
 import { useGroups } from '../../hooks/useGroups';
 import { AthleteMarquee } from './AthleteMarquee';
 import { AthleteDetails } from '../groups/AthleteDetails';
@@ -192,7 +192,7 @@ export const CoachDashboard: React.FC = () => {
       </div>
 
       {formState.isOpen && (
-        <NewWorkoutForm
+        <QuickWorkoutForm
           onSave={handleSaveWorkout}
           onCancel={() => setFormState({ isOpen: false })}
           initialData={formState.initialData}
