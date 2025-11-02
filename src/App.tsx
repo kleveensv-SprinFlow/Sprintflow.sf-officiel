@@ -20,7 +20,7 @@ import { CoachPlanning } from './components/planning/CoachPlanning';
 import { AthletePlanning } from './components/planning/AthletePlanning';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { ProfilePage } from './components/profile/ProfilePage';
-import { CoachGroupChat } from './components/groups/CoachGroupChat';
+import { ChatManager } from './components/chat/ChatManager';
 import { PartnershipsList } from './components/PartnershipsList';
 import { DeveloperPanel } from './components/developer/DeveloperPanel';
 import { NotificationDisplay } from './components/NotificationDisplay';
@@ -267,7 +267,7 @@ function App() {
         
         {/* Chat */}
         {currentView === 'chat' && effectiveRole === 'coach' && (
-          <CoachGroupChat />
+          <ChatManager />
         )}
         
         {/* Planning */}
