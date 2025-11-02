@@ -161,12 +161,12 @@ export const AthleteMarquee: React.FC<AthleteMarqueeProps> = ({ athletes = [], o
           ref={marqueeRef}
           className="flex gap-4 px-4 sm:px-6"
           style={{ justifyContent: isCarousel ? 'flex-start' : 'center' }}
-          animate={{
+          animate={isPaused || !isCarousel ? 'paused' : {
             x: isCarousel ? [0, -marqueeWidth] : 0,
           }}
           transition={{
             ease: 'linear',
-            duration: shuffledAthletes.length * 6, // 6s per card for a slower scroll
+            duration: shuffledAthletes.length * 6,
             repeat: Infinity,
           }}
           variants={{
@@ -174,7 +174,6 @@ export const AthleteMarquee: React.FC<AthleteMarqueeProps> = ({ athletes = [], o
             running: { animationPlayState: 'running' },
           }}
           initial="running"
-          animate={isPaused || !isCarousel ? 'paused' : 'running'}
         >
             {duplicatedAthletes.map((athlete, index) => (
               <AthleteCardWithData 

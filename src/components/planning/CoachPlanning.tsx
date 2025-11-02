@@ -10,7 +10,6 @@ import useAuth from '../../hooks/useAuth';
 import { WorkoutTemplate } from '../../hooks/useWorkoutTemplates';
 
 import { TemplateSelectionModal } from '../workouts/TemplateSelectionModal';
-import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { Workout } from '../../types';
 
 type ActiveFilter = {

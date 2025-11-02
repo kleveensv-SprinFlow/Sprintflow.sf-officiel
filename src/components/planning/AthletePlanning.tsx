@@ -5,7 +5,6 @@ import { fr } from 'date-fns/locale';
 import { RPEModal } from '../workouts/RPEModal';
 
 import { useWorkouts } from '../../hooks/useWorkouts';
-import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { Workout } from '../../types';
 
 const PlannedWorkoutModal: React.FC<{

@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DailyPlanCarousel } from './DailyPlanCarousel';
 import { AthleteSelectionModal } from './AthleteSelectionModal';
 import { GroupSelectionModal } from './GroupSelectionModal';
-import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { useWorkouts } from '../../hooks/useWorkouts';
 import useAuth from '../../hooks/useAuth';
 import { useGroups } from '../../hooks/useGroups';
