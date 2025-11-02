@@ -9,7 +9,13 @@ type ChatView = 'groups' | 'individuals';
 export const ChatManager: React.FC = () => {
   const [currentView, setCurrentView] = useState<ChatView>('groups');
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const { conversations } = useConversations();
+  const { conversations, loading, error } = useConversations();
+
+  React.useEffect(() => {
+    console.log('[ChatManager] Conversations:', conversations);
+    console.log('[ChatManager] Loading:', loading);
+    console.log('[ChatManager] Error:', error);
+  }, [conversations, loading, error]);
 
   const handleConversationSelect = (id: string) => {
     const conversation = conversations.find(c => c.conversation_id === id);

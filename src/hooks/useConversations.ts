@@ -21,21 +21,28 @@ export const useConversations = () => {
   const { user } = useAuth();
 
   const fetchConversations = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('[useConversations] Pas d\'utilisateur connecté');
+      return;
+    }
 
+    console.log('[useConversations] Chargement des conversations pour user:', user.id);
     setLoading(true);
     setError(null);
 
     try {
       const { data, error: rpcError } = await supabase.rpc('get_user_conversations');
 
+      console.log('[useConversations] Résultat RPC:', { data, error: rpcError });
+
       if (rpcError) {
         throw rpcError;
       }
 
+      console.log('[useConversations] Conversations récupérées:', data?.length || 0);
       setConversations(data || []);
     } catch (e) {
-      console.error("Erreur lors de la récupération des conversations:", e);
+      console.error("[useConversations] Erreur lors de la récupération des conversations:", e);
       setError(e);
     } finally {
       setLoading(false);
