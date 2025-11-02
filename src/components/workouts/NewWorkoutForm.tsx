@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown, Run, Dumbbell, Zap } from 'lucide-react';
+import { X, Plus, Trash2, FileText, ListChecks, ChevronUp, ChevronDown, Activity, Dumbbell, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Workout } from '../../types';
 import { CourseBlockForm, CourseBlockData } from './CourseBlockForm';
@@ -157,7 +157,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   };
 
   const renderBlockSummary = (bloc: WorkoutBlock) => {
-    const Icon = bloc.type === 'course' ? Run : bloc.type === 'muscu' ? Dumbbell : Zap;
+    const Icon = bloc.type === 'course' ? Activity : bloc.type === 'muscu' ? Dumbbell : Zap;
     let summary = '';
     switch(bloc.type) {
       case 'course':
