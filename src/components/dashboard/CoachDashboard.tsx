@@ -112,7 +112,7 @@ export const CoachDashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100 text-shadow-light dark:text-shadow-dark">Bienvenue, {profile?.prenom} !</h2>
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100 text-shadow-light dark:text-shadow-dark">Bienvenue, {profile?.first_name} !</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6 text-shadow-light dark:text-shadow-dark">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <button onClick={() => setAthleteModalOpen(true)} className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center">
