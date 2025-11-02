@@ -37,7 +37,7 @@ export function useWorkouts(selection?: Selection) {
          const { data: groupMemberships } = await supabase
             .from('group_members')
             .select('group_id')
-            .eq('user_id', user.id);
+            .eq('athlete_id', user.id);
 
         const groupIds = groupMemberships?.map(m => m.group_id) || [];
 
