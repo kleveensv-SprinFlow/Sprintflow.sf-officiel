@@ -1,6 +1,5 @@
 import React from 'react';
 import { Trash2, ChevronUp, ChevronDown, Dumbbell, Navigation, GripVertical } from 'lucide-react';
-import { produce } from 'immer';
 import { useExercices } from '../../hooks/useExercices';
 import { NumberStepper } from '../common/NumberStepper';
 import { TimePicker } from '../common/TimePicker';
@@ -63,9 +62,7 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
             poids: 50,
             restTime: '2m',
           };
-    onChange(produce(blocks, draft => {
-      draft.unshift(newBlock);
-    }));
+    onChange([newBlock, ...blocks]);
   };
 
   const removeBlock = (id: string) => {
@@ -73,12 +70,9 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
   };
 
   const updateBlock = (id: string, updatedFields: Partial<WorkoutBlock>) => {
-    onChange(produce(blocks, draft => {
-      const index = draft.findIndex(block => block.id === id);
-      if (index !== -1) {
-        draft[index] = { ...draft[index], ...updatedFields };
-      }
-    }));
+    onChange(blocks.map(block =>
+      block.id === id ? { ...block, ...updatedFields } : block
+    ));
   };
 
   const moveBlock = (id: string, direction: 'up' | 'down') => {
@@ -88,10 +82,10 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= blocks.length) return;
 
-    onChange(produce(blocks, draft => {
-      const [movedBlock] = draft.splice(index, 1);
-      draft.splice(newIndex, 0, movedBlock);
-    }));
+    const newBlocks = [...blocks];
+    const [movedBlock] = newBlocks.splice(index, 1);
+    newBlocks.splice(newIndex, 0, movedBlock);
+    onChange(newBlocks);
   };
 
   const renderBlock = (block: WorkoutBlock) => {
