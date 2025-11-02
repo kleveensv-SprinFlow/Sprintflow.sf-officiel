@@ -22,8 +22,8 @@ import useAuth from '../../hooks/useAuth';
 
 interface CourseBlockFormProps {
   block: CourseBlockData;
-  onChange: (id: string, newBlockData: CourseBlockData) => void;
-  onRemove: (id:string) => void;
+  onChange: (newBlockData: CourseBlockData) => void;
+  onRemove: () => void;
 }
 
 export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange, onRemove }) => {
@@ -37,7 +37,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
 
   // Update parent component when local state changes
   useEffect(() => {
-    onChange(block.id, { id: block.id, series, reps, distance, restBetweenReps: '0', restBetweenSeries, chronos });
+    onChange({ id: block.id, series, reps, distance, restBetweenReps: '0', restBetweenSeries, chronos });
   }, [series, reps, distance, restBetweenSeries, chronos, block.id, onChange]);
 
   // Adjust the chronos array size when series/reps change
@@ -89,7 +89,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChang
         <button type="button" onClick={handleSaveCourseBlock} className="p-1 text-gray-500 rounded hover:bg-gray-100">
             <MoreVertical className="w-5 h-5" />
         </button>
-        <button type="button" onClick={() => onRemove(block.id)} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded">
+        <button type="button" onClick={onRemove} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/20 rounded">
           <Trash2 className="w-5 h-5" />
         </button>
       </div>

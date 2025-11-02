@@ -41,7 +41,14 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   const [selectedWorkoutType, setSelectedWorkoutType] = useState<WorkoutType | null>(null);
   const [title, setTitle] = useState(initialData?.title || '');
   const [blocs, setBlocs] = useState<WorkoutBlock[]>(
-    initialData?.blocs.map(b => ({ ...b, id: `bloc_${Math.random()}` })) || []
+    initialData?.blocs.map(b => {
+      const blockId = `bloc_${Math.random()}`;
+      return {
+        ...b,
+        id: blockId,
+        data: b.type === 'course' ? { ...b.data, id: blockId } : b.data
+      };
+    }) || []
   );
 
   const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit'>(initialData?.type || 'guidé');
@@ -79,15 +86,16 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   const generateId = () => `bloc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   const addBlock = (type: 'course' | 'muscu' | 'escalier') => {
+    const newId = generateId();
     let newBlockData: any;
     if (type === 'course') {
-      newBlockData = { series: 1, reps: 1, distance: 100, restBetweenReps: '60', restBetweenSeries: '180', chronos: [[]] };
+      newBlockData = { id: newId, series: 1, reps: 1, distance: 100, restBetweenReps: '60', restBetweenSeries: '180', chronos: [[null]] };
     } else if (type === 'muscu') {
       newBlockData = { exercice_id: '', exercice_nom: '', series: 3, reps: 10, poids: 0 };
     } else if (type === 'escalier') {
       newBlockData = { exercice_id: '', exercice_nom: '', series: 1, marches: 100, poids: 0 };
     }
-    setBlocs(prev => [...prev, { id: generateId(), type, data: newBlockData }]);
+    setBlocs(prev => [...prev, { id: newId, type, data: newBlockData }]);
   };
 
   const updateBlock = (id: string, newData: any) => {
