@@ -57,6 +57,11 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit'>(initialData?.type || 'guidé');
   const [notes, setNotes] = useState(initialData?.notes || '');
 
+  useEffect(() => {
+    console.log('[NewWorkoutForm] workoutType:', workoutType);
+    console.log('[NewWorkoutForm] initialData?.type:', initialData?.type);
+  }, [workoutType, initialData]);
+
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [isFabOpen, setIsFabOpen] = useState(false);
@@ -284,8 +289,10 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   return (
     <div className="fixed inset-0 bg-gray-100 dark:bg-gray-900 z-50 overflow-y-auto">
+      {isFabOpen && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]" onClick={() => setIsFabOpen(false)}></div>}
+
       {workoutType === 'guidé' && (
-      <div className="fixed bottom-24 right-4 z-30">
+      <div className="fixed bottom-24 right-4 z-[70]">
         <AnimatePresence>
           {isFabOpen && (
             <motion.div
@@ -294,9 +301,9 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
               exit={{ opacity: 0, y: 10 }}
               className="flex flex-col items-center gap-3 mb-3"
             >
-              <button onClick={() => { addBlock('course'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg"><Activity /></button>
-              <button onClick={() => { addBlock('muscu'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg"><Dumbbell /></button>
-              <button onClick={() => { addBlock('escalier'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-yellow-500 text-white flex items-center justify-center shadow-lg"><Zap /></button>
+              <button onClick={() => { addBlock('course'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Activity /></button>
+              <button onClick={() => { addBlock('muscu'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Dumbbell /></button>
+              <button onClick={() => { addBlock('escalier'); setIsFabOpen(false); }} className="w-14 h-14 rounded-full bg-yellow-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"><Zap /></button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -311,7 +318,6 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
         </motion.button>
       </div>
       )}
-       {isFabOpen && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20" onClick={() => setIsFabOpen(false)}></div>}
 
 
       <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
