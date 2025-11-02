@@ -12,7 +12,7 @@ export interface Group {
 }
 
 export interface GroupMember {
-  group_id?: string;
+  group_id: string;
   athlete_id: string;
   profile?: Profile;
 }
