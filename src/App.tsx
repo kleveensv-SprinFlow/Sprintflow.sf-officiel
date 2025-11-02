@@ -28,6 +28,7 @@ import { NutritionModule } from './components/nutrition/NutritionModule';
 import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 import { SleepTracker } from './components/sleep/SleepTracker';
 import { getViewTitle } from './utils/navigation';
+// import AdvicePanel from './components/advice/AdvicePanel';
 
 function App() {
   const { user, profile, loading, error } = useAuth();
@@ -36,114 +37,51 @@ function App() {
   const [navigationStack, setNavigationStack] = useState<View[]>(['dashboard']);
   const currentView = navigationStack[navigationStack.length - 1];
   const [editingWorkout, setEditingWorkout] = useState<any>(null);
-  const [appError, setAppError] = useState<string | null>(null);
   const [refreshScores, setRefreshScores] = useState<(() => Promise<void>) | null>(null);
-  const [forceShowAuth, setForceShowAuth] = useState(false);
-
-  // Timeout de sécurité : forcer l'affichage après 5 secondes
-  useEffect(() => {
-    console.log('🕐 [App] État loading:', loading);
-    if (loading) {
-      const timeout = setTimeout(() => {
-        console.warn('⚠️ [App] Timeout atteint (5s), forçage affichage auth');
-        setForceShowAuth(true);
-      }, 5000);
-      return () => clearTimeout(timeout);
-    }
-  }, [loading]);
 
   const navigateTo = (view: View) => {
-    setNavigationStack([...navigationStack, view]);
+    if (view === currentView) return; // Prevent pushing the same view
+    setNavigationStack(prevStack => [...prevStack, view]);
   };
 
   const navigateBack = () => {
     if (navigationStack.length > 1) {
-      setNavigationStack(navigationStack.slice(0, -1));
+      setNavigationStack(prevStack => prevStack.slice(0, -1));
     }
   };
-
-  // Gestionnaire d'erreur global
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      console.error('Erreur globale capturée:', event.error);
-      
-      // Ignorer certaines erreurs non critiques
-      if (event.error?.message?.includes('infinite recursion') || 
-          event.error?.message?.includes('Auth session missing')) {
-        return;
-      }
-    };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Promise rejetée:', event.reason);
-      
-      // Ignorer certaines erreurs non critiques
-      if (event.reason?.message?.includes('infinite recursion') || 
-          event.reason?.message?.includes('Auth session missing')) {
-        event.preventDefault();
-        return;
-      }
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
-  }, []);
-
-  // Écouter les événements de changement de vue
-  useEffect(() => {
-    const handleViewChange = (event: any) => {
-      if (event.detail) {
-        navigateTo(event.detail);
-      }
-    };
-    
-    window.addEventListener('change-view', handleViewChange);
-    
-    return () => {
-      window.removeEventListener('change-view', handleViewChange);
-    };
-  }, [navigationStack]);
-
-  // Afficher l'écran de chargement pendant l'initialisation
-  if (loading && !forceShowAuth) {
-    return <LoadingScreen message="Initialisation de l'application..." />;
+  
+  const navigateToRoot = (view: View) => {
+    setNavigationStack([view]);
+  };
+  
+  // Affiche l'écran de chargement PENDANT que le hook useAuth détermine l'état de la session.
+  if (loading) {
+    console.log('🕐 [App] Initialisation en cours...');
+    return <LoadingScreen message="Vérification de la session..." />;
   }
 
-  // Afficher l'écran d'authentification si pas d'utilisateur
-  if (!user || forceShowAuth) {
-    console.log('🔐 Pas d\'utilisateur - Affichage Auth');
+  // Affiche l'écran d'authentification si le chargement est terminé et qu'il n'y a PAS d'utilisateur.
+  if (!user) {
+    console.log('🔐 [App] Pas d\'utilisateur, affichage de l\'écran d\'authentification.');
     return <Auth initialError={error} />;
   }
 
-  // Déterminer le rôle avec fallback sécurisé
+  // Si nous arrivons ici, l'utilisateur est authentifié.
   const userRole = profile?.role || 'athlete';
-  const isDeveloper = user?.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f';
-  const effectiveRole = isDeveloper ? 'coach' : userRole;
 
   const handleWorkoutSave = async (workoutData: any) => {
-    console.log('🟢 handleWorkoutSave appelé dans App.tsx', workoutData);
     try {
       if (editingWorkout) {
-        console.log('📝 Mode édition, ID:', editingWorkout.id);
         await updateWorkout(editingWorkout.id, workoutData);
       } else {
-        console.log('➕ Mode création nouvelle séance');
         await saveWorkout(workoutData);
       }
-      console.log('✅ Sauvegarde terminée, retour en arrière...');
       setEditingWorkout(null);
       navigateBack();
-      if (refreshScores) {
-        await refreshScores();
-      }
-    } catch (error: any) {
-      console.error('❌ Erreur dans handleWorkoutSave:', error);
-      alert(`Erreur: ${error?.message || error}`);
+      refreshScores?.();
+    } catch (e: any) {
+      console.error('❌ Erreur dans handleWorkoutSave:', e);
+      alert(`Erreur: ${e?.message || e}`);
     }
   };
 
@@ -151,36 +89,17 @@ function App() {
     try {
       await saveRecord(recordData);
       navigateBack();
-      if (refreshScores) {
-        await refreshScores();
-      }
+      refreshScores?.();
     } catch (error) {
       console.error('Erreur sauvegarde record:', error);
     }
   };
 
-
-  const handleSleepSave = async () => {
-    try {
-      navigateBack();
-      // Optionally refresh data if sleep affects scores
-      if (refreshScores) {
-        await refreshScores();
-      }
-    } catch (error) {
-      console.error('Error saving sleep:', error);
-    }
-  };
-
-  // Fonction pour forcer le rechargement des données depuis Supabase
   const refreshData = () => {
     if (user) {
-      // Vider les caches localStorage pour forcer le rechargement depuis Supabase
       localStorage.removeItem(`bodycomps_${user.id}`);
       localStorage.removeItem(`records_${user.id}`);
       localStorage.removeItem(`workouts_${user.id}`);
-      
-      // Recharger la page pour récupérer les données fraîches
       window.location.reload();
     }
   };
@@ -188,10 +107,10 @@ function App() {
   return (
     <div className="min-h-screen bg-transparent">
       <Header
-        userRole={effectiveRole}
+        userRole={userRole}
         onRefreshData={refreshData}
         onProfileClick={() => navigateTo('profile')}
-        onHomeClick={() => setNavigationStack(['dashboard'])}
+        onHomeClick={() => navigateToRoot('dashboard')}
         onPartnershipsClick={() => navigateTo('partnerships')}
         isDashboard={currentView === 'dashboard'}
         canGoBack={navigationStack.length > 1}
@@ -199,133 +118,34 @@ function App() {
         title={getViewTitle(currentView)}
       />
       
-      <main className="p-6 pb-20">
-        {/* Dashboard */}
-        {currentView === 'dashboard' && (
-          <Dashboard
-            workouts={workouts || []}
-            onViewChange={navigateTo}
-            userRole={effectiveRole}
-            onScoresLoad={(fn) => setRefreshScores(() => fn)}
-          />
-        )}
-        
-        {/* Workouts */}
-        {currentView === 'workouts' && (
-          <WorkoutsList 
-            onAddWorkout={() => navigateTo('add-workout')}
-            onEditWorkout={(workout) => {
-              setEditingWorkout(workout);
-              navigateTo('add-workout');
-            }}
-          />
-        )}
-        {currentView === 'add-workout' && (
-          <NewWorkoutForm
-            editingWorkout={editingWorkout}
-            onSave={handleWorkoutSave}
-            onCancel={() => {
-              setEditingWorkout(null);
-              navigateBack();
-            }}
-          />
-        )}
-        
-        {/* Records */}
-        {currentView === 'records' && (
-          <RecordsList onAddRecord={() => navigateTo('add-record')} />
-        )}
-        {currentView === 'add-record' && (
-          <RecordsForm 
-            records={records || []}
-            onSave={handleRecordSave}
-            onCancel={navigateBack}
-          />
-        )}
-        
-        {/* Body Composition */}
-        {currentView === 'bodycomp' && (
-          <div className="p-4 text-center">
-            <p className="text-gray-500">Module composition corporelle en développement</p>
-          </div>
-        )}
-
-        {/* Detailed Analysis */}
-        {currentView === 'ai' && (
-          <div className="p-4 text-center">
-            <p className="text-gray-500">Module conseils en développement</p>
-          </div>
-        )}
-        
-        {/* Groups */}
-        {currentView === 'groups' && effectiveRole === 'athlete' && (
-          <AthleteGroupView />
-        )}
-        {currentView === 'groups' && effectiveRole === 'coach' && (
-          <GroupManagement />
-        )}
-        
-        {/* Chat */}
-        {currentView === 'chat' && effectiveRole === 'coach' && (
-          <ChatManager />
-        )}
-        
-        {/* Planning */}
-        {currentView === 'planning' && effectiveRole === 'athlete' && (
-          <AthletePlanning />
-        )}
-        {currentView === 'planning' && effectiveRole === 'coach' && (
-          <CoachPlanning />
-        )}
-        
-        {/* Profile */}
-        {currentView === 'profile' && (
-          <ProfilePage />
-        )}
-        
-        {/* Partnerships */}
-        {currentView === 'partnerships' && (
-          <PartnershipsList />
-        )}
-
-        {/* Nutrition */}
-        {currentView === 'nutrition' && (
-          <NutritionModule />
-        )}
-        {currentView === 'add-food' && (
-          <FoodSearchModal 
-            onClose={navigateBack}
-            onFoodSelected={(food) => {
-              // TODO: Handle food selection logic
-              console.log('Nourriture sélectionnée:', food);
-              navigateBack();
-            }}
-          />
-        )}
-
-        {/* Sleep */}
-        {currentView === 'sleep' && (
-          <SleepTracker />
-        )}
-
-        {/* Developer Panel */}
-        {currentView === 'developer' && user && user.id === '75a17559-b45b-4dd1-883b-ce8ccfe03f0f' && (
-          <DeveloperPanel />
-        )}
+      <main className="p-4 md:p-6 pb-24">
+        {currentView === 'dashboard' && <Dashboard onViewChange={navigateTo} userRole={userRole} onScoresLoad={(fn) => setRefreshScores(() => fn)} />}
+        {currentView === 'workouts' && <WorkoutsList onAddWorkout={() => navigateTo('add-workout')} onEditWorkout={(workout) => { setEditingWorkout(workout); navigateTo('add-workout'); }} />}
+        {currentView === 'add-workout' && <NewWorkoutForm editingWorkout={editingWorkout} onSave={handleWorkoutSave} onCancel={() => { setEditingWorkout(null); navigateBack(); }} />}
+        {currentView === 'records' && <RecordsList onAddRecord={() => navigateTo('add-record')} />}
+        {currentView === 'add-record' && <RecordsForm records={records || []} onSave={handleRecordSave} onCancel={navigateBack} />}
+        {/* {currentView === 'ai' && <AdvicePanel />} */}
+        {currentView === 'groups' && userRole === 'athlete' && <AthleteGroupView />}
+        {currentView === 'groups' && userRole === 'coach' && <GroupManagement />}
+        {currentView === 'chat' && userRole === 'coach' && <ChatManager />}
+        {currentView === 'planning' && userRole === 'athlete' && <AthletePlanning />}
+        {currentView === 'planning' && userRole === 'coach' && <CoachPlanning />}
+        {currentView === 'profile' && <ProfilePage />}
+        {currentView === 'partnerships' && <PartnershipsList />}
+        {currentView === 'nutrition' && <NutritionModule />}
+        {currentView === 'add-food' && <FoodSearchModal onClose={navigateBack} onFoodSelected={(food) => { console.log('Nourriture sélectionnée:', food); navigateBack(); }} />}
+        {currentView === 'sleep' && <SleepTracker />}
+        {currentView === 'developer' && profile?.role === 'developer' && <DeveloperPanel />}
       </main>
       
-      {/* Navigation Components */}
       <TabBar
         currentView={currentView}
-        onViewChange={(view) => setNavigationStack([view])}
+        onViewChange={navigateToRoot}
         onFabAction={navigateTo}
-        userRole={effectiveRole}
+        userRole={userRole}
       />
       
-      {/* PWA Install Prompt */}
       <PWAInstallPrompt />
-      
-      {/* Global Notifications */}
       <NotificationDisplay />
     </div>
   );
