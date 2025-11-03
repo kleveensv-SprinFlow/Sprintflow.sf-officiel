@@ -27,126 +27,87 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = useCallback(async (user: User) => {
     console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
-
-    // --- MODIFICATION TEMPORAIRE POUR DÉBOGAGE ---
-    console.log("🟡 [useAuth] CONTOURNEMENT: Utilisation d'un profil de test.");
-    const mockProfile: Profile = {
-      id: user.id,
-      email: user.email,
-      first_name: "Utilisateur",
-      last_name: "Test",
-      role: 'athlete',
-      created_at: new Date().toISOString(),
-    };
-    setProfile(mockProfile);
-    // --- FIN DE LA MODIFICATION ---
-
-    /*
-    // Le code original est mis en commentaire pour le test
     try {
+      // Requête simplifiée pour être plus robuste
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, role, first_name, last_name, email')
         .eq('id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') {
+        // 'PGRST116' signifie "aucune ligne trouvée", ce n'est pas une erreur critique ici.
         throw error;
       }
 
       if (data) {
-        console.log("✅ [useAuth] Profil chargé:", data);
+        console.log("✅ [useAuth] Profil chargé depuis la base de données:", data);
         setProfile(data);
       } else {
-        console.log("🟡 [useAuth] Aucun profil trouvé, l'utilisateur doit le créer.");
-        setProfile(null);
+        // Fallback: si le profil n'existe pas, créer un profil de base en mémoire
+        console.log("🟡 [useAuth] Aucun profil trouvé en BDD. Utilisation d'un profil de secours.");
+        const fallbackProfile: Profile = {
+          id: user.id,
+          email: user.email,
+          first_name: user.user_metadata?.first_name || "Utilisateur",
+          last_name: user.user_metadata?.last_name || "",
+          // Tenter de deviner le rôle, sinon 'athlete' par défaut
+          role: user.user_metadata?.role || 'athlete', 
+          created_at: new Date().toISOString(),
+        };
+        setProfile(fallbackProfile);
       }
-    } catch (e) {
-      console.error("❌ [useAuth] Erreur lors du chargement du profil:", e);
-      setProfile(null);
+    } catch (e: any) {
+      console.error("❌ [useAuth] Erreur critique lors du chargement du profil:", e.message);
+      // En cas d'erreur, on empêche le blocage en créant un profil de secours
+      const errorProfile: Profile = {
+        id: user.id,
+        email: user.email,
+        first_name: "Erreur",
+        last_name: "Profil",
+        role: 'athlete',
+        created_at: new Date().toISOString(),
+      };
+      setProfile(errorProfile);
     }
-    */
   }, []);
 
   const refreshProfile = useCallback(async () => {
     console.log('🔄 [useAuth] Rafraîchissement manuel du profil...');
     if (user) {
       await fetchProfile(user);
-      console.log('✅ [useAuth] Profil rafraîchi avec succès');
     }
   }, [user, fetchProfile]);
   
   const signIn = useCallback(async (email: string, password: string) => {
-    console.log('🔐 [useAuth] Tentative de connexion...');
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      console.error('❌ [useAuth] Erreur de connexion:', error);
-      throw error;
-    }
-    console.log('✅ [useAuth] Connexion réussie');
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
     return data;
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData: any) => {
-    console.log('📝 [useAuth] Tentative d\'inscription...');
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: profileData.first_name,
-          last_name: profileData.last_name,
-        }
-      }
+      email, password, options: { data: { first_name: profileData.first_name, last_name: profileData.last_name } }
     });
-    if (error) {
-      console.error('❌ [useAuth] Erreur d\'inscription:', error);
-      throw error;
-    }
+    if (error) throw error;
     if (!data.user) throw new Error('Aucun utilisateur créé');
-    console.log('✅ [useAuth] Inscription réussie, création du profil...');
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        id: data.user.id,
-        email: email,
-        first_name: profileData.first_name,
-        last_name: profileData.last_name,
-        role: profileData.role,
-        role_specifique: profileData.role_specifique || null,
-        date_de_naissance: profileData.date_de_naissance || null,
-        discipline: profileData.discipline || null,
-        sexe: profileData.sexe || null,
-        height: profileData.height || null,
-      });
-    if (profileError) {
-      console.error('❌ [useAuth] Erreur création profil:', profileError);
-      throw new Error(`Erreur lors de la création du profil: ${profileError.message}`);
-    }
-    console.log('✅ [useAuth] Profil créé avec succès');
+      .insert({ id: data.user.id, email, ...profileData });
+    if (profileError) throw new Error(`Erreur lors de la création du profil: ${profileError.message}`);
     return data;
   }, []);
   
   const resendConfirmationEmail = useCallback(async (email: string) => {
-    console.log('📧 [useAuth] Renvoi de l\'email de confirmation...');
-    const { error } = await supabase.auth.resend({ type: 'signup', email: email });
-    if (error) {
-      console.error('❌ [useAuth] Erreur renvoi email:', error);
-      throw error;
-    }
-    console.log('✅ [useAuth] Email de confirmation renvoyé');
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) throw error;
   }, []);
 
   const signOut = useCallback(async () => {
-    console.log('🚪 [useAuth] Déconnexion...');
     await supabase.auth.signOut();
   }, []);
 
   useEffect(() => {
-    console.log("🔄 [useAuth] Initialisation du listener...");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         console.log(`🔐 [useAuth] Événement reçu: ${_event}`);
@@ -168,35 +129,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     );
-
-    return () => {
-      console.log("🛑 [useAuth] Nettoyage du listener.");
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
   useEffect(() => {
-    const handleProfileUpdate = () => {
-      console.log('🔄 [useAuth] Événement profile-updated reçu');
-      refreshProfile();
-    };
+    const handleProfileUpdate = () => refreshProfile();
     window.addEventListener('profile-updated', handleProfileUpdate);
-    return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdate);
-    };
+    return () => window.removeEventListener('profile-updated', handleProfileUpdate);
   }, [refreshProfile]);
 
-  const contextValue = {
-    session,
-    user,
-    profile,
-    loading,
-    refreshProfile,
-    signOut,
-    signIn,
-    signUp,
-    resendConfirmationEmail
-  };
+  const contextValue = { session, user, profile, loading, refreshProfile, signOut, signIn, signUp, resendConfirmationEmail };
 
   return (
     <AuthContext.Provider value={contextValue}>
