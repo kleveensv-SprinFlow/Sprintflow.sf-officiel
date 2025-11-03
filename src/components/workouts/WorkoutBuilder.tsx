@@ -1,5 +1,5 @@
-import React from 'react';
-import { Trash2, ChevronUp, ChevronDown, Dumbbell, Navigation, GripVertical } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trash2, ChevronUp, ChevronDown, Dumbbell, Navigation, GripVertical, Edit } from 'lucide-react';
 import { useExercices } from '../../hooks/useExercices';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { WorkoutBlock, CourseBlock, MuscuBlock } from '../../types/workout';
@@ -16,24 +16,26 @@ interface WorkoutBuilderProps {
 const generateId = () => `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange }) => {
+  const [openBlockId, setOpenBlockId] = useState<string | null>(null);
   const { exercices } = useExercices();
   const { dragState, handleDragStart, handleDragEnter, handleDragEnd, handleDragOver } = useDragAndDrop(blocks, onChange);
 
   const addBlock = (type: 'course' | 'musculation') => {
+    const newId = generateId();
     const newBlock: WorkoutBlock =
       type === 'course'
         ? {
             type: 'course',
-            id: generateId(),
+            id: newId,
             series: 1,
             reps: 1,
-            distance: 100,
+            distance: 400,
             restBetweenReps: '02:00',
             restBetweenSeries: '05:00',
           }
         : {
             type: 'musculation',
-            id: generateId(),
+            id: newId,
             exerciceId: '',
             exerciceNom: '',
             series: 3,
@@ -42,6 +44,7 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
             restTime: '02:00',
           };
     onChange([newBlock, ...blocks]);
+    setOpenBlockId(newId);
   };
 
   const removeBlock = (id: string) => {
@@ -67,12 +70,42 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
     onChange(newBlocks);
   };
 
-  const renderBlock = (block: WorkoutBlock) => {
+  const handleValidate = () => {
+    setOpenBlockId(null);
+  };
+
+  const renderBlock = (block: WorkoutBlock, index: number) => {
+    const isEditing = openBlockId === block.id;
+
+    if (!isEditing) {
+      const blockNumber = blocks.length - index;
+      let summary = '';
+      let title = '';
+
+      if (block.type === 'course') {
+        title = `Course ${blockNumber}`;
+        summary = `${block.series}x${block.reps}x${block.distance}m`;
+      } else if (block.type === 'musculation') {
+        title = `Muscu ${blockNumber}`;
+        summary = `${block.series}x${block.reps} @ ${block.poids}kg - ${block.exerciceNom || 'N/A'}`;
+      }
+
+      return (
+        <div onClick={() => setOpenBlockId(block.id)} className="cursor-pointer p-4 flex justify-between items-center">
+          <div>
+            <p className="font-bold text-lg text-gray-800 dark:text-white">{title}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{summary}</p>
+          </div>
+          <Edit className="w-5 h-5 text-gray-400" />
+        </div>
+      );
+    }
+
     if (block.type === 'course') {
-      return <CourseBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} />;
+      return <CourseBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} onValidate={handleValidate} />;
     }
     if (block.type === 'musculation') {
-      return <MuscuBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} />;
+      return <MuscuBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} onValidate={handleValidate} />;
     }
     return null;
   };
@@ -126,10 +159,9 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
               className={`
-                bg-white dark:bg-gray-800 p-6 rounded-2xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative
+                bg-white dark:bg-gray-800 rounded-2xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative
                 ${dragState.isDragging && dragState.draggedIndex === index ? 'opacity-40 scale-95 border-blue-500' : 'border-gray-200 dark:border-gray-700'}
                 ${dragState.draggedOverIndex === index && dragState.draggedIndex !== index ? 'border-blue-400 border-dashed scale-105' : ''}
-                cursor-move
               `}
             >
               <div className="absolute top-4 left-4 flex items-center space-x-2">
@@ -154,13 +186,16 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
                 </button>
                 <button
                   type="button"
-                  onClick={() => removeBlock(block.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeBlock(block.id);
+                  }}
                   className="p-2.5 bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-all active:scale-90"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>
-              {renderBlock(block)}
+              {renderBlock(block, index)}
             </div>
           ))
         )}
