@@ -8,8 +8,10 @@ import { useGroups } from '../../hooks/useGroups';
 import { useCoachLinks } from '../../hooks/useCoachLinks';
 import useAuth from '../../hooks/useAuth';
 import { WorkoutTemplate } from '../../hooks/useWorkoutTemplates';
+import { useWorkoutTypes } from '../../hooks/useWorkoutTypes'; // Importer le hook
 
 import { TemplateSelectionModal } from '../workouts/TemplateSelectionModal';
+import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { Workout } from '../../types';
 
 type ActiveFilter = {
@@ -23,6 +25,15 @@ export const CoachPlanning: React.FC = () => {
   const { workouts, planWorkout, loading: loadingWorkouts } = useWorkouts();
   const { groups, loading: loadingGroups } = useGroups();
   const { linkedAthletes, loading: loadingAthletes } = useCoachLinks(user?.id);
+  const { allTypes: workoutTypes } = useWorkoutTypes();
+
+  const workoutTypeMap = useMemo(() => {
+    const map = new Map<string, { name: string; color: string }>();
+    workoutTypes.forEach(type => {
+      map.set(type.id, { name: type.name, color: type.color });
+    });
+    return map;
+  }, [workoutTypes]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>({ type: 'all', id: null, name: 'Tous les athlètes' });
@@ -73,11 +84,13 @@ export const CoachPlanning: React.FC = () => {
     setWorkoutFormOpen(true);
   };
 
-  const handleSaveWorkout = async (payload: { title: string; blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
+  const handleSaveWorkout = async (payload: { blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
     if (!selectedDate) return;
 
+    const workoutTypeName = workoutTypeMap.get(payload.tag_seance)?.name || 'Séance';
+
     const planningPayload: any = {
-      title: payload.title,
+      title: workoutTypeName, // Le titre est maintenant le nom du type
       type: payload.type,
       tag_seance: payload.tag_seance,
       notes: payload.notes,
@@ -170,18 +183,24 @@ export const CoachPlanning: React.FC = () => {
                 <span className={`font-semibold text-lg ${isToday ? 'text-primary-500' : ''}`}>{format(day, 'd')}</span>
               </div>
               
-              <div className="flex-grow overflow-y-auto text-sm space-y-2">
+              <div className="flex-grow overflow-y-auto text-sm space-y-2 pr-2">
                 {workoutsForDay.map(w => {
-                  const isPlanned = w.status === 'planned';
+                  const typeInfo = w.tag_seance ? workoutTypeMap.get(w.tag_seance) : null;
+                  const workoutName = typeInfo ? typeInfo.name : w.title;
+                  const workoutColor = typeInfo ? typeInfo.color : '#6b7280'; // Gris par défaut
+
                   return (
                     <div
                       key={w.id}
-                      className={`p-2 rounded-lg shadow-sm truncate ${isPlanned ? 'bg-blue-100 dark:bg-blue-900' : 'bg-green-100 dark:bg-green-900'}`}
-                      title={w.title}
+                      className="p-2 rounded-lg shadow-sm truncate bg-gray-50 dark:bg-gray-700/50"
+                      style={{
+                        borderLeft: `4px solid ${workoutColor}`
+                      }}
+                      title={workoutName}
                     >
-                      <p className="font-semibold">{w.title}</p>
-                      <p className="text-xs opacity-80">{w.type === 'guidé' ? 'Séance Guidée' : 'Manuscrit'}</p>
-                      {!isPlanned && w.rpe && (
+                      <p className="font-semibold">{workoutName}</p>
+                      <p className="text-xs opacity-80">{w.type === 'guidé' ? 'Guidée' : 'Manuscrit'}</p>
+                      {w.status === 'completed' && w.rpe && (
                         <p className="font-bold text-xs mt-1">RPE: {w.rpe}</p>
                       )}
                     </div>
