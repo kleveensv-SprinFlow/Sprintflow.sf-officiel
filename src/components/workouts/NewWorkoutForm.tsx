@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import { WorkoutBuilder } from './WorkoutBuilder';
+import WorkoutTypeSelector from './WorkoutTypeSelector';
+import AddCustomWorkoutTypeModal from './AddCustomWorkoutTypeModal';
 import { WorkoutBlock } from '../../types/workout';
-
-export type { WorkoutBlock };
+import type { CustomWorkoutType } from '../../types';
 
 interface NewWorkoutFormProps {
   onSave: (payload: {
-    title: string;
+    tag_seance: string;
     blocs: WorkoutBlock[];
     type: 'guidé' | 'manuscrit';
     notes?: string;
@@ -15,7 +17,7 @@ interface NewWorkoutFormProps {
   onCancel: () => void;
   initialData?: {
     id?: string;
-    title: string;
+    tag_seance: string;
     blocs: WorkoutBlock[];
     type?: 'guidé' | 'manuscrit';
     notes?: string;
@@ -23,17 +25,18 @@ interface NewWorkoutFormProps {
 }
 
 export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutFormProps) {
-  const [title, setTitle] = useState(initialData?.title || `Nouvelle séance du ${new Date().toLocaleDateString('fr-FR')}`);
+  const [tagSeance, setTagSeance] = useState<string | null>(initialData?.tag_seance || null);
   const [blocks, setBlocks] = useState<WorkoutBlock[]>(initialData?.blocs || []);
   const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit'>(initialData?.type || 'guidé');
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [saving, setSaving] = useState(false);
+  const [isCustomModalOpen, setCustomModalOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim()) {
-      alert('Le titre est requis');
+    if (!tagSeance) {
+      alert('Veuillez sélectionner un type de séance.');
       return;
     }
 
@@ -50,7 +53,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     setSaving(true);
     try {
       await onSave({
-        title,
+        tag_seance: tagSeance,
         type: workoutType,
         notes,
         blocs: blocks,
@@ -64,37 +67,43 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {initialData?.id ? 'Modifier la séance' : 'Nouvelle séance'}
-          </h2>
-          <button
-            onClick={onCancel}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <>
+      <AnimatePresence>
+        {isCustomModalOpen && (
+          <AddCustomWorkoutTypeModal
+            onClose={() => setCustomModalOpen(false)}
+            onSuccess={(newType) => {
+              // Le hook mettra à jour la liste automatiquement,
+              // mais nous sélectionnons le nouveau type ici.
+              setTagSeance(newType.id);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Titre de la séance *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ex: Sprint + Force, Récupération active"
-              required
-            />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {initialData?.id ? 'Modifier la séance' : 'Nouvelle séance'}
+            </h2>
+            <button
+              onClick={onCancel}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+            <WorkoutTypeSelector
+              selectedType={tagSeance}
+              onSelectType={setTagSeance}
+              onOpenCustomModal={() => setCustomModalOpen(true)}
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Type de séance
             </label>
             <div className="flex gap-4">
@@ -167,5 +176,6 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
         </form>
       </div>
     </div>
+    </>
   );
 }
