@@ -119,15 +119,15 @@ export function LoadingScreen({
           <div className="absolute inset-0 rounded-full bg-primary-200 dark:bg-primary-800 animate-ping opacity-20"></div>
           <div className="absolute inset-2 rounded-full bg-primary-100 dark:bg-primary-900 animate-ping opacity-30 animation-delay-75"></div>
           <img
-            src="https://github.com/sprintflowanalyse-star/Sprintflow-logo/raw/a9fd36b0444dd0da71e7bc4eaf7aafb6631155c9/PhotoRoom-20250915_123950.png"
-            alt="Sprintflow Logo"
+            src="/logo-sprintflow.png"
+            alt="SprintFlow Logo"
             className="relative w-20 h-20 mx-auto object-contain animate-pulse"
           />
         </div>
 
         {/* Titre avec gradient */}
         <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-          Sprintflow
+          SprintFlow
         </h1>
 
         {/* Spinner de chargement */}
