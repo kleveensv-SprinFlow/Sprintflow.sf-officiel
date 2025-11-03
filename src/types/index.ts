@@ -105,3 +105,14 @@ export type CustomWorkoutType = {
   name: string;
   color: string;
 };
+
+export interface BodyComposition {
+  id: string;
+  date: string;
+  weight: number;
+  height: number;
+  waterPercentage: number;
+  totalMuscle: number;
+  skeletalMuscle: number;
+  bodyFatPercentage: number;
+}
