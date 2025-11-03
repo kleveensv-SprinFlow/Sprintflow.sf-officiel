@@ -8,7 +8,7 @@ import { NewWorkoutForm } from './components/workouts/NewWorkoutForm';
 import { RecordsForm } from './components/records/RecordsForm';
 import { ProfilePage } from './components/profile/ProfilePage';
 import { View } from './types';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SleepForm } from './components/sleep/SleepForm';
 import { GroupManagement } from './components/groups/GroupManagement';
@@ -22,9 +22,11 @@ import { ChatManager } from './components/chat/ChatManager';
 import { AthletePlanning } from './components/planning/AthletePlanning';
 import { NutritionModule } from './components/nutrition/NutritionModule';
 import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
+import { useRecords } from './hooks/useRecords';
 
 function App() {
   const { session, loading, profile } = useAuth();
+  const { records, saveRecord } = useRecords();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isFabOpen, setFabOpen] = useState(false);
   const [showForm, setShowForm] = useState<View | null>(null);
@@ -72,12 +74,23 @@ function App() {
     }
   };
 
+  const handleSaveRecord = async (record: any) => {
+    try {
+      await saveRecord(record);
+      toast.success('Record enregistré avec succès !');
+      setShowForm(null);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du record:', error);
+      toast.error('Erreur lors de la sauvegarde du record');
+    }
+  };
+
   const renderForm = () => {
     switch (showForm) {
       case 'add-workout':
         return <NewWorkoutForm onSave={() => setShowForm(null)} onCancel={() => setShowForm(null)} />;
       case 'add-record':
-        return <RecordsForm onClose={() => setShowForm(null)} />;
+        return <RecordsForm records={records} onSave={handleSaveRecord} onCancel={() => setShowForm(null)} />;
       case 'add-food':
         return <FoodSearchModal onClose={() => setShowForm(null)} onFoodSelected={() => setShowForm(null)} />;
       case 'sleep':
