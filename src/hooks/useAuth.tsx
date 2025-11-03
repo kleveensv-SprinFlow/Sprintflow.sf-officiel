@@ -30,20 +30,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
-      
+      if (error) {
+        console.error('❌ [useAuth] Erreur lors du chargement du profil:', error);
+        setProfile(null);
+        return;
+      }
+
       if (data) {
         console.log("✅ [useAuth] Profil chargé:", data);
         setProfile(data);
       } else {
-         console.log("🟡 [useAuth] Aucun profil trouvé en BDD pour cet utilisateur.");
-         setProfile(null);
+        console.log("🟡 [useAuth] Aucun profil trouvé. Attente de la création du profil...");
+        setProfile(null);
       }
     } catch (e: any) {
-      console.error("❌ [useAuth] Erreur lors de la récupération du profil:", e.message);
-      setProfile(null); // En cas d'erreur, on ne laisse pas un profil potentiellement incorrect
+      console.error("❌ [useAuth] Erreur lors du chargement du profil:", e);
+      setProfile(null);
     }
   }, []);
 
@@ -58,27 +62,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData: any) => {
-    // 1. Inscription de l'utilisateur
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { first_name: profileData.first_name, last_name: profileData.last_name } }
-    });
-    if (authError) throw authError;
-    if (!authData.user) throw new Error('Inscription échouée, aucun utilisateur créé.');
+    console.log('🔐 [useAuth] Tentative d\'inscription...');
 
-    // 2. Création du profil associé
-    // Important: l'utilisateur est maintenant authentifié, la politique RLS va fonctionner.
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: authData.user.id, // L'ID doit correspondre à l'utilisateur authentifié
+    const { data, error } = await supabase.auth.signUp({
       email,
-      ...profileData
+      password,
+      options: {
+        data: {
+          first_name: profileData.first_name,
+          last_name: profileData.last_name
+        }
+      }
     });
-    if (profileError) {
-      // Si la création du profil échoue, il faut le signaler clairement.
-      throw new Error(`Erreur lors de la création du profil: ${profileError.message}`);
+
+    if (error) throw error;
+    if (!data.user) throw new Error('Aucun utilisateur créé');
+
+    console.log('✅ [useAuth] Utilisateur créé, le trigger va créer le profil...');
+
+    // Le trigger handle_new_user() crée automatiquement le profil de base
+    // On attend un peu puis on met à jour les champs supplémentaires
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        first_name: profileData.first_name,
+        last_name: profileData.last_name,
+        full_name: `${profileData.first_name} ${profileData.last_name}`,
+        role: profileData.role || 'athlete',
+        role_specifique: profileData.role_specifique,
+        date_de_naissance: profileData.date_de_naissance,
+        discipline: profileData.discipline,
+        sexe: profileData.sexe,
+        height: profileData.height,
+      })
+      .eq('id', data.user.id);
+
+    if (updateError) {
+      console.error('⚠️ [useAuth] Erreur mise à jour profil (non bloquante):', updateError);
+    } else {
+      console.log('✅ [useAuth] Profil mis à jour avec succès');
     }
-    
-    return authData;
+
+    return data;
   }, []);
   
   const resendConfirmationEmail = useCallback(async (email: string) => {
@@ -86,31 +113,71 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error;
   }, []);
 
-  const signOut = useCallback(async () => { 
-    await supabase.auth.signOut();
-    setProfile(null);
+  const signOut = useCallback(async () => {
+    try {
+      console.log('🔐 [useAuth] Début de la déconnexion...');
+
+      // Nettoyer complètement l'état local d'abord
+      setProfile(null);
+      setUser(null);
+      setSession(null);
+
+      // Déconnexion de Supabase
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error('❌ [useAuth] Erreur lors de la déconnexion:', error);
+        throw error;
+      }
+
+      // Nettoyer le localStorage de Supabase manuellement
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      console.log('✅ [useAuth] Déconnexion réussie');
+    } catch (error) {
+      console.error('❌ [useAuth] Erreur critique lors de la déconnexion:', error);
+      // Forcer le nettoyage même en cas d'erreur
+      setProfile(null);
+      setUser(null);
+      setSession(null);
+    }
   }, []);
 
   useEffect(() => {
-    setLoading(true);
+    console.log("🔄 [useAuth] Initialisation du listener...");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         console.log(`🔐 [useAuth] Événement reçu: ${_event}`);
-        const currentUser = session?.user ?? null;
-        
-        setSession(session);
-        setUser(currentUser);
+        setLoading(true);
 
-        if (currentUser) {
-          await fetchProfile(currentUser);
-        } else {
-          setProfile(null);
+        try {
+          setSession(session);
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
+
+          if (currentUser) {
+            await fetchProfile(currentUser);
+          } else {
+            setProfile(null);
+          }
+        } catch (error) {
+          console.error("❌ [useAuth] Erreur dans onAuthStateChange:", error);
+        } finally {
+          setLoading(false);
+          console.log("✅ [useAuth] Traitement terminé");
         }
-        
-        setLoading(false);
       }
     );
-    return () => subscription.unsubscribe();
+
+    return () => {
+      console.log("🛑 [useAuth] Nettoyage du listener");
+      subscription.unsubscribe();
+    };
   }, [fetchProfile]);
   
   const contextValue = { session, user, profile, loading, refreshProfile, signOut, signIn, signUp, resendConfirmationEmail };
