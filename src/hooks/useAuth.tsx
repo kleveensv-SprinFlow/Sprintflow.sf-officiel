@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import { useState, useEffect, useContext, createContext, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
@@ -22,15 +22,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const isMountedRef = useRef(true);
 
   const fetchProfile = useCallback(async (user: User) => {
     console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
+
     try {
-      const { data, error } = await supabase
+      // Ajouter un timeout de 10 secondes
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout: Le chargement du profil a pris trop de temps')), 10000);
+      });
+
+      const queryPromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
+
+      console.log('🔍 [useAuth] Exécution de la requête Supabase...');
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+      console.log('📦 [useAuth] Réponse reçue de Supabase');
 
       if (error) {
         console.error('❌ [useAuth] Erreur lors du chargement du profil:', error);
@@ -150,9 +163,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     console.log("🔄 [useAuth] Initialisation du listener...");
+    isMountedRef.current = true;
+
+    const loadProfile = async (userId: string) => {
+      console.log(`📡 [useAuth] Chargement profil inline pour: ${userId}`);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (!isMountedRef.current) return;
+
+        if (error) {
+          console.error('❌ [useAuth] Erreur profil:', error);
+          setProfile(null);
+          return;
+        }
+
+        if (data) {
+          console.log("✅ [useAuth] Profil chargé:", data);
+          setProfile(data);
+        } else {
+          console.log("🟡 [useAuth] Aucun profil trouvé");
+          setProfile(null);
+        }
+      } catch (e) {
+        console.error("❌ [useAuth] Exception:", e);
+        if (isMountedRef.current) setProfile(null);
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        console.log(`🔐 [useAuth] Événement reçu: ${_event}`);
+        console.log(`🔐 [useAuth] Événement: ${_event}`);
+        if (!isMountedRef.current) return;
+
         setLoading(true);
 
         try {
@@ -161,24 +208,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(currentUser);
 
           if (currentUser) {
-            await fetchProfile(currentUser);
+            console.log('👤 [useAuth] Chargement profil...');
+            await loadProfile(currentUser.id);
           } else {
+            console.log('🚫 [useAuth] Pas d\'utilisateur');
             setProfile(null);
           }
         } catch (error) {
-          console.error("❌ [useAuth] Erreur dans onAuthStateChange:", error);
+          console.error("❌ [useAuth] Erreur:", error);
+          if (isMountedRef.current) setProfile(null);
         } finally {
-          setLoading(false);
-          console.log("✅ [useAuth] Traitement terminé");
+          if (isMountedRef.current) {
+            console.log('🏁 [useAuth] Fin de chargement');
+            setLoading(false);
+          }
         }
       }
     );
 
     return () => {
-      console.log("🛑 [useAuth] Nettoyage du listener");
+      console.log("🛑 [useAuth] Nettoyage");
+      isMountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, []);
   
   const contextValue = { session, user, profile, loading, refreshProfile, signOut, signIn, signUp, resendConfirmationEmail };
 
