@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Trash2, ChevronUp, ChevronDown, Dumbbell, Navigation, GripVertical, Edit } from 'lucide-react';
+import { Trash2, Dumbbell, Navigation, GripVertical, Edit } from 'lucide-react';
 import { useExercices } from '../../hooks/useExercices';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
-import { WorkoutBlock, CourseBlock, MuscuBlock } from '../../types/workout';
+import { WorkoutBlock } from '../../types/workout';
 import { CourseBlockForm } from './CourseBlockForm';
 import { MuscuBlockForm } from './MuscuBlockForm';
 
-export type { WorkoutBlock, CourseBlock, MuscuBlock };
+export type { WorkoutBlock };
 
 interface WorkoutBuilderProps {
   blocks: WorkoutBlock[];
@@ -16,39 +16,36 @@ interface WorkoutBuilderProps {
 const generateId = () => `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange }) => {
-  const [openBlockId, setOpenBlockId] = useState<string | null>(null);
+  const [openBlockIds, setOpenBlockIds] = useState<string[]>([]);
   const { exercices } = useExercices();
   const { dragState, handleDragStart, handleDragEnter, handleDragEnd, handleDragOver } = useDragAndDrop(blocks, onChange);
+
+  const toggleBlock = (id: string) => {
+    setOpenBlockIds(prev => 
+      prev.includes(id) ? prev.filter(blockId => blockId !== id) : [...prev, id]
+    );
+  };
 
   const addBlock = (type: 'course' | 'musculation') => {
     const newId = generateId();
     const newBlock: WorkoutBlock =
       type === 'course'
         ? {
-            type: 'course',
-            id: newId,
-            series: 1,
-            reps: 1,
-            distance: 400,
-            restBetweenReps: '02:00',
-            restBetweenSeries: '05:00',
+            type: 'course', id: newId, series: 1, reps: 1, distance: 400,
+            restBetweenReps: '02:00', restBetweenSeries: '05:00',
           }
         : {
-            type: 'musculation',
-            id: newId,
-            exerciceId: '',
-            exerciceNom: '',
-            series: 3,
-            reps: 10,
-            poids: 50,
-            restTime: '02:00',
+            type: 'musculation', id: newId, exerciceId: '', exerciceNom: '',
+            series: 3, reps: 10, poids: 50, restTime: '02:00',
           };
     onChange([newBlock, ...blocks]);
-    setOpenBlockId(newId);
+    setOpenBlockIds(prev => [...prev, newId]);
   };
 
   const removeBlock = (id: string) => {
-    onChange(blocks.filter(block => block.id !== id));
+    const newBlocks = blocks.filter(block => block.id !== id);
+    onChange(newBlocks);
+    setOpenBlockIds(prev => prev.filter(blockId => blockId !== id));
   };
 
   const updateBlock = (id: string, updatedFields: Partial<WorkoutBlock>) => {
@@ -57,25 +54,12 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
     ));
   };
 
-  const moveBlock = (id: string, direction: 'up' | 'down') => {
-    const index = blocks.findIndex(block => block.id === id);
-    if (index === -1) return;
-
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= blocks.length) return;
-
-    const newBlocks = [...blocks];
-    const [movedBlock] = newBlocks.splice(index, 1);
-    newBlocks.splice(newIndex, 0, movedBlock);
-    onChange(newBlocks);
-  };
-
-  const handleValidate = () => {
-    setOpenBlockId(null);
+  const handleValidate = (id: string) => {
+    setOpenBlockIds(prev => prev.filter(blockId => blockId !== id));
   };
 
   const renderBlock = (block: WorkoutBlock, index: number) => {
-    const isEditing = openBlockId === block.id;
+    const isEditing = openBlockIds.includes(block.id);
 
     if (!isEditing) {
       const blockNumber = blocks.length - index;
@@ -91,7 +75,7 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
       }
 
       return (
-        <div onClick={() => setOpenBlockId(block.id)} className="cursor-pointer p-4 flex justify-between items-center">
+        <div onClick={() => toggleBlock(block.id)} className="cursor-pointer p-4 flex justify-between items-center">
           <div>
             <p className="font-bold text-lg text-gray-800 dark:text-white">{title}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{summary}</p>
@@ -102,10 +86,10 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
     }
 
     if (block.type === 'course') {
-      return <CourseBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} onValidate={handleValidate} />;
+      return <CourseBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} onValidate={() => handleValidate(block.id)} />;
     }
     if (block.type === 'musculation') {
-      return <MuscuBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} onValidate={handleValidate} />;
+      return <MuscuBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} onValidate={() => handleValidate(block.id)} />;
     }
     return null;
   };
@@ -113,22 +97,14 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
-          type="button"
-          onClick={() => addBlock('course')}
-          className="group relative px-6 py-5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 transition-all duration-200 active:scale-95 overflow-hidden"
-        >
+        <button type="button" onClick={() => addBlock('course')} className="group relative px-6 py-5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 transition-all duration-200 active:scale-95 overflow-hidden">
           <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
           <div className="relative flex items-center justify-center space-x-3">
             <Navigation className="w-6 h-6" />
             <span className="text-lg">Ajouter Bloc Course</span>
           </div>
         </button>
-        <button
-          type="button"
-          onClick={() => addBlock('musculation')}
-          className="group relative px-6 py-5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-2xl shadow-lg shadow-green-500/30 transition-all duration-200 active:scale-95 overflow-hidden"
-        >
+        <button type="button" onClick={() => addBlock('musculation')} className="group relative px-6 py-5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-2xl shadow-lg shadow-green-500/30 transition-all duration-200 active:scale-95 overflow-hidden">
           <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
           <div className="relative flex items-center justify-center space-x-3">
             <Dumbbell className="w-6 h-6" />
@@ -141,12 +117,8 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
         {blocks.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-block p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-              <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">
-                Aucun bloc ajouté
-              </p>
-              <p className="text-gray-400 dark:text-gray-500 text-sm">
-                Commencez par ajouter un bloc Course ou Musculation
-              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">Aucun bloc ajouté</p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm">Commencez par ajouter un bloc Course ou Musculation</p>
             </div>
           </div>
         ) : (
@@ -158,32 +130,14 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
               onDragEnter={() => handleDragEnter(index)}
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
-              className={`
-                bg-white dark:bg-gray-800 rounded-2xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative
-                ${dragState.isDragging && dragState.draggedIndex === index ? 'opacity-40 scale-95 border-blue-500' : 'border-gray-200 dark:border-gray-700'}
-                ${dragState.draggedOverIndex === index && dragState.draggedIndex !== index ? 'border-blue-400 border-dashed scale-105' : ''}
-              `}
+              className={`bg-white dark:bg-gray-800 rounded-2xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative ${dragState.isDragging && dragState.draggedIndex === index ? 'opacity-40 scale-95 border-blue-500' : 'border-gray-200 dark:border-gray-700'} ${dragState.draggedOverIndex === index && dragState.draggedIndex !== index ? 'border-blue-400 border-dashed scale-105' : ''}`}
             >
               <div className="absolute top-4 left-4 flex items-center space-x-2">
                 <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-xl cursor-grab active:cursor-grabbing">
                   <GripVertical className="w-5 h-5 text-gray-400" />
                 </div>
               </div>
-              <div className="absolute top-4 right-4 flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => moveBlock(block.id, 'up')}
-                  className="p-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-all active:scale-90"
-                >
-                  <ChevronUp className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveBlock(block.id, 'down')}
-                  className="p-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-all active:scale-90"
-                >
-                  <ChevronDown className="w-5 h-5" />
-                </button>
+              <div className="absolute top-4 right-4">
                 <button
                   type="button"
                   onClick={(e) => {
