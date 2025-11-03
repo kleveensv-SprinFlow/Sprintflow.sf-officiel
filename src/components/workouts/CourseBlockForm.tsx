@@ -2,9 +2,7 @@ import React from 'react';
 import { Navigation } from 'lucide-react';
 import TimePicker from '../common/TimePicker';
 import PickerWheel from '../common/PickerWheel';
-import { CourseBlock } from '../../types/workout';
-
-export type CourseBlockData = CourseBlock;
+import { CourseBlockData } from '../../types';
 
 interface CourseBlockFormProps {
   block: CourseBlockData;
