@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Users, Loader2, X, Trash2 } from 'lucide-react';
 import { useGroups, Group } from '../../hooks/useGroups';
-import { GroupDetailsPage } from './GroupDetailsPage'; // Le nouveau composant de détails
-import { AthleteDetails } from './AthleteDetails'; // La fiche athlète existante
-import { Profile } from '../../types'; // Assurez-vous que le type Profile est bien importé
+import { GroupDetailsPage } from './GroupDetailsPage';
+import { AthleteDetails } from './AthleteDetails';
+import { Profile } from '../../types';
 import { toast } from 'react-toastify';
+import { supabase } from '../../lib/supabase';
 
 // Modale pour la création de groupe
 const CreateGroupModal: React.FC<{ onClose: () => void; onCreate: (name: string) => Promise<void>; }> = ({ onClose, onCreate }) => {
@@ -65,11 +66,31 @@ export const GroupManagement: React.FC = () => {
   };
   
   // Cette fonction sera passée à GroupDetailsPage
-  const handleViewAthlete = (athleteId: string) => {
+  const handleViewAthlete = async (athleteId: string) => {
+      // Vérifier d'abord si c'est un membre du groupe
       const athleteProfile = selectedGroup?.group_members.find(m => m.athlete_id === athleteId)?.profiles as Profile;
+
       if (athleteProfile) {
           setSelectedAthlete(athleteProfile);
           setCurrentView('athlete');
+      } else {
+          // Si pas trouvé dans group_members, charger depuis la base (cas du coach)
+          try {
+              const { data, error } = await supabase
+                  .from('profiles')
+                  .select('id, first_name, last_name, avatar_url, role, date_de_naissance, sexe, height, discipline, license_number')
+                  .eq('id', athleteId)
+                  .single();
+
+              if (error) throw error;
+              if (data) {
+                  setSelectedAthlete(data as Profile);
+                  setCurrentView('athlete');
+              }
+          } catch (error) {
+              console.error('Erreur chargement profil:', error);
+              toast.error('Impossible de charger le profil');
+          }
       }
   };
 
