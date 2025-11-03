@@ -75,50 +75,79 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData: any) => {
-    console.log('🔐 [useAuth] Tentative d\'inscription...');
+    console.log('🔐 [useAuth] Tentative d\'inscription...', { email, profileData });
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: profileData.first_name,
-          last_name: profileData.last_name
+    try {
+      // Mapper les rôles français vers anglais
+      const roleMap: Record<string, string> = {
+        'athlète': 'athlete',
+        'athlete': 'athlete',
+        'encadrant': 'coach',
+        'coach': 'coach'
+      };
+
+      const mappedRole = roleMap[profileData.role?.toLowerCase()] || 'athlete';
+      console.log('📋 [useAuth] Rôle mappé:', profileData.role, '->', mappedRole);
+
+      // 1. Inscription de l'utilisateur
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: profileData.first_name,
+            last_name: profileData.last_name,
+            role: mappedRole
+          }
         }
+      });
+
+      if (error) {
+        console.error('❌ [useAuth] Erreur inscription:', error);
+        throw error;
       }
-    });
 
-    if (error) throw error;
-    if (!data.user) throw new Error('Aucun utilisateur créé');
+      if (!data.user) {
+        throw new Error('Aucun utilisateur créé');
+      }
 
-    console.log('✅ [useAuth] Utilisateur créé, le trigger va créer le profil...');
+      console.log('✅ [useAuth] Utilisateur créé:', data.user.id);
 
-    // Le trigger handle_new_user() crée automatiquement le profil de base
-    // On attend un peu puis on met à jour les champs supplémentaires
-    await new Promise(resolve => setTimeout(resolve, 1000));
+      // 2. Créer le profil (le trigger a été supprimé)
+      console.log('📝 [useAuth] Création du profil...');
 
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
+      const newProfile = {
+        id: data.user.id,
+        email: email,
         first_name: profileData.first_name,
         last_name: profileData.last_name,
         full_name: `${profileData.first_name} ${profileData.last_name}`,
-        role: profileData.role || 'athlete',
-        role_specifique: profileData.role_specifique,
-        date_de_naissance: profileData.date_de_naissance,
-        discipline: profileData.discipline,
-        sexe: profileData.sexe,
-        height: profileData.height,
-      })
-      .eq('id', data.user.id);
+        role: mappedRole,
+        role_specifique: profileData.role_specifique || null,
+        date_de_naissance: profileData.date_de_naissance || null,
+        discipline: profileData.discipline || '',
+        sexe: profileData.sexe || null,
+        height: profileData.height || null,
+      };
 
-    if (updateError) {
-      console.error('⚠️ [useAuth] Erreur mise à jour profil (non bloquante):', updateError);
-    } else {
-      console.log('✅ [useAuth] Profil mis à jour avec succès');
+      console.log('📋 [useAuth] Données du profil:', newProfile);
+
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert(newProfile);
+
+      if (insertError) {
+        console.error('❌ [useAuth] Erreur création profil:', insertError);
+        throw new Error(`Erreur lors de la création du profil: ${insertError.message}`);
+      }
+
+      console.log('✅ [useAuth] Profil créé avec succès');
+
+      return data;
+    } catch (error) {
+      console.error('❌ [useAuth] Erreur complète inscription:', error);
+      throw error;
     }
-
-    return data;
   }, []);
   
   const resendConfirmationEmail = useCallback(async (email: string) => {
