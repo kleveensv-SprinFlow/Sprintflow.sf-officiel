@@ -159,15 +159,13 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   position: relative;
-
-  /* Le fond est maintenant géré par le composant AnimatedBackground */
-  background-color: transparent;
+  background-color: #f9fafb; /* bg-gray-50 */
   color: #1f2937; /* text-gray-800 */
 }
 
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: transparent;
+    background-color: #111827; /* bg-gray-900 */
     color: #f9fafb; /* text-gray-50 */
   }
 }
@@ -208,18 +206,4 @@ code {
 .no-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
-}
-/*
-  Animation FINALE pour le fond d'écran "vivant".
-  - Fait bouger un "pulse" de lumière de bas en haut.
-  - La translation est ajustée pour un rectangle plus grand que l'écran,
-    ce qui rend l'apparition et la disparition de la lueur invisibles.
-*/
-@keyframes flow-glow {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(-50%);
-  }
 }

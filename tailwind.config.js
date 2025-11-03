@@ -1,15 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'class',
+  darkMode: 'media',
   theme: {
     extend: {
-      backgroundImage: {
-        'theme-light': "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fcd-claire.png')",
-        'theme-dark': "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fdc-Sombre.png')",
-      },
       colors: {
-        // ... (vos couleurs existantes restent ici)
+        // Couleurs Sprintflow basées sur le logo
         primary: {
           50: '#f0f4ff',
           100: '#e0e9ff',
