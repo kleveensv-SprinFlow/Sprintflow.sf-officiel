@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import useAuth from './hooks/useAuth';
+import useAuth from './hooks/useAuth.tsx';
 import Auth from './components/Auth';
 import { LoadingScreen } from './components/LoadingScreen';
 import Dashboard from './components/Dashboard';
