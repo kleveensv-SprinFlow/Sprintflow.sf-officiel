@@ -43,7 +43,7 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
       case 'profile':
         return <ProfilePage />;
       case 'groups':
@@ -59,7 +59,7 @@ function App() {
       case 'chat':
         return <ChatManager />;
       default:
-        return <Dashboard />;
+        return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
     }
   };
 
