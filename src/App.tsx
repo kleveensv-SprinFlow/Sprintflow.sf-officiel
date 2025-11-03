@@ -10,6 +10,7 @@ import Header from './components/navigation/Header';
 import TabBar from './components/TabBar';
 import Dashboard from './components/Dashboard';
 import { WorkoutsList } from './components/workouts/WorkoutsList';
+import { NewWorkoutForm } from './components/workouts/NewWorkoutForm';
 import { RecordsList } from './components/records/RecordsList';
 import { RecordsForm } from './components/records/RecordsForm';
 import { AthleteGroupView } from './components/groups/AthleteGroupView';
