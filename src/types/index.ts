@@ -36,6 +36,7 @@ export type Workout = {
   user_id: string; // L'athlète qui a réalisé la séance
   date: string; // La date de réalisation effective
   title: string;
+  tag_seance?: string; // Ajout du tag pour le type de séance
 
   // Données de la séance
   workout_data: { blocs: any[] }; // Performances réelles de l'athlète
@@ -90,3 +91,17 @@ export type View =
   | 'developer'
   | 'settings'
   | 'contact';
+
+export type DefaultWorkoutType = {
+  id: string;
+  name: string;
+  color: string;
+};
+
+export type CustomWorkoutType = {
+  id: string;
+  created_at: string;
+  coach_id: string;
+  name: string;
+  color: string;
+};
