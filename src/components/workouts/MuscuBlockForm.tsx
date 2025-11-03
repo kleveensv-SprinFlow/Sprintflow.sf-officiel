@@ -9,13 +9,14 @@ import { MuscuBlock } from '../../types/workout';
 interface MuscuBlockFormProps {
   block: MuscuBlock;
   onChange: (updatedBlock: MuscuBlock) => void;
+  onValidate: () => void;
 }
 
 const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
 const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
 const poidsValues = Array.from({ length: 401 }, (_, i) => i * 0.5);
 
-export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange }) => {
+export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange, onValidate }) => {
   const { exercices } = useExercices();
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
@@ -36,12 +37,8 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange 
   }, [selectedCategory, exercices]);
 
   return (
-    <div className="space-y-6">
-      <h4 className="font-semibold text-green-600 dark:text-green-400 flex items-center space-x-2 px-4 pt-4 md:px-6">
-        <Dumbbell className="w-5 h-5" />
-        <span>Bloc Musculation / Force</span>
-      </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 md:px-6">
+    <div className="space-y-4 p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Catégorie</label>
           <select
@@ -77,7 +74,7 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange 
         </div>
       </div>
       
-      <div className="flex flex-wrap justify-center items-start gap-4 px-4 md:px-6">
+      <div className="flex flex-wrap justify-center items-start gap-4">
         <PickerWheel
           label="Séries"
           values={seriesValues}
@@ -99,8 +96,8 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange 
         />
       </div>
 
-      <div className="px-4 pb-4 md:px-6">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
           Repos
         </label>
         <TimePicker
@@ -108,6 +105,13 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange 
           onChange={(val) => updateBlock({ restTime: val })}
         />
       </div>
+      <button
+        type="button"
+        onClick={onValidate}
+        className="w-full mt-4 py-3 px-4 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        Valider
+      </button>
     </div>
   );
 };
