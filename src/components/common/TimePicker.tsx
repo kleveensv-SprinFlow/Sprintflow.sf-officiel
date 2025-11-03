@@ -1,94 +1,63 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 
-const ITEM_HEIGHT = 40; // Hauteur de chaque élément en pixels
-const VISIBLE_ITEMS = 3; // Nombre d'éléments visibles
-
-interface WheelProps {
-  values: number[];
-  initialValue: number;
-  onChange: (value: number) => void;
+interface TimePickerProps {
+  initialTime: string; // "MM:SS"
+  onChange: (time: string) => void;
 }
 
-const Wheel: React.FC<WheelProps> = ({ values, initialValue, onChange }) => {
-  const y = useMotionValue(-values.indexOf(initialValue) * ITEM_HEIGHT);
-  
-  const handleDragEnd = (event: any, info: any) => {
-    const offset = info.offset.y;
-    const nearestIndex = Math.round((y.get() + offset) / ITEM_HEIGHT);
-    const clampedIndex = Math.max(0, Math.min(values.length - 1, -nearestIndex));
-    
-    const targetY = -clampedIndex * ITEM_HEIGHT;
-
-    animate(y, targetY, {
-      type: 'spring',
-      stiffness: 400,
-      damping: 40,
-      onComplete: () => {
-        onChange(values[clampedIndex]);
-      }
-    });
+const TimeInput: React.FC<{
+  value: number;
+  onChange: (value: number) => void;
+  max: number;
+  label: string;
+}> = ({ value, onChange, max, label }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value === '' ? 0 : Number(e.target.value);
+    if (newValue >= 0 && newValue <= max) {
+      onChange(newValue);
+    }
   };
-  
+
   return (
-    <div
-      className="h-40 w-20 overflow-hidden relative touch-none"
-      style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
-    >
-      <div className="absolute top-1/2 left-0 right-0 h-10 bg-gray-200 dark:bg-gray-700/50 rounded-lg transform -translate-y-1/2 z-0" />
-      <motion.div
-            drag="y"
-            dragConstraints={{
-              top: -ITEM_HEIGHT * (values.length - 1),
-              bottom: 0,
-            }}
-            onDragEnd={handleDragEnd}
-            style={{ y, paddingTop: ITEM_HEIGHT, paddingBottom: ITEM_HEIGHT }}
-            className="flex flex-col items-center z-10"
-      >
-        {values.map((val) => (
-          <div
-            key={val}
-            className="h-10 w-full flex items-center justify-center text-xl font-semibold select-none"
-            style={{ height: ITEM_HEIGHT }}
-          >
-            {val.toString().padStart(2, '0')}
-          </div>
-        ))}
-      </motion.div>
+    <div className="flex flex-col items-center">
+      <input
+        type="number"
+        value={value.toString().padStart(2, '0')}
+        onChange={handleChange}
+        className="w-20 h-16 text-center bg-white dark:bg-gray-800 text-3xl font-semibold !text-black dark:!text-white border-none rounded-lg focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
+      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">{label}</span>
     </div>
   );
 };
 
-interface TimePickerProps {
-    initialTime: string; // "MM:SS"
-    onChange: (time: string) => void;
-}
-
 const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange }) => {
-    const parseTime = (time: string) => {
-        const [min, sec] = time.split(':').map(Number);
-        return { min, sec };
-    };
+  const parseTime = (time: string) => {
+    const parts = time.split(':');
+    if (parts.length === 2) {
+        const [min, sec] = parts.map(Number);
+        if (!isNaN(min) && !isNaN(sec)) {
+            return { min, sec };
+        }
+    }
+    return { min: 0, sec: 0 }; // Fallback for invalid format
+  };
 
-    const [minutes, setMinutes] = useState(parseTime(initialTime).min);
-    const [seconds, setSeconds] = useState(parseTime(initialTime).sec);
+  const [minutes, setMinutes] = useState(parseTime(initialTime).min);
+  const [seconds, setSeconds] = useState(parseTime(initialTime).sec);
 
-    const minutesValues = Array.from({ length: 31 }, (_, i) => i);
-    const secondsValues = Array.from({ length: 60 }, (_, i) => i);
+  useEffect(() => {
+    const newTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    onChange(newTime);
+  }, [minutes, seconds, onChange]);
 
-    useEffect(() => {
-        const newTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        onChange(newTime);
-    }, [minutes, seconds, onChange]);
-
-    return (
-        <div className="flex items-center justify-center bg-gray-100 dark:bg-gray-900/50 p-2 rounded-xl">
-            <Wheel values={minutesValues} initialValue={minutes} onChange={setMinutes} />
-            <span className="text-2xl font-semibold pb-1">:</span>
-            <Wheel values={secondsValues} initialValue={seconds} onChange={setSeconds} />
-        </div>
-    );
+  return (
+    <div className="flex items-center justify-center gap-2 p-2 rounded-xl bg-gray-100 dark:bg-gray-900/50">
+      <TimeInput value={minutes} onChange={setMinutes} max={59} label="min" />
+      <span className="text-3xl font-semibold text-gray-400 dark:text-gray-500 pb-4">:</span>
+      <TimeInput value={seconds} onChange={setSeconds} max={59} label="sec" />
+    </div>
+  );
 };
 
 export default TimePicker;
