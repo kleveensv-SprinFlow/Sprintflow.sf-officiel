@@ -1,61 +1,77 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import PickerWheel from './PickerWheel';
 
 interface TimePickerProps {
   initialTime: string; // "MM:SS"
   onChange: (time: string) => void;
 }
 
-const TimeInput: React.FC<{
-  value: number;
-  onChange: (value: number) => void;
-  max: number;
-  label: string;
-}> = ({ value, onChange, max, label }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value === '' ? 0 : Number(e.target.value);
-    if (newValue >= 0 && newValue <= max) {
-      onChange(newValue);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center">
-      <input
-        type="number"
-        value={value.toString().padStart(2, '0')}
-        onChange={handleChange}
-        className="w-20 h-16 text-center bg-white dark:bg-gray-800 text-3xl font-semibold !text-black dark:!text-white border-none rounded-lg focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-      />
-      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">{label}</span>
-    </div>
-  );
-};
+const minutesValues = Array.from({ length: 60 }, (_, i) => i);
+const secondsValues = Array.from({ length: 60 }, (_, i) => i);
 
 const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
   const parseTime = (time: string) => {
     const parts = time.split(':');
     if (parts.length === 2) {
         const [min, sec] = parts.map(Number);
-        if (!isNaN(min) && !isNaN(sec)) {
-            return { min, sec };
-        }
+        if (!isNaN(min) && !isNaN(sec)) return { min, sec };
     }
-    return { min: 0, sec: 0 }; // Fallback for invalid format
+    return { min: 0, sec: 0 };
   };
 
   const [minutes, setMinutes] = useState(parseTime(initialTime).min);
   const [seconds, setSeconds] = useState(parseTime(initialTime).sec);
 
-  useEffect(() => {
+  const handleValidate = () => {
     const newTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     onChange(newTime);
-  }, [minutes, seconds, onChange]);
+    setIsOpen(false);
+  };
 
   return (
-    <div className="flex items-center justify-center gap-2 p-2 rounded-xl bg-gray-100 dark:bg-gray-900/50">
-      <TimeInput value={minutes} onChange={setMinutes} max={59} label="min" />
-      <span className="text-3xl font-semibold text-gray-400 dark:text-gray-500 pb-4">:</span>
-      <TimeInput value={seconds} onChange={setSeconds} max={59} label="sec" />
+    <div>
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="w-full h-12 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center text-xl font-semibold !text-black dark:!text-white border border-gray-300 dark:border-gray-600"
+      >
+        {initialTime}
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg flex flex-col items-center gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-2">
+                <PickerWheel values={minutesValues} initialValue={minutes} onChange={setMinutes} label="Min" />
+                <PickerWheel values={secondsValues} initialValue={seconds} onChange={setSeconds} label="Sec" />
+              </div>
+              <button
+                type="button"
+                onClick={handleValidate}
+                className="w-full py-2 px-4 bg-blue-500 text-white font-semibold rounded-lg"
+              >
+                Valider
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
