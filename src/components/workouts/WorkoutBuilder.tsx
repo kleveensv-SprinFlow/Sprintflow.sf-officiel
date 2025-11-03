@@ -1,10 +1,10 @@
 import React from 'react';
 import { Trash2, ChevronUp, ChevronDown, Dumbbell, Navigation, GripVertical } from 'lucide-react';
 import { useExercices } from '../../hooks/useExercices';
-import { NumberStepper } from '../common/NumberStepper';
-import { TimePicker } from '../common/TimePicker';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { WorkoutBlock, CourseBlock, MuscuBlock } from '../../types/workout';
+import { CourseBlockForm } from './CourseBlockForm';
+import { MuscuBlockForm } from './MuscuBlockForm';
 
 export type { WorkoutBlock, CourseBlock, MuscuBlock };
 
@@ -28,8 +28,8 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
             series: 1,
             reps: 1,
             distance: 100,
-            restBetweenReps: '2m',
-            restBetweenSeries: '5m',
+            restBetweenReps: '02:00',
+            restBetweenSeries: '05:00',
           }
         : {
             type: 'musculation',
@@ -39,7 +39,7 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
             series: 3,
             reps: 10,
             poids: 50,
-            restTime: '2m',
+            restTime: '02:00',
           };
     onChange([newBlock, ...blocks]);
   };
@@ -69,111 +69,10 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
 
   const renderBlock = (block: WorkoutBlock) => {
     if (block.type === 'course') {
-      return (
-        <div className="space-y-4 pl-16 pr-12">
-          <h4 className="font-semibold text-blue-600 dark:text-blue-400 flex items-center space-x-2">
-            <Navigation className="w-5 h-5" />
-            <span>Bloc Course / Piste</span>
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <NumberStepper
-              label="Séries"
-              value={block.series}
-              onChange={(val) => updateBlock(block.id, { ...block, series: val })}
-              min={1}
-              max={20}
-            />
-            <NumberStepper
-              label="Répétitions"
-              value={block.reps}
-              onChange={(val) => updateBlock(block.id, { ...block, reps: val })}
-              min={1}
-              max={50}
-            />
-            <NumberStepper
-              label="Distance"
-              value={block.distance}
-              onChange={(val) => updateBlock(block.id, { ...block, distance: val })}
-              min={50}
-              max={10000}
-              step={50}
-              suffix="m"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TimePicker
-              label="Repos entre répétitions"
-              value={block.restBetweenReps}
-              onChange={(val) => updateBlock(block.id, { ...block, restBetweenReps: val })}
-            />
-            <TimePicker
-              label="Repos entre séries"
-              value={block.restBetweenSeries}
-              onChange={(val) => updateBlock(block.id, { ...block, restBetweenSeries: val })}
-            />
-          </div>
-        </div>
-      );
+      return <CourseBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} />;
     }
     if (block.type === 'musculation') {
-      return (
-        <div className="space-y-4 pl-16 pr-12">
-          <h4 className="font-semibold text-green-600 dark:text-green-400 flex items-center space-x-2">
-            <Dumbbell className="w-5 h-5" />
-            <span>Bloc Musculation / Force</span>
-          </h4>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Exercice</label>
-            <select
-              value={block.exerciceId}
-              onChange={(e) => {
-                const selectedExercice = exercices.find(ex => ex.id === e.target.value);
-                updateBlock(block.id, {
-                  ...block,
-                  exerciceId: e.target.value,
-                  exerciceNom: selectedExercice?.nom || ''
-                });
-              }}
-              className="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-            >
-              <option value="">Sélectionner un exercice...</option>
-              {exercices.map(ex => (
-                <option key={ex.id} value={ex.id}>{ex.nom}</option>
-              ))}
-            </select>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <NumberStepper
-              label="Séries"
-              value={block.series}
-              onChange={(val) => updateBlock(block.id, { ...block, series: val })}
-              min={1}
-              max={20}
-            />
-            <NumberStepper
-              label="Répétitions"
-              value={block.reps}
-              onChange={(val) => updateBlock(block.id, { ...block, reps: val })}
-              min={1}
-              max={100}
-            />
-            <NumberStepper
-              label="Poids"
-              value={block.poids}
-              onChange={(val) => updateBlock(block.id, { ...block, poids: val })}
-              min={0}
-              max={500}
-              step={0.5}
-              suffix="kg"
-            />
-            <TimePicker
-              label="Repos"
-              value={block.restTime}
-              onChange={(val) => updateBlock(block.id, { ...block, restTime: val })}
-            />
-          </div>
-        </div>
-      );
+      return <MuscuBlockForm block={block} onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)} />;
     }
     return null;
   };
