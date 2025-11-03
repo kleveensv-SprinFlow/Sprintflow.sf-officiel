@@ -34,7 +34,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: 'athlete' as 'athlete' | 'encadrant',
+    role: 'athlète' as 'athlète' | 'encadrant',
     role_specifique: '',
     discipline: '',
     sexe: '',
@@ -397,7 +397,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
               </div>
               <input type="date" name="date_de_naissance" value={formData.date_de_naissance} onChange={handleInputChange} required className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white" />
               <div className="grid grid-cols-2 gap-4">
-                <SelectionCard label="Athlète" isSelected={formData.role === 'athlete'} onClick={() => setFormData(prev => ({ ...prev, role: 'athlete' }))} icon={<User />} />
+                <SelectionCard label="Athlète" isSelected={formData.role === 'athlète'} onClick={() => setFormData(prev => ({ ...prev, role: 'athlète' }))} icon={<User />} />
                 <SelectionCard label="Encadrant" isSelected={formData.role === 'encadrant'} onClick={() => setFormData(prev => ({ ...prev, role: 'encadrant' }))} icon={<Briefcase />} />
               </div>
               {formData.role === 'encadrant' && (
