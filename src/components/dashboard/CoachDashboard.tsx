@@ -179,9 +179,9 @@ export const CoachDashboard: React.FC = () => {
             </AnimatePresence>
           </div>
           
-          <div className="space-y-8">
+          <div className="space-y-4">
             {renderContent()}
-            
+
             <AthleteMarquee athletes={coachAthletes || []} onAthleteClick={handleAthleteMarqueeClick} />
           </div>
 

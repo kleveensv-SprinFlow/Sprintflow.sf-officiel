@@ -131,8 +131,7 @@ export const AthleteMarquee: React.FC<AthleteMarqueeProps> = ({ athletes = [], o
 
   if (!isPreview && (!data || data.length === 0)) {
     return (
-      <div className="py-8" data-testid="empty-marquee">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 px-4 sm:px-6 text-shadow-light dark:text-shadow-dark">À la une</h2>
+      <div className="py-4" data-testid="empty-marquee">
         <div className="px-4 sm:px-6">
           <div className="relative w-full md:w-auto md:max-w-md h-64 rounded-2xl p-6 flex flex-col justify-center items-center bg-black/20 backdrop-blur-lg border border-white/20 shadow-lg text-center">
             <User size={48} className="text-white/50 mb-4" />
@@ -148,8 +147,7 @@ export const AthleteMarquee: React.FC<AthleteMarqueeProps> = ({ athletes = [], o
   const marqueeWidth = cardWidth * shuffledAthletes.length;
   
   return (
-    <div className="py-8">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 px-4 sm:px-6 text-shadow-light dark:text-shadow-dark">À la une</h2>
+    <div className="py-4">
       <div
         className="relative w-full overflow-x-auto no-scrollbar"
         onMouseEnter={() => isCarousel && setIsPaused(true)}
