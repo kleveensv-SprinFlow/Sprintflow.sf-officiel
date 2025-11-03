@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const mappedRole = roleMap[profileData.role?.toLowerCase()] || 'athlete';
       console.log('📋 [useAuth] Rôle mappé:', profileData.role, '->', mappedRole);
 
-      // 1. Inscription de l'utilisateur
+      // 1. Inscription de l'utilisateur avec TOUTES les données dans raw_user_meta_data
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -98,7 +98,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           data: {
             first_name: profileData.first_name,
             last_name: profileData.last_name,
-            role: mappedRole
+            role: mappedRole,
+            role_specifique: profileData.role_specifique || null,
+            date_de_naissance: profileData.date_de_naissance || null,
+            discipline: profileData.discipline || '',
+            sexe: profileData.sexe || null,
+            height: profileData.height || null
           }
         }
       });
@@ -300,7 +305,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           if (currentUser) {
             console.log('👤 [useAuth] Chargement profil...');
-            await loadProfile(currentUser.id);
+
+            // Si c'est une confirmation d'email (SIGNED_IN après confirmation)
+            // le profil peut ne pas être encore créé par le trigger
+            // On fait des tentatives avec délais
+            if (_event === 'SIGNED_IN') {
+              console.log('🔄 [useAuth] Connexion détectée, tentative avec retry...');
+
+              let attempts = 0;
+              const maxAttempts = 5;
+
+              while (attempts < maxAttempts && isMountedRef.current) {
+                await loadProfile(currentUser.id);
+
+                // Si le profil est chargé, on arrête
+                const { data: checkProfile } = await supabase
+                  .from('profiles')
+                  .select('id')
+                  .eq('id', currentUser.id)
+                  .maybeSingle();
+
+                if (checkProfile) {
+                  console.log('✅ [useAuth] Profil trouvé!');
+                  break;
+                }
+
+                attempts++;
+                if (attempts < maxAttempts) {
+                  console.log(`⏳ [useAuth] Profil non trouvé, tentative ${attempts + 1}/${maxAttempts}...`);
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+              }
+
+              if (attempts === maxAttempts) {
+                console.warn('⚠️ [useAuth] Profil non trouvé après plusieurs tentatives');
+              }
+            } else {
+              await loadProfile(currentUser.id);
+            }
           } else {
             console.log('🚫 [useAuth] Pas d\'utilisateur');
             setProfile(null);
