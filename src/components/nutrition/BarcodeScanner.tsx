@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
 import { X, Camera, Zap, ZapOff } from 'lucide-react';
+
+// Type pour Html5Qrcode chargé dynamiquement
+type Html5Qrcode = any;
 
 interface BarcodeScannerProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ export function BarcodeScanner({ isOpen, onClose, onScanSuccess }: BarcodeScanne
   const [isScanning, setIsScanning] = useState(false);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingLib, setIsLoadingLib] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const mountedRef = useRef(true);
 
@@ -34,14 +37,19 @@ export function BarcodeScanner({ isOpen, onClose, onScanSuccess }: BarcodeScanne
   const startScanner = async () => {
     try {
       setError(null);
-      setIsScanning(true);
+      setIsLoadingLib(true);
 
       if (scannerRef.current) {
         await stopScanner();
       }
-      
-      const newScanner = new Html5Qrcode('barcode-reader');
+
+      // Chargement dynamique de html5-qrcode uniquement quand nécessaire
+      const { Html5Qrcode: Html5QrcodeClass } = await import('html5-qrcode');
+
+      const newScanner = new Html5QrcodeClass('barcode-reader');
       scannerRef.current = newScanner;
+      setIsLoadingLib(false);
+      setIsScanning(true);
 
       const config = {
         fps: 10,
@@ -76,6 +84,7 @@ export function BarcodeScanner({ isOpen, onClose, onScanSuccess }: BarcodeScanne
         }
         setError(errorMessage);
         setIsScanning(false);
+        setIsLoadingLib(false);
       }
     }
   };
@@ -139,10 +148,12 @@ export function BarcodeScanner({ isOpen, onClose, onScanSuccess }: BarcodeScanne
             <div className="relative bg-gray-900 rounded-2xl overflow-hidden shadow-2xl aspect-square">
               <div id="barcode-reader" className="w-full h-full"></div>
               
-              {!isScanning && (
+              {(isLoadingLib || !isScanning) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
                   <Camera className="w-16 h-16 mb-4" />
-                  <p className="text-center">Démarrage de la caméra...</p>
+                  <p className="text-center">
+                    {isLoadingLib ? 'Chargement du scanner...' : 'Démarrage de la caméra...'}
+                  </p>
                 </div>
               )}
 

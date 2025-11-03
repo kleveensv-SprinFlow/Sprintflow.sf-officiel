@@ -27,18 +27,19 @@
   <body>
     <div id="root"></div>
 
-    <!-- Console de debug mobile (Eruda) - Activé uniquement sur mobile -->
+    <!-- Console de debug mobile (Eruda) - Activé uniquement en développement -->
     <script>
-      // Détecter si on est sur mobile
+      // Charger Eruda uniquement en mode développement
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-      if (isMobile) {
+      if (isDevelopment && isMobile) {
         // Charger Eruda (console de debug mobile)
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/eruda';
         script.onload = function() {
           eruda.init();
-          console.log('🔧 Console de debug mobile activée. Appuyez sur l\'icône en bas à droite.');
+          console.log('🔧 Console de debug mobile activée (développement uniquement).');
         };
         document.head.appendChild(script);
       }

@@ -197,3 +197,4 @@ export const AthletePlanning: React.FC = () => {
     </div>
   );
 };
+export default AthletePlanning;

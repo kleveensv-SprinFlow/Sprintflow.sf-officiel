@@ -1,29 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import useAuth from './hooks/useAuth.tsx';
 import Auth from './components/Auth';
 import { LoadingScreen } from './components/LoadingScreen';
 import Dashboard from './components/Dashboard';
 import TabBar from './components/TabBar';
-import { NewWorkoutForm } from './components/workouts/NewWorkoutForm';
-import { RecordsForm } from './components/records/RecordsForm';
-import { ProfilePage } from './components/profile/ProfilePage';
+import Header from './components/navigation/Header';
 import { View } from './types';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { SleepForm } from './components/sleep/SleepForm';
-import { GroupManagement } from './components/groups/GroupManagement';
-import { AthleteGroupView } from './components/groups/AthleteGroupView';
-import { SettingsPage } from './components/static/SettingsPage';
-import { ContactPage } from './components/static/ContactPage';
-import { PartnershipsList } from './components/PartnershipsList';
-import Header from './components/navigation/Header';
-import { DeveloperPanel } from './components/developer/DeveloperPanel';
-import { ChatManager } from './components/chat/ChatManager';
-import { AthletePlanning } from './components/planning/AthletePlanning';
-import { NutritionModule } from './components/nutrition/NutritionModule';
-import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 import { useRecords } from './hooks/useRecords';
-import { AdvicePage } from './components/advice/AdvicePage';
+
+// Lazy loading des composants lourds
+const AthletePlanning = lazy(() => import('./components/planning/AthletePlanning'));
+const NutritionModule = lazy(() => import('./components/nutrition/NutritionModule'));
+const AdvicePage = lazy(() => import('./components/advice/AdvicePage'));
+const ProfilePage = lazy(() => import('./components/profile/ProfilePage'));
+const GroupManagement = lazy(() => import('./components/groups/GroupManagement'));
+const AthleteGroupView = lazy(() => import('./components/groups/AthleteGroupView'));
+const SettingsPage = lazy(() => import('./components/static/SettingsPage'));
+const ContactPage = lazy(() => import('./components/static/ContactPage'));
+const PartnershipsList = lazy(() => import('./components/PartnershipsList'));
+const DeveloperPanel = lazy(() => import('./components/developer/DeveloperPanel'));
+const ChatManager = lazy(() => import('./components/chat/ChatManager'));
+
+// Lazy loading des formulaires
+const NewWorkoutForm = lazy(() => import('./components/workouts/NewWorkoutForm').then(m => ({ default: m.NewWorkoutForm })));
+const RecordsForm = lazy(() => import('./components/records/RecordsForm').then(m => ({ default: m.RecordsForm })));
+const FoodSearchModal = lazy(() => import('./components/nutrition/FoodSearchModal').then(m => ({ default: m.FoodSearchModal })));
+const SleepForm = lazy(() => import('./components/sleep/SleepForm').then(m => ({ default: m.SleepForm })));
 
 function App() {
   const { session, loading, profile } = useAuth();
@@ -47,32 +51,40 @@ function App() {
   };
 
   const renderView = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
-      case 'workouts':
-        return <AthletePlanning />;
-      case 'nutrition':
-        return <NutritionModule />;
-      case 'ai':
-        return <AdvicePage onNavigate={setCurrentView} />;
-      case 'profile':
-        return <ProfilePage />;
-      case 'groups':
-        return profile?.role === 'coach' ? <GroupManagement /> : <AthleteGroupView />;
-      case 'settings':
-        return <SettingsPage />;
-      case 'contact':
-        return <ContactPage />;
-      case 'partnerships':
-        return <PartnershipsList />;
-       case 'developer-panel':
-        return <DeveloperPanel />;
-      case 'chat':
-        return <ChatManager />;
-      default:
-        return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
-    }
+    const viewComponent = (() => {
+      switch (currentView) {
+        case 'dashboard':
+          return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
+        case 'workouts':
+          return <AthletePlanning />;
+        case 'nutrition':
+          return <NutritionModule />;
+        case 'ai':
+          return <AdvicePage onNavigate={setCurrentView} />;
+        case 'profile':
+          return <ProfilePage />;
+        case 'groups':
+          return profile?.role === 'coach' ? <GroupManagement /> : <AthleteGroupView />;
+        case 'settings':
+          return <SettingsPage />;
+        case 'contact':
+          return <ContactPage />;
+        case 'partnerships':
+          return <PartnershipsList />;
+        case 'developer-panel':
+          return <DeveloperPanel />;
+        case 'chat':
+          return <ChatManager />;
+        default:
+          return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
+      }
+    })();
+
+    return currentView === 'dashboard' ? viewComponent : (
+      <Suspense fallback={<LoadingScreen />}>
+        {viewComponent}
+      </Suspense>
+    );
   };
 
   const handleSaveRecord = async (record: any) => {
@@ -87,18 +99,26 @@ function App() {
   };
 
   const renderForm = () => {
-    switch (showForm) {
-      case 'add-workout':
-        return <NewWorkoutForm onSave={() => setShowForm(null)} onCancel={() => setShowForm(null)} />;
-      case 'add-record':
-        return <RecordsForm records={records} onSave={handleSaveRecord} onCancel={() => setShowForm(null)} />;
-      case 'add-food':
-        return <FoodSearchModal onClose={() => setShowForm(null)} onFoodSelected={() => setShowForm(null)} />;
-      case 'sleep':
-        return <SleepForm onClose={() => setShowForm(null)} />;
-      default:
-        return null;
-    }
+    const formComponent = (() => {
+      switch (showForm) {
+        case 'add-workout':
+          return <NewWorkoutForm onSave={() => setShowForm(null)} onCancel={() => setShowForm(null)} />;
+        case 'add-record':
+          return <RecordsForm records={records} onSave={handleSaveRecord} onCancel={() => setShowForm(null)} />;
+        case 'add-food':
+          return <FoodSearchModal onClose={() => setShowForm(null)} onFoodSelected={() => setShowForm(null)} />;
+        case 'sleep':
+          return <SleepForm onClose={() => setShowForm(null)} />;
+        default:
+          return null;
+      }
+    })();
+
+    return formComponent ? (
+      <Suspense fallback={<LoadingScreen />}>
+        {formComponent}
+      </Suspense>
+    ) : null;
   };
 
   if (loading) {

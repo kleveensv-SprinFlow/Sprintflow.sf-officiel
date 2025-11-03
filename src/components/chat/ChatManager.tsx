@@ -80,3 +80,4 @@ export const ChatManager: React.FC = () => {
     </div>
   );
 };
+export default ChatManager;

@@ -203,3 +203,5 @@ export function AdvicePage({ onNavigate }: AdvicePageProps) {
     </div>
   );
 }
+
+export default AdvicePage;

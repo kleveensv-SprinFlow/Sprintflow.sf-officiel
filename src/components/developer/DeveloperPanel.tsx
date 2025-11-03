@@ -74,5 +74,7 @@ export const DeveloperPanel: React.FC = () => {
       {activeTab === 'partnerships' && <PartnershipManagement />}
       {activeTab === 'notifications' && <NotificationSender />}
     </div>
-  )
+  );
 }
+
+export default DeveloperPanel;

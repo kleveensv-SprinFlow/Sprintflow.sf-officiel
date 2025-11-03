@@ -207,5 +207,7 @@ export const PartnershipsList: React.FC = () => {
         </div>
       )}
     </div>
-  )
+  );
 }
+
+export default PartnershipsList;

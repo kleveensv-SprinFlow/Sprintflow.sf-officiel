@@ -1,12 +1,11 @@
 // Fichier: src/hooks/useVideoAnalysis.ts
 
 import { useState, useEffect, useRef } from 'react';
-import {
-  PoseLandmarker,
-  FilesetResolver,
-  PoseLandmarkerResult,
-  NormalizedLandmark,
-} from '@mediapipe/tasks-vision';
+
+// Types importés dynamiquement
+type PoseLandmarker = any;
+type PoseLandmarkerResult = any;
+type NormalizedLandmark = any;
 
 // --- Types et Constantes ---
 
@@ -71,8 +70,11 @@ export function useVideoAnalysis(): UseVideoAnalysis {
   useEffect(() => {
     const createPoseLandmarker = async () => {
       try {
+        // Chargement dynamique de MediaPipe uniquement quand nécessaire
+        const { PoseLandmarker: PoseLandmarkerClass, FilesetResolver } = await import('@mediapipe/tasks-vision');
+
         const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm');
-        const newPoseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        const newPoseLandmarker = await PoseLandmarkerClass.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: POSE_LANDMARKER_MODEL_PATH,
             delegate: 'GPU',

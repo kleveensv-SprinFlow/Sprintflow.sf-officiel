@@ -134,4 +134,4 @@ export const AthleteGroupView: React.FC = () => {
       )}
     </div>
   );
-};
+};export default AthleteGroupView;
