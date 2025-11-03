@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import useAuth from './useAuth.ts'
+import useAuth from './useAuth'
 import { useProfile } from './useProfile.ts'
 import { supabase } from '../lib/supabase'
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import useAuth from './useAuth.ts'
+import useAuth from './useAuth'
 import { supabase } from '../lib/supabase'
 import { BodyComposition } from '../types'
 

@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  refreshProfile: () => Promise<void>; // <-- LA NOUVELLE FONCTION
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,8 +27,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .select('*')
         .eq('id', user.id)
         .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+
+      if (error && error.code !== 'PGRST116') {
         throw error;
       }
 
@@ -45,10 +45,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // <-- LA NOUVELLE FONCTION DE RAFRAÎCHISSEMENT -->
   const refreshProfile = useCallback(async () => {
+    console.log('🔄 [useAuth] Rafraîchissement manuel du profil...');
     if (user) {
       await fetchProfile(user);
+      console.log('✅ [useAuth] Profil rafraîchi avec succès');
     }
   }, [user, fetchProfile]);
 
@@ -77,18 +78,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [fetchProfile]);
 
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      console.log('🔄 [useAuth] Événement profile-updated reçu');
+      refreshProfile();
+    };
+
+    window.addEventListener('profile-updated', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdate);
+    };
+  }, [refreshProfile]);
+
   const value = {
     session,
     user,
     profile,
     loading,
-    refreshProfile, // <-- On l'expose ici
+    refreshProfile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-const useAuth = (): AuthContextType => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

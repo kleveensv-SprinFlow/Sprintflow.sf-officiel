@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { format, startOfWeek, addDays, subWeeks, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import useAuth from './useAuth.ts'
+import useAuth from './useAuth'
 import { supabase } from '../lib/supabase'
 import { SessionTemplate } from '../types'
 

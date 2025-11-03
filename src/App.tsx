@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import useAuth from './hooks/useAuth.tsx'; // <-- CORRECTION ICI
-import { Auth } from './components/Auth';
+import useAuth from './hooks/useAuth';
+import Auth from './components/Auth';
 import { LoadingScreen } from './components/LoadingScreen';
-import { Dashboard } from './components/Dashboard';
-import { TabBar } from './components/TabBar';
+import Dashboard from './components/Dashboard';
+import TabBar from './components/TabBar';
 import { NewWorkoutForm } from './components/workouts/NewWorkoutForm';
 import { RecordsForm } from './components/records/RecordsForm';
 import { ProfilePage } from './components/profile/ProfilePage';
