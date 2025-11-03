@@ -245,12 +245,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         console.log('🚀 [useAuth] Requête Supabase lancée, en attente de réponse...');
 
-        // Augmenter le timeout à 15 secondes et ajouter des logs
+        // Timeout de 3 secondes pour passer rapidement à l'Edge Function
         const timeoutPromise = new Promise((_, reject) => {
           const timeout = setTimeout(() => {
-            console.error('⏰ [useAuth] TIMEOUT atteint - la requête ne répond pas');
-            reject(new Error('Timeout après 15 secondes'));
-          }, 15000);
+            console.error('⏰ [useAuth] TIMEOUT atteint - passage à Edge Function');
+            reject(new Error('Timeout après 3 secondes'));
+          }, 3000);
           return timeout;
         });
 
@@ -285,23 +285,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (e: any) {
         console.error("❌ [useAuth] Exception:", e.message || e);
 
-        // En cas de timeout, essayer de récupérer le profil directement sans retry
-        console.log('🔄 [useAuth] Tentative directe sans Promise.race...');
+        // En cas de timeout, essayer via Edge Function (contournement pour StackBlitz)
+        console.log('🔄 [useAuth] Tentative via Edge Function...');
 
         try {
-          const { data: directData, error: directError } = await supabase
-            .from('profiles')
-            .select('id, role, first_name, last_name, email')
-            .eq('id', userId)
-            .maybeSingle();
+          const { data: { session } } = await supabase.auth.getSession();
 
-          if (directData && !directError) {
-            console.log('✅ [useAuth] Profil récupéré en tentative directe!');
-            setProfile(directData);
-            return;
+          if (session?.access_token) {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-profile`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+
+            if (response.ok) {
+              const profileData = await response.json();
+              console.log('✅ [useAuth] Profil récupéré via Edge Function!');
+              setProfile(profileData);
+              return;
+            } else {
+              console.error('❌ [useAuth] Edge Function error:', response.status);
+            }
           }
-        } catch (directErr) {
-          console.error('❌ [useAuth] Tentative directe échouée aussi');
+        } catch (edgeFuncErr) {
+          console.error('❌ [useAuth] Edge Function échouée aussi:', edgeFuncErr);
         }
 
         // En dernier recours, créer un profil minimal
