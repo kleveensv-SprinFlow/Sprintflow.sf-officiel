@@ -99,7 +99,7 @@ export function ProfilePage() {
 
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: urlWithCacheBuster })
+        .update({ photo_url: urlWithCacheBuster })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
