@@ -1,115 +1,94 @@
-import React, { useState } from 'react';
-import { Clock, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 
-interface TimePickerProps {
-  value: string;
-  onChange: (value: string) => void;
-  label?: string;
-  className?: string;
+const ITEM_HEIGHT = 40; // Hauteur de chaque élément en pixels
+const VISIBLE_ITEMS = 3; // Nombre d'éléments visibles
+
+interface WheelProps {
+  values: number[];
+  initialValue: number;
+  onChange: (value: number) => void;
 }
 
-const QUICK_TIMES = [
-  { label: '30s', value: '30s' },
-  { label: '1m', value: '1m' },
-  { label: '1m30s', value: '1m30s' },
-  { label: '2m', value: '2m' },
-  { label: '3m', value: '3m' },
-  { label: '5m', value: '5m' },
-  { label: '8m', value: '8m' },
-  { label: '10m', value: '10m' },
-];
+const Wheel: React.FC<WheelProps> = ({ values, initialValue, onChange }) => {
+  const y = useMotionValue(-values.indexOf(initialValue) * ITEM_HEIGHT);
+  
+  const handleDragEnd = (event: any, info: any) => {
+    const offset = info.offset.y;
+    const nearestIndex = Math.round((y.get() + offset) / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(values.length - 1, -nearestIndex));
+    
+    const targetY = -clampedIndex * ITEM_HEIGHT;
 
-export const TimePicker: React.FC<TimePickerProps> = ({
-  value,
-  onChange,
-  label,
-  className = ''
-}) => {
-  const [showCustom, setShowCustom] = useState(false);
-  const [customValue, setCustomValue] = useState(value);
-
-  const isQuickTime = QUICK_TIMES.some(t => t.value === value);
-
-  const handleQuickSelect = (timeValue: string) => {
-    onChange(timeValue);
-    setShowCustom(false);
+    animate(y, targetY, {
+      type: 'spring',
+      stiffness: 400,
+      damping: 40,
+      onComplete: () => {
+        onChange(values[clampedIndex]);
+      }
+    });
   };
-
-  const handleCustomSubmit = () => {
-    if (customValue.trim()) {
-      onChange(customValue);
-      setShowCustom(false);
-    }
-  };
-
+  
   return (
-    <div className={className}>
-      {label && (
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-          {label}
-        </label>
-      )}
-
-      <div className="space-y-2">
-        <div className="grid grid-cols-4 gap-2">
-          {QUICK_TIMES.map((time) => (
-            <button
-              key={time.value}
-              type="button"
-              onClick={() => handleQuickSelect(time.value)}
-              className={`
-                relative px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
-                ${value === time.value
-                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-105'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }
-                active:scale-95
-              `}
-            >
-              {value === time.value && (
-                <Check className="absolute top-1 right-1 w-3 h-3" />
-              )}
-              {time.label}
-            </button>
-          ))}
-        </div>
-
-        {!showCustom ? (
-          <button
-            type="button"
-            onClick={() => setShowCustom(true)}
-            className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center justify-center space-x-2 active:scale-95"
+    <div
+      className="h-40 w-20 overflow-hidden relative touch-none"
+      style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
+    >
+      <div className="absolute top-1/2 left-0 right-0 h-10 bg-gray-200 dark:bg-gray-700/50 rounded-lg transform -translate-y-1/2 z-0" />
+      <motion.div
+            drag="y"
+            dragConstraints={{
+              top: -ITEM_HEIGHT * (values.length - 1),
+              bottom: 0,
+            }}
+            onDragEnd={handleDragEnd}
+            style={{ y, paddingTop: ITEM_HEIGHT, paddingBottom: ITEM_HEIGHT }}
+            className="flex flex-col items-center z-10"
+      >
+        {values.map((val) => (
+          <div
+            key={val}
+            className="h-10 w-full flex items-center justify-center text-xl font-semibold select-none"
+            style={{ height: ITEM_HEIGHT }}
           >
-            <Clock className="w-4 h-4" />
-            <span>{!isQuickTime ? value : 'Temps personnalisé'}</span>
-          </button>
-        ) : (
-          <div className="flex items-center space-x-2">
-            <input
-              type="text"
-              value={customValue}
-              onChange={(e) => setCustomValue(e.target.value)}
-              placeholder="ex: 2m30s"
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-blue-300 dark:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              autoFocus
-            />
-            <button
-              type="button"
-              onClick={handleCustomSubmit}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors active:scale-95"
-            >
-              OK
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowCustom(false)}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors active:scale-95"
-            >
-              ✕
-            </button>
+            {val.toString().padStart(2, '0')}
           </div>
-        )}
-      </div>
+        ))}
+      </motion.div>
     </div>
   );
 };
+
+interface TimePickerProps {
+    initialTime: string; // "MM:SS"
+    onChange: (time: string) => void;
+}
+
+const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange }) => {
+    const parseTime = (time: string) => {
+        const [min, sec] = time.split(':').map(Number);
+        return { min, sec };
+    };
+
+    const [minutes, setMinutes] = useState(parseTime(initialTime).min);
+    const [seconds, setSeconds] = useState(parseTime(initialTime).sec);
+
+    const minutesValues = Array.from({ length: 31 }, (_, i) => i);
+    const secondsValues = Array.from({ length: 60 }, (_, i) => i);
+
+    useEffect(() => {
+        const newTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        onChange(newTime);
+    }, [minutes, seconds, onChange]);
+
+    return (
+        <div className="flex items-center justify-center bg-gray-100 dark:bg-gray-900/50 p-2 rounded-xl">
+            <Wheel values={minutesValues} initialValue={minutes} onChange={setMinutes} />
+            <span className="text-2xl font-semibold pb-1">:</span>
+            <Wheel values={secondsValues} initialValue={seconds} onChange={setSeconds} />
+        </div>
+    );
+};
+
+export default TimePicker;
