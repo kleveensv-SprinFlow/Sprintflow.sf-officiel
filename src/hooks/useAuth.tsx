@@ -234,18 +234,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log(`📡 [useAuth] Chargement profil inline pour: ${userId}`);
 
       try {
-        // Timeout de 5 secondes
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout après 5 secondes')), 5000)
-        );
+        console.log('⏳ [useAuth] Construction de la requête...');
 
+        // Test avec uniquement les colonnes de base
         const queryPromise = supabase
           .from('profiles')
-          .select('*')
+          .select('id, role, first_name, last_name, email')
           .eq('id', userId)
           .maybeSingle();
 
-        console.log('⏳ [useAuth] Requête Supabase lancée...');
+        console.log('🚀 [useAuth] Requête Supabase lancée, en attente de réponse...');
+
+        // Augmenter le timeout à 15 secondes et ajouter des logs
+        const timeoutPromise = new Promise((_, reject) => {
+          const timeout = setTimeout(() => {
+            console.error('⏰ [useAuth] TIMEOUT atteint - la requête ne répond pas');
+            reject(new Error('Timeout après 15 secondes'));
+          }, 15000);
+          return timeout;
+        });
 
         const result = await Promise.race([queryPromise, timeoutPromise]);
 
@@ -277,7 +284,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (e: any) {
         console.error("❌ [useAuth] Exception:", e.message || e);
-        // En cas de timeout, créer un profil minimal
+
+        // En cas de timeout, essayer de récupérer le profil directement sans retry
+        console.log('🔄 [useAuth] Tentative directe sans Promise.race...');
+
+        try {
+          const { data: directData, error: directError } = await supabase
+            .from('profiles')
+            .select('id, role, first_name, last_name, email')
+            .eq('id', userId)
+            .maybeSingle();
+
+          if (directData && !directError) {
+            console.log('✅ [useAuth] Profil récupéré en tentative directe!');
+            setProfile(directData);
+            return;
+          }
+        } catch (directErr) {
+          console.error('❌ [useAuth] Tentative directe échouée aussi');
+        }
+
+        // En dernier recours, créer un profil minimal
         if (isMountedRef.current) {
           console.warn('⚠️ [useAuth] Timeout - Création profil minimal');
           setProfile({
@@ -305,44 +332,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           if (currentUser) {
             console.log('👤 [useAuth] Chargement profil...');
-
-            // Si c'est une confirmation d'email (SIGNED_IN après confirmation)
-            // le profil peut ne pas être encore créé par le trigger
-            // On fait des tentatives avec délais
-            if (_event === 'SIGNED_IN') {
-              console.log('🔄 [useAuth] Connexion détectée, tentative avec retry...');
-
-              let attempts = 0;
-              const maxAttempts = 5;
-
-              while (attempts < maxAttempts && isMountedRef.current) {
-                await loadProfile(currentUser.id);
-
-                // Si le profil est chargé, on arrête
-                const { data: checkProfile } = await supabase
-                  .from('profiles')
-                  .select('id')
-                  .eq('id', currentUser.id)
-                  .maybeSingle();
-
-                if (checkProfile) {
-                  console.log('✅ [useAuth] Profil trouvé!');
-                  break;
-                }
-
-                attempts++;
-                if (attempts < maxAttempts) {
-                  console.log(`⏳ [useAuth] Profil non trouvé, tentative ${attempts + 1}/${maxAttempts}...`);
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-              }
-
-              if (attempts === maxAttempts) {
-                console.warn('⚠️ [useAuth] Profil non trouvé après plusieurs tentatives');
-              }
-            } else {
-              await loadProfile(currentUser.id);
-            }
+            // Charger le profil une seule fois, sans retry
+            await loadProfile(currentUser.id);
           } else {
             console.log('🚫 [useAuth] Pas d\'utilisateur');
             setProfile(null);
