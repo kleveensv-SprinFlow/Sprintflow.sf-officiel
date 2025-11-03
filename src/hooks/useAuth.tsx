@@ -167,18 +167,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const loadProfile = async (userId: string) => {
       console.log(`📡 [useAuth] Chargement profil inline pour: ${userId}`);
+
       try {
-        const { data, error } = await supabase
+        // Timeout de 5 secondes
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout après 5 secondes')), 5000)
+        );
+
+        const queryPromise = supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .maybeSingle();
 
+        console.log('⏳ [useAuth] Requête Supabase lancée...');
+
+        const result = await Promise.race([queryPromise, timeoutPromise]);
+
+        console.log('📦 [useAuth] Réponse reçue');
+
         if (!isMountedRef.current) return;
+
+        const { data, error } = result as any;
 
         if (error) {
           console.error('❌ [useAuth] Erreur profil:', error);
-          setProfile(null);
+          // En cas d'erreur, créer un profil minimal pour débloquer
+          setProfile({
+            id: userId,
+            role: 'athlete',
+            email: '',
+            first_name: 'Utilisateur',
+            last_name: '',
+          } as any);
           return;
         }
 
@@ -189,9 +210,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log("🟡 [useAuth] Aucun profil trouvé");
           setProfile(null);
         }
-      } catch (e) {
-        console.error("❌ [useAuth] Exception:", e);
-        if (isMountedRef.current) setProfile(null);
+      } catch (e: any) {
+        console.error("❌ [useAuth] Exception:", e.message || e);
+        // En cas de timeout, créer un profil minimal
+        if (isMountedRef.current) {
+          console.warn('⚠️ [useAuth] Timeout - Création profil minimal');
+          setProfile({
+            id: userId,
+            role: 'athlete',
+            email: '',
+            first_name: 'Chargement',
+            last_name: '...',
+          } as any);
+        }
       }
     };
 
