@@ -289,27 +289,51 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('🔄 [useAuth] Tentative via Edge Function...');
 
         try {
-          const { data: { session } } = await supabase.auth.getSession();
+          // Récupérer le token directement du localStorage (bypass Supabase client)
+          const storageKey = `sb-${import.meta.env.VITE_SUPABASE_URL.split('//')[1].split('.')[0]}-auth-token`;
+          const authDataStr = localStorage.getItem(storageKey);
+          console.log('🔑 [useAuth] Storage key:', storageKey);
+          console.log('🔑 [useAuth] Auth data exists:', !!authDataStr);
 
-          if (session?.access_token) {
+          let accessToken: string | null = null;
+
+          if (authDataStr) {
+            try {
+              const authData = JSON.parse(authDataStr);
+              accessToken = authData?.access_token || authData?.currentSession?.access_token;
+              console.log('🔑 [useAuth] Token trouvé:', !!accessToken);
+            } catch (parseErr) {
+              console.error('❌ [useAuth] Erreur parse localStorage:', parseErr);
+            }
+          }
+
+          if (accessToken) {
+            console.log('📡 [useAuth] Appel Edge Function avec token...');
             const response = await fetch(
               `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-profile`,
               {
+                method: 'GET',
                 headers: {
-                  'Authorization': `Bearer ${session.access_token}`,
+                  'Authorization': `Bearer ${accessToken}`,
                   'Content-Type': 'application/json',
+                  'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                 },
               }
             );
 
+            console.log('📡 [useAuth] Response status:', response.status);
+
             if (response.ok) {
               const profileData = await response.json();
-              console.log('✅ [useAuth] Profil récupéré via Edge Function!');
+              console.log('✅ [useAuth] Profil récupéré via Edge Function!', profileData);
               setProfile(profileData);
               return;
             } else {
-              console.error('❌ [useAuth] Edge Function error:', response.status);
+              const errorText = await response.text();
+              console.error('❌ [useAuth] Edge Function error:', response.status, errorText);
             }
+          } else {
+            console.error('❌ [useAuth] Pas de token trouvé dans localStorage');
           }
         } catch (edgeFuncErr) {
           console.error('❌ [useAuth] Edge Function échouée aussi:', edgeFuncErr);
