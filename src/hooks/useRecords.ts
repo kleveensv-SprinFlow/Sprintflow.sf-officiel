@@ -3,34 +3,45 @@ import useAuth from './useAuth'
 import { supabase } from '../lib/supabase'
 import { Record } from '../types'
 
-export function useRecords() {
+export function useRecords(targetUserId?: string) {
   const { user } = useAuth()
   const [records, setRecords] = useState<Record[]>([])
   const [loading, setLoading] = useState(true)
+  const userId = targetUserId || user?.id
 
   useEffect(() => {
-    if (user) {
+    if (userId) {
       loadRecords()
     } else {
       setRecords([])
       setLoading(false)
     }
-  }, [user])
+  }, [userId])
+
+  useEffect(() => {
+    const handleRecordSaved = () => {
+      if (userId) {
+        loadRecords()
+      }
+    }
+    window.addEventListener('record-saved', handleRecordSaved)
+    return () => window.removeEventListener('record-saved', handleRecordSaved)
+  }, [userId])
 
   const loadRecords = async () => {
-    if (!user) return
-    
+    if (!userId) return
+
     try {
       const { data, error } = await supabase
         .from('records')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('date', { ascending: false })
       
       if (error) {
         console.error('Erreur chargement records:', error.message)
         // En cas d'erreur Supabase, essayer localStorage comme fallback
-        const localRecords = localStorage.getItem(`records_${user.id}`)
+        const localRecords = localStorage.getItem(`records_${userId}`)
         if (localRecords) {
           try {
             const parsedRecords = JSON.parse(localRecords)
@@ -69,14 +80,14 @@ export function useRecords() {
           exercice_reference_id: item.exercice_id
         })) || []
         setRecords(mappedRecords)
-        
+
         // Synchroniser avec localStorage après chargement Supabase
-        localStorage.setItem(`records_${user.id}`, JSON.stringify(mappedRecords))
+        localStorage.setItem(`records_${userId}`, JSON.stringify(mappedRecords))
       }
     } catch (error) {
       console.error('Erreur loadRecords:', error)
       // En cas d'erreur réseau, essayer localStorage
-      const localRecords = localStorage.getItem(`records_${user.id}`)
+      const localRecords = localStorage.getItem(`records_${userId}`)
       if (localRecords) {
         try {
           const parsedRecords = JSON.parse(localRecords)
@@ -133,11 +144,14 @@ export function useRecords() {
       
       // Mettre à jour l'état local
       setRecords(prev => [completeRecord, ...prev])
-      
+
       // Synchroniser avec localStorage
       const updatedRecords = [completeRecord, ...records]
       localStorage.setItem(`records_${user.id}`, JSON.stringify(updatedRecords))
-      
+
+      // Notifier tous les composants qu'un record a été sauvegardé
+      window.dispatchEvent(new Event('record-saved'))
+
       return completeRecord
       
     } catch (error) {
@@ -148,11 +162,14 @@ export function useRecords() {
       }
       
       setRecords(prev => [localRecord, ...prev])
-      
+
       // Sauvegarder en localStorage
       const updatedRecords = [localRecord, ...records]
       localStorage.setItem(`records_${user.id}`, JSON.stringify(updatedRecords))
-      
+
+      // Notifier quand même les autres composants
+      window.dispatchEvent(new Event('record-saved'))
+
       // Re-lancer l'erreur pour informer l'utilisateur
       throw new Error(`Erreur sauvegarde: ${error.message || error}`)
     }
@@ -174,10 +191,13 @@ export function useRecords() {
       }
       
       setRecords(prev => prev.filter(r => r.id !== id))
-      
+
       // Mettre à jour localStorage après suppression
       const updatedRecords = records.filter(r => r.id !== id)
       localStorage.setItem(`records_${user.id}`, JSON.stringify(updatedRecords))
+
+      // Notifier tous les composants qu'un record a été supprimé
+      window.dispatchEvent(new Event('record-saved'))
     } catch (error) {
       console.error('Erreur deleteRecord:', error)
       throw error
