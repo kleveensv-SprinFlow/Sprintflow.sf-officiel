@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Users, UserPlus, Check, X, Clipboard, ClipboardCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Check, X, Clipboard, ClipboardCheck, Loader2, Crown } from 'lucide-react';
 import { useGroups, Group, JoinRequest } from '../../hooks/useGroups';
 import { toast } from 'react-toastify';
+import { supabase } from '../../lib/supabase';
 
 interface GroupDetailsPageProps {
   group: Group;
@@ -15,8 +16,22 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
-  
+  const [coachProfile, setCoachProfile] = useState<any>(null);
+
   const { fetchJoinRequests, respondToRequest } = useGroups();
+
+  // Charger les informations du coach
+  useEffect(() => {
+    const loadCoachProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url, role')
+        .eq('id', group.coach_id)
+        .single();
+      setCoachProfile(data);
+    };
+    loadCoachProfile();
+  }, [group.coach_id]);
 
   const loadRequests = useCallback(async () => {
     setLoadingRequests(true);
@@ -84,7 +99,7 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
             className={`flex items-center space-x-2 py-3 px-1 border-b-2 font-medium ${activeTab === 'members' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
           >
             <Users size={18} />
-            <span>Membres ({group.group_members.length})</span>
+            <span>Membres ({group.group_members.length + 1})</span>
           </button>
           <button
             onClick={() => setActiveTab('requests')}
@@ -101,16 +116,48 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
       <div>
         {activeTab === 'members' && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {/* Afficher le coach en premier avec badge orange */}
+            {coachProfile && (
+              <div
+                key={coachProfile.id}
+                onClick={() => onViewAthlete(coachProfile.id)}
+                className="cursor-pointer text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border-2 border-orange-400"
+              >
+                <div className="relative">
+                  <img
+                    src={coachProfile.avatar_url || `https://ui-avatars.com/api/?name=${coachProfile.first_name}+${coachProfile.last_name}&background=f97316`}
+                    alt="avatar"
+                    className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
+                  />
+                  <div className="absolute -top-1 -right-1 bg-orange-500 rounded-full p-1">
+                    <Crown size={16} className="text-white" />
+                  </div>
+                </div>
+                <p className="font-semibold truncate">{coachProfile.first_name} {coachProfile.last_name}</p>
+                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">
+                  Coach
+                </span>
+              </div>
+            )}
+
+            {/* Afficher les athlètes avec badge bleu */}
             {group.group_members.length > 0 ? group.group_members.map(member => (
-              <div key={member.athlete_id} onClick={() => onViewAthlete(member.athlete_id)} className="cursor-pointer text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow">
-                <img 
-                  src={member.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${member.profiles?.first_name}+${member.profiles?.last_name}&background=random`} 
-                  alt="avatar" 
-                  className="w-20 h-20 rounded-full mx-auto mb-2 border-2 border-gray-200 dark:border-gray-600 object-cover"
+              <div
+                key={member.athlete_id}
+                onClick={() => onViewAthlete(member.athlete_id)}
+                className="cursor-pointer text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border-2 border-blue-400"
+              >
+                <img
+                  src={member.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${member.profiles?.first_name}+${member.profiles?.last_name}&background=3b82f6`}
+                  alt="avatar"
+                  className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
                 />
                 <p className="font-semibold truncate">{member.profiles?.first_name} {member.profiles?.last_name}</p>
+                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">
+                  Athlète
+                </span>
               </div>
-            )) : <p className="col-span-full text-center py-8 text-gray-500">Aucun membre dans ce groupe.</p>}
+            )) : !coachProfile && <p className="col-span-full text-center py-8 text-gray-500">Aucun membre dans ce groupe.</p>}
           </div>
         )}
 
