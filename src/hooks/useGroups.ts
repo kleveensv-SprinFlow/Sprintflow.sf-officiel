@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react'; // Ajout de useMemo
 import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 import { Profile } from '../types';
@@ -73,6 +73,20 @@ export const useGroups = () => {
     fetchGroups();
   }, [fetchGroups]);
 
+  // --- CORRECTION : Re-créer la liste `coachAthletes` ---
+  const coachAthletes = useMemo(() => {
+    const allAthletes = new Map<string, Profile>();
+    groups.forEach(group => {
+        group.group_members.forEach(member => {
+            if (member.profiles && !allAthletes.has(member.athlete_id)) {
+                allAthletes.set(member.athlete_id, member.profiles);
+            }
+        });
+    });
+    return Array.from(allAthletes.values());
+  }, [groups]);
+
+
   const createGroup = async (name: string) => {
     if (!user) throw new Error("Utilisateur non authentifié.");
 
@@ -97,8 +111,6 @@ export const useGroups = () => {
     setGroups(prev => prev.filter(g => g.id !== groupId));
   };
   
-  // --- NOUVELLES FONCTIONS ---
-
   const fetchJoinRequests = useCallback(async (groupId: string): Promise<JoinRequest[]> => {
     const { data, error } = await supabase
       .from('group_join_requests')
@@ -138,7 +150,6 @@ export const useGroups = () => {
         throw new Error(result.message);
     }
     
-    // Si acceptée, rafraîchir les groupes pour voir le nouveau membre
     if (newStatus === 'accepted') {
         await fetchGroups();
     }
@@ -146,7 +157,6 @@ export const useGroups = () => {
     return result;
   };
   
-  // Fonction pour l'athlète
   const joinGroupWithCode = async (invitationCode: string) => {
     const { data, error } = await supabase.rpc('join_group_with_code', {
         invitation_code_param: invitationCode
@@ -166,9 +176,10 @@ export const useGroups = () => {
     groups,
     loading,
     error,
+    coachAthletes, // On l'exporte à nouveau
     createGroup,
     deleteGroup,
-    fetchGroups, // Exposer pour rafraîchissement manuel si besoin
+    fetchGroups,
     fetchJoinRequests,
     respondToRequest,
     joinGroupWithCode,
