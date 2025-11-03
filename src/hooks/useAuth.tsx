@@ -59,16 +59,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       async (_event, session) => {
         console.log(`🔐 [useAuth] Événement reçu: ${_event}`);
         setLoading(true);
-        setSession(session);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          await fetchProfile(currentUser);
-        } else {
-          setProfile(null);
+        try {
+          setSession(session);
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
+          if (currentUser) {
+            await fetchProfile(currentUser);
+          } else {
+            setProfile(null);
+          }
+        } catch (error) {
+            console.error("❌ [useAuth] Erreur critique dans onAuthStateChange:", error);
+        } finally {
+            setLoading(false);
+            console.log("✅ [useAuth] Fin de traitement, chargement terminé.");
         }
-        setLoading(false);
-        console.log("✅ [useAuth] Fin de traitement, chargement terminé.");
       }
     );
 
