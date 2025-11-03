@@ -19,6 +19,9 @@ import { PartnershipsList } from './components/PartnershipsList';
 import Header from './components/navigation/Header';
 import { DeveloperPanel } from './components/developer/DeveloperPanel';
 import { ChatManager } from './components/chat/ChatManager';
+import { AthletePlanning } from './components/planning/AthletePlanning';
+import { NutritionModule } from './components/nutrition/NutritionModule';
+import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 
 function App() {
   const { session, loading, profile } = useAuth();
@@ -44,6 +47,12 @@ function App() {
     switch (currentView) {
       case 'dashboard':
         return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
+      case 'workouts':
+        return <AthletePlanning />;
+      case 'nutrition':
+        return <NutritionModule />;
+      case 'ai':
+        return <ChatManager />;
       case 'profile':
         return <ProfilePage />;
       case 'groups':
@@ -65,11 +74,13 @@ function App() {
 
   const renderForm = () => {
     switch (showForm) {
-      case 'new-workout':
+      case 'add-workout':
         return <NewWorkoutForm onSave={() => setShowForm(null)} onCancel={() => setShowForm(null)} />;
       case 'add-record':
         return <RecordsForm onClose={() => setShowForm(null)} />;
-      case 'add-sleep':
+      case 'add-food':
+        return <FoodSearchModal onClose={() => setShowForm(null)} onFoodSelected={() => setShowForm(null)} />;
+      case 'sleep':
         return <SleepForm onClose={() => setShowForm(null)} />;
       default:
         return null;
