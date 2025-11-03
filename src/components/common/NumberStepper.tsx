@@ -34,13 +34,6 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseFloat(e.target.value);
-    if (!isNaN(newValue) && newValue >= min && newValue <= max) {
-      onChange(newValue);
-    }
-  };
-
   return (
     <div className={className}>
       {label && (
@@ -58,18 +51,20 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
           <Minus className="w-5 h-5 text-gray-700 dark:text-gray-200" />
         </button>
 
-        <div className="flex-1 flex items-center justify-center px-4 h-12 bg-white dark:bg-gray-800">
+        <div className="relative flex-1 h-12">
           <input
             type="number"
             value={value}
-            onChange={handleInputChange}
-            min={min}
-            max={max}
-            step={step}
-            className="w-full text-center text-lg font-semibold text-gray-900 dark:text-white bg-transparent border-0 focus:outline-none focus:ring-0 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            onChange={(e) => {
+                const newValue = e.target.value === '' ? min : Number(e.target.value);
+                if (newValue >= min && newValue <= max) {
+                    onChange(newValue);
+                }
+            }}
+            className="w-full h-full px-2 text-center bg-white dark:bg-gray-800 text-lg font-semibold text-gray-900 dark:text-white border-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           {suffix && (
-            <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500 dark:text-gray-400 pointer-events-none">
               {suffix}
             </span>
           )}
