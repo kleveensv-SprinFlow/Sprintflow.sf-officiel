@@ -37,7 +37,7 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
 
   const handleFabActionClick = (view: View) => {
     onFabAction(view);
-    setIsFabOpen(false);
+    setFabOpen(false);
   };
 
   const navItems = userRole === 'coach' ? coachNavItems : athleteNavItems;
@@ -85,7 +85,7 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
       {userRole === 'athlete' && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
           <button
-            onClick={() => setIsFabOpen(!isFabOpen)}
+            onClick={() => setFabOpen(!isFabOpen)}
             className={`w-16 h-16 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 transform ${
               isFabOpen
                 ? 'bg-red-500 rotate-45'
