@@ -3,8 +3,9 @@ import { ChevronLeft, ChevronRight, CheckCircle, Clock } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { RPEModal } from '../workouts/RPEModal';
-
+import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { useWorkouts } from '../../hooks/useWorkouts';
+import { useWorkoutTypes } from '../../hooks/useWorkoutTypes'; // Importer
 import { Workout } from '../../types';
 
 const PlannedWorkoutModal: React.FC<{
@@ -62,6 +63,15 @@ const PlannedWorkoutModal: React.FC<{
 
 export const AthletePlanning: React.FC = () => {
   const { workouts, completeWorkout, loading } = useWorkouts();
+  const { allTypes: workoutTypes } = useWorkoutTypes();
+
+  const workoutTypeMap = useMemo(() => {
+    const map = new Map<string, { name: string; color: string }>();
+    workoutTypes.forEach(type => {
+      map.set(type.id, { name: type.name, color: type.color });
+    });
+    return map;
+  }, [workoutTypes]);
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [view, setView] = useState<'calendar' | 'form' | 'details' | 'rpe'>('calendar');
@@ -93,7 +103,7 @@ export const AthletePlanning: React.FC = () => {
     setView('form');
   };
 
-  const handleSaveCompletedWorkout = async (payload: { title: string; blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
+  const handleSaveCompletedWorkout = async (payload: { blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
     if (!selectedWorkout) return;
     setCompletedWorkoutData({ workout_data: { blocs: payload.blocs } });
     setView('rpe');
@@ -120,7 +130,11 @@ export const AthletePlanning: React.FC = () => {
       <NewWorkoutForm
         onCancel={() => setView('calendar')}
         onSave={handleSaveCompletedWorkout}
-        initialData={{ title: selectedWorkout.title, blocs: selectedWorkout.planned_data!.blocs }}
+        initialData={{
+          tag_seance: selectedWorkout.tag_seance!,
+          blocs: selectedWorkout.planned_data!.blocs,
+          type: selectedWorkout.type
+        }}
       />
     );
   }
@@ -154,17 +168,27 @@ export const AthletePlanning: React.FC = () => {
               className={`h-32 border rounded-lg p-1 flex flex-col ${isCurrentMonth ? '' : 'bg-gray-100 dark:bg-gray-700 opacity-50'} ${isToday ? 'border-primary-500' : ''}`}
             >
               <span className={`font-semibold ${isToday ? 'text-primary-500' : ''}`}>{format(day, 'd')}</span>
-              <div className="flex-grow overflow-y-auto text-xs space-y-1 mt-1">
-                {plannedForDay.map(w => (
-                  <div key={w.id} onClick={() => handleWorkoutClick(w)} className="p-1 bg-blue-100 dark:bg-blue-900 border-l-4 border-blue-400 rounded-md truncate cursor-pointer" title={w.title}>
-                    <Clock size={12} className="inline mr-1"/>{w.title}
-                  </div>
-                ))}
-                {completedForDay.map(w => (
-                  <div key={w.id} onClick={() => handleWorkoutClick(w)} className="p-1 bg-green-100 dark:bg-green-900 border-l-4 border-green-500 rounded-md truncate" title={w.title}>
-                    <CheckCircle size={12} className="inline mr-1"/>{w.title}
-                  </div>
-                ))}
+              <div className="flex-grow overflow-y-auto text-xs space-y-1 mt-1 pr-1">
+                {plannedForDay.map(w => {
+                  const typeInfo = w.tag_seance ? workoutTypeMap.get(w.tag_seance) : null;
+                  const workoutName = typeInfo ? typeInfo.name : w.title;
+                  const workoutColor = typeInfo ? typeInfo.color : '#3b82f6'; // Bleu par défaut
+                  return (
+                    <div key={w.id} onClick={() => handleWorkoutClick(w)} className="p-1 bg-gray-100 dark:bg-gray-700/80 rounded-md truncate cursor-pointer" title={workoutName} style={{ borderLeft: `3px solid ${workoutColor}`}}>
+                      <Clock size={12} className="inline mr-1"/>{workoutName}
+                    </div>
+                  );
+                })}
+                {completedForDay.map(w => {
+                  const typeInfo = w.tag_seance ? workoutTypeMap.get(w.tag_seance) : null;
+                  const workoutName = typeInfo ? typeInfo.name : w.title;
+                  const workoutColor = typeInfo ? typeInfo.color : '#22c55e'; // Vert par défaut
+                  return (
+                    <div key={w.id} onClick={() => handleWorkoutClick(w)} className="p-1 bg-gray-100 dark:bg-gray-700/80 rounded-md truncate" title={workoutName} style={{ borderLeft: `3px solid ${workoutColor}`}}>
+                      <CheckCircle size={12} className="inline mr-1"/>{workoutName}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
