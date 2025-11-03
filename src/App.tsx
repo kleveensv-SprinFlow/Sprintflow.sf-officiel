@@ -27,6 +27,7 @@ import { NutritionModule } from './components/nutrition/NutritionModule';
 import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 import { SleepTracker } from './components/sleep/SleepTracker';
 import { getViewTitle } from './utils/navigation';
+import AnimatedBackground from './components/common/AnimatedBackground';
 
 function App() {
   const { user, profile, loading, error } = useAuth();
@@ -138,6 +139,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-transparent">
+      <AnimatedBackground />
       <Header
         userRole={userRole}
         onRefreshData={refreshData}
