@@ -28,15 +28,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchProfile = useCallback(async (user: User) => {
     console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
     try {
-      // Requête simplifiée pour être plus robuste
-      const { data, error } = await supabase
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout: La requête a pris plus de 8 secondes')), 8000)
+      );
+
+      const supabasePromise = supabase
         .from('profiles')
         .select('id, role, first_name, last_name, email')
         .eq('id', user.id)
         .single();
 
+      // Le premier qui répond (la requête ou le timeout) gagne
+      const result: any = await Promise.race([supabasePromise, timeoutPromise]);
+      
+      const { data, error } = result;
+
       if (error && error.code !== 'PGRST116') {
-        // 'PGRST116' signifie "aucune ligne trouvée", ce n'est pas une erreur critique ici.
         throw error;
       }
 
@@ -44,29 +51,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("✅ [useAuth] Profil chargé depuis la base de données:", data);
         setProfile(data);
       } else {
-        // Fallback: si le profil n'existe pas, créer un profil de base en mémoire
-        console.log("🟡 [useAuth] Aucun profil trouvé en BDD. Utilisation d'un profil de secours.");
+        console.log("🟡 [useAuth] Aucun profil trouvé. Utilisation d'un profil de secours (coach).");
         const fallbackProfile: Profile = {
-          id: user.id,
-          email: user.email,
-          first_name: user.user_metadata?.first_name || "Utilisateur",
-          last_name: user.user_metadata?.last_name || "",
-          // Tenter de deviner le rôle, sinon 'athlete' par défaut
-          role: user.user_metadata?.role || 'athlete', 
-          created_at: new Date().toISOString(),
+          id: user.id, email: user.email, first_name: user.user_metadata?.first_name || "Utilisateur",
+          last_name: user.user_metadata?.last_name || "", role: 'coach', created_at: new Date().toISOString(),
         };
         setProfile(fallbackProfile);
       }
     } catch (e: any) {
-      console.error("❌ [useAuth] Erreur critique lors du chargement du profil:", e.message);
-      // En cas d'erreur, on empêche le blocage en créant un profil de secours
+      console.error("❌ [useAuth] Erreur ou timeout lors du chargement du profil:", e.message);
       const errorProfile: Profile = {
-        id: user.id,
-        email: user.email,
-        first_name: "Erreur",
-        last_name: "Profil",
-        role: 'athlete',
-        created_at: new Date().toISOString(),
+        id: user.id, email: user.email, first_name: "Profil",
+        last_name: "Indisponible", role: 'coach', created_at: new Date().toISOString(),
       };
       setProfile(errorProfile);
     }
@@ -74,28 +70,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refreshProfile = useCallback(async () => {
     console.log('🔄 [useAuth] Rafraîchissement manuel du profil...');
-    if (user) {
-      await fetchProfile(user);
-    }
+    if (user) await fetchProfile(user);
   }, [user, fetchProfile]);
   
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
+    if (error) throw error; return data;
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData: any) => {
-    const { data, error } = await supabase.auth.signUp({
-      email, password, options: { data: { first_name: profileData.first_name, last_name: profileData.last_name } }
-    });
-    if (error) throw error;
-    if (!data.user) throw new Error('Aucun utilisateur créé');
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({ id: data.user.id, email, ...profileData });
-    if (profileError) throw new Error(`Erreur lors de la création du profil: ${profileError.message}`);
-    return data;
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { first_name: profileData.first_name, last_name: profileData.last_name } } });
+    if (error) throw error; if (!data.user) throw new Error('Aucun utilisateur créé');
+    const { error: profileError } = await supabase.from('profiles').insert({ id: data.user.id, email, ...profileData });
+    if (profileError) throw new Error(`Erreur: ${profileError.message}`); return data;
   }, []);
   
   const resendConfirmationEmail = useCallback(async (email: string) => {
@@ -103,9 +90,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error;
   }, []);
 
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-  }, []);
+  const signOut = useCallback(async () => { await supabase.auth.signOut(); }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -121,12 +106,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } else {
             setProfile(null);
           }
-        } catch (error) {
-            console.error("❌ [useAuth] Erreur critique dans onAuthStateChange:", error);
-        } finally {
-            setLoading(false);
-            console.log("✅ [useAuth] Fin de traitement, chargement terminé.");
-        }
+        } catch (error) { console.error("❌ [useAuth] Erreur dans onAuthStateChange:", error);
+        } finally { setLoading(false); console.log("✅ [useAuth] Chargement terminé."); }
       }
     );
     return () => subscription.unsubscribe();
@@ -140,18 +121,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const contextValue = { session, user, profile, loading, refreshProfile, signOut, signIn, signUp, resendConfirmationEmail };
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
 };
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
 
