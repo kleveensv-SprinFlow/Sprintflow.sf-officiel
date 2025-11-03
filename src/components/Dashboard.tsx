@@ -6,7 +6,6 @@ import { IndicesPanel } from './dashboard/IndicesPanel';
 import { RecentWorkouts } from './dashboard/RecentWorkouts';
 import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';
 import { StrengthRecordsCarousel } from './dashboard/StrengthRecordsCarousel';
-import { SleepAnalysis } from './dashboard/SleepAnalysis';
 import { GroupOverview } from './dashboard/GroupOverview';
 import { WellnessCheckinCard } from './dashboard/WellnessCheckinCard';
 
@@ -109,7 +108,6 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
 
       <TrackRecordsCarousel onNavigate={() => onViewChange('records')} />
       <StrengthRecordsCarousel onNavigate={() => onViewChange('records')} />
-      <SleepAnalysis onNavigate={() => onViewChange('sleep')} />
       <GroupOverview onNavigate={() => onViewChange('groups')} />
 
       <RecentWorkouts onNavigate={() => onViewChange('workouts')} />
