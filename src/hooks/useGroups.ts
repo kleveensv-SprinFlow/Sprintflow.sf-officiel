@@ -22,24 +22,45 @@ export interface JoinRequest {
 }
 
 export const useGroups = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchGroups = useCallback(async () => {
-    if (!user) return;
+    if (!user || !profile) return;
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
-        .from('groups')
-        .select(`
-          id, name, coach_id, created_at, invitation_code,
-          group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url ) )
-        `)
-        .eq('coach_id', user.id);
-      if (error) throw error;
+      let data;
+
+      if (profile.role === 'coach') {
+        // Pour un coach : récupérer les groupes qu'il a créés
+        const { data: coachGroups, error: coachError } = await supabase
+          .from('groups')
+          .select(`
+            id, name, coach_id, created_at, invitation_code,
+            group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url ) )
+          `)
+          .eq('coach_id', user.id);
+        if (coachError) throw coachError;
+        data = coachGroups;
+      } else {
+        // Pour un athlète : récupérer les groupes dont il est membre
+        const { data: athleteGroups, error: athleteError } = await supabase
+          .from('group_members')
+          .select(`
+            groups (
+              id, name, coach_id, created_at, invitation_code,
+              group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url ) )
+            )
+          `)
+          .eq('athlete_id', user.id);
+        if (athleteError) throw athleteError;
+        // Extraire les groupes de la structure imbriquée
+        data = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
+      }
+
       setGroups(data || []);
     } catch (e: any) {
       console.error("Erreur lors de la récupération des groupes:", e);
@@ -47,7 +68,7 @@ export const useGroups = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, profile]);
 
   useEffect(() => {
     fetchGroups();
