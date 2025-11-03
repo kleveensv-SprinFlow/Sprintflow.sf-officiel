@@ -61,7 +61,7 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
                     onChange(newValue);
                 }
             }}
-            className="w-full h-full px-2 text-center bg-white dark:bg-gray-800 text-lg font-semibold text-gray-900 dark:text-white border-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-full h-full px-2 text-center bg-white dark:bg-gray-800 text-lg font-semibold !text-black dark:!text-white border-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           {suffix && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500 dark:text-gray-400 pointer-events-none">
