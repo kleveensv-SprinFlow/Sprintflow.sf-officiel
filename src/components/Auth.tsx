@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, ArrowLeft, User, Briefcase } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, ArrowLeft, User, Briefcase, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { SelectionCard } from './common/SelectionCard';
@@ -28,6 +28,8 @@ export default function Auth({ initialError }: AuthProps = {}) {
   const [resetSent, setResetSent] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const [authError, setAuthError] = useState<string | null>(initialError || null);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -105,9 +107,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
         }
 
         // L'appel à signUp gère maintenant la création de l'utilisateur ET du profil.
-        // Si cette fonction réussit, le onAuthStateChange du hook useAuth
-        // détectera la nouvelle session et l'application redirigera automatiquement.
-        await signUp(
+        const result = await signUp(
           formData.email,
           formData.password,
           {
@@ -121,6 +121,12 @@ export default function Auth({ initialError }: AuthProps = {}) {
             height: formData.height ? parseInt(formData.height, 10) : null,
           }
         );
+
+        // Vérifier si l'email nécessite une confirmation
+        if (result?.user && !result.session) {
+          setRegisteredEmail(formData.email);
+          setShowEmailConfirmation(true);
+        }
       }
     } catch (error: any) {
       console.error('Erreur auth:', error);
@@ -359,6 +365,53 @@ export default function Auth({ initialError }: AuthProps = {}) {
   }
 
   // L'écran de succès à l'inscription est supprimé car la redirection est maintenant automatique.
+
+  if (showEmailConfirmation) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+        {hasVideos ? (
+          videos.map((video, index) => (
+            <video
+              key={video}
+              id={`video-${index}`}
+              className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
+              src={video}
+              autoPlay
+              muted
+              onEnded={handleVideoEnded}
+              playsInline
+            />
+          ))
+        ) : (
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"></div>
+        )}
+        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
+        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-green-500 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-12 h-12 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">Vérifiez votre email</h2>
+            <p className="text-white/90 mb-6 text-lg">
+              Un email de confirmation a été envoyé à <strong className="text-white">{registeredEmail}</strong>
+            </p>
+            <p className="text-white/80 mb-8">
+              Veuillez cliquer sur le lien dans l'email pour activer votre compte et vous connecter.
+            </p>
+            <button
+              onClick={() => {
+                setShowEmailConfirmation(false);
+                setIsLogin(true);
+              }}
+              className="w-full bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg font-medium transition-colors border border-white/30"
+            >
+              Retour à la connexion
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">

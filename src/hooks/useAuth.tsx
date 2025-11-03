@@ -94,6 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             first_name: profileData.first_name,
             last_name: profileData.last_name,
@@ -112,52 +113,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       console.log('✅ [useAuth] Utilisateur créé:', data.user.id);
+      console.log('📧 [useAuth] Session:', data.session ? 'Existe (email confirmé ou désactivé)' : 'Null (email nécessite confirmation)');
 
-      // 2. Créer le profil (le trigger a été supprimé)
-      console.log('📝 [useAuth] Création du profil...');
+      // 2. Créer le profil uniquement si l'utilisateur a une session immédiate
+      // (confirmation d'email désactivée)
+      // Si la confirmation est activée, le trigger handle_email_confirmation créera le profil
+      if (data.session) {
+        console.log('📝 [useAuth] Création du profil (session immédiate)...');
 
-      const newProfile = {
-        id: data.user.id,
-        email: email,
-        first_name: profileData.first_name,
-        last_name: profileData.last_name,
-        role: mappedRole,
-        role_specifique: profileData.role_specifique || null,
-        date_de_naissance: profileData.date_de_naissance || null,
-        discipline: profileData.discipline || '',
-        sexe: profileData.sexe || null,
-        height: profileData.height || null,
-      };
+        const newProfile = {
+          id: data.user.id,
+          email: email,
+          first_name: profileData.first_name,
+          last_name: profileData.last_name,
+          role: mappedRole,
+          role_specifique: profileData.role_specifique || null,
+          date_de_naissance: profileData.date_de_naissance || null,
+          discipline: profileData.discipline || '',
+          sexe: profileData.sexe || null,
+          height: profileData.height || null,
+        };
 
-      console.log('📋 [useAuth] Données du profil:', newProfile);
+        console.log('📋 [useAuth] Données du profil:', newProfile);
 
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert(newProfile);
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert(newProfile);
 
-      if (insertError) {
-        console.error('❌ [useAuth] Erreur création profil:', insertError);
+        if (insertError) {
+          console.error('❌ [useAuth] Erreur création profil:', insertError);
 
-        // Si le profil existe déjà (duplicate key), essayer de le mettre à jour
-        if (insertError.code === '23505') {
-          console.log('⚠️ [useAuth] Le profil existe déjà, tentative de mise à jour...');
+          // Si le profil existe déjà (duplicate key), essayer de le mettre à jour
+          if (insertError.code === '23505') {
+            console.log('⚠️ [useAuth] Le profil existe déjà, tentative de mise à jour...');
 
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update(newProfile)
-            .eq('id', data.user.id);
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update(newProfile)
+              .eq('id', data.user.id);
 
-          if (updateError) {
-            console.error('❌ [useAuth] Erreur mise à jour profil:', updateError);
-            throw new Error(`Impossible de créer ou mettre à jour le profil: ${updateError.message}`);
+            if (updateError) {
+              console.error('❌ [useAuth] Erreur mise à jour profil:', updateError);
+              throw new Error(`Impossible de créer ou mettre à jour le profil: ${updateError.message}`);
+            }
+
+            console.log('✅ [useAuth] Profil mis à jour avec succès');
+          } else {
+            throw new Error(`Erreur lors de la création du profil: ${insertError.message}`);
           }
-
-          console.log('✅ [useAuth] Profil mis à jour avec succès');
         } else {
-          throw new Error(`Erreur lors de la création du profil: ${insertError.message}`);
+          console.log('✅ [useAuth] Profil créé avec succès');
         }
       } else {
-        console.log('✅ [useAuth] Profil créé avec succès');
+        console.log('ℹ️ [useAuth] Pas de session immédiate - le profil sera créé après confirmation d\'email');
       }
 
       return data;
