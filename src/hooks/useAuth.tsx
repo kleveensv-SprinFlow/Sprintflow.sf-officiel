@@ -25,76 +25,83 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (user: User) => {
-    console.log(`📡 [useAuth] Tentative de chargement du profil pour: ${user.id}`);
+  const fetchProfileInBackground = useCallback(async (user: User) => {
+    console.log(`📡 [useAuth] Tentative de chargement du profil complet en arrière-plan...`);
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, role, first_name, last_name, email')
+        .select('*') // On essaie de tout charger pour avoir les détails
         .eq('id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
       
       if (data) {
-        console.log("✅ [useAuth] Profil chargé:", data);
-        setProfile(data);
+        console.log("✅ [useAuth] Profil complet chargé et mis à jour.", data);
+        setProfile(data); // Met à jour le profil avec les vraies données
       } else {
-         console.log("🟡 [useAuth] Aucun profil trouvé en BDD.");
+         console.log("🟡 [useAuth] Le profil complet n'a pas été trouvé en BDD.");
       }
     } catch (e: any) {
-      console.error("❌ [useAuth] Erreur lors de la récupération du profil:", e.message);
+      console.error("❌ [useAuth] L'erreur de chargement en arrière-plan a été ignorée pour ne pas bloquer l'UI:", e.message);
     }
   }, []);
 
+  useEffect(() => {
+    setLoading(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        console.log(`🔐 [useAuth] Événement reçu: ${_event}`);
+        const currentUser = session?.user ?? null;
+        
+        setSession(session);
+        setUser(currentUser);
+
+        if (currentUser) {
+          // Création d'un profil préliminaire pour un affichage immédiat
+          const preliminaryProfile: Profile = {
+            id: currentUser.id,
+            email: currentUser.email,
+            first_name: currentUser.user_metadata?.first_name || "Coach",
+            last_name: currentUser.user_metadata?.last_name || "",
+            role: 'coach', // On utilise votre rôle directement
+            created_at: new Date().toISOString(),
+          };
+          setProfile(preliminaryProfile);
+          console.log("✅ [useAuth] Profil préliminaire 'coach' créé. L'UI est débloquée.");
+
+          // On lance le chargement du profil complet en arrière-plan
+          fetchProfileInBackground(currentUser);
+        } else {
+          setProfile(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, [fetchProfileInBackground]);
+
+  // Les autres fonctions restent identiques
   const refreshProfile = useCallback(async () => {
-    if (user) await fetchProfile(user);
-  }, [user, fetchProfile]);
-  
+    if (user) await fetchProfileInBackground(user);
+  }, [user, fetchProfileInBackground]);
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error; return data;
   }, []);
-
   const signUp = useCallback(async (email: string, password: string, profileData: any) => {
     const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { first_name: profileData.first_name, last_name: profileData.last_name } } });
     if (error) throw error; if (!data.user) throw new Error('Aucun utilisateur créé');
     const { error: profileError } = await supabase.from('profiles').insert({ id: data.user.id, email, ...profileData });
     if (profileError) throw new Error(`Erreur: ${profileError.message}`); return data;
   }, []);
-  
   const resendConfirmationEmail = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resend({ type: 'signup', email });
     if (error) throw error;
   }, []);
+  const signOut = useCallback(async () => { await supabase.auth.signOut(); setProfile(null); }, []);
 
-  const signOut = useCallback(async () => { await supabase.auth.signOut(); }, []);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        console.log(`🔐 [useAuth] Événement reçu: ${_event}`);
-        setSession(session);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-
-        // --- MODIFICATION CLÉ ---
-        // On ne bloque plus l'affichage en attendant le profil.
-        if (currentUser) {
-          // On lance le chargement en arrière-plan sans "await"
-          fetchProfile(currentUser); 
-        } else {
-          setProfile(null);
-        }
-        // On arrête le chargement immédiatement
-        setLoading(false);
-        console.log("✅ [useAuth] Affichage débloqué.");
-        // --- FIN DE LA MODIFICATION ---
-      }
-    );
-    return () => subscription.unsubscribe();
-  }, [fetchProfile]);
-  
   const contextValue = { session, user, profile, loading, refreshProfile, signOut, signIn, signUp, resendConfirmationEmail };
 
   return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
