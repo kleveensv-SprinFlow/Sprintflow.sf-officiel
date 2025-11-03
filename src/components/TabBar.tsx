@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { Home, Users, MessageSquare, Lightbulb, Apple, Plus, Dumbbell, Activity, Calendar, Utensils, Bed, Trophy } from 'lucide-react';
-import { View, Role } from '../../types';
+import { View } from '../types';
 
 interface TabBarProps {
   currentView: View;
-  onViewChange: (view: View) => void;
-  onFabAction: (view: View) => void; // Pour gérer les modales/formulaires
-  userRole: Role;
+  setCurrentView: (view: View) => void;
+  onFabAction: (view: View) => void;
+  isFabOpen: boolean;
+  setFabOpen: (open: boolean) => void;
+  userRole?: 'athlete' | 'coach';
 }
 
-const TabBar: React.FC<TabBarProps> = ({ currentView, onViewChange, onFabAction, userRole }) => {
-  const [isFabOpen, setIsFabOpen] = useState(false);
+const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabAction, isFabOpen, setFabOpen, userRole = 'athlete' }) => {
 
   const athleteNavItems = [
     { view: 'dashboard' as View, icon: Home, label: 'Accueil' },
@@ -66,7 +67,7 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, onViewChange, onFabAction,
           item ? (
             <button
               key={item.view}
-              onClick={() => onViewChange(item.view)}
+              onClick={() => setCurrentView(item.view)}
               className={`flex flex-col items-center justify-center w-full h-full transition-colors duration-200 ${
                 currentView === item.view
                   ? 'text-blue-600 dark:text-blue-400'

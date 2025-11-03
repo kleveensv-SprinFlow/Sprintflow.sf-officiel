@@ -86,12 +86,14 @@ function App() {
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 min-h-screen">
-      <Header 
-        isDashboard={currentView === 'dashboard'} 
+      <Header
+        userRole={profile?.role as 'athlete' | 'coach'}
+        isDashboard={currentView === 'dashboard'}
         title={currentView.charAt(0).toUpperCase() + currentView.slice(1)}
         canGoBack={currentView !== 'dashboard'}
         onBack={() => setCurrentView('dashboard')}
         onProfileClick={() => setCurrentView('profile')}
+        onHomeClick={() => setCurrentView('dashboard')}
       />
       <main className="pb-20">
         {renderView()}
@@ -101,12 +103,13 @@ function App() {
           {renderForm()}
         </div>
       )}
-      <TabBar 
-        onFabAction={handleFabAction} 
-        isFabOpen={isFabOpen} 
+      <TabBar
+        onFabAction={handleFabAction}
+        isFabOpen={isFabOpen}
         setFabOpen={setFabOpen}
         currentView={currentView}
         setCurrentView={setCurrentView}
+        userRole={profile?.role as 'athlete' | 'coach'}
       />
       <ToastContainer position="bottom-center" theme="dark" />
     </div>
