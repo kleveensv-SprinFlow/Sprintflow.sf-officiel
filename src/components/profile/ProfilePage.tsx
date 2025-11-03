@@ -65,35 +65,79 @@ export function ProfilePage() {
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner un fichier image valide');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La taille du fichier ne doit pas dépasser 5 MB');
+      return;
+    }
+
     setUploadingPhoto(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
 
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const filePath = `avatars/${user.id}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('📤 Upload vers:', filePath);
+
+      const { data: existingFiles } = await supabase.storage
         .from('profiles')
-        .upload(filePath, file, { upsert: true });
-      if (uploadError) throw uploadError;
+        .list('avatars', {
+          search: user.id
+        });
+
+      if (existingFiles && existingFiles.length > 0) {
+        console.log('🗑️ Suppression des anciens avatars...');
+        for (const oldFile of existingFiles) {
+          await supabase.storage
+            .from('profiles')
+            .remove([`avatars/${oldFile.name}`]);
+        }
+      }
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('❌ Erreur upload:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('✅ Upload réussi:', uploadData);
 
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
         .getPublicUrl(filePath);
 
       const urlWithCacheBuster = `${publicUrl}?t=${new Date().getTime()}`;
+      console.log('🔗 URL publique:', urlWithCacheBuster);
 
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: urlWithCacheBuster })
         .eq('id', user.id);
-      if (updateError) throw updateError;
 
+      if (updateError) {
+        console.error('❌ Erreur mise à jour profil:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Profil mis à jour avec succès');
       setProfile(prevProfile => prevProfile ? { ...prevProfile, avatar_url: urlWithCacheBuster } : null);
+      alert('Photo de profil mise à jour avec succès !');
 
     } catch (err: any) {
-      console.error('Erreur upload photo:', err);
+      console.error('❌ Erreur upload photo:', err);
       alert(`Erreur lors de l'upload: ${err.message || 'Veuillez réessayer'}`);
     } finally {
       setUploadingPhoto(false);
