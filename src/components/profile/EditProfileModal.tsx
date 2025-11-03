@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Loader2, X } from 'lucide-react';
+import useAuth from '../../hooks/useAuth'; // <-- IMPORT AJOUTÉ
+import { toast } from 'react-toastify'; // Ajout pour notifications
 
 interface EditProfileModalProps {
   currentProfileData: any;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: () => void; // onSaved est toujours utile pour fermer la modale
 }
 
 export function EditProfileModal({ currentProfileData, onClose, onSaved }: EditProfileModalProps) {
+  const { user, refreshProfile } = useAuth(); // <-- ON RÉCUPÈRE refreshProfile
   const [formData, setFormData] = useState({
     first_name: currentProfileData.first_name || '',
     last_name: currentProfileData.last_name || '',
@@ -19,7 +22,6 @@ export function EditProfileModal({ currentProfileData, onClose, onSaved }: EditP
     license_number: currentProfileData.license_number || '',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -28,16 +30,16 @@ export function EditProfileModal({ currentProfileData, onClose, onSaved }: EditP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+        toast.error("Utilisateur non authentifié.");
+        return;
+    }
     setLoading(true);
-    setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Utilisateur non authentifié");
-
       const updates = {
         ...formData,
-        height: formData.height ? parseInt(formData.height, 10) : null,
+        height: formData.height ? parseInt(String(formData.height), 10) : null,
       };
 
       const { error } = await supabase
@@ -46,16 +48,22 @@ export function EditProfileModal({ currentProfileData, onClose, onSaved }: EditP
         .eq('id', user.id);
 
       if (error) throw error;
-
-      onSaved();
+      
+      // --- LA CORRECTION EST ICI ---
+      await refreshProfile(); // On rafraîchit le contexte global
+      
+      toast.success("Profil mis à jour !");
+      onSaved(); // Appelle la fonction du parent (qui ferme la modale et recharge la page de profil)
+    
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message || "Erreur lors de la mise à jour.");
       console.error("Erreur lors de la mise à jour du profil:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Le JSX reste identique
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md relative">
@@ -103,8 +111,6 @@ export function EditProfileModal({ currentProfileData, onClose, onSaved }: EditP
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">N° de License (optionnel)</label>
             <input type="text" name="license_number" value={formData.license_number} onChange={handleInputChange} className="w-full mt-1 p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
           </div>
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <div className="flex justify-end space-x-4 mt-6">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-600 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500">Annuler</button>
