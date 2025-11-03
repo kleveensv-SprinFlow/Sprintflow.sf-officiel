@@ -27,6 +27,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = useCallback(async (user: User) => {
     console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
+
+    // --- MODIFICATION TEMPORAIRE POUR DÉBOGAGE ---
+    console.log("🟡 [useAuth] CONTOURNEMENT: Utilisation d'un profil de test.");
+    const mockProfile: Profile = {
+      id: user.id,
+      email: user.email,
+      first_name: "Utilisateur",
+      last_name: "Test",
+      role: 'athlete',
+      created_at: new Date().toISOString(),
+    };
+    setProfile(mockProfile);
+    // --- FIN DE LA MODIFICATION ---
+
+    /*
+    // Le code original est mis en commentaire pour le test
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -49,6 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("❌ [useAuth] Erreur lors du chargement du profil:", e);
       setProfile(null);
     }
+    */
   }, []);
 
   const refreshProfile = useCallback(async () => {
