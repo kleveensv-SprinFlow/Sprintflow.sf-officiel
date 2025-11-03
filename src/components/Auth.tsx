@@ -8,6 +8,7 @@ import { CardCarousel } from './common/CardCarousel';
 // Détection dynamique des vidéos dans le dossier public/videos
 const videoModules = import.meta.glob('/public/videos/*');
 const allVideos = Object.keys(videoModules).map(path => path.replace('/public', ''));
+const hasVideos = allVideos.length > 0;
 
 interface AuthProps {
   initialError?: string | null;
@@ -62,11 +63,13 @@ export default function Auth({ initialError }: AuthProps = {}) {
   };
 
   useEffect(() => {
-    setVideos(shuffleArray(allVideos));
+    if (hasVideos) {
+      setVideos(shuffleArray(allVideos));
+    }
   }, []);
 
   useEffect(() => {
-    if (videos.length === 0) return;
+    if (!hasVideos || videos.length === 0) return;
     const videoElement = document.getElementById(`video-${currentVideoIndex}`) as HTMLVideoElement;
     if (videoElement) {
       videoElement.play().catch(error => console.error("Video play failed:", error));
@@ -182,18 +185,22 @@ export default function Auth({ initialError }: AuthProps = {}) {
     // ... (code inchangé pour cette partie)
     return (
         <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-        {videos.map((video, index) => (
-            <video
-            key={video}
-            id={`video-${index}`}
-            className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
-            src={video}
-            autoPlay
-            muted
-            onEnded={handleVideoEnded}
-            playsInline
-            />
-        ))}
+        {hasVideos ? (
+          videos.map((video, index) => (
+              <video
+              key={video}
+              id={`video-${index}`}
+              className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
+              src={video}
+              autoPlay
+              muted
+              onEnded={handleVideoEnded}
+              playsInline
+              />
+          ))
+        ) : (
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"></div>
+        )}
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
         <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
             <div className="flex items-center mb-6">
@@ -268,18 +275,22 @@ export default function Auth({ initialError }: AuthProps = {}) {
     // ... (code inchangé pour cette partie)
     return (
         <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-        {videos.map((video, index) => (
-            <video
-            key={video}
-            id={`video-${index}`}
-            className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
-            src={video}
-            autoPlay
-            muted
-            onEnded={handleVideoEnded}
-            playsInline
-            />
-        ))}
+        {hasVideos ? (
+          videos.map((video, index) => (
+              <video
+              key={video}
+              id={`video-${index}`}
+              className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
+              src={video}
+              autoPlay
+              muted
+              onEnded={handleVideoEnded}
+              playsInline
+              />
+          ))
+        ) : (
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"></div>
+        )}
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
         <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
             <div className="flex items-center mb-6">
@@ -351,18 +362,22 @@ export default function Auth({ initialError }: AuthProps = {}) {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-      {videos.map((video, index) => (
-        <video
-          key={video}
-          id={`video-${index}`}
-          className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
-          src={video}
-          autoPlay
-          muted
-          onEnded={handleVideoEnded}
-          playsInline
-        />
-      ))}
+      {hasVideos ? (
+        videos.map((video, index) => (
+          <video
+            key={video}
+            id={`video-${index}`}
+            className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
+            src={video}
+            autoPlay
+            muted
+            onEnded={handleVideoEnded}
+            playsInline
+          />
+        ))
+      ) : (
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"></div>
+      )}
       <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
       <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
         <div className="text-center mb-8">
