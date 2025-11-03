@@ -23,6 +23,7 @@ import { AthletePlanning } from './components/planning/AthletePlanning';
 import { NutritionModule } from './components/nutrition/NutritionModule';
 import { FoodSearchModal } from './components/nutrition/FoodSearchModal';
 import { useRecords } from './hooks/useRecords';
+import { AdvicePage } from './components/advice/AdvicePage';
 
 function App() {
   const { session, loading, profile } = useAuth();
@@ -54,7 +55,7 @@ function App() {
       case 'nutrition':
         return <NutritionModule />;
       case 'ai':
-        return <ChatManager />;
+        return <AdvicePage onNavigate={setCurrentView} />;
       case 'profile':
         return <ProfilePage />;
       case 'groups':
