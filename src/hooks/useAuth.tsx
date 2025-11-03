@@ -137,14 +137,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (insertError) {
         console.error('❌ [useAuth] Erreur création profil:', insertError);
-        throw new Error(`Erreur lors de la création du profil: ${insertError.message}`);
+
+        // Si le profil existe déjà (duplicate key), essayer de le mettre à jour
+        if (insertError.code === '23505') {
+          console.log('⚠️ [useAuth] Le profil existe déjà, tentative de mise à jour...');
+
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(newProfile)
+            .eq('id', data.user.id);
+
+          if (updateError) {
+            console.error('❌ [useAuth] Erreur mise à jour profil:', updateError);
+            throw new Error(`Impossible de créer ou mettre à jour le profil: ${updateError.message}`);
+          }
+
+          console.log('✅ [useAuth] Profil mis à jour avec succès');
+        } else {
+          throw new Error(`Erreur lors de la création du profil: ${insertError.message}`);
+        }
+      } else {
+        console.log('✅ [useAuth] Profil créé avec succès');
       }
 
-      console.log('✅ [useAuth] Profil créé avec succès');
-
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [useAuth] Erreur complète inscription:', error);
+
+      // Messages d'erreur plus clairs pour l'utilisateur
+      if (error.message?.includes('User already registered')) {
+        throw new Error('Cet email est déjà utilisé. Essayez de vous connecter.');
+      }
+
       throw error;
     }
   }, []);
