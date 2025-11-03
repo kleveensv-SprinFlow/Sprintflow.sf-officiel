@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Dumbbell } from 'lucide-react';
 import { useExercices } from '../../hooks/useExercices';
-import { NumberStepper } from '../common/NumberStepper';
 import TimePicker from '../common/TimePicker';
+import PickerWheel from '../common/PickerWheel';
 import { EXERCISE_CATEGORIES } from '../../data/categories';
 import { MuscuBlock } from '../../types/workout';
 
@@ -10,6 +10,10 @@ interface MuscuBlockFormProps {
   block: MuscuBlock;
   onChange: (updatedBlock: MuscuBlock) => void;
 }
+
+const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
+const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
+const poidsValues = Array.from({ length: 401 }, (_, i) => i * 0.5);
 
 export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange }) => {
   const { exercices } = useExercices();
@@ -32,12 +36,12 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange 
   }, [selectedCategory, exercices]);
 
   return (
-    <div className="space-y-4 px-4 md:px-6 py-4">
-      <h4 className="font-semibold text-green-600 dark:text-green-400 flex items-center space-x-2">
+    <div className="space-y-6">
+      <h4 className="font-semibold text-green-600 dark:text-green-400 flex items-center space-x-2 px-4 pt-4 md:px-6">
         <Dumbbell className="w-5 h-5" />
         <span>Bloc Musculation / Force</span>
       </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 md:px-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Catégorie</label>
           <select
@@ -72,39 +76,37 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ block, onChange 
           </select>
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-6">
-        <NumberStepper
+      
+      <div className="flex flex-wrap justify-center items-start gap-4 px-4 md:px-6">
+        <PickerWheel
           label="Séries"
-          value={block.series}
+          values={seriesValues}
+          initialValue={block.series}
           onChange={(val) => updateBlock({ series: val })}
-          min={1}
-          max={20}
         />
-        <NumberStepper
+        <PickerWheel
           label="Répétitions"
-          value={block.reps}
+          values={repsValues}
+          initialValue={block.reps}
           onChange={(val) => updateBlock({ reps: val })}
-          min={1}
-          max={100}
         />
-        <NumberStepper
+        <PickerWheel
           label="Poids"
-          value={block.poids}
+          values={poidsValues}
+          initialValue={block.poids}
           onChange={(val) => updateBlock({ poids: val })}
-          min={0}
-          max={500}
-          step={0.5}
           suffix="kg"
         />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Repos
-          </label>
-          <TimePicker
-            initialTime={block.restTime}
-            onChange={(val) => updateBlock({ restTime: val })}
-          />
-        </div>
+      </div>
+
+      <div className="px-4 pb-4 md:px-6">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Repos
+        </label>
+        <TimePicker
+          initialTime={block.restTime}
+          onChange={(val) => updateBlock({ restTime: val })}
+        />
       </div>
     </div>
   );
