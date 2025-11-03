@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
@@ -9,6 +9,9 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, profileData: any) => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,6 +55,86 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('✅ [useAuth] Profil rafraîchi avec succès');
     }
   }, [user, fetchProfile]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    console.log('🔐 [useAuth] Tentative de connexion...');
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('❌ [useAuth] Erreur de connexion:', error);
+      throw error;
+    }
+
+    console.log('✅ [useAuth] Connexion réussie');
+    return data;
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string, profileData: any) => {
+    console.log('📝 [useAuth] Tentative d\'inscription...');
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: profileData.first_name,
+          last_name: profileData.last_name,
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ [useAuth] Erreur d\'inscription:', error);
+      throw error;
+    }
+
+    if (!data.user) {
+      throw new Error('Aucun utilisateur créé');
+    }
+
+    console.log('✅ [useAuth] Inscription réussie, création du profil...');
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        email: email,
+        first_name: profileData.first_name,
+        last_name: profileData.last_name,
+        role: profileData.role,
+        role_specifique: profileData.role_specifique || null,
+        date_de_naissance: profileData.date_de_naissance || null,
+        discipline: profileData.discipline || null,
+        sexe: profileData.sexe || null,
+        height: profileData.height || null,
+      });
+
+    if (profileError) {
+      console.error('❌ [useAuth] Erreur création profil:', profileError);
+      throw new Error(`Erreur lors de la création du profil: ${profileError.message}`);
+    }
+
+    console.log('✅ [useAuth] Profil créé avec succès');
+    return data;
+  }, []);
+
+  const resendConfirmationEmail = useCallback(async (email: string) => {
+    console.log('📧 [useAuth] Renvoi de l\'email de confirmation...');
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+
+    if (error) {
+      console.error('❌ [useAuth] Erreur renvoi email:', error);
+      throw error;
+    }
+
+    console.log('✅ [useAuth] Email de confirmation renvoyé');
+  }, []);
 
   useEffect(() => {
     console.log("🔄 [useAuth] Initialisation du listener...");
@@ -102,6 +185,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     profile,
     loading,
     refreshProfile,
+    signIn,
+    signUp,
+    resendConfirmationEmail,
   };
 
   return (
