@@ -210,16 +210,16 @@ code {
   scrollbar-width: none;  /* Firefox */
 }
 /*
-  Animation pour le fond d'écran "vivant".
-  - Fait bouger un élément (le dégradé de la lueur) verticalement.
-  - On commence au-dessus de l'écran (-100%) et on termine en dessous (+100%).
+  Animation CORRIGÉE pour le fond d'écran "vivant".
+  - Fait bouger la lueur de bas en haut pour un effet d'énergie.
+  - On commence en dessous de l'écran (+100%) et on termine au-dessus (-100%).
   - L'animation est linéaire et en boucle infinie pour un effet fluide et continu.
 */
 @keyframes flow-glow {
   from {
-    transform: translateY(-100%);
+    transform: translateY(100%);
   }
   to {
-    transform: translateY(100%);
+    transform: translateY(-100%);
   }
 }
