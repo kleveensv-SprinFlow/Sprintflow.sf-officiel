@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
+// src/hooks/useAuth.tsx
+
+import { useState, useEffect, useContext, createContext, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
@@ -9,8 +11,9 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, profileData: any) => Promise<void>;
+  signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, profileData: any) => Promise<any>;
   resendConfirmationEmail: (email: string) => Promise<void>;
 }
 
@@ -55,26 +58,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('✅ [useAuth] Profil rafraîchi avec succès');
     }
   }, [user, fetchProfile]);
-
+  
   const signIn = useCallback(async (email: string, password: string) => {
     console.log('🔐 [useAuth] Tentative de connexion...');
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
     if (error) {
       console.error('❌ [useAuth] Erreur de connexion:', error);
       throw error;
     }
-
     console.log('✅ [useAuth] Connexion réussie');
     return data;
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData: any) => {
     console.log('📝 [useAuth] Tentative d\'inscription...');
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -85,18 +85,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     });
-
     if (error) {
       console.error('❌ [useAuth] Erreur d\'inscription:', error);
       throw error;
     }
-
-    if (!data.user) {
-      throw new Error('Aucun utilisateur créé');
-    }
-
+    if (!data.user) throw new Error('Aucun utilisateur créé');
     console.log('✅ [useAuth] Inscription réussie, création du profil...');
-
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
@@ -111,29 +105,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         sexe: profileData.sexe || null,
         height: profileData.height || null,
       });
-
     if (profileError) {
       console.error('❌ [useAuth] Erreur création profil:', profileError);
       throw new Error(`Erreur lors de la création du profil: ${profileError.message}`);
     }
-
     console.log('✅ [useAuth] Profil créé avec succès');
     return data;
   }, []);
-
+  
   const resendConfirmationEmail = useCallback(async (email: string) => {
     console.log('📧 [useAuth] Renvoi de l\'email de confirmation...');
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: email,
-    });
-
+    const { error } = await supabase.auth.resend({ type: 'signup', email: email });
     if (error) {
       console.error('❌ [useAuth] Erreur renvoi email:', error);
       throw error;
     }
-
     console.log('✅ [useAuth] Email de confirmation renvoyé');
+  }, []);
+
+  const signOut = useCallback(async () => {
+    console.log('🚪 [useAuth] Déconnexion...');
+    await supabase.auth.signOut();
   }, []);
 
   useEffect(() => {
@@ -171,9 +163,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('🔄 [useAuth] Événement profile-updated reçu');
       refreshProfile();
     };
-
     window.addEventListener('profile-updated', handleProfileUpdate);
-
     return () => {
       window.removeEventListener('profile-updated', handleProfileUpdate);
     };
@@ -185,9 +175,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     profile,
     loading,
     refreshProfile,
+    signOut,
     signIn,
     signUp,
-    resendConfirmationEmail,
+    resendConfirmationEmail
   };
 
   return (
