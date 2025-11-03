@@ -1,8 +1,7 @@
 import React from 'react';
 import { Navigation } from 'lucide-react';
-import { NumberStepper } from '../common/NumberStepper';
 import TimePicker from '../common/TimePicker';
-
+import PickerWheel from '../common/PickerWheel';
 import { CourseBlock } from '../../types/workout';
 
 export type CourseBlockData = CourseBlock;
@@ -12,44 +11,45 @@ interface CourseBlockFormProps {
   onChange: (updatedBlock: CourseBlockData) => void;
 }
 
-export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange }) => {
+const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
+const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
+const distanceValues = Array.from({ length: 200 }, (_, i) => (i + 1) * 50);
 
+export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ block, onChange }) => {
   const updateBlock = (updatedFields: Partial<CourseBlockData>) => {
     onChange({ ...block, ...updatedFields });
   };
 
   return (
-    <div className="space-y-4 md:pl-16 md:pr-12">
-      <h4 className="font-semibold text-blue-600 dark:text-blue-400 flex items-center space-x-2">
+    <div className="space-y-6">
+      <h4 className="font-semibold text-blue-600 dark:text-blue-400 flex items-center space-x-2 px-4 pt-4 md:px-6">
         <Navigation className="w-5 h-5" />
         <span>Bloc Course / Piste</span>
       </h4>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
-        <NumberStepper
+      
+      <div className="flex flex-wrap justify-center items-start gap-4 px-4 md:px-6">
+        <PickerWheel
           label="Séries"
-          value={block.series}
+          values={seriesValues}
+          initialValue={block.series}
           onChange={(val) => updateBlock({ series: val })}
-          min={1}
-          max={20}
         />
-        <NumberStepper
+        <PickerWheel
           label="Répétitions"
-          value={block.reps}
+          values={repsValues}
+          initialValue={block.reps}
           onChange={(val) => updateBlock({ reps: val })}
-          min={1}
-          max={50}
         />
-        <NumberStepper
+        <PickerWheel
           label="Distance"
-          value={block.distance}
+          values={distanceValues}
+          initialValue={block.distance}
           onChange={(val) => updateBlock({ distance: val })}
-          min={50}
-          max={10000}
-          step={50}
           suffix="m"
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 px-4 pb-4 md:px-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Repos entre Répétitions
