@@ -26,50 +26,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (user: User) => {
-    console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
+    console.log(`📡 [useAuth] Tentative de chargement du profil pour: ${user.id}`);
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: La requête a pris plus de 8 secondes')), 8000)
-      );
-
-      const supabasePromise = supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('id, role, first_name, last_name, email')
         .eq('id', user.id)
         .single();
 
-      // Le premier qui répond (la requête ou le timeout) gagne
-      const result: any = await Promise.race([supabasePromise, timeoutPromise]);
+      if (error && error.code !== 'PGRST116') throw error;
       
-      const { data, error } = result;
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
       if (data) {
-        console.log("✅ [useAuth] Profil chargé depuis la base de données:", data);
+        console.log("✅ [useAuth] Profil chargé:", data);
         setProfile(data);
       } else {
-        console.log("🟡 [useAuth] Aucun profil trouvé. Utilisation d'un profil de secours (coach).");
-        const fallbackProfile: Profile = {
-          id: user.id, email: user.email, first_name: user.user_metadata?.first_name || "Utilisateur",
-          last_name: user.user_metadata?.last_name || "", role: 'coach', created_at: new Date().toISOString(),
-        };
-        setProfile(fallbackProfile);
+         console.log("🟡 [useAuth] Aucun profil trouvé en BDD.");
       }
     } catch (e: any) {
-      console.error("❌ [useAuth] Erreur ou timeout lors du chargement du profil:", e.message);
-      const errorProfile: Profile = {
-        id: user.id, email: user.email, first_name: "Profil",
-        last_name: "Indisponible", role: 'coach', created_at: new Date().toISOString(),
-      };
-      setProfile(errorProfile);
+      console.error("❌ [useAuth] Erreur lors de la récupération du profil:", e.message);
     }
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    console.log('🔄 [useAuth] Rafraîchissement manuel du profil...');
     if (user) await fetchProfile(user);
   }, [user, fetchProfile]);
   
@@ -94,31 +72,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         console.log(`🔐 [useAuth] Événement reçu: ${_event}`);
-        setLoading(true);
-        try {
-          setSession(session);
-          const currentUser = session?.user ?? null;
-          setUser(currentUser);
-          if (currentUser) {
-            await fetchProfile(currentUser);
-          } else {
-            setProfile(null);
-          }
-        } catch (error) { console.error("❌ [useAuth] Erreur dans onAuthStateChange:", error);
-        } finally { setLoading(false); console.log("✅ [useAuth] Chargement terminé."); }
+        setSession(session);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        // --- MODIFICATION CLÉ ---
+        // On ne bloque plus l'affichage en attendant le profil.
+        if (currentUser) {
+          // On lance le chargement en arrière-plan sans "await"
+          fetchProfile(currentUser); 
+        } else {
+          setProfile(null);
+        }
+        // On arrête le chargement immédiatement
+        setLoading(false);
+        console.log("✅ [useAuth] Affichage débloqué.");
+        // --- FIN DE LA MODIFICATION ---
       }
     );
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
-
-  useEffect(() => {
-    const handleProfileUpdate = () => refreshProfile();
-    window.addEventListener('profile-updated', handleProfileUpdate);
-    return () => window.removeEventListener('profile-updated', handleProfileUpdate);
-  }, [refreshProfile]);
-
+  
   const contextValue = { session, user, profile, loading, refreshProfile, signOut, signIn, signUp, resendConfirmationEmail };
 
   return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
