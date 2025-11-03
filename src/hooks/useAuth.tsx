@@ -121,7 +121,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: email,
         first_name: profileData.first_name,
         last_name: profileData.last_name,
-        full_name: `${profileData.first_name} ${profileData.last_name}`,
         role: mappedRole,
         role_specifique: profileData.role_specifique || null,
         date_de_naissance: profileData.date_de_naissance || null,
