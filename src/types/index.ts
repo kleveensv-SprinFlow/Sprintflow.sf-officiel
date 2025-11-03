@@ -1,118 +1,122 @@
-import { CourseBlockData } from '../components/workouts/CourseBlockForm';
+import { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { Session, User } from '@supabase/supabase-js';
+import { Profile } from '../types';
 
-export interface Record {
-  id: string;
-  type: 'run' | 'exercise' | 'jump' | 'throw';
-  name: string;
-  value: number;
-  unit: string;
-  date: string;
-  timing_method?: 'manual' | 'automatic';
-  distance_method?: 'decameter' | 'theodolite';
-  wind_speed?: number;
-  is_hill?: boolean;
-  hill_location?: string;
-  shoe_type?: 'spikes' | 'sneakers';
-  exercice_reference_id?: string;
-  exercice_personnalise_id?: string;
+interface AuthContextType {
+  session: Session | null;
+  user: User | null;
+  profile: Profile | null;
+  loading: boolean;
+  refreshProfile: () => Promise<void>;
 }
 
-export type WorkoutMuscu = {
-  exercice_id: string;
-  exercice_nom: string;
-  series: number;
-  reps: number;
-  poids: number;
-  name?: string; // for block templates
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProfile = useCallback(async (user: User) => {
+    console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        console.log("✅ [useAuth] Profil chargé:", data);
+        setProfile(data);
+      } else {
+        console.log("🟡 [useAuth] Aucun profil trouvé, l'utilisateur doit le créer.");
+        setProfile(null);
+      }
+    } catch (e) {
+      console.error("❌ [useAuth] Erreur lors du chargement du profil:", e);
+      setProfile(null);
+    }
+  }, []);
+
+  const refreshProfile = useCallback(async () => {
+    console.log('🔄 [useAuth] Rafraîchissement manuel du profil...');
+    if (user) {
+      await fetchProfile(user);
+      console.log('✅ [useAuth] Profil rafraîchi avec succès');
+    }
+  }, [user, fetchProfile]);
+
+  useEffect(() => {
+    console.log("🔄 [useAuth] Initialisation du listener...");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        console.log(`🔐 [useAuth] Événement reçu: ${_event}`);
+        setLoading(true);
+        try {
+          setSession(session);
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
+          if (currentUser) {
+            await fetchProfile(currentUser);
+          } else {
+            setProfile(null);
+          }
+        } catch (error) {
+            console.error("❌ [useAuth] Erreur critique dans onAuthStateChange:", error);
+        } finally {
+            setLoading(false);
+            console.log("✅ [useAuth] Fin de traitement, chargement terminé.");
+        }
+      }
+    );
+
+    return () => {
+      console.log("🛑 [useAuth] Nettoyage du listener.");
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      console.log('🔄 [useAuth] Événement profile-updated reçu');
+      refreshProfile();
+    };
+
+    window.addEventListener('profile-updated', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdate);
+    };
+  }, [refreshProfile]);
+
+  const contextValue = {
+    session,
+    user,
+    profile,
+    loading,
+    refreshProfile,
+  };
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export type TextBlock = {
-  id: string;
-  content: string;
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
-export type Workout = {
-  id: string;
-  user_id: string; // L'athlète qui a réalisé la séance
-  date: string; // La date de réalisation effective
-  title: string;
-  tag_seance?: string; // Ajout du tag pour le type de séance
-
-  // Données de la séance
-  workout_data: { blocs: any[] }; // Performances réelles de l'athlète
-  planned_data?: { blocs: any[] }; // Plan initial du coach
-  type: 'guidé' | 'manuscrit'; // Type de séance
-
-  // Métadonnées de planification
-  status: 'planned' | 'completed';
-  scheduled_date?: string; // Date prévue par le coach
-  coach_id?: string; // Coach qui a planifié
-  assigned_to_user_id?: string; // Si assigné à un athlète
-  assigned_to_group_id?: string; // Si assigné à un groupe
-
-  // Feedback
-  rpe?: number; // RPE de l'athlète
-  notes?: string;
-
-  // Champs techniques
-  duration_minutes?: number;
-  created_at?: string;
-  updated_at?: string;
-};
-
-// Generic Profile type based on what the app uses
-export type Profile = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  [key: string]: any; // Allow other properties
-};
-
-// App-wide navigation view types
-export type View =
-  | 'dashboard'
-  | 'workouts'
-  | 'add-workout'
-  | 'records'
-  | 'add-record'
-  | 'bodycomp'
-  | 'add-bodycomp'
-  | 'ai'
-  | 'groups'
-  | 'chat'
-  | 'planning'
-  | 'coach-planning'
-  | 'profile'
-  | 'partnerships'
-  | 'nutrition'
-  | 'add-food'
-  | 'sleep'
-  | 'developer'
-  | 'settings'
-  | 'contact';
-
-export type DefaultWorkoutType = {
-  id: string;
-  name: string;
-  color: string;
-};
-
-export type CustomWorkoutType = {
-  id: string;
-  created_at: string;
-  coach_id: string;
-  name: string;
-  color: string;
-};
-
-export interface BodyComposition {
-  id: string;
-  date: string;
-  weight: number;
-  height: number;
-  waterPercentage: number;
-  totalMuscle: number;
-  skeletalMuscle: number;
-  bodyFatPercentage: number;
-}
+export default useAuth;
