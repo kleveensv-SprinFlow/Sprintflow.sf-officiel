@@ -1,173 +1,176 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 import { Profile } from '../types';
 
+// Étend le type Group pour inclure le nouveau code d'invitation
 export interface Group {
   id: string;
-  coach_id: string;
   name: string;
+  coach_id: string;
   created_at: string;
-  group_members: GroupMember[];
+  invitation_code: string; // Ajout du code d'invitation
+  group_members: { athlete_id: string; profiles: Profile | null }[];
 }
 
-export interface GroupMember {
+// Nouveau type pour les demandes d'adhésion
+export interface JoinRequest {
+  id: string;
   group_id: string;
   athlete_id: string;
-  profile?: Profile;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  // On inclut le profil de l'athlète qui fait la demande
+  profiles: Pick<Profile, 'id' | 'first_name' | 'last_name' | 'avatar_url'> | null;
 }
 
-export function useGroups() {
-  const { user, profile } = useAuth();
+export const useGroups = () => {
+  const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchGroups = useCallback(async () => {
-    if (!user || !profile) {
-      setGroups([]);
-      return;
-    }
+    if (!user) return;
 
     setLoading(true);
     setError(null);
-
     try {
-      if (profile.role === 'coach') {
-        const { data: groupsData, error: groupsError } = await supabase
-          .from('groups')
-          .select(`
-            *,
-            group_members(
-              athlete_id,
-              group_id,
-              profile:profiles(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
+      const { data, error } = await supabase
+        .from('groups')
+        .select(`
+          id,
+          name,
+          coach_id,
+          created_at,
+          invitation_code,
+          group_members (
+            athlete_id,
+            profiles (
+              id,
+              first_name,
+              last_name,
+              avatar_url
             )
-          `)
-          .eq('coach_id', user.id);
+          )
+        `)
+        .eq('coach_id', user.id);
 
-        if (groupsError) throw groupsError;
-
-        console.log('📦 Groups data from Supabase:', JSON.stringify(groupsData, null, 2));
-        setGroups(groupsData || []);
-
-      } else if (profile.role === 'athlete') {
-        const { data: memberData, error: memberError } = await supabase
-          .from('group_members')
-          .select('group:groups(*)')
-          .eq('athlete_id', user.id);
-
-        if (memberError) throw memberError;
-
-        const groupIds = memberData?.map(m => m.group?.id).filter(Boolean) || [];
-        if (groupIds.length > 0) {
-            const { data: groupsData, error: groupsError } = await supabase
-                .from('groups')
-                .select(`
-                  *,
-                  group_members(
-                    athlete_id,
-                    group_id,
-                    profile:profiles(id, first_name, last_name, avatar_url, date_de_naissance, discipline)
-                  )
-                `)
-                .in('id', groupIds);
-
-            if (groupsError) throw groupsError;
-            console.log('📦 Groups data from Supabase (athlete):', JSON.stringify(groupsData, null, 2));
-            setGroups(groupsData || []);
-        } else {
-            setGroups([]);
-        }
+      if (error) {
+        throw error;
       }
-    } catch (err: any) {
-      setError(err.message);
-      console.error("Erreur lors du chargement des groupes:", err);
+      
+      setGroups(data || []);
+    } catch (e: any) {
+      console.error("Erreur lors de la récupération des groupes:", e);
+      setError(e);
     } finally {
       setLoading(false);
     }
-  }, [user, profile]);
+  }, [user]);
 
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
 
-  const coachAthletes = useMemo(() => {
-    if (profile?.role !== 'coach' || !groups) return [];
-
-    const allMembers = groups.flatMap(g => g.group_members);
-    const uniqueAthletes = new Map<string, Profile>();
-
-    allMembers.forEach(member => {
-      if (member.profile && !uniqueAthletes.has(member.athlete_id)) {
-        uniqueAthletes.set(member.athlete_id, member.profile);
-      }
-    });
-
-    return Array.from(uniqueAthletes.values());
-  }, [groups, profile]);
-
-
   const createGroup = async (name: string) => {
-    if (!user || profile?.role !== 'coach') throw new Error('Seuls les coachs peuvent créer des groupes.');
+    if (!user) throw new Error("Utilisateur non authentifié.");
 
     const { data, error } = await supabase
       .from('groups')
-      .insert({ name: name, coach_id: user.id })
+      .insert({ name, coach_id: user.id })
       .select()
       .single();
 
     if (error) throw error;
 
     if (data) {
-        const newGroup: Group = { ...data, group_members: [] };
-        setGroups(prev => [newGroup, ...prev]);
+        // Pour rafraîchir la liste avec le nouveau groupe complet
+        await fetchGroups();
     }
     return data;
   };
 
   const deleteGroup = async (groupId: string) => {
-    if (!user || profile?.role !== 'coach') throw new Error('Seuls les coachs peuvent supprimer des groupes.');
-
     const { error } = await supabase.from('groups').delete().eq('id', groupId);
-
     if (error) throw error;
     setGroups(prev => prev.filter(g => g.id !== groupId));
   };
+  
+  // --- NOUVELLES FONCTIONS ---
 
-  const addMemberToGroup = async (groupId: string, athleteId: string) => {
-    if (!user || profile?.role !== 'coach') throw new Error('Seuls les coachs peuvent ajouter des membres.');
-
-    const { error } = await supabase
-      .from('group_members')
-      .insert({ group_id: groupId, athlete_id: athleteId });
-
-    if (error) throw error;
-    await fetchGroups();
-  };
-
-  const removeMemberFromGroup = async (groupId: string, athleteId: string) => {
-    if (!user || profile?.role !== 'coach') throw new Error('Seuls les coachs peuvent retirer des membres.');
-
-    const { error } = await supabase
-      .from('group_members')
-      .delete()
+  const fetchJoinRequests = useCallback(async (groupId: string): Promise<JoinRequest[]> => {
+    const { data, error } = await supabase
+      .from('group_join_requests')
+      .select(`
+        id,
+        group_id,
+        athlete_id,
+        status,
+        created_at,
+        profiles (
+            id,
+            first_name,
+            last_name,
+            avatar_url
+        )
+      `)
       .eq('group_id', groupId)
-      .eq('athlete_id', athleteId);
+      .eq('status', 'pending');
+
+    if (error) {
+      console.error("Erreur fetchJoinRequests:", error);
+      throw error;
+    }
+    return data || [];
+  }, []);
+  
+  const respondToRequest = async (requestId: string, newStatus: 'accepted' | 'rejected') => {
+    const { data, error } = await supabase.rpc('respond_to_join_request', {
+      request_id_param: requestId,
+      new_status_param: newStatus
+    });
 
     if (error) throw error;
-    await fetchGroups();
+
+    const result = data as { status: string; message: string };
+    if (result.status === 'error') {
+        throw new Error(result.message);
+    }
+    
+    // Si acceptée, rafraîchir les groupes pour voir le nouveau membre
+    if (newStatus === 'accepted') {
+        await fetchGroups();
+    }
+
+    return result;
   };
+  
+  // Fonction pour l'athlète
+  const joinGroupWithCode = async (invitationCode: string) => {
+    const { data, error } = await supabase.rpc('join_group_with_code', {
+        invitation_code_param: invitationCode
+    });
+
+    if (error) throw error;
+
+    const result = data as { status: string; message: string };
+    if (result.status === 'error') {
+        throw new Error(result.message);
+    }
+    return result;
+  };
+
 
   return {
     groups,
-    coachAthletes,
     loading,
     error,
     createGroup,
     deleteGroup,
-    addMemberToGroup,
-    removeMemberFromGroup,
-    refresh: fetchGroups
+    fetchGroups, // Exposer pour rafraîchissement manuel si besoin
+    fetchJoinRequests,
+    respondToRequest,
+    joinGroupWithCode,
   };
-}
+};
