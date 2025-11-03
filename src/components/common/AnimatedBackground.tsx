@@ -16,10 +16,16 @@ const AnimatedBackground = () => {
         aria-hidden="true"
       >
         <defs>
-          {/* === Dégradé pour la lueur animée === */}
+          {/* 
+            === Dégradé CORRIGÉ pour la lueur animée ===
+            Ce dégradé est conçu pour être un "pulse" de lumière doux et court
+            au milieu d'une grande zone transparente.
+          */}
           <linearGradient id="glow-gradient" gradientTransform="rotate(90)">
             <stop offset="0%" stopColor="rgba(0, 255, 255, 0)" />
-            <stop offset="50%" stopColor="rgba(0, 255, 255, 0.5)" />
+            <stop offset="45%" stopColor="rgba(0, 255, 255, 0)" />
+            <stop offset="50%" stopColor="rgba(0, 255, 255, 0.4)" />
+            <stop offset="55%" stopColor="rgba(0, 255, 255, 0)" />
             <stop offset="100%" stopColor="rgba(0, 255, 255, 0)" />
           </linearGradient>
 
@@ -37,15 +43,13 @@ const AnimatedBackground = () => {
 
         {/* 
           Rectangles animés.
-          Chaque rectangle remplit tout le SVG et est masqué par une piste.
-          On applique le dégradé "glow-gradient" comme remplissage.
-          L'animation `flow-glow` est appliquée avec des durées et des délais différents
-          pour créer un effet asynchrone et organique.
+          La hauteur est maintenant beaucoup plus grande que la zone visible
+          pour que l'animation du "pulse" soit fluide du début à la fin.
         */}
         <g fill="url(#glow-gradient)">
           <rect
             width="1170"
-            height="2532"
+            height="5064" // Hauteur augmentée
             mask="url(#mask-left)"
             style={{
               animation: 'flow-glow 8s linear infinite',
@@ -53,7 +57,7 @@ const AnimatedBackground = () => {
           />
           <rect
             width="1170"
-            height="2532"
+            height="5064" // Hauteur augmentée
             mask="url(#mask-center)"
             style={{
               animation: 'flow-glow 7s linear infinite',
@@ -62,7 +66,7 @@ const AnimatedBackground = () => {
           />
           <rect
             width="1170"
-            height="2532"
+            height="5064" // Hauteur augmentée
             mask="url(#mask-right)"
             style={{
               animation: 'flow-glow 8s linear infinite',
