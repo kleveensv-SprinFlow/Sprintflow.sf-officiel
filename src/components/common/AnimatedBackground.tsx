@@ -52,103 +52,52 @@ const AnimatedBackground = () => {
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 overflow-hidden">
         {profile && (
           <>
-            <svg className="w-full max-w-4xl" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
-              <defs>
-                <linearGradient id="textGradientLight" x1="0%" y1="0%" x2="200%" y2="0%">
-                  <stop offset="0%" stopColor="hsl(210, 5%, 85%)" />
-                  <stop offset="50%" stopColor="hsl(210, 5%, 65%)" />
-                  <stop offset="100%" stopColor="hsl(210, 5%, 85%)" />
-                  <animate attributeName="x1" values="0%;-100%;0%" dur="12s" repeatCount="indefinite" />
-                  <animate attributeName="x2" values="200%;100%;200%" dur="12s" repeatCount="indefinite" />
-                </linearGradient>
-                <linearGradient id="textGradientDark" x1="0%" y1="0%" x2="200%" y2="0%">
-                  <stop offset="0%" stopColor="hsl(210, 10%, 30%)" />
-                  <stop offset="50%" stopColor="hsl(210, 10%, 60%)" />
-                  <stop offset="100%" stopColor="hsl(210, 10%, 30%)" />
-                  <animate attributeName="x1" values="0%;-100%;0%" dur="12s" repeatCount="indefinite" />
-                  <animate attributeName="x2" values="200%;100%;200%" dur="12s" repeatCount="indefinite" />
-                </linearGradient>
-                <filter id="textShadowLight">
-                  <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
-                  <feOffset dx="0" dy="1" result="offsetblur" />
-                  <feComponentTransfer>
-                    <feFuncA type="linear" slope="0.1" />
-                  </feComponentTransfer>
-                  <feMerge>
-                    <feMergeNode />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <filter id="textShadowDark">
-                  <feGaussianBlur in="SourceAlpha" stdDeviation="5" />
-                  <feOffset dx="0" dy="2" result="offsetblur" />
-                  <feComponentTransfer>
-                    <feFuncA type="linear" slope="0.4" />
-                  </feComponentTransfer>
-                  <feMerge>
-                    <feMergeNode />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-
-              <text
-                x="50%"
-                y="45%"
-                textAnchor="middle"
-                className="font-sans font-light select-none text-name"
-                fontSize="60"
-                fill="url(#textGradientLight)"
-                filter="url(#textShadowLight)"
-              >
-                {profile.first_name} {profile.last_name}
-              </text>
-
-              {profile.role === 'athlete' && objectif && (
-                <text
-                  x="50%"
-                  y="75%"
-                  textAnchor="middle"
-                  className="font-sans font-light select-none text-objectif"
-                  fontSize="50"
-                  fill="url(#textGradientLight)"
-                  filter="url(#textShadowLight)"
-                >
-                  {formatObjectifValue()}
-                </text>
-              )}
-            </svg>
-
-            <svg className="w-full max-w-4xl absolute opacity-0 dark:opacity-100 transition-opacity duration-1000" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
-              <text
-                x="50%"
-                y="45%"
-                textAnchor="middle"
-                className="font-sans font-light select-none text-name"
-                fontSize="60"
-                fill="url(#textGradientDark)"
-                filter="url(#textShadowDark)"
-              >
-                {profile.first_name} {profile.last_name}
-              </text>
-
-              {profile.role === 'athlete' && objectif && (
-                <text
-                  x="50%"
-                  y="75%"
-                  textAnchor="middle"
-                  className="font-sans font-light select-none text-objectif"
-                  fontSize="50"
-                  fill="url(#textGradientDark)"
-                  filter="url(#textShadowDark)"
-                >
-                  {formatObjectifValue()}
-                </text>
-              )}
-            </svg>
+            <h1 className="font-sans font-light text-5xl md:text-7xl text-gray-300 dark:text-gray-700 select-none animated-gradient">
+              {profile.first_name} {profile.last_name}
+            </h1>
+            {profile.role === 'athlete' && objectif && (
+              <p className="font-sans font-light text-4xl md:text-6xl text-gray-400 dark:text-gray-600 select-none mt-4 animated-gradient">
+                {formatObjectifValue()}
+              </p>
+            )}
           </>
         )}
       </div>
+      <style>{`
+        .animated-gradient {
+          background-image: linear-gradient(
+            90deg,
+            hsl(210, 5%, 85%),
+            hsl(210, 5%, 65%),
+            hsl(210, 5%, 85%)
+          );
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          background-size: 200% 100%;
+          animation: gradient-animation 12s ease-in-out infinite;
+          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        }
+        @media (prefers-color-scheme: dark) {
+          .animated-gradient {
+            background-image: linear-gradient(
+              90deg,
+              hsl(210, 10%, 30%),
+              hsl(210, 10%, 60%),
+              hsl(210, 10%, 30%)
+            );
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+          }
+        }
+        @keyframes gradient-animation {
+          0% {
+            background-position: 200% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+      `}</style>
     </div>
   );
 };
