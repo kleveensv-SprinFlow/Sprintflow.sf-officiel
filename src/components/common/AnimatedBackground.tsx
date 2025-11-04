@@ -40,12 +40,12 @@ const AnimatedBackground = () => {
     <div className="fixed inset-0 -z-10 bg-gray-50 dark:bg-gray-900">
       {/* Light theme background */}
       <div
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 dark:opacity-0"
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 dark:opacity-0 opacity-30"
         style={{ backgroundImage: "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fcd-claire.png')" }}
       ></div>
       {/* Dark theme background */}
       <div
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0 dark:opacity-100"
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0 dark:opacity-30"
         style={{ backgroundImage: "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fdc-Sombre.png')" }}
       ></div>
 
