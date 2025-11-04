@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Trophy, Plus, Clock, Weight, Trash2, TrendingUp, TrendingDown, Minus, Target, MapPin, Filter, Play, Dumbbell } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Record } from '../../types';
 import { useRecords } from '../../hooks/useRecords';
