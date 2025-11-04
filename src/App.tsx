@@ -22,13 +22,13 @@ const ContactPage = lazy(() => import('./components/static/ContactPage').then(m 
 const PartnershipsList = lazy(() => import('./components/PartnershipsList').then(m => ({ default: m.PartnershipsList || m.default })));
 const DeveloperPanel = lazy(() => import('./components/developer/DeveloperPanel').then(m => ({ default: m.DeveloperPanel || m.default })));
 const ChatManager = lazy(() => import('./components/chat/ChatManager').then(m => ({ default: m.ChatManager || m.default })));
-const RecordsList = lazy(() => import('./components/records/RecordsList').then(m => ({ default: m.RecordsList || m.default })));
 
 // Lazy loading des formulaires
 const NewWorkoutForm = lazy(() => import('./components/workouts/NewWorkoutForm').then(m => ({ default: m.NewWorkoutForm })));
 const RecordsForm = lazy(() => import('./components/records/RecordsForm').then(m => ({ default: m.RecordsForm })));
 const FoodSearchModal = lazy(() => import('./components/nutrition/FoodSearchModal').then(m => ({ default: m.FoodSearchModal })));
 const SleepForm = lazy(() => import('./components/sleep/SleepForm').then(m => ({ default: m.SleepForm })));
+const ShareView = lazy(() => import('./components/sharing/ShareView').then(m => ({ default: m.default })));
 
 function App() {
   const { session, loading, profile } = useAuth();
@@ -42,19 +42,8 @@ function App() {
       const customEvent = event as CustomEvent<View>;
       setCurrentView(customEvent.detail);
     };
-
-    const handleOpenForm = (event: Event) => {
-      const customEvent = event as CustomEvent<View>;
-      setShowForm(customEvent.detail);
-    };
-
     window.addEventListener('change-view', handleViewChange);
-    window.addEventListener('open-form', handleOpenForm);
-
-    return () => {
-      window.removeEventListener('change-view', handleViewChange);
-      window.removeEventListener('open-form', handleOpenForm);
-    };
+    return () => window.removeEventListener('change-view', handleViewChange);
   }, []);
 
   const handleFabAction = (view: View) => {
@@ -73,8 +62,6 @@ function App() {
           return <NutritionModule />;
         case 'ai':
           return <AdvicePage onNavigate={setCurrentView} />;
-        case 'records':
-          return <RecordsList />;
         case 'profile':
           return <ProfilePage />;
         case 'groups':
@@ -123,6 +110,8 @@ function App() {
           return <FoodSearchModal onClose={() => setShowForm(null)} onFoodSelected={() => setShowForm(null)} />;
         case 'sleep':
           return <SleepForm onClose={() => setShowForm(null)} />;
+        case 'share-performance':
+          return <ShareView onClose={() => setShowForm(null)} />;
         default:
           return null;
       }
