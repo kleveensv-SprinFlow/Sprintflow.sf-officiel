@@ -244,7 +244,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
               // Sinon, trier alphabétiquement
               return keyA.localeCompare(keyB);
             })
-            .map(([key, recordsGroup]) => {
+            .map(([key, recordsGroup], index) => {
             const firstRecord = recordsGroup[0];
             const recordType = firstRecord.type;
             const isRunning = recordType === 'run';
