@@ -9,7 +9,7 @@ const videoUrl = "https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/pub
 
 const VideoBackground = () => (
   <video
-    className="absolute top-0 left-0 w-full h-full object-cover"
+    className="fixed top-0 left-0 w-full h-full object-cover"
     src={videoUrl}
     autoPlay
     loop
@@ -146,10 +146,10 @@ export default function Auth({ initialError }: AuthProps = {}) {
 
   if (showResendConfirmation) {
     return (
-        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#100f2b]">
+        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-auto bg-[#100f2b]">
         <VideoBackground />
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
+        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 my-auto">
             <div className="flex items-center mb-6">
             <button
                 onClick={resetResendState}
@@ -158,7 +158,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
                 <ArrowLeft className="w-5 h-5 text-white" />
             </button>
             <div className="w-full text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-2xl font-bold text-white">Renvoyer l'email de confirmation</h1>
@@ -183,7 +183,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
                         value={resendEmail}
                         onChange={(e) => setResendEmail(e.target.value)}
                         required
-                        className="w-full pl-10 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                         placeholder="votre@email.com"
                     />
                     </div>
@@ -192,7 +192,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
                 <button
                     type="submit"
                     disabled={loading || !resendEmail.trim()}
-                    className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-orange-600 disabled:opacity-50"
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-800 disabled:opacity-50"
                 >
                     {loading ? "Envoi..." : "Renvoyer l'email"}
                 </button>
@@ -206,7 +206,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
                 </p>
                 <button
                 onClick={resetResendState}
-                className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-3 px-4 rounded-lg"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg"
                 >
                 Retour à la connexion
                 </button>
@@ -219,10 +219,10 @@ export default function Auth({ initialError }: AuthProps = {}) {
 
   if (showForgotPassword) {
     return (
-        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#100f2b]">
+        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-auto bg-[#100f2b]">
         <VideoBackground />
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
+        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 my-auto">
             <div className="flex items-center mb-6">
             <button
                 onClick={resetForgotPasswordState}
@@ -231,7 +231,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
                 <ArrowLeft className="w-5 h-5 text-white" />
             </button>
             <div className="w-full text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-2xl font-bold text-white">Mot de passe oublié</h1>
@@ -263,7 +263,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
                 <button
                     type="submit"
                     disabled={loading || !resetEmail.trim()}
-                    className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-3 px-4 rounded-lg"
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg"
                 >
                     {loading ? "Envoi..." : "Envoyer le lien"}
                 </button>
@@ -277,7 +277,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
                 </p>
                 <button
                 onClick={resetForgotPasswordState}
-                className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-3 px-4 rounded-lg"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg"
                 >
                 Retour
                 </button>
@@ -290,10 +290,10 @@ export default function Auth({ initialError }: AuthProps = {}) {
 
   if (showEmailConfirmation) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#100f2b]">
+      <div className="relative min-h-screen flex items-center justify-center p-4 overflow-auto bg-[#100f2b]">
         <VideoBackground />
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
+        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 my-auto">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 bg-green-500 rounded-full flex items-center justify-center">
               <CheckCircle className="w-12 h-12 text-white" />
@@ -321,13 +321,14 @@ export default function Auth({ initialError }: AuthProps = {}) {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#100f2b]">
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-auto bg-[#100f2b]">
       <VideoBackground />
       <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
-      <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
+      <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 my-auto">
         <div className="text-center mb-8">
-          <img src="/logo-sprintflow.png" alt="SprintFlow Logo" className="w-24 h-24 mx-auto mb-4" />
-          <h1 className="text-4xl font-bold text-white tracking-wider [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">SprintFlow</h1>
+          <h1 className="text-4xl font-bold text-white tracking-wider [text-shadow:0_2px_4px_rgba(0,0,0,0.6)]">
+            Sprint<span className="text-blue-500">Flow</span>
+          </h1>
           <p className="text-white/80 mt-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
             {isLogin ? 'Connectez-vous à votre compte' : 'Créez votre compte'}
           </p>
@@ -382,14 +383,14 @@ export default function Auth({ initialError }: AuthProps = {}) {
             <div className="text-center text-sm font-medium p-3 mb-4 bg-red-900/50 rounded-lg">
               <p className="text-red-400">{authError}</p>
               {authError.includes('confirmer votre email') && (
-                <button type="button" onClick={() => setShowResendConfirmation(true)} className="mt-2 text-orange-400 hover:text-orange-300 font-semibold underline">
+                <button type="button" onClick={() => setShowResendConfirmation(true)} className="mt-2 text-blue-400 hover:text-blue-300 font-semibold underline">
                   Renvoyer l'email de confirmation
                 </button>
               )}
             </div>
           )}
 
-          <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-3 px-4 rounded-lg font-semibold disabled:opacity-50">
+          <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg font-semibold disabled:opacity-50">
             {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" /> : (isLogin ? 'Se connecter' : 'Créer un compte')}
           </button>
         </form>
@@ -397,8 +398,8 @@ export default function Auth({ initialError }: AuthProps = {}) {
         <div className="mt-6 text-center space-y-3">
           {isLogin && (
             <>
-              <button onClick={() => setShowForgotPassword(true)} className="text-orange-400 hover:text-orange-300 font-medium block w-full">Mot de passe oublié ?</button>
-              <button onClick={() => setShowResendConfirmation(true)} className="text-orange-400 hover:text-orange-300 font-medium block w-full">Renvoyer l'email de confirmation</button>
+              <button onClick={() => setShowForgotPassword(true)} className="text-blue-400 hover:text-blue-300 font-medium block w-full">Mot de passe oublié ?</button>
+              <button onClick={() => setShowResendConfirmation(true)} className="text-blue-400 hover:text-blue-300 font-medium block w-full">Renvoyer l'email de confirmation</button>
             </>
           )}
           <button onClick={() => setIsLogin(!isLogin)} className="text-blue-400 hover:text-blue-300 font-medium block w-full">
