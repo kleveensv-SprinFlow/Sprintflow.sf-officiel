@@ -12,6 +12,7 @@ import { useRecords } from './hooks/useRecords';
 
 // Lazy loading des composants lourds
 const AthletePlanning = lazy(() => import('./components/planning/AthletePlanning').then(m => ({ default: m.AthletePlanning || m.default })));
+const CoachPlanning = lazy(() => import('./components/planning/CoachPlanning').then(m => ({ default: m.CoachPlanning || m.default })));
 const NutritionModule = lazy(() => import('./components/nutrition/NutritionModule').then(m => ({ default: m.NutritionModule || m.default })));
 const AdvicePage = lazy(() => import('./components/advice/AdvicePage').then(m => ({ default: m.AdvicePage || m.default })));
 const ProfilePage = lazy(() => import('./components/profile/ProfilePage').then(m => ({ default: m.ProfilePage || m.default })));
@@ -57,7 +58,7 @@ function App() {
         case 'dashboard':
           return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
         case 'workouts':
-          return <AthletePlanning />;
+          return profile?.role === 'coach' ? <CoachPlanning /> : <AthletePlanning />;
         case 'nutrition':
           return <NutritionModule />;
         case 'ai':
