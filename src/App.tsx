@@ -11,17 +11,17 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useRecords } from './hooks/useRecords';
 
 // Lazy loading des composants lourds
-const AthletePlanning = lazy(() => import('./components/planning/AthletePlanning'));
-const NutritionModule = lazy(() => import('./components/nutrition/NutritionModule'));
-const AdvicePage = lazy(() => import('./components/advice/AdvicePage'));
-const ProfilePage = lazy(() => import('./components/profile/ProfilePage'));
-const GroupManagement = lazy(() => import('./components/groups/GroupManagement'));
-const AthleteGroupView = lazy(() => import('./components/groups/AthleteGroupView'));
-const SettingsPage = lazy(() => import('./components/static/SettingsPage'));
-const ContactPage = lazy(() => import('./components/static/ContactPage'));
-const PartnershipsList = lazy(() => import('./components/PartnershipsList'));
-const DeveloperPanel = lazy(() => import('./components/developer/DeveloperPanel'));
-const ChatManager = lazy(() => import('./components/chat/ChatManager'));
+const AthletePlanning = lazy(() => import('./components/planning/AthletePlanning').then(m => ({ default: m.AthletePlanning || m.default })));
+const NutritionModule = lazy(() => import('./components/nutrition/NutritionModule').then(m => ({ default: m.NutritionModule || m.default })));
+const AdvicePage = lazy(() => import('./components/advice/AdvicePage').then(m => ({ default: m.AdvicePage || m.default })));
+const ProfilePage = lazy(() => import('./components/profile/ProfilePage').then(m => ({ default: m.ProfilePage || m.default })));
+const GroupManagement = lazy(() => import('./components/groups/GroupManagement').then(m => ({ default: m.GroupManagement || m.default })));
+const AthleteGroupView = lazy(() => import('./components/groups/AthleteGroupView').then(m => ({ default: m.AthleteGroupView || m.default })));
+const SettingsPage = lazy(() => import('./components/static/SettingsPage').then(m => ({ default: m.SettingsPage || m.default })));
+const ContactPage = lazy(() => import('./components/static/ContactPage').then(m => ({ default: m.ContactPage || m.default })));
+const PartnershipsList = lazy(() => import('./components/PartnershipsList').then(m => ({ default: m.PartnershipsList || m.default })));
+const DeveloperPanel = lazy(() => import('./components/developer/DeveloperPanel').then(m => ({ default: m.DeveloperPanel || m.default })));
+const ChatManager = lazy(() => import('./components/chat/ChatManager').then(m => ({ default: m.ChatManager || m.default })));
 
 // Lazy loading des formulaires
 const NewWorkoutForm = lazy(() => import('./components/workouts/NewWorkoutForm').then(m => ({ default: m.NewWorkoutForm })));

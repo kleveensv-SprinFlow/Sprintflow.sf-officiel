@@ -193,4 +193,6 @@ export const GroupManagement: React.FC = () => {
        )}
     </div>
   );
-};export default GroupManagement;
+};
+
+export default GroupManagement;
