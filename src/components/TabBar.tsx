@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Users, MessageSquare, Lightbulb, Apple, Plus, Dumbbell, Activity, Calendar, Utensils, Bed, Trophy } from 'lucide-react';
+import { Home, Users, MessageSquare, Lightbulb, Apple, Plus, Dumbbell, Activity, Calendar, Utensils, Bed, Trophy, Share } from 'lucide-react';
 import { View } from '../types';
 
 interface TabBarProps {
@@ -33,6 +33,7 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
     { view: 'add-record' as View, icon: Trophy, label: 'Ajouter Record' },
     { view: 'add-food' as View, icon: Utensils, label: 'Ajouter Repas' },
     { view: 'sleep' as View, icon: Bed, label: 'Saisir Sommeil' },
+    { view: 'share-performance' as View, icon: Share, label: 'Partager un Exploit' },
   ];
 
   const handleFabActionClick = (view: View) => {
