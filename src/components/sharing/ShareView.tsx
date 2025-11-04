@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import usePhotoUpload from '../../hooks/usePhotoUpload';
 import { X, Upload, Share2 } from 'lucide-react';
-import Watermark from '../Watermark';
 import { toast } from 'react-toastify';
 
 interface ShareViewProps {
@@ -37,7 +36,6 @@ const ShareView: React.FC<ShareViewProps> = ({ onClose }) => {
           {image ? (
             <div className="relative">
               <img src={image} alt="Aperçu de l'exploit" className="max-h-64 object-contain" />
-              <Watermark />
             </div>
           ) : (
             <div className="text-center">
