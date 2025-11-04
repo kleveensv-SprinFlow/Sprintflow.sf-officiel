@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, ArrowLeft, User, Briefcase, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { SelectionCard } from './common/SelectionCard';
 import { CardCarousel } from './common/CardCarousel';
 
-// Détection dynamique des vidéos dans le dossier public/videos
-const videoModules = import.meta.glob('/public/videos/*');
-const allVideos = Object.keys(videoModules).map(path => path.replace('/public', ''));
-const hasVideos = allVideos.length > 0;
+const videoUrl = "https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fond-Video.mp4";
 
 interface AuthProps {
   initialError?: string | null;
@@ -16,8 +13,6 @@ interface AuthProps {
 
 export default function Auth({ initialError }: AuthProps = {}) {
   const { signIn, signUp, resendConfirmationEmail } = useAuth();
-  const [videos, setVideos] = useState<string[]>([]);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showResendConfirmation, setShowResendConfirmation] = useState(false);
@@ -44,51 +39,6 @@ export default function Auth({ initialError }: AuthProps = {}) {
     height: '',
   });
 
-  // Fonction pour mélanger un tableau (algorithme de Fisher-Yates)
-  const shuffleArray = (array: string[], lastItem?: string): string[] => {
-    let currentIndex = array.length, randomIndex;
-    const newArray = [...array];
-
-    while (currentIndex !== 0) {
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-      [newArray[currentIndex], newArray[randomIndex]] = [
-        newArray[randomIndex], newArray[currentIndex]];
-    }
-
-    if (lastItem && newArray[0] === lastItem && newArray.length > 1) {
-      const firstElement = newArray.shift();
-      if (firstElement) newArray.push(firstElement);
-    }
-    
-    return newArray;
-  };
-
-  useEffect(() => {
-    if (hasVideos) {
-      setVideos(shuffleArray(allVideos));
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hasVideos || videos.length === 0) return;
-    const videoElement = document.getElementById(`video-${currentVideoIndex}`) as HTMLVideoElement;
-    if (videoElement) {
-      videoElement.play().catch(error => console.error("Video play failed:", error));
-    }
-  }, [currentVideoIndex, videos]);
-
-  const handleVideoEnded = () => {
-    const nextIndex = currentVideoIndex + 1;
-    if (nextIndex >= videos.length) {
-      const lastVideo = videos[videos.length - 1];
-      setVideos(shuffleArray(allVideos, lastVideo));
-      setCurrentVideoIndex(0);
-    } else {
-      setCurrentVideoIndex(nextIndex);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -97,7 +47,6 @@ export default function Auth({ initialError }: AuthProps = {}) {
     try {
       if (isLogin) {
         await signIn(formData.email, formData.password);
-        // La redirection est gérée par le App.tsx via le hook useAuth
       } else {
         if (formData.password !== formData.confirmPassword) {
           throw new Error("Les mots de passe ne correspondent pas.");
@@ -106,7 +55,6 @@ export default function Auth({ initialError }: AuthProps = {}) {
           throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
         }
 
-        // L'appel à signUp gère maintenant la création de l'utilisateur ET du profil.
         const result = await signUp(
           formData.email,
           formData.password,
@@ -122,7 +70,6 @@ export default function Auth({ initialError }: AuthProps = {}) {
           }
         );
 
-        // Vérifier si l'email nécessite une confirmation
         if (result?.user && !result.session) {
           setRegisteredEmail(formData.email);
           setShowEmailConfirmation(true);
@@ -148,7 +95,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
       setResetSent(true);
     } catch (error: any) {
       console.error('Erreur reset password:', error);
-      alert(error.message || 'Erreur lors de l\'envoi du lien de réinitialisation');
+      alert(error.message || 'Erreur lors de l\\'envoi du lien de réinitialisation');
     } finally {
       setLoading(false);
     }
@@ -169,7 +116,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
       setResendSent(true);
     } catch (error: any) {
       console.error('Erreur renvoi confirmation:', error);
-      alert(error.message || 'Erreur lors du renvoi de l\'email de confirmation');
+      alert(error.message || 'Erreur lors du renvoi de l\\'email de confirmation');
     } finally {
       setLoading(false);
     }
@@ -185,28 +132,22 @@ export default function Auth({ initialError }: AuthProps = {}) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+  
+  const VideoBackground = () => (
+    <video
+      className="absolute top-0 left-0 w-full h-full object-cover"
+      src={videoUrl}
+      autoPlay
+      loop
+      muted
+      playsInline
+    />
+  );
 
-  // Interface de renvoi d'email de confirmation (conservée si l'option est réactivée)
   if (showResendConfirmation) {
-    // ... (code inchangé pour cette partie)
     return (
-        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-        {hasVideos ? (
-          videos.map((video, index) => (
-              <video
-              key={video}
-              id={`video-${index}`}
-              className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
-              src={video}
-              autoPlay
-              muted
-              onEnded={handleVideoEnded}
-              playsInline
-              />
-          ))
-        ) : (
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"></div>
-        )}
+        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#100f2b]">
+        <VideoBackground />
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
         <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
             <div className="flex items-center mb-6">
@@ -276,27 +217,10 @@ export default function Auth({ initialError }: AuthProps = {}) {
     );
   }
 
-  // Interface de récupération de mot de passe
   if (showForgotPassword) {
-    // ... (code inchangé pour cette partie)
     return (
-        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-        {hasVideos ? (
-          videos.map((video, index) => (
-              <video
-              key={video}
-              id={`video-${index}`}
-              className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
-              src={video}
-              autoPlay
-              muted
-              onEnded={handleVideoEnded}
-              playsInline
-              />
-          ))
-        ) : (
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"></div>
-        )}
+        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#100f2b]">
+        <VideoBackground />
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
         <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
             <div className="flex items-center mb-6">
@@ -364,27 +288,10 @@ export default function Auth({ initialError }: AuthProps = {}) {
     );
   }
 
-  // L'écran de succès à l'inscription est supprimé car la redirection est maintenant automatique.
-
   if (showEmailConfirmation) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-        {hasVideos ? (
-          videos.map((video, index) => (
-            <video
-              key={video}
-              id={`video-${index}`}
-              className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
-              src={video}
-              autoPlay
-              muted
-              onEnded={handleVideoEnded}
-              playsInline
-            />
-          ))
-        ) : (
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"></div>
-        )}
+      <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#100f2b]">
+        <VideoBackground />
         <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
         <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
           <div className="text-center">
@@ -414,23 +321,8 @@ export default function Auth({ initialError }: AuthProps = {}) {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-      {hasVideos ? (
-        videos.map((video, index) => (
-          <video
-            key={video}
-            id={`video-${index}`}
-            className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentVideoIndex ? 'opacity-100' : 'opacity-0'}`}
-            src={video}
-            autoPlay
-            muted
-            onEnded={handleVideoEnded}
-            playsInline
-          />
-        ))
-      ) : (
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"></div>
-      )}
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-[#100f2b]">
+      <VideoBackground />
       <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
       <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
         <div className="text-center mb-8">
