@@ -7,7 +7,7 @@ import { RecentWorkouts } from './dashboard/RecentWorkouts';
 import { AthleteRecordsCarousel } from './dashboard/AthleteRecordsCarousel';
 import { GroupOverview } from './dashboard/GroupOverview';
 import { WellnessCheckinCard } from './dashboard/WellnessCheckinCard';
-import { AthletePlanning } from './planning/AthletePlanning';
+import { AthleteDailyPlanCarousel } from './dashboard/AthleteDailyPlanCarousel';
 
 interface DashboardProps {
   userRole?: 'athlete' | 'coach' | 'developer';
@@ -106,7 +106,7 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
         onNavigate={() => onViewChange('ai')}
       />
 
-      <AthletePlanning />
+      <AthleteDailyPlanCarousel />
 
       <AthleteRecordsCarousel onNavigate={() => onViewChange('records')} />
       <GroupOverview onNavigate={() => onViewChange('groups')} />
