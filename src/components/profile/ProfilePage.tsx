@@ -212,8 +212,8 @@ export function ProfilePage() {
           </h2>
           {objectif ? (
             <div className="text-center">
-              <p className="text-gray-600 dark:text-gray-300">{objectif.exercice?.nom}</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{objectif.valeur} {objectif.exercice?.unite}</p>
+              <p className="text-gray-600 dark:text-gray-300">{objectif.epreuve?.nom}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{objectif.valeur} {objectif.epreuve?.unite}</p>
               <button onClick={() => setShowObjectifModal(true)} className="mt-2 text-sm text-blue-500 hover:underline">Modifier</button>
             </div>
           ) : (

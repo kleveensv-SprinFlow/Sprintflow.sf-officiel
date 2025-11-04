@@ -14,9 +14,9 @@ const AnimatedBackground = () => {
   }, [profile]);
 
   const formatObjectifValue = () => {
-    if (!objectif || !objectif.exercice) return '';
-    
-    switch (objectif.exercice.unite) {
+    if (!objectif || !objectif.epreuve) return '';
+
+    switch (objectif.epreuve.type_mesure) {
       case 'temps':
         const minutes = Math.floor(objectif.valeur / 60);
         const seconds = objectif.valeur % 60;
@@ -25,12 +25,8 @@ const AnimatedBackground = () => {
         formatted += `${seconds.toFixed(2).replace('.', '"')}`;
         return formatted;
       case 'distance':
+      case 'hauteur':
         return `${objectif.valeur}m`;
-      case 'poids':
-        return `${objectif.valeur}kg`;
-      case 'reps':
-      case 'nb':
-        return `${objectif.valeur}`;
       default:
         return objectif.valeur.toString();
     }

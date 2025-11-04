@@ -44,19 +44,20 @@ export type View =
   | 'sleep'
   | 'share-performance';
 
-export interface ExerciceReference {
+export interface EpreuveAthletisme {
   id: string;
   nom: string;
   categorie: string;
-  unite: 'temps' | 'distance' | 'poids' | 'reps' | 'nb';
+  type_mesure: 'temps' | 'distance' | 'hauteur';
+  unite: string;
   created_at: string;
 }
 
 export interface Objectif {
   id: string;
   user_id: string;
-  exercice_id: string;
+  epreuve_id: string;
   valeur: number;
   created_at: string;
-  exercice?: ExerciceReference;
+  epreuve?: EpreuveAthletisme;
 }

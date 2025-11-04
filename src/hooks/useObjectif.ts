@@ -24,7 +24,7 @@ const useObjectif = create<ObjectifState>((set) => ({
         .from('objectifs')
         .select(`
           *,
-          exercice:exercices_reference(*)
+          epreuve:epreuves_athletisme(*)
         `)
         .eq('user_id', userId)
         .maybeSingle();
@@ -59,30 +59,30 @@ const useObjectif = create<ObjectifState>((set) => ({
         const { data, error } = await supabase
           .from('objectifs')
           .update({
-            exercice_id: objectifData.exercice_id,
+            epreuve_id: objectifData.epreuve_id,
             valeur: objectifData.valeur,
           })
           .eq('user_id', userId)
           .select(`
             *,
-            exercice:exercices_reference(*)
+            epreuve:epreuves_athletisme(*)
           `)
           .single();
         if (error) throw error;
         objectifResult = data;
-        
+
       } else {
         // Créer un nouvel objectif
         const { data, error } = await supabase
           .from('objectifs')
           .insert({
             user_id: userId,
-            exercice_id: objectifData.exercice_id,
+            epreuve_id: objectifData.epreuve_id,
             valeur: objectifData.valeur,
           })
           .select(`
             *,
-            exercice:exercices_reference(*)
+            epreuve:epreuves_athletisme(*)
           `)
           .single();
         if (error) throw error;
@@ -107,10 +107,10 @@ const useObjectif = create<ObjectifState>((set) => ({
         .eq('id', objectifId)
         .select(`
           *,
-          exercice:exercices_reference(*)
+          epreuve:epreuves_athletisme(*)
         `)
         .single();
-      
+
       if (error) throw error;
       set({ objectif: data, loading: false });
     } catch (error: unknown) {

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Save, Target } from 'lucide-react';
-import useExercices from '../../hooks/useExercices';
+import useEpreuves from '../../hooks/useEpreuves';
 import useObjectif from '../../hooks/useObjectif';
 import useAuth from '../../hooks/useAuth';
-import { ExerciceReference, Objectif } from '../../types';
+import { EpreuveAthletisme, Objectif } from '../../types';
 import { toast } from 'react-toastify';
 import { ChronoInput } from '../workouts/ChronoInput';
 
@@ -14,24 +14,24 @@ interface SetObjectifModalProps {
 
 export const SetObjectifModal: React.FC<SetObjectifModalProps> = ({ onClose, onSaved }) => {
   const { user } = useAuth();
-  const { categories, exercices, loading: loadingExercices } = useExercices();
+  const { categories, epreuves, loading: loadingEpreuves } = useEpreuves();
   const { objectif: currentObjectif, setObjectif, loading: savingObjectif } = useObjectif();
-  
+
   const [selectedCategorie, setSelectedCategorie] = useState<string | null>(null);
-  const [selectedExercice, setSelectedExercice] = useState<ExerciceReference | null>(null);
+  const [selectedEpreuve, setSelectedEpreuve] = useState<EpreuveAthletisme | null>(null);
   const [valeur, setValeur] = useState<string>('');
 
   useEffect(() => {
-    if (currentObjectif && currentObjectif.exercice) {
-      setSelectedCategorie(currentObjectif.exercice.categorie);
-      setSelectedExercice(currentObjectif.exercice);
+    if (currentObjectif && currentObjectif.epreuve) {
+      setSelectedCategorie(currentObjectif.epreuve.categorie);
+      setSelectedEpreuve(currentObjectif.epreuve);
       setValeur(currentObjectif.valeur.toString());
     }
   }, [currentObjectif]);
 
   const handleSave = async () => {
-    if (!user || !selectedExercice || valeur === '') {
-      toast.warn('Veuillez sélectionner un exercice et entrer une valeur.');
+    if (!user || !selectedEpreuve || valeur === '') {
+      toast.warn('Veuillez sélectionner une épreuve et entrer une valeur.');
       return;
     }
     const numValue = parseFloat(valeur.replace(',', '.'));
@@ -41,36 +41,31 @@ export const SetObjectifModal: React.FC<SetObjectifModalProps> = ({ onClose, onS
     }
 
     await setObjectif({
-      exercice_id: selectedExercice.id,
+      epreuve_id: selectedEpreuve.id,
       valeur: numValue
     }, user.id);
-    
+
     toast.success('Objectif enregistré avec succès !');
     onSaved();
     onClose();
   };
 
   const renderUnitInput = () => {
-    if (!selectedExercice) return null;
+    if (!selectedEpreuve) return null;
 
-    switch (selectedExercice.unite) {
-      case 'temps':
-        return <ChronoInput value={parseFloat(valeur) || 0} onChange={(newVal) => setValeur(newVal.toString())} />;
-      case 'distance':
-      case 'poids':
-      case 'reps':
-      case 'nb':
-        return (
-          <input
-            type="number"
-            value={valeur}
-            onChange={(e) => setValeur(e.target.value)}
-            className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
-            placeholder={`Valeur en ${selectedExercice.unite === 'distance' ? 'mètres' : selectedExercice.unite}`}
-          />
-        );
-      default:
-        return null;
+    if (selectedEpreuve.type_mesure === 'temps') {
+      return <ChronoInput value={parseFloat(valeur) || 0} onChange={(newVal) => setValeur(newVal?.toString() || '')} />;
+    } else {
+      return (
+        <input
+          type="number"
+          step="0.01"
+          value={valeur}
+          onChange={(e) => setValeur(e.target.value)}
+          className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+          placeholder={`Valeur en ${selectedEpreuve.unite}`}
+        />
+      );
     }
   };
 
@@ -105,29 +100,29 @@ export const SetObjectifModal: React.FC<SetObjectifModalProps> = ({ onClose, onS
 
           {selectedCategorie && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Exercice</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Épreuve</label>
               <select
-                value={selectedExercice?.id || ''}
+                value={selectedEpreuve?.id || ''}
                 onChange={(e) => {
-                  const exo = exercices.find(ex => ex.id === e.target.value);
-                  setSelectedExercice(exo || null);
+                  const epr = epreuves.find(ep => ep.id === e.target.value);
+                  setSelectedEpreuve(epr || null);
                   setValeur('');
                 }}
-                disabled={!selectedCategorie || loadingExercices}
+                disabled={!selectedCategorie || loadingEpreuves}
                 className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
               >
-                <option value="" disabled>Choisir un exercice</option>
-                {exercices.filter(ex => ex.categorie === selectedCategorie).map((exo) => (
-                  <option key={exo.id} value={exo.id}>{exo.nom}</option>
+                <option value="" disabled>Choisir une épreuve</option>
+                {epreuves.filter(ep => ep.categorie === selectedCategorie).map((epr) => (
+                  <option key={epr.id} value={epr.id}>{epr.nom}</option>
                 ))}
               </select>
             </div>
           )}
 
-          {selectedExercice && (
+          {selectedEpreuve && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Objectif ({selectedExercice.unite})
+                Objectif ({selectedEpreuve.unite})
               </label>
               {renderUnitInput()}
             </div>
