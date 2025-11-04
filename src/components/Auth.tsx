@@ -7,6 +7,17 @@ import { CardCarousel } from './common/CardCarousel';
 
 const videoUrl = "https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fond-Video.mp4";
 
+const VideoBackground = () => (
+  <video
+    className="absolute top-0 left-0 w-full h-full object-cover"
+    src={videoUrl}
+    autoPlay
+    loop
+    muted
+    playsInline
+  />
+);
+
 interface AuthProps {
   initialError?: string | null;
 }
@@ -132,17 +143,6 @@ export default function Auth({ initialError }: AuthProps = {}) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  const VideoBackground = () => (
-    <video
-      className="absolute top-0 left-0 w-full h-full object-cover"
-      src={videoUrl}
-      autoPlay
-      loop
-      muted
-      playsInline
-    />
-  );
 
   if (showResendConfirmation) {
     return (
