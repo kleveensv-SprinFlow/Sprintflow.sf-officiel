@@ -8,8 +8,9 @@ interface DayCardProps {
   date: Date;
   workout: Workout | null;
   isActive: boolean;
-  onPlanClick: (date: Date) => void;
-  onEditClick: (workoutId: string) => void;
+  onPlanClick?: (date: Date) => void;
+  onEditClick?: (workoutId: string) => void;
+  isReadOnly?: boolean;
 }
 
 const WorkoutSummary: React.FC<{ workout: Workout }> = ({ workout }) => {
@@ -33,7 +34,7 @@ const WorkoutSummary: React.FC<{ workout: Workout }> = ({ workout }) => {
   );
 };
 
-export const DayCard: React.FC<DayCardProps> = ({ date, workout, isActive, onPlanClick, onEditClick }) => {
+export const DayCard: React.FC<DayCardProps> = ({ date, workout, isActive, onPlanClick, onEditClick, isReadOnly = false }) => {
   const getDayLabel = () => {
     if (isToday(date)) return "Aujourd'hui";
     if (isYesterday(date)) return "Hier";
@@ -52,7 +53,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workout, isActive, onPla
           <h3 className={`font-bold text-lg text-shadow-light dark:text-shadow-dark ${isActive ? 'text-white' : ''}`}>{getDayLabel()}</h3>
           <p className={`text-sm text-shadow-light dark:text-shadow-dark ${isActive ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>{format(date, 'd MMMM', { locale: fr })}</p>
         </div>
-        {workout && (
+        {workout && !isReadOnly && onEditClick && (
           <button onClick={() => onEditClick(workout.id)} className={`p-2 rounded-full transition-colors ${isActive ? 'hover:bg-white/20' : 'hover:bg-white/20 dark:hover:bg-white/10'}`}>
             <Edit3 size={16} />
           </button>
@@ -65,13 +66,15 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workout, isActive, onPla
             <WorkoutSummary workout={workout} />
           </div>
         ) : (
-          <button
-            onClick={() => onPlanClick(date)}
-            className="btn-primary flex items-center gap-2 py-2 px-4 text-sm"
-          >
-            <Plus size={18} />
-            Planifier
-          </button>
+          !isReadOnly && onPlanClick && (
+            <button
+              onClick={() => onPlanClick(date)}
+              className="btn-primary flex items-center gap-2 py-2 px-4 text-sm"
+            >
+              <Plus size={18} />
+              Planifier
+            </button>
+          )
         )}
       </div>
 
