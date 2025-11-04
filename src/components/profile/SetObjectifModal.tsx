@@ -5,7 +5,7 @@ import useObjectif from '../../hooks/useObjectif';
 import useAuth from '../../hooks/useAuth';
 import { ExerciceReference, Objectif } from '../../types';
 import { toast } from 'react-toastify';
-import { ChronoInput } from '../workouts/ChronoInput';
+import ChronoInput from '../workouts/ChronoInput'; // Pour la saisie de temps
 
 interface SetObjectifModalProps {
   onClose: () => void;
