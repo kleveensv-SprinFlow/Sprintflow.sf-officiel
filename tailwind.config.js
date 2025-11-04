@@ -43,6 +43,10 @@ export default {
           900: '#701a75',
         }
       },
+      fontFamily: {
+        'noto-sans': ['"Noto Sans"', 'sans-serif'],
+        'din': ['"DIN 1451"', 'sans-serif'],
+      },
     },
   },
   plugins: [],

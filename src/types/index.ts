@@ -43,3 +43,20 @@ export type View =
   | 'add-food'
   | 'sleep'
   | 'share-performance';
+
+export interface ExerciceReference {
+  id: string;
+  nom: string;
+  categorie: string;
+  unite: 'temps' | 'distance' | 'poids' | 'reps' | 'nb';
+  created_at: string;
+}
+
+export interface Objectif {
+  id: string;
+  user_id: string;
+  exercice_id: string;
+  valeur: number;
+  created_at: string;
+  exercice?: ExerciceReference;
+}

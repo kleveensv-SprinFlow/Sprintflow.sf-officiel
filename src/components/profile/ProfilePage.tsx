@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Edit, Lock, LogOut, Mail, Loader2, Camera, Trash2, Shield, Settings, MessageSquare, Handshake, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import useAuth from '../../hooks/useAuth'; // <-- IMPORT MODIFIÉ
+import useAuth from '../../hooks/useAuth';
+import useObjectif from '../../hooks/useObjectif';
 import { EditProfileModal } from './EditProfileModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { DeleteAccountModal } from './DeleteAccountModal';
-import { View } from '../../types';
+import { SetObjectifModal } from './SetObjectifModal';
+import { View, Objectif } from '../../types';
 import { toast } from 'react-toastify'; // Ajout pour des notifications plus jolies
 
 interface ProfileData {
@@ -24,40 +26,45 @@ interface ProfileData {
 }
 
 export function ProfilePage() {
-  const { user, signOut, profile: authProfile, refreshProfile } = useAuth(); // <-- RÉCUPÉRATION DE refreshProfile
+  const { user, signOut, profile: authProfile, refreshProfile } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { objectif, fetchObjectif } = useObjectif();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [showObjectifModal, setShowObjectifModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Utiliser le profil du hook d'authentification pour éviter un re-chargement inutile
+    if (user) {
+      loadProfileAndObjectif();
+    }
+  }, [user]);
+
+  const loadProfileAndObjectif = async () => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      await refreshProfile();
+      await fetchObjectif(user.id);
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des données:', error.message);
+      toast.error("Impossible de charger toutes les données.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (authProfile && user) {
       setProfile({
         ...authProfile,
         email: user.email || '',
       });
-      setIsLoading(false);
-    } else {
-      loadProfile(); // Fallback si le profil n'est pas encore chargé
     }
-  }, [authProfile, user]);
-
-  const loadProfile = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      await refreshProfile(); // La meilleure façon de recharger est d'utiliser la fonction centrale
-    } catch (error: any) {
-      console.error('Erreur lors du chargement du profil:', error.message);
-      toast.error("Impossible de charger le profil.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [authProfile]);
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -195,6 +202,32 @@ export function ProfilePage() {
     <div className="max-w-xl mx-auto p-4 md:p-6 space-y-6">
       <ProfileCard profile={profile} onEdit={() => setShowEditModal(true)} />
 
+      {profile?.role === 'athlete' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+            <Target className="w-6 h-6" />
+            Mon Objectif
+          </h2>
+          {objectif ? (
+            <div className="text-center">
+              <p className="text-gray-600 dark:text-gray-300">{objectif.exercice?.nom}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{objectif.valeur} {objectif.exercice?.unite}</p>
+              <button onClick={() => setShowObjectifModal(true)} className="mt-2 text-sm text-blue-500 hover:underline">Modifier</button>
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">Vous n'avez pas encore défini d'objectif.</p>
+              <button
+                onClick={() => setShowObjectifModal(true)}
+                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Définir un objectif
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="space-y-3">
           <button onClick={() => navigate('settings')} className="w-full flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
@@ -233,9 +266,10 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {showEditModal && <EditProfileModal currentProfileData={profile} onClose={() => setShowEditModal(false)} onSaved={() => { setShowEditModal(false); loadProfile(); }} />}
+      {showEditModal && <EditProfileModal currentProfileData={profile} onClose={() => setShowEditModal(false)} onSaved={() => { setShowEditModal(false); loadProfileAndObjectif(); }} />}
       {showChangePasswordModal && <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />}
       {showDeleteAccountModal && <DeleteAccountModal onClose={() => setShowDeleteAccountModal(false)} />}
+      {showObjectifModal && <SetObjectifModal onClose={() => setShowObjectifModal(false)} onSaved={() => { setShowObjectifModal(false); if(user) fetchObjectif(user.id); }} />}
     </div>
   );
 }

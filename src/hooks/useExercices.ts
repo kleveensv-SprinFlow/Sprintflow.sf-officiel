@@ -85,6 +85,7 @@ export function useExercices() {
 
   return {
     exercices,
+    categories: EXERCISE_CATEGORIES,
     loading,
     loadExercices,
     getExercicesByCategorie,
@@ -92,3 +93,5 @@ export function useExercices() {
     getExerciceById,
   };
 }
+
+export default useExercices;
