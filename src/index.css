@@ -217,3 +217,40 @@ code {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+@keyframes spin-float {
+  0% {
+    transform: translateY(0) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotateY(180deg);
+  }
+  100% {
+    transform: translateY(0) rotateY(360deg);
+  }
+}
+
+.animate-spin-float {
+  animation: spin-float 4s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes progress-bar {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-progress-bar {
+  animation: progress-bar 2s linear infinite;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--primary-500),
+    transparent
+  );
+  background-size: 200% 100%;
+}
