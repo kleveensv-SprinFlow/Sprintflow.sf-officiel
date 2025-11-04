@@ -38,33 +38,35 @@ export function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (user) {
-      loadProfileAndObjectif();
-    }
-  }, [user]);
-
-  const loadProfileAndObjectif = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      await refreshProfile();
-      await fetchObjectif(user.id);
-    } catch (error: any) {
-      console.error('Erreur lors du chargement des données:', error.message);
-      toast.error("Impossible de charger toutes les données.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
     if (authProfile && user) {
       setProfile({
         ...authProfile,
         email: user.email || '',
       });
+      setIsLoading(false);
     }
-  }, [authProfile]);
+  }, [authProfile, user]);
+
+  useEffect(() => {
+    if (authProfile?.role === 'athlete' && user) {
+      fetchObjectif(user.id).catch(err => {
+        console.error('Erreur lors du chargement de l\'objectif:', err);
+      });
+    }
+  }, [authProfile?.role, user]);
+
+  const loadProfileAndObjectif = async () => {
+    if (!user) return;
+    try {
+      await refreshProfile();
+      if (authProfile?.role === 'athlete') {
+        await fetchObjectif(user.id);
+      }
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des données:', error.message);
+      toast.error("Impossible de charger toutes les données.");
+    }
+  };
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
