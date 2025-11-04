@@ -17,7 +17,7 @@ export default defineConfig({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
+        /* manualChunks: (id) => {
           // Séparation intelligente des chunks
           if (id.includes('node_modules')) {
             // Librairies lourdes dans leurs propres chunks
@@ -39,7 +39,7 @@ export default defineConfig({
           if (id.includes('/components/groups/')) return 'groups';
           if (id.includes('/components/chat/')) return 'chat';
           if (id.includes('/components/video_analysis/')) return 'video-analysis';
-        },
+        }, */
         // Optimisation des noms de fichiers pour le cache
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
