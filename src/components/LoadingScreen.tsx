@@ -33,7 +33,7 @@ export function LoadingScreen() {
         <img
           src="/logo-sprintflow.png"
           alt="SprintFlow Logo"
-          className="w-24 h-24 animate-spin-float"
+          className="w-40 h-40 animate-spin-float"
         />
       </div>
 
