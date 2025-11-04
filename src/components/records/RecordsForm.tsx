@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trophy, PlusCircle, ChevronDown } from 'lucide-react';
 import { Record } from '../../types';
 import { useExercices, ExerciceReference } from '../../hooks/useExercices';
 import { CustomExerciceForm } from './CustomExerciceForm';
 import { TiroirDeSelection } from '../common/TiroirDeSelection';
+import PickerWheel from '../common/PickerWheel';
+import { ChronoInput } from '../workouts/ChronoInput';
 
 interface RecordsFormProps {
   records: Record[];
@@ -16,7 +18,7 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [isTiroirOpen, setIsTiroirOpen] = useState(false);
   
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState<number | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   
   const [selectedExercice, setSelectedExercice] = useState<ExerciceReference | null>(null);
@@ -37,7 +39,7 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
     
     const exerciceName = type === 'exercise' ? selectedExercice?.nom : customExerciceName;
 
-    if (!value || !date || !exerciceName) {
+    if (value === null || !date || !exerciceName) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -50,7 +52,7 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
     const record: Omit<Record, 'id'> = {
       type,
       name: exerciceName,
-      value: parseFloat(value),
+      value: value,
       unit: type === 'run' ? 's' : type === 'exercise' ? 'kg' : 'm',
       date,
       ...(type === 'exercise' && { exercice_reference_id: selectedExercice?.id }),
@@ -59,7 +61,7 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
     onSave(record);
     
     // Reset form
-    setValue('');
+    setValue(null);
     setDate(new Date().toISOString().split('T')[0]);
     setSelectedExercice(null);
     setCustomExerciceName('');
@@ -67,6 +69,15 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
 
   // State for non-exercise types
   const [customExerciceName, setCustomExerciceName] = useState('');
+
+  const pickerValues = useMemo(() => {
+    if (type === 'exercise') {
+      // 0 to 300 kg, step 0.5
+      return Array.from({ length: 601 }, (_, i) => i * 0.5);
+    }
+    // For jump and throw, 0 to 100 m, step 0.01
+    return Array.from({ length: 10001 }, (_, i) => parseFloat((i * 0.01).toFixed(2)));
+  }, [type]);
 
   if (showCustomForm) {
     return <CustomExerciceForm onSave={handleCustomFormSave} onCancel={() => setShowCustomForm(false)} />;
@@ -142,19 +153,22 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
             )}
 
             <div>
-              <label htmlFor="value" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {type === 'exercise' ? 'Charge (kg)' : type === 'run' ? 'Temps (s)' : 'Distance (m)'}
               </label>
-              <input
-                id="value"
-                type="number"
-                step="0.01"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
-                placeholder="100.0"
-                required
-              />
+              {type === 'run' ? (
+                <ChronoInput
+                  value={value}
+                  onChange={setValue}
+                />
+              ) : (
+                <PickerWheel
+                  values={pickerValues}
+                  initialValue={value ?? 0}
+                  onChange={setValue}
+                  suffix={type === 'exercise' ? ' kg' : ' m'}
+                />
+              )}
             </div>
 
             <div>
