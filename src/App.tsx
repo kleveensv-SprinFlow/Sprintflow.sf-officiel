@@ -28,6 +28,7 @@ const ChatManager = lazy(() => import('./components/chat/ChatManager').then(m =>
 // Lazy loading des formulaires
 const NewWorkoutForm = lazy(() => import('./components/workouts/NewWorkoutForm').then(m => ({ default: m.NewWorkoutForm })));
 const RecordsForm = lazy(() => import('./components/records/RecordsForm').then(m => ({ default: m.RecordsForm })));
+const RecordsList = lazy(() => import('./components/records/RecordsList').then(m => ({ default: m.RecordsList })));
 const FoodSearchModal = lazy(() => import('./components/nutrition/FoodSearchModal').then(m => ({ default: m.FoodSearchModal })));
 const SleepForm = lazy(() => import('./components/sleep/SleepForm').then(m => ({ default: m.SleepForm })));
 const ShareView = lazy(() => import('./components/sharing/ShareView').then(m => ({ default: m.default })));
@@ -66,6 +67,8 @@ function App() {
           return <AdvicePage onNavigate={setCurrentView} />;
         case 'profile':
           return <ProfilePage />;
+        case 'records':
+          return <RecordsList onAddRecord={() => setShowForm('add-record')} />;
         case 'groups':
           return profile?.role === 'coach' ? <GroupManagement /> : <AthleteGroupView />;
         case 'settings':
