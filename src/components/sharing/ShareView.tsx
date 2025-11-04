@@ -36,6 +36,9 @@ const ShareView: React.FC<ShareViewProps> = ({ onClose }) => {
           {image ? (
             <div className="relative">
               <img src={image} alt="Aperçu de l'exploit" className="max-h-64 object-contain" />
+              <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs p-1 rounded">
+                SprintFlow
+              </div>
             </div>
           ) : (
             <div className="text-center">
