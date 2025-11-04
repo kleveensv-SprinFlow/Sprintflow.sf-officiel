@@ -52,7 +52,7 @@ export default defineConfig({
     // Suppression des console.log en production
     drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
   },
-  base: './',
+  base: '/',
   server: {
     port: 5173,
     host: true
