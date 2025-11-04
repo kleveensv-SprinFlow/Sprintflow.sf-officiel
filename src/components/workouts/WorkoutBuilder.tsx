@@ -132,7 +132,7 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
               onDragOver={handleDragOver}
               className={`bg-white dark:bg-gray-800 rounded-2xl border-2 shadow-lg hover:shadow-xl transition-all duration-200 relative ${dragState.isDragging && dragState.draggedIndex === index ? 'opacity-40 scale-95 border-blue-500' : 'border-gray-200 dark:border-gray-700'} ${dragState.draggedOverIndex === index && dragState.draggedIndex !== index ? 'border-blue-400 border-dashed scale-105' : ''}`}
             >
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 right-4 z-10">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -144,7 +144,9 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({ blocks, onChange
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>
-              {renderBlock(block, index)}
+              <div className="pr-16">
+                {renderBlock(block, index)}
+              </div>
             </div>
           ))
         )}
