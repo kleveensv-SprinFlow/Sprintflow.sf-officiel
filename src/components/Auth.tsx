@@ -95,7 +95,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
       setResetSent(true);
     } catch (error: any) {
       console.error('Erreur reset password:', error);
-      alert(error.message || 'Erreur lors de l\\'envoi du lien de réinitialisation');
+      alert(error.message || "Erreur lors de l'envoi du lien de réinitialisation");
     } finally {
       setLoading(false);
     }
@@ -116,7 +116,7 @@ export default function Auth({ initialError }: AuthProps = {}) {
       setResendSent(true);
     } catch (error: any) {
       console.error('Erreur renvoi confirmation:', error);
-      alert(error.message || 'Erreur lors du renvoi de l\\'email de confirmation');
+      alert(error.message || "Erreur lors du renvoi de l'email de confirmation");
     } finally {
       setLoading(false);
     }
