@@ -35,4 +35,5 @@ export type View =
   | 'chat'
   | 'new-workout'
   | 'add-record'
-  | 'add-sleep';
+  | 'add-sleep'
+  | 'share-performance';
