@@ -41,12 +41,12 @@ const AnimatedBackground = () => {
       {/* Light theme background */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 dark:opacity-0"
-        style={{ backgroundImage: "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/ui-assets/Theme_Claire.jpg')" }}
+        style={{ backgroundImage: "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fcd-claire.png')" }}
       ></div>
       {/* Dark theme background */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0 dark:opacity-100"
-        style={{ backgroundImage: "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/ui-assets/Theme_sombre.jpg')" }}
+        style={{ backgroundImage: "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fdc-Sombre.png')" }}
       ></div>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 overflow-hidden">
