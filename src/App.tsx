@@ -22,6 +22,7 @@ const ContactPage = lazy(() => import('./components/static/ContactPage').then(m 
 const PartnershipsList = lazy(() => import('./components/PartnershipsList').then(m => ({ default: m.PartnershipsList || m.default })));
 const DeveloperPanel = lazy(() => import('./components/developer/DeveloperPanel').then(m => ({ default: m.DeveloperPanel || m.default })));
 const ChatManager = lazy(() => import('./components/chat/ChatManager').then(m => ({ default: m.ChatManager || m.default })));
+const RecordsList = lazy(() => import('./components/records/RecordsList').then(m => ({ default: m.RecordsList || m.default })));
 
 // Lazy loading des formulaires
 const NewWorkoutForm = lazy(() => import('./components/workouts/NewWorkoutForm').then(m => ({ default: m.NewWorkoutForm })));
@@ -41,8 +42,19 @@ function App() {
       const customEvent = event as CustomEvent<View>;
       setCurrentView(customEvent.detail);
     };
+
+    const handleOpenForm = (event: Event) => {
+      const customEvent = event as CustomEvent<View>;
+      setShowForm(customEvent.detail);
+    };
+
     window.addEventListener('change-view', handleViewChange);
-    return () => window.removeEventListener('change-view', handleViewChange);
+    window.addEventListener('open-form', handleOpenForm);
+
+    return () => {
+      window.removeEventListener('change-view', handleViewChange);
+      window.removeEventListener('open-form', handleOpenForm);
+    };
   }, []);
 
   const handleFabAction = (view: View) => {
@@ -61,6 +73,8 @@ function App() {
           return <NutritionModule />;
         case 'ai':
           return <AdvicePage onNavigate={setCurrentView} />;
+        case 'records':
+          return <RecordsList />;
         case 'profile':
           return <ProfilePage />;
         case 'groups':

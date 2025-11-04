@@ -9,7 +9,7 @@ import { formatTime } from '../../utils/formatters';
 import { LoadingScreen } from '../LoadingScreen';
 
 interface RecordsListProps {
-  onAddRecord: () => void;
+  onAddRecord?: () => void;
 }
 
 export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
@@ -17,6 +17,16 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'run' | 'jump' | 'throw' | 'exercise'>('all');
   const [shoeFilter, setShoeFilter] = useState<'all' | 'spikes' | 'sneakers'>('all');
+
+  const handleAddRecord = () => {
+    if (onAddRecord) {
+      onAddRecord();
+    } else {
+      // Déclencher l'ouverture du formulaire d'ajout de record
+      const event = new CustomEvent('open-form', { detail: 'add-record' });
+      window.dispatchEvent(event);
+    }
+  };
 
   const groupedRecords = useMemo(() => {
     if (!records) return {};
@@ -128,7 +138,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white text-shadow-light dark:text-shadow-dark">Résultats</h1>
         <button
-          onClick={onAddRecord}
+          onClick={handleAddRecord}
           className="btn-primary flex items-center gap-2"
         >
           <Plus className="h-5 w-5" />
@@ -181,7 +191,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
           <h3 className="text-xl font-medium text-gray-800 dark:text-white mb-2 text-shadow-light dark:text-shadow-dark">Aucun résultat</h3>
           <p className="text-gray-700 dark:text-gray-300 mb-6 text-shadow-light dark:text-shadow-dark">Enregistrez vos performances pour suivre vos progrès.</p>
           <button
-            onClick={onAddRecord}
+            onClick={handleAddRecord}
             className="btn-primary"
           >
             Premier résultat
@@ -203,7 +213,7 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
             Voir tous les records
           </button>
           <button
-            onClick={onAddRecord}
+            onClick={handleAddRecord}
             className="btn-primary"
           >
             Ajouter un record
@@ -512,3 +522,4 @@ export const RecordsList: React.FC<RecordsListProps> = ({ onAddRecord }) => {
   );
 };
                 
+export default RecordsList;

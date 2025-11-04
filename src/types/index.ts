@@ -28,6 +28,10 @@ export type View =
   | 'dashboard'
   | 'profile'
   | 'groups'
+  | 'workouts'
+  | 'nutrition'
+  | 'ai'
+  | 'records'
   | 'settings'
   | 'contact'
   | 'partnerships'
@@ -36,4 +40,6 @@ export type View =
   | 'new-workout'
   | 'add-record'
   | 'add-sleep'
+  | 'add-food'
+  | 'sleep'
   | 'share-performance';
