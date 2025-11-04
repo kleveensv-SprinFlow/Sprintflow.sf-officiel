@@ -41,11 +41,11 @@ const AnimatedBackground = () => {
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 overflow-hidden">
         {profile && (
           <>
-            <h1 className="font-noto-sans font-bold text-5xl md:text-7xl text-gray-300 dark:text-gray-700 select-none animate-pulse-glow">
+            <h1 className="font-sans font-bold text-5xl md:text-7xl text-gray-300 dark:text-gray-700 select-none animated-gradient">
               {profile.first_name} {profile.last_name}
             </h1>
             {profile.role === 'athlete' && objectif && (
-              <p className="font-din text-4xl md:text-6xl text-gray-400 dark:text-gray-600 select-none mt-4 animate-pulse-glow-delayed">
+              <p className="font-sans text-4xl md:text-6xl text-gray-400 dark:text-gray-600 select-none mt-4 animated-gradient">
                 {formatObjectifValue()}
               </p>
             )}
@@ -53,20 +53,36 @@ const AnimatedBackground = () => {
         )}
       </div>
       <style>{`
-        @keyframes pulse-glow {
-          0%, 100% {
-            text-shadow: 0 0 5px rgba(59, 130, 246, 0.3), 0 0 10px rgba(59, 130, 246, 0.3);
-          }
-          50% {
-            text-shadow: 0 0 15px rgba(59, 130, 246, 0.7), 0 0 30px rgba(59, 130, 246, 0.7);
+        .animated-gradient {
+          background-image: linear-gradient(
+            90deg,
+            hsl(210, 8%, 70%),
+            hsl(210, 8%, 50%),
+            hsl(210, 8%, 70%)
+          );
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          background-size: 200% 100%;
+          animation: gradient-animation 8s ease-in-out infinite;
+        }
+        @media (prefers-color-scheme: dark) {
+          .animated-gradient {
+            background-image: linear-gradient(
+              90deg,
+              hsl(210, 6%, 25%),
+              hsl(210, 6%, 55%),
+              hsl(210, 6%, 25%)
+            );
           }
         }
-        .animate-pulse-glow {
-          animation: pulse-glow 6s ease-in-out infinite;
-        }
-        .animate-pulse-glow-delayed {
-            animation: pulse-glow 6s ease-in-out infinite;
-            animation-delay: 0.5s;
+        @keyframes gradient-animation {
+          0% {
+            background-position: 200% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
         }
       `}</style>
     </div>
