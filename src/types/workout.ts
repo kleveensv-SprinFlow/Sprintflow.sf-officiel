@@ -20,3 +20,9 @@ export interface MuscuBlock {
 }
 
 export type WorkoutBlock = CourseBlock | MuscuBlock;
+
+export interface WorkoutTemplate {
+  id: string;
+  name: string;
+  workout_data: any; // Vous pouvez affiner ce type plus tard
+}
