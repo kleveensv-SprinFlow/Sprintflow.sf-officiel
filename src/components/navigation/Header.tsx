@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, Home, RefreshCw, Crown, User as UserIcon } from 'lucide-react';
+import { ChevronLeft, Home, RefreshCw, Crown, User as UserIcon, Menu } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
 interface HeaderProps {
@@ -7,13 +7,14 @@ interface HeaderProps {
   onRefreshData?: () => void;
   onProfileClick?: () => void;
   onHomeClick?: () => void;
+  onMenuClick?: () => void;
   isDashboard: boolean;
   canGoBack?: boolean;
   onBack?: () => void;
   title?: string;
 }
 
-export default function Header({ userRole, onRefreshData, onProfileClick, onHomeClick, isDashboard, canGoBack, onBack, title }: HeaderProps) {
+export default function Header({ userRole, onRefreshData, onProfileClick, onHomeClick, onMenuClick, isDashboard, canGoBack, onBack, title }: HeaderProps) {
   const { profile } = useAuth();
 
   const handleRefresh = () => {
@@ -23,26 +24,38 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
   };
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 backdrop-blur-md dark:backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90 overflow-hidden header-3d">
+    <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
       <div className="px-4 py-3 flex items-center justify-between min-w-0">
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
-          {canGoBack && (
+          {userRole === 'athlete' ? (
             <button
-              onClick={onBack}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 button-3d"
-              aria-label="Retour"
+              onClick={onMenuClick}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Ouvrir le menu"
             >
-              <ChevronLeft className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+              <Menu className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             </button>
-          )}
-          {!isDashboard && !canGoBack && (
-            <button
-              onClick={onHomeClick}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 button-3d"
-              aria-label="Accueil"
-            >
-              <Home className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-            </button>
+          ) : (
+            <>
+              {canGoBack && (
+                <button
+                  onClick={onBack}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  aria-label="Retour"
+                >
+                  <ChevronLeft className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                </button>
+              )}
+              {!isDashboard && !canGoBack && (
+                <button
+                  onClick={onHomeClick}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  aria-label="Accueil"
+                >
+                  <Home className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                </button>
+              )}
+            </>
           )}
         </div>
         
@@ -73,7 +86,7 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">
           <button
             onClick={handleRefresh}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 hidden xs:block button-3d"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors hidden xs:block"
             title="Actualiser les données"
           >
             <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-300" />
