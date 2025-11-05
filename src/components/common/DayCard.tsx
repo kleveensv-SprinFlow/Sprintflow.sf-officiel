@@ -43,33 +43,31 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workout, isActive, onPla
   };
 
   return (
-    <div className={`w-full h-full rounded-2xl p-4 flex flex-col justify-between shadow-lg transition-all duration-300 backdrop-blur-md dark:backdrop-blur-sm border
-      ${isActive
-        ? 'bg-primary-500/20 dark:bg-primary-400/20 text-white border-primary-500/30'
-        : 'bg-white/10 dark:bg-black/10 text-gray-800 dark:text-gray-200 border-white/20'}`
-    }>
+    <div className={`w-full h-full rounded-2xl p-4 flex flex-col justify-between card-glass shadow-lg transition-all duration-300 group ${
+      isActive ? 'border-primary-500/50' : ''
+    }`}>
       <header className="flex justify-between items-start">
         <div>
-          <h3 className={`font-bold text-lg text-shadow-light dark:text-shadow-dark ${isActive ? 'text-white' : ''}`}>{getDayLabel()}</h3>
-          <p className={`text-sm text-shadow-light dark:text-shadow-dark ${isActive ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>{format(date, 'd MMMM', { locale: fr })}</p>
+          <h3 className="font-bold text-xl text-gray-800 dark:text-white">{getDayLabel()}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{format(date, 'd MMMM', { locale: fr })}</p>
         </div>
         {workout && !isReadOnly && onEditClick && (
-          <button onClick={() => onEditClick(workout.id)} className={`p-2 rounded-full transition-colors ${isActive ? 'hover:bg-white/20' : 'hover:bg-white/20 dark:hover:bg-white/10'}`}>
-            <Edit3 size={16} />
+          <button onClick={() => onEditClick(workout.id)} className="p-2 rounded-full transition-all bg-black/5 dark:bg-white/10 opacity-0 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/20">
+            <Edit3 size={16} className="text-gray-700 dark:text-gray-300" />
           </button>
         )}
       </header>
 
       <div className="flex-grow flex items-center justify-center">
         {workout ? (
-          <div className={`${isActive ? 'text-white/90' : ''} text-shadow-light dark:text-shadow-dark`}>
+          <div className="text-gray-800 dark:text-gray-200">
             <WorkoutSummary workout={workout} />
           </div>
         ) : (
           !isReadOnly && onPlanClick && (
             <button
               onClick={() => onPlanClick(date)}
-              className="btn-primary flex items-center gap-2 py-2 px-4 text-sm"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105"
             >
               <Plus size={18} />
               Planifier
@@ -80,7 +78,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workout, isActive, onPla
 
       {workout?.title && (
         <footer className="text-left">
-          <p className={`font-semibold text-sm truncate text-shadow-light dark:text-shadow-dark ${isActive ? 'text-white' : ''}`}>
+          <p className="font-bold text-base truncate text-gray-800 dark:text-white">
             {workout.title}
           </p>
         </footer>
