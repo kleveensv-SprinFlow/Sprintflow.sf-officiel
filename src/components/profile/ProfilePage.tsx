@@ -39,6 +39,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (authProfile && user) {
+      console.log('📋 [ProfilePage] authProfile reçu:', authProfile);
       setProfile({
         ...authProfile,
         email: user.email || '',
@@ -108,7 +109,7 @@ export function ProfilePage() {
 
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ photo_url: urlWithCacheBuster })
+        .update({ avatar_url: urlWithCacheBuster })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
