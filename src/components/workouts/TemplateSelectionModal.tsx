@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText } from 'lucide-react';
-import { WorkoutTemplate } from '../../types/workout';
+import { WorkoutTemplate } from '../../types/workout'; // Assurez-vous que ce type existe
 
 // Données factices pour la démonstration
 const MOCK_TEMPLATES: WorkoutTemplate[] = [
