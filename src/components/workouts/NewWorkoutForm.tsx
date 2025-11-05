@@ -88,17 +88,11 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   };
   
   const renderContent = () => {
-    if (addingBlockType === 'course') {
-      return <CourseBlockForm onAddBlock={handleAddBlock} onCancel={() => setAddingBlockType(null)} />;
-    }
-    if (addingBlockType === 'musculation') {
-      return <MuscuBlockForm onAddBlock={handleAddBlock} onCancel={() => setAddingBlockType(null)} />;
-    }
     return (
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Tags de la séance
+            Tag
           </label>
           <WorkoutTypeSelector
             selectedType={tagSeance}
@@ -142,29 +136,43 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
               Contenu de la séance *
             </label>
-            
-            <WorkoutBuilder 
-              blocks={blocks} 
+
+            <WorkoutBuilder
+              blocks={blocks}
               onChange={handleUpdateBlocks}
-              onRemoveBlock={handleRemoveBlock} 
+              onRemoveBlock={handleRemoveBlock}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <button type="button" onClick={() => setAddingBlockType('course')} className="group relative px-6 py-5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 transition-all duration-200 active:scale-95 overflow-hidden">
-                <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                <div className="relative flex items-center justify-center space-x-3">
-                  <Navigation className="w-6 h-6" />
-                  <span className="text-lg">Ajouter Bloc Course</span>
-                </div>
-              </button>
-              <button type="button" onClick={() => setAddingBlockType('musculation')} className="group relative px-6 py-5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-2xl shadow-lg shadow-green-500/30 transition-all duration-200 active:scale-95 overflow-hidden">
-                <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                <div className="relative flex items-center justify-center space-x-3">
-                  <Dumbbell className="w-6 h-6" />
-                  <span className="text-lg">Ajouter Bloc Muscu</span>
-                </div>
-              </button>
-            </div>
+            {!addingBlockType && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <button type="button" onClick={() => setAddingBlockType('course')} className="group relative px-6 py-5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 transition-all duration-200 active:scale-95 overflow-hidden">
+                  <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  <div className="relative flex items-center justify-center space-x-3">
+                    <Navigation className="w-6 h-6" />
+                    <span className="text-lg">Ajouter Bloc Course</span>
+                  </div>
+                </button>
+                <button type="button" onClick={() => setAddingBlockType('musculation')} className="group relative px-6 py-5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-2xl shadow-lg shadow-green-500/30 transition-all duration-200 active:scale-95 overflow-hidden">
+                  <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  <div className="relative flex items-center justify-center space-x-3">
+                    <Dumbbell className="w-6 h-6" />
+                    <span className="text-lg">Ajouter Bloc Muscu</span>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {addingBlockType === 'course' && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-blue-500">
+                <CourseBlockForm onAddBlock={(block) => { handleAddBlock(block); setAddingBlockType(null); }} onCancel={() => setAddingBlockType(null)} />
+              </div>
+            )}
+
+            {addingBlockType === 'musculation' && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-green-500">
+                <MuscuBlockForm onAddBlock={(block) => { handleAddBlock(block); setAddingBlockType(null); }} onCancel={() => setAddingBlockType(null)} />
+              </div>
+            )}
           </div>
         ) : (
           <div>
@@ -219,7 +227,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              { addingBlockType ? `Ajouter un bloc de ${addingBlockType}` : (initialData?.id ? 'Modifier la séance' : 'Nouvelle séance') }
+              {initialData?.id ? 'Modifier la séance' : 'Nouvelle séance'}
             </h2>
             <button
               onClick={onCancel}
