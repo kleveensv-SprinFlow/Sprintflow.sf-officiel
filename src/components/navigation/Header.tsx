@@ -24,35 +24,35 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+    <header className="sticky top-0 z-30 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg">
       <div className="px-4 py-3 flex items-center justify-between min-w-0">
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
           {userRole === 'athlete' ? (
             <button
               onClick={onMenuClick}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               aria-label="Ouvrir le menu"
             >
-              <Menu className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+              <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300" />
             </button>
           ) : (
             <>
               {canGoBack && (
                 <button
                   onClick={onBack}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                   aria-label="Retour"
                 >
-                  <ChevronLeft className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                  <ChevronLeft className="h-6 w-6 text-gray-700 dark:text-gray-300" />
                 </button>
               )}
               {!isDashboard && !canGoBack && (
                 <button
                   onClick={onHomeClick}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                   aria-label="Accueil"
                 >
-                  <Home className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                  <Home className="h-6 w-6 text-gray-700 dark:text-gray-300" />
                 </button>
               )}
             </>
@@ -61,19 +61,15 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
         
         <div className="flex-1 flex justify-center min-w-0">
           {isDashboard && !canGoBack ? (
-            <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-              (userRole === 'coach' || userRole === 'developer')
-                ? 'bg-secondary-100 dark:bg-secondary-900/20 text-secondary-700 dark:text-secondary-300 border border-secondary-200 dark:border-secondary-800' 
-                : 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800'
-            }`}>
+            <div className="flex items-center space-x-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
               {(userRole === 'coach' || userRole === 'developer') ? (
                 <>
-                  <Crown className="w-4 h-4" />
+                  <Crown className="w-4 h-4 text-secondary-500" />
                   <span>{userRole === 'developer' ? 'Développeur' : 'Coach'}</span>
                 </>
               ) : (
                 <>
-                  <UserIcon className="w-4 h-4" />
+                  <UserIcon className="w-4 h-4 text-primary-500" />
                   <span>Athlète</span>
                 </>
               )}
@@ -86,7 +82,7 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">
           <button
             onClick={handleRefresh}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors hidden xs:block"
+            className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors hidden xs:block"
             title="Actualiser les données"
           >
             <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-300" />
@@ -95,7 +91,7 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
           {isDashboard && (
             <button
               onClick={onProfileClick}
-              className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-primary-100 to-secondary-100 dark:from-primary-900 dark:to-secondary-900 flex items-center justify-center flex-shrink-0 border-2 border-primary-200 dark:border-primary-700 hover:border-primary-400 dark:hover:border-primary-500 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
+              className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
               title="Mon Profil"
             >
               {profile?.avatar_url ? (
@@ -106,7 +102,7 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
                   onError={(e) => { e.currentTarget.style.display = 'none' }}
                 />
               ) : (
-                <UserIcon className="w-5 h-5 text-primary-500" />
+                <UserIcon className="w-5 h-5 text-gray-500" />
               )}
             </button>
           )}
