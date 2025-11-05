@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useExercices } from '../../hooks/useExercices';
 import TimePicker from '../common/TimePicker';
 import PickerWheel from '../common/PickerWheel';
@@ -6,14 +7,15 @@ import { EXERCISE_CATEGORIES } from '../../data/categories';
 import { MuscuBlock, WorkoutBlock } from '../../types/workout';
 
 interface MuscuBlockFormProps {
-  onAddBlock: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
+  onSave: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
   onCancel: () => void;
   initialData?: MuscuBlock;
+  isOpen: boolean;
 }
 
 const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
 const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
-const poidsValues = Array.from({ length: 401 }, (_, i) => i * 0.5);
+const poidsValues = [0, ...Array.from({ length: 400 }, (_, i) => (i + 1) * 0.5)];
 
 const defaultState: Omit<MuscuBlock, 'id'> = {
   type: 'musculation',
@@ -25,18 +27,23 @@ const defaultState: Omit<MuscuBlock, 'id'> = {
   restTime: '02:00',
 };
 
-export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onAddBlock, onCancel, initialData }) => {
+export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel, initialData, isOpen }) => {
   const { exercices } = useExercices();
   const [block, setBlock] = useState(initialData || defaultState);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [noWeight, setNoWeight] = useState(false);
 
   useEffect(() => {
-    if (initialData) {
-      setBlock(initialData);
-      const exo = exercices.find(e => e.id === initialData.exerciceId);
+    const data = initialData || defaultState;
+    setBlock(data);
+    setNoWeight(data.poids === null);
+    if (data.exerciceId) {
+      const exo = exercices.find(e => e.id === data.exerciceId);
       if (exo) setSelectedCategory(exo.categorie);
+    } else {
+      setSelectedCategory('');
     }
-  }, [initialData, exercices]);
+  }, [initialData, isOpen, exercices]);
 
   const updateBlock = (updatedFields: Partial<Omit<MuscuBlock, 'id'>>) => {
     setBlock(prev => ({ ...prev, ...updatedFields }));
@@ -47,11 +54,14 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onAddBlock, onCa
       alert("Veuillez sélectionner un exercice.");
       return;
     }
-    onAddBlock(block);
-    if (!initialData) {
-      setBlock(defaultState);
-      setSelectedCategory('');
-    }
+    onSave(noWeight ? { ...block, poids: null } : block);
+  };
+
+  const handleNoWeightToggle = () => {
+    setNoWeight(prev => {
+      if (!prev) updateBlock({ poids: 0 }); // Si on coche, mettre le poids à 0
+      return !prev;
+    });
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -65,88 +75,55 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onAddBlock, onCa
   }, [selectedCategory, exercices]);
 
   return (
-    <div className="space-y-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Catégorie</label>
-          <select
-            value={selectedCategory}
-            onChange={handleCategoryChange}
-            className="w-full h-11 px-4 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-base font-medium text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none"
-          >
-            <option value="">Sélectionner une catégorie...</option>
-            {EXERCISE_CATEGORIES.map(cat => (
-              <option key={cat.key} value={cat.key}>{cat.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Exercice</label>
-          <select
-            value={block.exerciceId}
-            onChange={(e) => {
-              const selectedExercice = exercices.find(ex => ex.id === e.target.value);
-              updateBlock({
-                exerciceId: e.target.value,
-                exerciceNom: selectedExercice?.nom || ''
-              });
-            }}
-            className="w-full h-11 px-4 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-base font-medium text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition-shadow appearance-none"
-            disabled={!selectedCategory}
-          >
-            <option value="">Sélectionner un exercice...</option>
-            {filteredExercices.map(ex => (
-              <option key={ex.id} value={ex.id}>{ex.nom}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <PickerWheel
-          label="Séries"
-          values={seriesValues}
-          initialValue={block.series}
-          onChange={(val) => updateBlock({ series: val })}
-        />
-        <PickerWheel
-          label="Répétitions"
-          values={repsValues}
-          initialValue={block.reps}
-          onChange={(val) => updateBlock({ reps: val })}
-        />
-        <PickerWheel
-          label="Poids"
-          values={poidsValues}
-          initialValue={block.poids}
-          onChange={(val) => updateBlock({ poids: val })}
-          suffix="kg"
-        />
-        <div>
-          <label className="block text-sm font-medium text-center text-gray-700 dark:text-gray-300 mb-2">Repos</label>
-          <TimePicker
-            initialTime={block.restTime}
-            onChange={(val) => updateBlock({ restTime: val })}
-          />
-        </div>
-      </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onCancel}>
+          <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-6 p-6">
+              <h3 className="text-xl font-bold">{initialData ? 'Modifier le bloc Musculation' : 'Ajouter un bloc Musculation'}</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Catégorie</label>
+                  <select value={selectedCategory} onChange={handleCategoryChange} className="w-full h-11 px-4 rounded-xl border">
+                    <option value="">Sélectionner...</option>
+                    {EXERCISE_CATEGORIES.map(cat => <option key={cat.key} value={cat.key}>{cat.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Exercice</label>
+                  <select value={block.exerciceId} onChange={(e) => updateBlock({ exerciceId: e.target.value, exerciceNom: e.target.selectedOptions[0].text })} className="w-full h-11 px-4 rounded-xl border" disabled={!selectedCategory}>
+                    <option value="">Sélectionner...</option>
+                    {filteredExercices.map(ex => <option key={ex.id} value={ex.id}>{ex.nom}</option>)}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <PickerWheel label="Séries" values={seriesValues} initialValue={block.series} onChange={(val) => updateBlock({ series: val })} />
+                <PickerWheel label="Répétitions" values={repsValues} initialValue={block.reps} onChange={(val) => updateBlock({ reps: val })} />
+                <div>
+                  <div className="flex items-center justify-center mb-2">
+                    <label className="text-sm font-medium">Poids</label>
+                    <input type="checkbox" checked={noWeight} onChange={handleNoWeightToggle} className="ml-2" />
+                    <span className="text-xs ml-1">Aucun</span>
+                  </div>
+                  <PickerWheel values={poidsValues} initialValue={block.poids || 0} onChange={(val) => updateBlock({ poids: val })} suffix="kg" disabled={noWeight} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-center mb-2">Repos</label>
+                  <TimePicker initialTime={block.restTime} onChange={(val) => updateBlock({ restTime: val })} />
+                </div>
+              </div>
 
-      <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <button
-          type="button"
-          onClick={handleValidate}
-          className="flex-1 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium transition-all"
-        >
-          {initialData ? 'Modifier ce bloc' : 'Ajouter ce bloc'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl font-medium transition-all"
-        >
-          Annuler
-        </button>
-      </div>
-    </div>
+              <div className="flex gap-3 pt-4 border-t">
+                <button type="button" onClick={handleValidate} className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-xl">{initialData ? 'Modifier' : 'Ajouter'}</button>
+                <button type="button" onClick={onCancel} className="px-6 py-3 border-2 rounded-xl">Annuler</button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
