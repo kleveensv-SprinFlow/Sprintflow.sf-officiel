@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2, Zap, HeartPulse, HelpCircle } from 'lucide-react';
+import { motion, PanInfo } from 'framer-motion';
+import { Loader2, Zap, HeartPulse } from 'lucide-react';
 import AdviceModal from './AdviceModal';
 import CircularProgress from '../common/CircularProgress';
 
@@ -8,52 +8,52 @@ interface ScoreCircleProps {
   score: number | null;
   title: string;
   icon: React.ElementType;
-  isPercentage: boolean;
-  onClick: () => void;
 }
 
-const ScoreCircle: React.FC<ScoreCircleProps> = ({ score, title, icon: Icon, isPercentage, onClick }) => {
-  const progressValue = score !== null ? (isPercentage ? score : score * 10) : 0;
+const ScoreCircle: React.FC<ScoreCircleProps> = ({ score, title, icon: Icon }) => {
+  const progressValue = score !== null ? (title === "Forme" ? score * 10 : score) : 0;
 
   return (
-    <button 
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }} 
-      className="flex flex-col items-center gap-1.5 sm:gap-2 group transition-transform duration-200 hover:scale-105"
-    >
-      <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
+    <div className="flex flex-col items-center gap-2 group">
+      <div className="relative w-32 h-32 flex items-center justify-center">
         <CircularProgress 
           value={progressValue} 
-          strokeWidth={8}
+          strokeWidth={10}
           className="w-full h-full"
         />
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-full m-[10px] sm:m-[14px]">
-          <span className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">{score ?? '-'}</span>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-4xl font-bold text-gray-800 dark:text-white text-shadow-light dark:text-shadow-dark">{score ?? '-'}</span>
         </div>
       </div>
-      <h3 className="text-xs sm:text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1">
-        <Icon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 dark:text-gray-400" />
+      <h3 className="text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+        <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
         {title}
       </h3>
-    </button>
+    </div>
   );
 };
 
+interface ScoreData {
+  indice: number | null;
+}
+
 interface IndicesPanelProps {
   loading: boolean;
-  scoreForme: any;
-  scorePerformance: any;
-  scoreEvolution: any;
+  scoreForme: ScoreData | null;
+  scorePerformance: ScoreData | null;
   onNavigate: () => void;
 }
 
-export function IndicesPanel({ loading, scoreForme, scorePerformance, scoreEvolution, onNavigate }: IndicesPanelProps) {
-  const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance' | 'evolution'; data: any } | null>(null);
-  const [isFlipped, setIsFlipped] = useState(false);
+export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate }: IndicesPanelProps) {
+  const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance'; data: ScoreData } | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const handleScoreClick = (type: 'forme' | 'poidsPuissance' | 'evolution', data: any) => {
+  const scores = [
+    { type: 'forme' as const, data: scoreForme, title: 'Forme', icon: HeartPulse },
+    { type: 'poidsPuissance' as const, data: scorePerformance, title: 'Poids/Puissance', icon: Zap }
+  ];
+
+  const handleScoreClick = (type: 'forme' | 'poidsPuissance', data: ScoreData | null) => {
     if (type === 'forme' && data?.indice) {
       onNavigate();
     } else if (data && data.indice !== null) {
@@ -61,62 +61,66 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, scoreEvolu
     }
   };
 
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const swipeThreshold = 50;
+    if (info.offset.x < -swipeThreshold) {
+      setActiveIndex(1);
+    } else if (info.offset.x > swipeThreshold) {
+      setActiveIndex(0);
+    }
+  };
+  
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow-lg">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="flex justify-center items-center p-8 card-glass shadow-lg h-[244px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         <p className="ml-4 text-lg text-gray-700 dark:text-gray-300">Calcul des indices...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800/50 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-4 sm:mb-6">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Vos Indices de Performance</h2>
-        <button className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
-          <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
+    <div className="card-glass shadow-lg p-4 sm:p-6 overflow-hidden">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Vos Indices</h2>
       </div>
-      <div 
-        className="flex justify-center items-center cursor-pointer h-32"
-        onClick={() => setIsFlipped(!isFlipped)}
-        style={{ perspective: '1200px' }}
-      >
+
+      <div className="relative w-full h-[160px]">
         <motion.div
-          style={{ transformStyle: 'preserve-3d', width: '100%', height: '100%' }}
-          initial={false}
-          animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
+          className="flex absolute inset-0"
+          animate={{ x: `-${activeIndex * 100}%` }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
-          onDragEnd={(event, info) => {
-            if (info.offset.x > 50) {
-              setIsFlipped(false);
-            } else if (info.offset.x < -50) {
-              setIsFlipped(true);
-            }
-          }}
+          onDragEnd={handleDragEnd}
         >
-          <div className="absolute w-full h-full flex justify-center items-center" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-            <ScoreCircle score={scoreForme?.indice} title="Forme" icon={HeartPulse} isPercentage={false} onClick={() => handleScoreClick('forme', scoreForme)} />
-          </div>
-          <div className="absolute w-full h-full flex justify-center items-center" style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-            <ScoreCircle score={scorePerformance?.indice} title="Poids/Puissance" icon={Zap} isPercentage={true} onClick={() => handleScoreClick('poidsPuissance', scorePerformance)} />
-          </div>
+          {scores.map((score) => (
+            <div 
+              key={score.type} 
+              className="w-full flex-shrink-0 flex justify-center items-center"
+              onClick={() => handleScoreClick(score.type, score.data)}
+            >
+              <ScoreCircle
+                score={score.data?.indice}
+                title={score.title}
+                icon={score.icon}
+              />
+            </div>
+          ))}
         </motion.div>
       </div>
+
       <div className="flex justify-center items-center gap-2 mt-2">
-        <button 
-          onClick={() => setIsFlipped(false)} 
-          className={`w-2 h-2 rounded-full transition-colors duration-300 ${!isFlipped ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'}`} 
-          aria-label="Afficher l'indice de Forme"
-        />
-        <button 
-          onClick={() => setIsFlipped(true)} 
-          className={`w-2 h-2 rounded-full transition-colors duration-300 ${isFlipped ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'}`} 
-          aria-label="Afficher l'indice Poids/Puissance"
-        />
+        {scores.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setActiveIndex(index)}
+            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+              activeIndex === index ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
+            }`}
+            aria-label={`Afficher l'indice ${index + 1}`}
+          />
+        ))}
       </div>
       
       {modalContent && <AdviceModal content={modalContent} onClose={() => setModalContent(null)} />}
