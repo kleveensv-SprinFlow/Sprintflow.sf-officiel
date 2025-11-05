@@ -45,6 +45,13 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
 
   return (
     <>
+      {isFabOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm"
+          onClick={() => setFabOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       {isFabOpen && userRole === 'athlete' && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-3 z-40">
           {fabActions.map((action) => (
