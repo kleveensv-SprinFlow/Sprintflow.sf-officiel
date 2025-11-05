@@ -130,34 +130,28 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
         {workoutType === 'guidé' ? (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Contenu de la séance *
             </label>
+
+            {!addingBlockType && (
+              <div className="flex gap-2 mb-4">
+                <button type="button" onClick={() => setAddingBlockType('course')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-all duration-200 active:scale-95">
+                  <Navigation className="w-5 h-5" />
+                  <span>Ajouter Bloc Course</span>
+                </button>
+                <button type="button" onClick={() => setAddingBlockType('musculation')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-all duration-200 active:scale-95">
+                  <Dumbbell className="w-5 h-5" />
+                  <span>Ajouter Bloc Muscu</span>
+                </button>
+              </div>
+            )}
 
             <WorkoutBuilder
               blocks={blocks}
               onChange={handleUpdateBlocks}
               onRemoveBlock={handleRemoveBlock}
             />
-
-            {!addingBlockType && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <button type="button" onClick={() => setAddingBlockType('course')} className="group relative px-6 py-5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/30 transition-all duration-200 active:scale-95 overflow-hidden">
-                  <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                  <div className="relative flex items-center justify-center space-x-3">
-                    <Navigation className="w-6 h-6" />
-                    <span className="text-lg">Ajouter Bloc Course</span>
-                  </div>
-                </button>
-                <button type="button" onClick={() => setAddingBlockType('musculation')} className="group relative px-6 py-5 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-2xl shadow-lg shadow-green-500/30 transition-all duration-200 active:scale-95 overflow-hidden">
-                  <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                  <div className="relative flex items-center justify-center space-x-3">
-                    <Dumbbell className="w-6 h-6" />
-                    <span className="text-lg">Ajouter Bloc Muscu</span>
-                  </div>
-                </button>
-              </div>
-            )}
 
             {addingBlockType === 'course' && (
               <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-blue-500">
