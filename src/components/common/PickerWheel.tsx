@@ -94,13 +94,18 @@ const PickerWheel: React.FC<PickerWheelProps> = ({ values, initialValue, onChang
         setIsOpen(false);
     };
 
+    const handleOpen = () => {
+      setCurrentValue(initialValue);
+      setIsOpen(true);
+    };
+
     return (
-        <div className="flex flex-col items-center">
-            {label && <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>}
+        <div className="flex flex-col items-center w-full">
+            {label && <label className="block text-sm text-center font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>}
             <button
                 type="button"
-                onClick={() => setIsOpen(true)}
-                className="w-32 h-12 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center text-xl font-semibold !text-black dark:!text-white border border-gray-300 dark:border-gray-600"
+                onClick={handleOpen}
+                className="w-full h-11 px-4 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-base font-medium text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition-shadow"
             >
                 {initialValue}{suffix}
             </button>
