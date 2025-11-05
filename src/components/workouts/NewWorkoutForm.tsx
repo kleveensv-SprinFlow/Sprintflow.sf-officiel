@@ -91,9 +91,6 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     return (
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Tag
-          </label>
           <WorkoutTypeSelector
             selectedType={tagSeance}
             onSelectType={setTagSeance}
@@ -109,7 +106,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
             <button
               type="button"
               onClick={() => setWorkoutType('guidé')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all ${
+              className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
                 workoutType === 'guidé'
                   ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -120,7 +117,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
             <button
               type="button"
               onClick={() => setWorkoutType('manuscrit')}
-              className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all ${
+              className={`flex-1 py-2 px-4 rounded-xl font-medium transition-all ${
                 workoutType === 'manuscrit'
                   ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
