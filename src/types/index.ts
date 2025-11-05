@@ -29,6 +29,7 @@ export type View =
   | 'profile'
   | 'groups'
   | 'workouts'
+  | 'planning'
   | 'nutrition'
   | 'ai'
   | 'records'

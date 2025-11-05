@@ -99,6 +99,8 @@ function App() {
         case 'dashboard':
           return <Dashboard userRole={profile?.role as 'athlete' | 'coach'} onViewChange={setCurrentView} />;
         case 'workouts':
+          return <AthletePlanning />;
+        case 'planning':
           return profile?.role === 'coach' ? <CoachPlanning /> : <AthletePlanning />;
         case 'nutrition':
           return <NutritionModule />;
