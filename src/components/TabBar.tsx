@@ -102,11 +102,11 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
                     className="group flex items-center"
                     variants={buttonVariants}
                   >
-                    <span className="mr-3 px-3 py-1.5 text-sm font-medium bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm">
+                    <span className="mr-3 px-3 py-1.5 text-sm font-semibold text-gray-800 dark:text-white bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg rounded-lg shadow-sm border border-white/20 dark:border-white/10">
                       {action.label}
                     </span>
-                    <div className="w-12 h-12 bg-white dark:bg-gray-600 rounded-full flex items-center justify-center shadow-md">
-                      <action.icon size={24} className="text-gray-600 dark:text-gray-200" />
+                    <div className="w-12 h-12 card-glass rounded-full flex items-center justify-center shadow-lg">
+                      <action.icon size={24} className="text-primary-600 dark:text-primary-400" />
                     </div>
                   </motion.button>
                 ))}
@@ -115,20 +115,21 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
           </>
         )}
       </AnimatePresence>
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 shadow-lg border-t border-gray-200 dark:border-gray-700 flex justify-around items-center z-50">
-        {navItems.map((item, index) =>
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg flex justify-around items-center z-50">
+        {navItems.map((item) =>
           item ? (
             <button
               key={item.view}
               onClick={() => setCurrentView(item.view)}
-              className={`flex flex-col items-center justify-center w-full h-full transition-colors duration-200 ${
+              className={`flex flex-col items-center justify-center w-full h-full transition-colors duration-200 relative ${
                 currentView === item.view
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-300'
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-300'
               }`}
             >
               <item.icon size={24} />
-              <span className="text-xs mt-1">{item.label}</span>
+              <span className="text-xs mt-1 font-medium">{item.label}</span>
+              {currentView === item.view && <motion.div layoutId="active-tab-indicator" className="absolute bottom-2 w-5 h-1 bg-primary-500 rounded-full" />}
             </button>
           ) : (
             <div key="fab-placeholder" className="w-full" />
@@ -139,10 +140,10 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
           <button
             onClick={() => setFabOpen(!isFabOpen)}
-            className={`w-16 h-16 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 transform ${
+            className={`w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 ${
               isFabOpen
-                ? 'bg-red-500 rotate-45'
-                : 'bg-blue-600'
+                ? 'bg-gradient-to-br from-red-500 to-pink-500 rotate-45'
+                : 'bg-gradient-to-br from-primary-500 to-accent-500'
             }`}
             aria-label="Ajouter une nouvelle entrée"
           >
