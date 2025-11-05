@@ -44,7 +44,7 @@ export default {
         }
       },
       fontFamily: {
-        'noto-sans': ['"Noto Sans"', 'sans-serif'],
+        sans: ['"Inter"', '"Noto Sans"', 'sans-serif'],
         'din': ['"DIN 1451"', 'sans-serif'],
       },
     },
