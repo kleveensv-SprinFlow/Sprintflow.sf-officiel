@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Users, MessageSquare, Lightbulb, Apple, Plus, Dumbbell, Activity, Calendar, Utensils, Bed, Trophy, Share } from 'lucide-react';
 import { View } from '../types';
 
@@ -43,33 +44,77 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
 
   const navItems = userRole === 'coach' ? coachNavItems : athleteNavItems;
 
+  const menuVariants = {
+    open: {
+      transition: { staggerChildren: 0.07, delayChildren: 0.2 }
+    },
+    closed: {
+      transition: { staggerChildren: 0.05, staggerDirection: -1 }
+    }
+  };
+
+  const buttonVariants = {
+    open: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        y: { stiffness: 1000, velocity: -100 }
+      }
+    },
+    closed: {
+      y: 50,
+      opacity: 0,
+      transition: {
+        y: { stiffness: 1000 }
+      }
+    }
+  };
+
   return (
     <>
-      {isFabOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm"
-          onClick={() => setFabOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-      {isFabOpen && userRole === 'athlete' && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-3 z-40">
-          {fabActions.map((action) => (
-            <button
-              key={action.view}
-              onClick={() => handleFabActionClick(action.view)}
-              className="group flex items-center"
-            >
-              <span className="mr-3 px-3 py-1.5 text-sm font-medium bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm">
-                {action.label}
-              </span>
-              <div className="w-12 h-12 bg-white dark:bg-gray-600 rounded-full flex items-center justify-center shadow-md">
-                <action.icon size={24} className="text-gray-600 dark:text-gray-200" />
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {isFabOpen && (
+          <>
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm"
+              onClick={() => setFabOpen(false)}
+              aria-hidden="true"
+            />
+            
+            {userRole === 'athlete' && (
+              <motion.div 
+                key="fab-menu"
+                className="fixed bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center space-y-3 z-40"
+                variants={menuVariants}
+                initial="closed"
+                animate="open"
+                exit="closed"
+              >
+                {fabActions.map((action) => (
+                  <motion.button
+                    key={action.view}
+                    onClick={() => handleFabActionClick(action.view)}
+                    className="group flex items-center"
+                    variants={buttonVariants}
+                  >
+                    <span className="mr-3 px-3 py-1.5 text-sm font-medium bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow-sm">
+                      {action.label}
+                    </span>
+                    <div className="w-12 h-12 bg-white dark:bg-gray-600 rounded-full flex items-center justify-center shadow-md">
+                      <action.icon size={24} className="text-gray-600 dark:text-gray-200" />
+                    </div>
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </>
+        )}
+      </AnimatePresence>
       <div className="fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 shadow-lg border-t border-gray-200 dark:border-gray-700 flex justify-around items-center z-50">
         {navItems.map((item, index) =>
           item ? (
