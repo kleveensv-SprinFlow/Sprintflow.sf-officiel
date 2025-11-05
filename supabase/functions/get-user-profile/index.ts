@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
     // Récupérer le profil avec le service role (bypass RLS)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, role, first_name, last_name, email, photo_url, phone, height, weight, body_fat_percentage, personal_records, training_frequency, dietary_preferences, created_at, updated_at, discipline, sexe, date_de_naissance, role_specifique, license_number')
+      .select('id, role, first_name, last_name, email, avatar_url, phone, height, weight, body_fat_percentage, personal_records, training_frequency, dietary_preferences, created_at, updated_at, discipline, sexe, date_de_naissance, role_specifique, license_number')
       .eq('id', user.id)
       .maybeSingle();
 
