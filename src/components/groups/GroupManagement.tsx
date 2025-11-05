@@ -67,23 +67,12 @@ export const GroupManagement: React.FC = () => {
   
   // Cette fonction sera passée à GroupDetailsPage
   const handleViewAthlete = async (athleteId: string) => {
-      console.log('🔍 handleViewAthlete appelé avec athleteId:', athleteId);
-      console.log('🔍 selectedGroup:', selectedGroup);
-      console.log('🔍 group_members:', selectedGroup?.group_members);
-      console.log('🔍 group_members[0]:', selectedGroup?.group_members[0]);
-      console.log('🔍 group_members[0].athlete_id:', selectedGroup?.group_members[0]?.athlete_id);
-      console.log('🔍 group_members[0].profiles:', selectedGroup?.group_members[0]?.profiles);
-
-      // Vérifier d'abord si c'est un membre du groupe
       const athleteProfile = selectedGroup?.group_members.find(m => m.athlete_id === athleteId)?.profiles as Profile;
-      console.log('🔍 athleteProfile trouvé dans group_members:', athleteProfile);
 
       if (athleteProfile) {
           setSelectedAthlete(athleteProfile);
           setCurrentView('athlete');
       } else {
-          // Si pas trouvé dans group_members, charger depuis la base (cas du coach)
-          console.log('🔍 Pas trouvé dans group_members, chargement depuis DB...');
           try {
               const { data, error } = await supabase
                   .from('profiles')
@@ -91,7 +80,6 @@ export const GroupManagement: React.FC = () => {
                   .eq('id', athleteId)
                   .maybeSingle();
 
-              console.log('🔍 Résultat DB:', { data, error });
               if (error) throw error;
               if (data) {
                   setSelectedAthlete(data as Profile);
