@@ -57,7 +57,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     const blockToEdit = blocks.find(b => b.id === id);
     if (blockToEdit) {
       setEditingBlockId(id);
-      setAddingBlockType(blockToEdit.type);
+      setAddingBlockType(blockToEdit.type as 'course' | 'musculation');
     }
   };
 
@@ -76,13 +76,10 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   const handleSaveTemplate = (templateName: string) => {
     console.log("Sauvegarde du modèle:", templateName, { tagSeance, blocks, notes });
-    // Ici, vous appelleriez une fonction pour sauvegarder le modèle dans la BDD
     setSaveTemplateModalOpen(false);
   };
 
   const handleSelectTemplate = (template: WorkoutTemplate) => {
-    // Simule le chargement des données du modèle
-    // Dans un cas réel, vous chargeriez `template.workout_data`
     setTagSeance('aerobie'); // Exemple
     setBlocks([
       { id: '1', type: 'course', series: 2, reps: 5, distance: 500, restBetweenReps: '01:30', restBetweenSeries: '03:00' },
@@ -90,6 +87,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     ]);
     setNotes('Chargé depuis le modèle: ' + template.name);
     setTemplateSelectionOpen(false);
+    setWorkoutType('modèle');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,7 +113,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
 
   return (
     <>
-      <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{initialData?.id ? 'Modifier la séance' : 'Nouvelle séance'}</h2>
@@ -136,14 +134,10 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
             {workoutType !== 'manuscrit' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contenu de la séance *</label>
-                {!isFormActive && (
-                  <div className="flex gap-2 mb-4">
-                    <button type="button" onClick={() => setAddingBlockType('course')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Navigation size={16}/>Course</button>
-                    <button type="button" onClick={() => setAddingBlockType('musculation')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Dumbbell size={16}/>Muscu</button>
-                  </div>
-                )}
-                {(addingBlockType === 'course' || (editingBlockId && editingBlockData?.type === 'course')) && <CourseBlockForm onAddBlock={handleUpsertBlock} onCancel={handleCancelForm} initialData={editingBlockData as CourseBlock} />}
-                {(addingBlockType === 'musculation' || (editingBlockId && editingBlockData?.type === 'musculation')) && <MuscuBlockForm onAddBlock={handleUpsertBlock} onCancel={handleCancelForm} initialData={editingBlockData as MuscuBlock} />}
+                <div className="flex gap-2 mb-4">
+                  <button type="button" onClick={() => setAddingBlockType('course')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Navigation size={16}/>Course</button>
+                  <button type="button" onClick={() => setAddingBlockType('musculation')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Dumbbell size={16}/>Muscu</button>
+                </div>
                 <WorkoutBuilder blocks={blocks} onChange={handleUpdateBlocks} onRemoveBlock={handleRemoveBlock} onEditBlock={handleEditBlock} isAddingOrEditing={isFormActive} />
               </div>
             )}
@@ -161,15 +155,30 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
                   </motion.div>
                 )}
               </AnimatePresence>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3 justify-end">
                 <button type="button" onClick={() => setSaveTemplateModalOpen(true)} className="px-4 py-2 border rounded-lg flex items-center gap-2"><Bookmark size={16}/>Sauver modèle</button>
-                <button type="submit" disabled={saving} className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-xl">{saving ? '...' : 'Enregistrer'}</button>
-                <button type="button" onClick={onCancel} className="px-6 py-3 border rounded-xl">Annuler</button>
+                <div className="flex-grow flex gap-3">
+                    <button type="button" onClick={onCancel} className="w-full px-6 py-3 border rounded-xl">Annuler</button>
+                    <button type="submit" disabled={saving} className="w-full bg-blue-500 text-white px-6 py-3 rounded-xl">{saving ? '...' : 'Enregistrer'}</button>
+                </div>
               </div>
             </div>
           </form>
         </div>
       </div>
+      
+      <CourseBlockForm 
+        isOpen={addingBlockType === 'course' || (!!editingBlockId && editingBlockData?.type === 'course')}
+        onSave={handleUpsertBlock}
+        onCancel={handleCancelForm}
+        initialData={editingBlockData?.type === 'course' ? editingBlockData as CourseBlock : undefined}
+      />
+      <MuscuBlockForm 
+        isOpen={addingBlockType === 'musculation' || (!!editingBlockId && editingBlockData?.type === 'musculation')}
+        onSave={handleUpsertBlock}
+        onCancel={handleCancelForm}
+        initialData={editingBlockData?.type === 'musculation' ? editingBlockData as MuscuBlock : undefined}
+      />
       
       <AnimatePresence>
         {isCustomModalOpen && <AddCustomWorkoutTypeModal onClose={() => setCustomModalOpen(false)} onSuccess={(newType) => setTagSeance(newType.id)} />}
