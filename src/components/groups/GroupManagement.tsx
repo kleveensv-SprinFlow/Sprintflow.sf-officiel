@@ -70,6 +70,9 @@ export const GroupManagement: React.FC = () => {
       console.log('🔍 handleViewAthlete appelé avec athleteId:', athleteId);
       console.log('🔍 selectedGroup:', selectedGroup);
       console.log('🔍 group_members:', selectedGroup?.group_members);
+      console.log('🔍 group_members[0]:', selectedGroup?.group_members[0]);
+      console.log('🔍 group_members[0].athlete_id:', selectedGroup?.group_members[0]?.athlete_id);
+      console.log('🔍 group_members[0].profiles:', selectedGroup?.group_members[0]?.profiles);
 
       // Vérifier d'abord si c'est un membre du groupe
       const athleteProfile = selectedGroup?.group_members.find(m => m.athlete_id === athleteId)?.profiles as Profile;
