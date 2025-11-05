@@ -3,6 +3,18 @@ import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 import { Profile } from '../types';
 
+// Helper function to transform profile names for frontend compatibility
+const transformProfile = (profile: any): Profile | null => {
+  if (!profile) return null;
+  // This ensures that any component using the hook gets the expected data structure.
+  return {
+    ...profile,
+    first_name: profile.prenom,
+    last_name: profile.nom,
+  };
+};
+
+
 export interface Group {
   id: string;
   name: string;
@@ -32,36 +44,48 @@ export const useGroups = () => {
     setLoading(true);
     setError(null);
     try {
-      let data;
+      let rawData;
 
       if (profile.role === 'coach') {
-        // Pour un coach : récupérer les groupes qu'il a créés
+        // For a coach: fetch the groups they created
         const { data: coachGroups, error: coachError } = await supabase
           .from('groups')
           .select(`
             id, name, coach_id, created_at, invitation_code,
-            group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url ) )
+            group_members ( athlete_id, profiles ( id, prenom, nom, avatar_url, role ) )
           `)
           .eq('coach_id', user.id);
         if (coachError) throw coachError;
-        data = coachGroups;
+        rawData = coachGroups;
       } else {
-        // Pour un athlète : récupérer les groupes dont il est membre
+        // For an athlete: fetch the groups they are a member of
         const { data: athleteGroups, error: athleteError } = await supabase
           .from('group_members')
           .select(`
             groups (
               id, name, coach_id, created_at, invitation_code,
-              group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url ) )
+              group_members ( athlete_id, profiles ( id, prenom, nom, avatar_url, role ) )
             )
           `)
           .eq('athlete_id', user.id);
         if (athleteError) throw athleteError;
-        // Extraire les groupes de la structure imbriquée
-        data = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
+        rawData = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
       }
 
-      setGroups(data || []);
+      // Transform the data after fetching
+      if (rawData) {
+        const transformedData = rawData.map((group: any) => ({
+          ...group,
+          group_members: group.group_members.map((member: any) => ({
+            ...member,
+            profiles: transformProfile(member.profiles),
+          })),
+        }));
+        setGroups(transformedData);
+      } else {
+        setGroups([]);
+      }
+
     } catch (e: any) {
       console.error("Erreur lors de la récupération des groupes:", e);
       setError(e);
@@ -74,14 +98,12 @@ export const useGroups = () => {
     fetchGroups();
   }, [fetchGroups]);
 
-  // --- VERSION CORRIGÉE ET ROBUSTE ---
   const coachAthletes = useMemo(() => {
     try {
       const allAthletes = new Map<string, Profile>();
-      if (!groups) return []; // Sécurité si groups est null
+      if (!groups) return [];
       
       groups.forEach(group => {
-        // Sécurité si un groupe ou ses membres sont mal formés
         if (group && group.group_members) {
           group.group_members.forEach(member => {
             if (member && member.profiles && !allAthletes.has(member.athlete_id)) {
@@ -93,7 +115,7 @@ export const useGroups = () => {
       return Array.from(allAthletes.values());
     } catch (e) {
       console.error("Erreur critique lors du calcul de coachAthletes:", e);
-      return []; // Retourne un tableau vide en cas d'erreur pour éviter le crash
+      return [];
     }
   }, [groups]);
 
@@ -117,11 +139,18 @@ export const useGroups = () => {
   const fetchJoinRequests = useCallback(async (groupId: string): Promise<JoinRequest[]> => {
     const { data, error } = await supabase
       .from('group_join_requests')
-      .select(`*, profiles ( id, first_name, last_name, avatar_url )`)
+      .select(`*, profiles ( id, prenom, nom, avatar_url )`)
       .eq('group_id', groupId)
       .eq('status', 'pending');
     if (error) throw error;
-    return data || [];
+
+    if (data) {
+      return data.map((req: any) => ({
+        ...req,
+        profiles: transformProfile(req.profiles),
+      }));
+    }
+    return [];
   }, []);
 
   const respondToRequest = async (requestId: string, newStatus: 'accepted' | 'rejected') => {

@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 interface GroupDetailsPageProps {
   group: Group;
   onBack: () => void;
-  onViewAthlete: (athleteId: string) => void; // Pour naviguer vers la fiche athlète
+  onViewAthlete: (athleteId: string) => void;
 }
 
 export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBack, onViewAthlete }) => {
@@ -20,15 +20,25 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
 
   const { fetchJoinRequests, respondToRequest } = useGroups();
 
-  // Charger les informations du coach
+  // Load coach information with data transformation
   useEffect(() => {
     const loadCoachProfile = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url, role')
+        .select('id, prenom, nom, avatar_url, role')
         .eq('id', group.coach_id)
         .single();
-      setCoachProfile(data);
+      
+      if (error) {
+        console.error("Erreur chargement profil coach:", error);
+      } else if (data) {
+        // Transform data to match frontend expectations
+        setCoachProfile({
+          ...data,
+          first_name: data.prenom,
+          last_name: data.nom,
+        });
+      }
     };
     loadCoachProfile();
   }, [group.coach_id]);
@@ -57,7 +67,6 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
     try {
       await respondToRequest(requestId, status);
       toast.success(`Demande ${status === 'accepted' ? 'acceptée' : 'refusée'} !`);
-      // Recharger les demandes pour enlever celle qui a été traitée
       loadRequests();
     } catch (error: any) {
       toast.error(error.message || "Erreur lors du traitement.");
@@ -69,12 +78,11 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
   const copyToClipboard = () => {
     navigator.clipboard.writeText(group.invitation_code);
     setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   return (
     <div className="p-4 space-y-4 animate-in fade-in-0">
-      {/* Header */}
       <div className="flex items-center space-x-2">
         <button onClick={onBack} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
           <ArrowLeft size={24} />
@@ -91,7 +99,6 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
         </div>
       </div>
 
-      {/* Onglets */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex space-x-4">
           <button
@@ -112,11 +119,9 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
         </nav>
       </div>
 
-      {/* Contenu des onglets */}
       <div>
         {activeTab === 'members' && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {/* Afficher le coach en premier avec badge orange */}
             {coachProfile && (
               <div
                 key={coachProfile.id}
@@ -140,7 +145,6 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
               </div>
             )}
 
-            {/* Afficher les athlètes avec badge bleu */}
             {group.group_members.length > 0 ? group.group_members.map(member => (
               <div
                 key={member.athlete_id}

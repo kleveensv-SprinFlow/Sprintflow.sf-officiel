@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Save, Dumbbell, Navigation } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import WorkoutTypeSelector from './WorkoutTypeSelector';
 import AddCustomWorkoutTypeModal from './AddCustomWorkoutTypeModal';
-import { WorkoutBlock } from '../../types/workout';
+import { WorkoutBlock, CourseBlock, MuscuBlock } from '../../types/workout';
 import { CourseBlockForm } from './CourseBlockForm';
 import { MuscuBlockForm } from './MuscuBlockForm';
 import { WorkoutBuilder } from './WorkoutBuilder';
@@ -32,17 +32,37 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [saving, setSaving] = useState(false);
   const [isCustomModalOpen, setCustomModalOpen] = useState(false);
+  
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [addingBlockType, setAddingBlockType] = useState<'course' | 'musculation' | null>(null);
 
-  const handleAddBlock = (newBlock: Omit<WorkoutBlock, 'id'>) => {
-    const newBlockWithId: WorkoutBlock = {
-      ...newBlock,
-      id: `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    };
-    setBlocks(prev => [...prev, newBlockWithId]);
-    // Note: The form remains open for quick additions as requested.
-    // To close it after adding, uncomment the line below:
-    // setAddingBlockType(null); 
+  const handleUpsertBlock = (blockData: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => {
+    if ('id' in blockData && blockData.id) {
+      // Modification
+      setBlocks(prev => prev.map(b => (b.id === blockData.id ? { ...b, ...blockData } : b)));
+    } else {
+      // Ajout
+      const newBlockWithId: WorkoutBlock = {
+        ...blockData,
+        id: `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      };
+      setBlocks(prev => [...prev, newBlockWithId]);
+    }
+    setAddingBlockType(null);
+    setEditingBlockId(null);
+  };
+
+  const handleEditBlock = (id: string) => {
+    const blockToEdit = blocks.find(b => b.id === id);
+    if (blockToEdit) {
+      setEditingBlockId(id);
+      setAddingBlockType(blockToEdit.type);
+    }
+  };
+
+  const handleCancelForm = () => {
+    setAddingBlockType(null);
+    setEditingBlockId(null);
   };
 
   const handleRemoveBlock = (id: string) => {
@@ -87,6 +107,13 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     }
   };
   
+  const isFormActive = !!addingBlockType || !!editingBlockId;
+
+  const editingBlockData = useMemo(() => {
+    if (!editingBlockId) return undefined;
+    return blocks.find(b => b.id === editingBlockId);
+  }, [editingBlockId, blocks]);
+
   const renderContent = () => {
     return (
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -134,7 +161,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
               Contenu de la séance *
             </label>
 
-            {!addingBlockType && (
+            {!isFormActive && (
               <div className="flex gap-2 mb-4">
                 <button type="button" onClick={() => setAddingBlockType('course')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-all duration-200 active:scale-95">
                   <Navigation className="w-5 h-5" />
@@ -146,24 +173,34 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
                 </button>
               </div>
             )}
+            
+            {(addingBlockType === 'course' || (editingBlockId && editingBlockData?.type === 'course')) && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-blue-500">
+                <CourseBlockForm
+                  onAddBlock={handleUpsertBlock}
+                  onCancel={handleCancelForm}
+                  initialData={editingBlockData as CourseBlock}
+                />
+              </div>
+            )}
+
+            {(addingBlockType === 'musculation' || (editingBlockId && editingBlockData?.type === 'musculation')) && (
+              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-green-500">
+                <MuscuBlockForm
+                  onAddBlock={handleUpsertBlock}
+                  onCancel={handleCancelForm}
+                  initialData={editingBlockData as MuscuBlock}
+                />
+              </div>
+            )}
 
             <WorkoutBuilder
               blocks={blocks}
               onChange={handleUpdateBlocks}
               onRemoveBlock={handleRemoveBlock}
+              onEditBlock={handleEditBlock}
+              isAddingOrEditing={isFormActive}
             />
-
-            {addingBlockType === 'course' && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-blue-500">
-                <CourseBlockForm onAddBlock={(block) => { handleAddBlock(block); setAddingBlockType(null); }} onCancel={() => setAddingBlockType(null)} />
-              </div>
-            )}
-
-            {addingBlockType === 'musculation' && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-green-500">
-                <MuscuBlockForm onAddBlock={(block) => { handleAddBlock(block); setAddingBlockType(null); }} onCancel={() => setAddingBlockType(null)} />
-              </div>
-            )}
           </div>
         ) : (
           <div>

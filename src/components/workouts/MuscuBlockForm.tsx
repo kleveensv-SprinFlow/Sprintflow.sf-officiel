@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useExercices } from '../../hooks/useExercices';
 import TimePicker from '../common/TimePicker';
 import PickerWheel from '../common/PickerWheel';
@@ -6,8 +6,9 @@ import { EXERCISE_CATEGORIES } from '../../data/categories';
 import { MuscuBlock, WorkoutBlock } from '../../types/workout';
 
 interface MuscuBlockFormProps {
-  onAddBlock: (newBlock: Omit<WorkoutBlock, 'id'>) => void;
+  onAddBlock: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
   onCancel: () => void;
+  initialData?: MuscuBlock;
 }
 
 const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -24,10 +25,18 @@ const defaultState: Omit<MuscuBlock, 'id'> = {
   restTime: '02:00',
 };
 
-export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onAddBlock, onCancel }) => {
+export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onAddBlock, onCancel, initialData }) => {
   const { exercices } = useExercices();
-  const [block, setBlock] = useState(defaultState);
+  const [block, setBlock] = useState(initialData || defaultState);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  useEffect(() => {
+    if (initialData) {
+      setBlock(initialData);
+      const exo = exercices.find(e => e.id === initialData.exerciceId);
+      if (exo) setSelectedCategory(exo.categorie);
+    }
+  }, [initialData, exercices]);
 
   const updateBlock = (updatedFields: Partial<Omit<MuscuBlock, 'id'>>) => {
     setBlock(prev => ({ ...prev, ...updatedFields }));
@@ -39,8 +48,10 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onAddBlock, onCa
       return;
     }
     onAddBlock(block);
-    setBlock(defaultState);
-    setSelectedCategory('');
+    if (!initialData) {
+      setBlock(defaultState);
+      setSelectedCategory('');
+    }
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -126,7 +137,7 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onAddBlock, onCa
           onClick={handleValidate}
           className="flex-1 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium transition-all"
         >
-          Ajouter ce bloc
+          {initialData ? 'Modifier ce bloc' : 'Ajouter ce bloc'}
         </button>
         <button
           type="button"

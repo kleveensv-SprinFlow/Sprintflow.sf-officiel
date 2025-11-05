@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TimePicker from '../common/TimePicker';
 import PickerWheel from '../common/PickerWheel';
 import { CourseBlock, WorkoutBlock } from '../../types/workout';
 
 interface CourseBlockFormProps {
-  onAddBlock: (newBlock: Omit<WorkoutBlock, 'id'>) => void;
+  onAddBlock: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
   onCancel: () => void;
+  initialData?: CourseBlock;
 }
 
 const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -21,8 +22,14 @@ const defaultState: Omit<CourseBlock, 'id'> = {
   restBetweenSeries: '05:00',
 };
 
-export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onAddBlock, onCancel }) => {
-  const [block, setBlock] = useState(defaultState);
+export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onAddBlock, onCancel, initialData }) => {
+  const [block, setBlock] = useState(initialData || defaultState);
+
+  useEffect(() => {
+    if (initialData) {
+      setBlock(initialData);
+    }
+  }, [initialData]);
 
   const updateBlock = (updatedFields: Partial<Omit<CourseBlock, 'id'>>) => {
     setBlock(prev => ({ ...prev, ...updatedFields }));
@@ -30,7 +37,9 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onAddBlock, on
 
   const handleValidate = () => {
     onAddBlock(block);
-    setBlock(defaultState); 
+    if (!initialData) {
+      setBlock(defaultState);
+    }
   };
 
   return (
@@ -86,7 +95,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onAddBlock, on
           onClick={handleValidate}
           className="flex-1 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium transition-all"
         >
-          Ajouter ce bloc
+          {initialData ? 'Modifier ce bloc' : 'Ajouter ce bloc'}
         </button>
         <button
           type="button"
