@@ -41,7 +41,13 @@ export const useGroups = () => {
           .from('groups')
           .select(`
             id, name, coach_id, created_at, invitation_code,
-            group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url, role ) )
+            group_members (
+              athlete_id,
+              profiles (
+                id, first_name, last_name, avatar_url, role,
+                date_de_naissance, sexe, height, discipline, license_number
+              )
+            )
           `)
           .eq('coach_id', user.id);
         if (coachError) throw coachError;
@@ -53,7 +59,13 @@ export const useGroups = () => {
           .select(`
             groups (
               id, name, coach_id, created_at, invitation_code,
-              group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url, role ) )
+              group_members (
+                athlete_id,
+                profiles (
+                  id, first_name, last_name, avatar_url, role,
+                  date_de_naissance, sexe, height, discipline, license_number
+                )
+              )
             )
           `)
           .eq('athlete_id', user.id);
