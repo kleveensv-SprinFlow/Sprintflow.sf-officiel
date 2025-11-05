@@ -31,12 +31,19 @@ const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange }) => {
     setIsOpen(false);
   };
 
+  const handleOpen = () => {
+    const { min, sec } = parseTime(initialTime);
+    setMinutes(min);
+    setSeconds(sec);
+    setIsOpen(true);
+  };
+
   return (
-    <div>
+    <div className="w-full">
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
-        className="w-full h-12 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center text-xl font-semibold !text-black dark:!text-white border border-gray-300 dark:border-gray-600"
+        onClick={handleOpen}
+        className="w-full h-11 px-4 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-base font-medium text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition-shadow"
       >
         {initialTime}
       </button>
