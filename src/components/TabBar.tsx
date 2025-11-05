@@ -46,10 +46,10 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
 
   const menuVariants = {
     open: {
-      transition: { staggerChildren: 0.07, delayChildren: 0.2 }
+      transition: { staggerChildren: 0.04, delayChildren: 0 }
     },
     closed: {
-      transition: { staggerChildren: 0.05, staggerDirection: -1 }
+      transition: { staggerChildren: 0.03, staggerDirection: -1 }
     }
   };
 
