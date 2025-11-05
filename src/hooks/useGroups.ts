@@ -3,17 +3,6 @@ import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 import { Profile } from '../types';
 
-// Helper function to transform profile names for frontend compatibility
-const transformProfile = (profile: any): Profile | null => {
-  if (!profile) return null;
-  // This ensures that any component using the hook gets the expected data structure.
-  return {
-    ...profile,
-    first_name: profile.prenom,
-    last_name: profile.nom,
-  };
-};
-
 
 export interface Group {
   id: string;
@@ -40,21 +29,27 @@ export const useGroups = () => {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchGroups = useCallback(async () => {
-    if (!user || !profile) return;
+    if (!user || !profile) {
+      console.log('[useGroups] No user or profile:', { user: !!user, profile: !!profile });
+      return;
+    }
+    console.log('[useGroups] Fetching groups for user:', user.id, 'role:', profile.role);
     setLoading(true);
     setError(null);
     try {
       let rawData;
 
       if (profile.role === 'coach') {
+        console.log('[useGroups] Coach query with user.id:', user.id);
         // For a coach: fetch the groups they created
         const { data: coachGroups, error: coachError } = await supabase
           .from('groups')
           .select(`
             id, name, coach_id, created_at, invitation_code,
-            group_members ( athlete_id, profiles ( id, prenom, nom, avatar_url, role ) )
+            group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url, role ) )
           `)
           .eq('coach_id', user.id);
+        console.log('[useGroups] Coach groups result:', { data: coachGroups, error: coachError });
         if (coachError) throw coachError;
         rawData = coachGroups;
       } else {
@@ -64,7 +59,7 @@ export const useGroups = () => {
           .select(`
             groups (
               id, name, coach_id, created_at, invitation_code,
-              group_members ( athlete_id, profiles ( id, prenom, nom, avatar_url, role ) )
+              group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url, role ) )
             )
           `)
           .eq('athlete_id', user.id);
@@ -72,17 +67,13 @@ export const useGroups = () => {
         rawData = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
       }
 
-      // Transform the data after fetching
-      if (rawData) {
-        const transformedData = rawData.map((group: any) => ({
-          ...group,
-          group_members: group.group_members.map((member: any) => ({
-            ...member,
-            profiles: transformProfile(member.profiles),
-          })),
-        }));
-        setGroups(transformedData);
+      // Set the data
+      console.log('[useGroups] Raw data:', rawData);
+      if (rawData && rawData.length > 0) {
+        console.log('[useGroups] Setting groups:', rawData);
+        setGroups(rawData);
       } else {
+        console.log('[useGroups] No raw data, setting empty array');
         setGroups([]);
       }
 
@@ -139,18 +130,12 @@ export const useGroups = () => {
   const fetchJoinRequests = useCallback(async (groupId: string): Promise<JoinRequest[]> => {
     const { data, error } = await supabase
       .from('group_join_requests')
-      .select(`*, profiles ( id, prenom, nom, avatar_url )`)
+      .select(`*, profiles ( id, first_name, last_name, avatar_url )`)
       .eq('group_id', groupId)
       .eq('status', 'pending');
     if (error) throw error;
 
-    if (data) {
-      return data.map((req: any) => ({
-        ...req,
-        profiles: transformProfile(req.profiles),
-      }));
-    }
-    return [];
+    return data || [];
   }, []);
 
   const respondToRequest = async (requestId: string, newStatus: 'accepted' | 'rejected') => {
