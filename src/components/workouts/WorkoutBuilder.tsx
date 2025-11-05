@@ -70,6 +70,9 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({
             onDragOver={handleDragOver}
             className={`bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex justify-between items-center transition-all duration-200 relative cursor-grab active:cursor-grabbing ${dragState.isDragging && dragState.draggedIndex === index ? 'opacity-40 scale-95 ring-2 ring-blue-500' : ''} ${dragState.draggedOverIndex === index && dragState.draggedIndex !== index ? 'ring-2 ring-blue-400 ring-dashed scale-105' : ''}`}
           >
+            <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md">
+              {index + 1}
+            </div>
             {renderBlockSummary(block)}
             <div className="flex items-center gap-2">
               <button
