@@ -27,7 +27,7 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
         .from('profiles')
         .select('id, first_name, last_name, avatar_url, role')
         .eq('id', group.coach_id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Erreur chargement profil coach:", error);

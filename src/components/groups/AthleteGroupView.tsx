@@ -39,12 +39,14 @@ export const AthleteGroupView: React.FC = () => {
           .from('profiles')
           .select('id, first_name, last_name, avatar_url, role, date_de_naissance, sexe, height, discipline, license_number')
           .eq('id', athleteId)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         if (data) {
           setSelectedAthlete(data as Profile);
           setCurrentView('athlete');
+        } else {
+          toast.error('Profil introuvable');
         }
       } catch (error) {
         console.error('Erreur chargement profil:', error);

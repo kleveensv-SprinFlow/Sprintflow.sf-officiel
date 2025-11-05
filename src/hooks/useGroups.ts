@@ -29,18 +29,13 @@ export const useGroups = () => {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchGroups = useCallback(async () => {
-    if (!user || !profile) {
-      console.log('[useGroups] No user or profile:', { user: !!user, profile: !!profile });
-      return;
-    }
-    console.log('[useGroups] Fetching groups for user:', user.id, 'role:', profile.role);
+    if (!user || !profile) return;
     setLoading(true);
     setError(null);
     try {
       let rawData;
 
       if (profile.role === 'coach') {
-        console.log('[useGroups] Coach query with user.id:', user.id);
         // For a coach: fetch the groups they created
         const { data: coachGroups, error: coachError } = await supabase
           .from('groups')
@@ -49,7 +44,6 @@ export const useGroups = () => {
             group_members ( athlete_id, profiles ( id, first_name, last_name, avatar_url, role ) )
           `)
           .eq('coach_id', user.id);
-        console.log('[useGroups] Coach groups result:', { data: coachGroups, error: coachError });
         if (coachError) throw coachError;
         rawData = coachGroups;
       } else {
@@ -68,12 +62,9 @@ export const useGroups = () => {
       }
 
       // Set the data
-      console.log('[useGroups] Raw data:', rawData);
       if (rawData && rawData.length > 0) {
-        console.log('[useGroups] Setting groups:', rawData);
         setGroups(rawData);
       } else {
-        console.log('[useGroups] No raw data, setting empty array');
         setGroups([]);
       }
 
