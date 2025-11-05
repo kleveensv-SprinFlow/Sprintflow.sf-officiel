@@ -5,6 +5,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import Dashboard from './components/Dashboard';
 import TabBar from './components/TabBar';
 import Header from './components/navigation/Header';
+import SideMenu from './components/navigation/SideMenu';
 import AnimatedBackground from './components/common/AnimatedBackground';
 import { View } from './types';
 import { ToastContainer, toast } from 'react-toastify';
@@ -41,6 +42,12 @@ function App() {
   const [isFabOpen, setFabOpen] = useState(false);
   const [showForm, setShowForm] = useState<View | null>(null);
   const [isConfirmingEmail, setIsConfirmingEmail] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
+
+  const handleMenuNavigate = (view: View) => {
+    setCurrentView(view);
+    setMenuOpen(false);
+  };
 
   useEffect(() => {
     const handleEmailConfirmation = async () => {
@@ -203,6 +210,12 @@ function App() {
         onBack={() => setCurrentView('dashboard')}
         onProfileClick={() => setCurrentView('profile')}
         onHomeClick={() => setCurrentView('dashboard')}
+        onMenuClick={() => setMenuOpen(true)}
+      />
+      <SideMenu
+        isOpen={isMenuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNavigate={handleMenuNavigate}
       />
       <main className="pb-20">
         {renderView()}
