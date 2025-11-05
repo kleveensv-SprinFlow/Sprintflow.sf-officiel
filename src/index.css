@@ -1,5 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=DIN+1451&display=swap');
 
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
@@ -103,20 +103,16 @@
     @apply bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent;
   }
 
-  .card-3d {
-    @apply shadow-lg hover:shadow-xl transition-shadow duration-200;
+  .card-glass {
+    background-color: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    @apply rounded-2xl border border-white/20;
   }
 
-  .card-3d-deep {
-    @apply shadow-xl hover:shadow-2xl transition-all duration-200 hover:-translate-y-1;
-  }
-
-  .button-3d {
-    @apply shadow-md hover:shadow-lg transition-all duration-200 active:shadow-sm active:translate-y-0.5;
-  }
-
-  .header-3d {
-    @apply shadow-md;
+  .dark .card-glass {
+    background-color: rgba(30, 41, 59, 0.6); /* slate-800 with alpha */
+    @apply border-white/10;
   }
 
   .text-shadow-light {
