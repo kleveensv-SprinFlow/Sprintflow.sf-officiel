@@ -25,6 +25,41 @@ interface ProfileData {
   role: 'athlete' | 'encadrant' | null;
 }
 
+const convertHeicToJpeg = async (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context non disponible'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const convertedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(convertedFile);
+          } else {
+            reject(new Error('Conversion échouée'));
+          }
+        }, 'image/jpeg', 0.9);
+      };
+      img.onerror = () => reject(new Error('Impossible de charger l\'image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Impossible de lire le fichier'));
+    reader.readAsDataURL(file);
+  });
+};
+
 export function ProfilePage() {
   const { user, signOut, profile: authProfile, refreshProfile } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -73,10 +108,25 @@ export function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.warn('Veuillez sélectionner un fichier image valide');
+    console.log('📸 Fichier sélectionné:', {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+
+    const isValidType = file.type.startsWith('image/') || validImageTypes.includes(file.type);
+    const isValidExtension = fileExtension && validExtensions.includes(fileExtension);
+
+    if (!isValidType && !isValidExtension) {
+      console.error('❌ Type de fichier invalide:', file.type, 'Extension:', fileExtension);
+      toast.warn('Veuillez sélectionner un fichier image valide (JPG, PNG, GIF, WebP)');
       return;
     }
+
     if (file.size > 5 * 1024 * 1024) {
       toast.warn('La taille du fichier ne doit pas dépasser 5 MB');
       return;
@@ -84,22 +134,40 @@ export function ProfilePage() {
 
     setUploadingPhoto(true);
     try {
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      let fileToUpload = file;
+      let fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+
+      if (fileExt === 'heic' || fileExt === 'heif') {
+        console.log('🔄 Conversion HEIC/HEIF vers JPEG...');
+        fileToUpload = await convertHeicToJpeg(file);
+        fileExt = 'jpg';
+      }
+
       const filePath = `avatars/${user.id}.${fileExt}`;
 
-      // Supprimer l'ancien avatar s'il existe pour éviter les orphelins
+      console.log('⬆️ Upload vers:', filePath);
+
       if (profile?.avatar_url) {
           const oldAvatarPath = profile.avatar_url.split('/profiles/').pop()?.split('?')[0];
           if (oldAvatarPath) {
+              console.log('🗑️ Suppression ancien avatar:', oldAvatarPath);
               await supabase.storage.from('profiles').remove([oldAvatarPath]);
           }
       }
 
       const { error: uploadError } = await supabase.storage
         .from('profiles')
-        .upload(filePath, file, { upsert: true }); // Upsert est plus sûr
+        .upload(filePath, fileToUpload, {
+          upsert: true,
+          contentType: fileToUpload.type || 'image/jpeg'
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('❌ Erreur upload:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('✅ Upload réussi!');
 
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
@@ -159,7 +227,14 @@ export function ProfilePage() {
           <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} className="absolute -bottom-1 -right-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md">
             {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
           </button>
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.heic,.heif"
+            capture="environment"
+            onChange={handlePhotoUpload}
+            className="hidden"
+          />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{getFullName(profile)}</h1>
