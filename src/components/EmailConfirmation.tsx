@@ -1,48 +1,62 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 export default function EmailConfirmation() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
     const handleEmailConfirmation = async () => {
+      console.log('📧 [EmailConfirmation] Début de la confirmation...');
+
       try {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
         const type = hashParams.get('type');
 
-        if (type === 'signup' && accessToken) {
-          const { error } = await supabase.auth.setSession({
+        console.log('🔍 [EmailConfirmation] Paramètres détectés:', {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          type,
+        });
+
+        if (type === 'signup' && accessToken && refreshToken) {
+          console.log('✅ [EmailConfirmation] Paramètres valides, création de session...');
+
+          const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: hashParams.get('refresh_token') || '',
+            refresh_token: refreshToken,
           });
 
           if (error) {
+            console.error('❌ [EmailConfirmation] Erreur setSession:', error);
             throw error;
           }
+
+          console.log('✅ [EmailConfirmation] Session créée:', data?.session?.user?.id);
 
           setStatus('success');
           setMessage('Votre email a été confirmé avec succès !');
 
           setTimeout(() => {
-            navigate('/');
+            console.log('🔄 [EmailConfirmation] Redirection vers dashboard...');
+            window.location.href = '/';
           }, 3000);
         } else {
-          throw new Error('Lien de confirmation invalide ou expiré');
+          console.error('❌ [EmailConfirmation] Paramètres manquants ou invalides');
+          throw new Error('Lien de confirmation invalide ou expiré. Veuillez demander un nouvel email de confirmation.');
         }
       } catch (error: any) {
-        console.error('Erreur confirmation email:', error);
+        console.error('❌ [EmailConfirmation] Erreur confirmation email:', error);
         setStatus('error');
-        setMessage(error.message || 'Une erreur est survenue lors de la confirmation');
+        setMessage(error.message || 'Une erreur est survenue lors de la confirmation de votre email.');
       }
     };
 
     handleEmailConfirmation();
-  }, [navigate]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -91,7 +105,7 @@ export default function EmailConfirmation() {
                 {message}
               </p>
               <button
-                onClick={() => navigate('/')}
+                onClick={() => window.location.href = '/'}
                 className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
               >
                 Retour à l'accueil

@@ -90,11 +90,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('📋 [useAuth] Rôle mappé:', profileData.role, '->', mappedRole);
 
       // 1. Inscription de l'utilisateur avec TOUTES les données dans raw_user_meta_data
+      // Utiliser l'URL de production pour la redirection email
+      const redirectUrl = window.location.hostname === 'localhost'
+        ? `${window.location.origin}/`
+        : 'https://sprintflow.one/';
+
+      console.log('🔗 [useAuth] URL de redirection:', redirectUrl);
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: redirectUrl,
           data: {
             first_name: profileData.first_name,
             last_name: profileData.last_name,

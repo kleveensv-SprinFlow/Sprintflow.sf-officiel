@@ -49,27 +49,41 @@ function App() {
       const type = hashParams.get('type');
       const refreshToken = hashParams.get('refresh_token');
 
+      console.log('🔍 [App] Vérification des paramètres URL:', {
+        hasHash: !!window.location.hash,
+        type,
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+      });
+
       if (type === 'signup' && accessToken && refreshToken) {
-        console.log('📧 Détection d\'une confirmation d\'email...');
+        console.log('📧 [App] Détection d\'une confirmation d\'email valide...');
         setIsConfirmingEmail(true);
 
         try {
-          const { error } = await supabase.auth.setSession({
+          console.log('⏳ [App] Création de la session Supabase...');
+          const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
           if (error) {
-            console.error('❌ Erreur lors de la confirmation:', error);
-            toast.error('Erreur lors de la confirmation de votre email. Veuillez réessayer.');
+            console.error('❌ [App] Erreur lors de la confirmation:', error);
+            toast.error(`Erreur: ${error.message || 'Impossible de confirmer votre email'}`, {
+              autoClose: 5000,
+            });
           } else {
-            console.log('✅ Email confirmé avec succès!');
-            toast.success('Votre email a été confirmé avec succès! Bienvenue sur SprintFlow.');
+            console.log('✅ [App] Email confirmé avec succès! User ID:', data?.session?.user?.id);
+            toast.success('Votre email a été confirmé avec succès! Bienvenue sur SprintFlow.', {
+              autoClose: 3000,
+            });
             window.history.replaceState({}, document.title, '/');
           }
-        } catch (err) {
-          console.error('❌ Exception lors de la confirmation:', err);
-          toast.error('Une erreur est survenue lors de la confirmation.');
+        } catch (err: any) {
+          console.error('❌ [App] Exception lors de la confirmation:', err);
+          toast.error(`Erreur inattendue: ${err.message || 'Veuillez réessayer'}`, {
+            autoClose: 5000,
+          });
         } finally {
           setIsConfirmingEmail(false);
         }
