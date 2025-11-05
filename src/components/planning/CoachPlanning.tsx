@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users, User, Filter, Plus } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { format, eachDayOfInterval, startOfWeek, endOfWeek, isSameDay, addDays, subDays, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -8,21 +8,22 @@ import { useGroups } from '../../hooks/useGroups';
 import { useCoachLinks } from '../../hooks/useCoachLinks';
 import useAuth from '../../hooks/useAuth';
 import { WorkoutTemplate } from '../../hooks/useWorkoutTemplates';
-import { useWorkoutTypes } from '../../hooks/useWorkoutTypes'; // Importer le hook
+import { useWorkoutTypes } from '../../hooks/useWorkoutTypes';
 
 import { TemplateSelectionModal } from '../workouts/TemplateSelectionModal';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
-import { Workout } from '../../types';
 
 type ActiveFilter = {
-  type: 'all' | 'group' | 'athlete';
-  id: string | null;
+  type: 'group' | 'athlete';
+  id: string;
   name: string;
 };
 
+type SelectionType = 'group' | 'athlete';
+
 export const CoachPlanning: React.FC = () => {
   const { user } = useAuth();
-  const { workouts, planWorkout, loading: loadingWorkouts } = useWorkouts();
+  const { workouts, planWorkout } = useWorkouts();
   const { groups, loading: loadingGroups } = useGroups();
   const { linkedAthletes, loading: loadingAthletes } = useCoachLinks(user?.id);
   const { allTypes: workoutTypes } = useWorkoutTypes();
@@ -36,12 +37,32 @@ export const CoachPlanning: React.FC = () => {
   }, [workoutTypes]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>({ type: 'all', id: null, name: 'Tous les athlètes' });
+  const [selectionType, setSelectionType] = useState<SelectionType>('group');
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [initialWorkoutData, setInitialWorkoutData] = useState<any>(null);
+
+  useEffect(() => {
+    // Set default filter to the first group when data is available
+    if (selectionType === 'group' && !loadingGroups && groups.length > 0) {
+      if (!activeFilter || activeFilter.type !== 'group') {
+        setActiveFilter({ type: 'group', id: groups[0].id, name: groups[0].name });
+      }
+    // Set default filter to the first athlete when data is available
+    } else if (selectionType === 'athlete' && !loadingAthletes && linkedAthletes.length > 0) {
+      if (!activeFilter || activeFilter.type !== 'athlete') {
+        const athlete = linkedAthletes[0];
+        setActiveFilter({ type: 'athlete', id: athlete.id, name: `${athlete.first_name} ${athlete.last_name}` });
+      }
+    // If a type is selected but its list is empty, clear the filter
+    } else if ((selectionType === 'group' && !loadingGroups && groups.length === 0) || (selectionType === 'athlete' && !loadingAthletes && linkedAthletes.length === 0)) {
+        setActiveFilter(null);
+    }
+  }, [selectionType, groups, linkedAthletes, loadingGroups, loadingAthletes, activeFilter]);
+
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -49,9 +70,8 @@ export const CoachPlanning: React.FC = () => {
   const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   const filteredWorkouts = useMemo(() => {
-    if (activeFilter.type === 'all') {
-      return workouts.filter(w => w.coach_id === user?.id && w.status === 'planned');
-    }
+    if (!activeFilter) return [];
+    
     if (activeFilter.type === 'group') {
       return workouts.filter(w => w.assigned_to_group_id === activeFilter.id && w.status === 'planned');
     }
@@ -62,9 +82,13 @@ export const CoachPlanning: React.FC = () => {
       );
     }
     return [];
-  }, [workouts, activeFilter, user?.id]);
+  }, [workouts, activeFilter]);
 
   const handleDateClick = (date: Date) => {
+    if (!activeFilter) {
+      alert("Veuillez d'abord sélectionner un groupe ou un athlète.");
+      return;
+    }
     setSelectedDate(date);
     setTemplateModalOpen(true);
   };
@@ -85,12 +109,15 @@ export const CoachPlanning: React.FC = () => {
   };
 
   const handleSaveWorkout = async (payload: { blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
-    if (!selectedDate) return;
+    if (!selectedDate || !activeFilter) {
+        alert("Veuillez sélectionner un groupe ou un athlète pour assigner la séance.");
+        return;
+    }
 
     const workoutTypeName = workoutTypeMap.get(payload.tag_seance)?.name || 'Séance';
 
     const planningPayload: any = {
-      title: workoutTypeName, // Le titre est maintenant le nom du type
+      title: workoutTypeName,
       type: payload.type,
       tag_seance: payload.tag_seance,
       notes: payload.notes,
@@ -102,9 +129,6 @@ export const CoachPlanning: React.FC = () => {
       planningPayload.assigned_to_group_id = activeFilter.id;
     } else if (activeFilter.type === 'athlete' && activeFilter.id) {
       planningPayload.assigned_to_user_id = activeFilter.id;
-    } else {
-        alert("Veuillez sélectionner un groupe ou un athlète spécifique pour assigner une séance.");
-        return;
     }
 
     await planWorkout(planningPayload);
@@ -130,28 +154,70 @@ export const CoachPlanning: React.FC = () => {
 
       <h1 className="text-2xl font-bold">Calendrier de Planification</h1>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="flex items-center gap-2">
-            <Filter size={20} />
-            <select
-                className="p-2 border rounded-lg dark:bg-gray-700"
-                value={`${activeFilter.type}:${activeFilter.id || 'null'}`}
-                onChange={(e) => {
-                    const [type, id] = e.target.value.split(':');
-                    const name = e.target.options[e.target.selectedIndex].text;
-                    setActiveFilter({ type: type as 'all' | 'group' | 'athlete', id: id === 'null' ? null : id, name });
-                }}
-            >
-                <option value="all:null">Tous les athlètes</option>
-                <optgroup label="Groupes">
-                    {groups.map(g => <option key={g.id} value={`group:${g.id}`}>{g.name}</option>)}
-                </optgroup>
-                <optgroup label="Athlètes">
-                    {linkedAthletes.map(a => <option key={a.id} value={`athlete:${a.id}`}>{a.first_name} {a.last_name}</option>)}
-                </optgroup>
-            </select>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
+                <button
+                    onClick={() => setSelectionType('group')}
+                    className={`px-4 py-1 rounded-md text-sm font-semibold transition-colors ${
+                        selectionType === 'group' ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow' : 'text-gray-600 dark:text-gray-300'
+                    }`}
+                >
+                    Groupes
+                </button>
+                <button
+                    onClick={() => setSelectionType('athlete')}
+                    className={`px-4 py-1 rounded-md text-sm font-semibold transition-colors ${
+                        selectionType === 'athlete' ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow' : 'text-gray-600 dark:text-gray-300'
+                    }`}
+                >
+                    Athlètes
+                </button>
+            </div>
+            
+            {selectionType === 'group' && (
+                <select
+                    className="p-2 border rounded-lg dark:bg-gray-700 w-full sm:w-auto"
+                    value={activeFilter?.id || ''}
+                    onChange={(e) => {
+                        const id = e.target.value;
+                        const group = groups.find(g => g.id === id);
+                        if(group) setActiveFilter({ type: 'group', id, name: group.name });
+                    }}
+                    disabled={loadingGroups || groups.length === 0}
+                >
+                    {loadingGroups ? (
+                        <option>Chargement...</option>
+                    ) : groups.length > 0 ? (
+                        groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)
+                    ) : (
+                        <option>Aucun groupe</option>
+                    )}
+                </select>
+            )}
+
+            {selectionType === 'athlete' && (
+                <select
+                    className="p-2 border rounded-lg dark:bg-gray-700 w-full sm:w-auto"
+                    value={activeFilter?.id || ''}
+                    onChange={(e) => {
+                        const id = e.target.value;
+                        const athlete = linkedAthletes.find(a => a.id === id);
+                        if(athlete) setActiveFilter({ type: 'athlete', id, name: `${athlete.first_name} ${athlete.last_name}` });
+                    }}
+                    disabled={loadingAthletes || linkedAthletes.length === 0}
+                >
+                     {loadingAthletes ? (
+                        <option>Chargement...</option>
+                    ) : linkedAthletes.length > 0 ? (
+                        linkedAthletes.map(a => <option key={a.id} value={a.id}>{a.first_name} {a.last_name}</option>)
+                    ) : (
+                        <option>Aucun athlète</option>
+                    )}
+                </select>
+            )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 self-center">
           <button onClick={() => setCurrentDate(subDays(currentDate, 7))}><ChevronLeft /></button>
           <h2 className="text-lg font-semibold w-48 text-center">
             {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'd MMM', { locale: fr })} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'd MMM yyyy', { locale: fr })}
@@ -169,8 +235,8 @@ export const CoachPlanning: React.FC = () => {
           const isToday = isSameDay(day, new Date());
 
           const workoutsForDay = filteredWorkouts.filter(w => {
-            const dateToCompare = w.status === 'planned' ? w.date : w.date;
-            return isSameDay(parseISO(dateToCompare), day);
+            const dateToCompare = w.date; 
+            return dateToCompare ? isSameDay(parseISO(dateToCompare), day) : false;
           });
 
           return (
@@ -187,7 +253,7 @@ export const CoachPlanning: React.FC = () => {
                 {workoutsForDay.map(w => {
                   const typeInfo = w.tag_seance ? workoutTypeMap.get(w.tag_seance) : null;
                   const workoutName = typeInfo ? typeInfo.name : w.title;
-                  const workoutColor = typeInfo ? typeInfo.color : '#6b7280'; // Gris par défaut
+                  const workoutColor = typeInfo ? typeInfo.color : '#6b7280'; 
 
                   return (
                     <div
@@ -209,8 +275,9 @@ export const CoachPlanning: React.FC = () => {
               </div>
               <button 
                 onClick={() => handleDateClick(day)}
-                className="absolute bottom-2 right-2 flex items-center justify-center w-8 h-8 rounded-full bg-primary-500 text-white shadow-lg hover:bg-primary-600 transition-colors"
+                className={`absolute bottom-2 right-2 flex items-center justify-center w-8 h-8 rounded-full text-white shadow-lg transition-colors ${activeFilter ? 'bg-primary-500 hover:bg-primary-600' : 'bg-gray-400 cursor-not-allowed'}`}
                 aria-label="Ajouter une séance"
+                disabled={!activeFilter}
               >
                 <Plus size={20} />
               </button>
