@@ -13,7 +13,7 @@ import useAuth from '../../hooks/useAuth';
 import { useGroups } from '../../hooks/useGroups';
 import { AthleteMarquee } from './AthleteMarquee';
 import { AthleteDetails } from '../groups/AthleteDetails';
-import { Workout, Profile } from '../../types';
+import { Profile } from '../../types';
 
 type Selection = {
   type: 'athlete' | 'group';
@@ -21,9 +21,18 @@ type Selection = {
   name: string;
 } | null;
 
+import { WorkoutBlock } from '../workouts/WorkoutBuilder';
+
 type FormState = {
   isOpen: boolean;
-  initialData?: any;
+  initialData?: {
+    id: string;
+    tag_seance: string;
+    blocs: WorkoutBlock[];
+    type?: 'guidé' | 'manuscrit' | 'modèle';
+    notes?: string;
+    date: string;
+  };
   date?: Date;
 }
 
@@ -36,7 +45,7 @@ export const CoachDashboard: React.FC = () => {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [formState, setFormState] = useState<FormState>({ isOpen: false });
 
-  const { coachAthletes, loading: athletesLoading } = useGroups();
+  const { coachAthletes } = useGroups();
   const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
 
   const { workouts, loading, error, planWorkout, updateWorkout } = useWorkouts(selection || undefined);
@@ -76,7 +85,7 @@ export const CoachDashboard: React.FC = () => {
     });
   };
 
-  const handleSaveWorkout = async (payload: any) => {
+  const handleSaveWorkout = async (payload: { title: string; type: 'guidé' | 'manuscrit' | 'modèle'; notes?: string; blocs: WorkoutBlock[] }) => {
     if (!selection) return;
 
     const isEditing = !!formState.initialData?.id;
@@ -93,13 +102,20 @@ export const CoachDashboard: React.FC = () => {
 
     try {
       if (isEditing) {
-        await updateWorkout(formState.initialData.id, workoutPayload);
+        await updateWorkout(formState.initialData.id, {
+          ...formState.initialData,
+          ...workoutPayload
+        });
       } else {
         await planWorkout(workoutPayload);
       }
       setFormState({ isOpen: false });
-    } catch (e: any) {
-      alert(`Erreur: ${e.message}`);
+    } catch (e) {
+      if (e instanceof Error) {
+        alert(`Erreur: ${e.message}`);
+      } else {
+        alert('Une erreur inconnue est survenue.');
+      }
     }
   };
 
@@ -107,18 +123,18 @@ export const CoachDashboard: React.FC = () => {
     if (!selection) {
       return (
         <motion.div 
-          className="text-center py-16 px-4 bg-white/10 dark:bg-black/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg"
+          className="text-center py-16 px-4 card-glass shadow-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100 text-shadow-light dark:text-shadow-dark">Bienvenue, {profile?.first_name} !</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6 text-shadow-light dark:text-shadow-dark">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
+          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Bienvenue, {profile?.first_name} !</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-8">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-            <button onClick={() => setAthleteModalOpen(true)} className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center">
+            <button onClick={() => setAthleteModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
               <User /> Athlète
             </button>
-            <button onClick={() => setGroupModalOpen(true)} className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center">
+            <button onClick={() => setGroupModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-gray-800 dark:text-white bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
               <Users /> Groupe
             </button>
           </div>
@@ -148,7 +164,7 @@ export const CoachDashboard: React.FC = () => {
           <div className="absolute top-6 right-6 z-20">
             <button
               onClick={() => setMenuOpen(!isMenuOpen)}
-              className="p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg"
+              className="p-2 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg rounded-full shadow-lg border border-white/20 dark:border-white/10"
             >
               <Settings2 size={20} className="text-gray-700 dark:text-gray-300" />
             </button>
@@ -159,12 +175,12 @@ export const CoachDashboard: React.FC = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-xl border dark:border-gray-600 origin-top-right"
+                  className="absolute right-0 mt-2 w-48 card-glass shadow-xl origin-top-right"
                 >
-                  <p className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b dark:border-gray-600">Changer de vue</p>
+                  <p className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-white/20 dark:border-white/10">Changer de vue</p>
                   <button
                     onClick={() => { setAthleteModalOpen(true); setMenuOpen(false); }}
-                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10"
                   >
                     <User size={16} /> Athlète
                   </button>
