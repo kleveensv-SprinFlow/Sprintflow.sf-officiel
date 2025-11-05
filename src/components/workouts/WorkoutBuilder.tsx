@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trash2, Dumbbell, Navigation, Pencil } from 'lucide-react';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
-import { WorkoutBlock } from '../../types/workout';
+import { WorkoutBlock, MuscuBlock } from '../../types/workout';
 
 export type { WorkoutBlock };
 
@@ -32,9 +32,13 @@ export const WorkoutBuilder: React.FC<WorkoutBuilderProps> = ({
       icon = <Navigation className="w-6 h-6 text-blue-500" />;
       summary = `${block.series}x ${block.reps}x ${block.distance}m`;
     } else if (block.type === 'musculation') {
-      title = block.exerciceNom || 'Musculation';
+      const muscuBlock = block as MuscuBlock;
+      title = muscuBlock.exerciceNom || 'Musculation';
       icon = <Dumbbell className="w-6 h-6 text-green-500" />;
-      summary = `${block.series}x ${block.reps} @ ${block.poids}kg`;
+      summary = `${muscuBlock.series}x ${muscuBlock.reps}`;
+      if (muscuBlock.poids !== null && muscuBlock.poids !== undefined && muscuBlock.poids > 0) {
+        summary += ` @ ${muscuBlock.poids}kg`;
+      }
     }
 
     return (
