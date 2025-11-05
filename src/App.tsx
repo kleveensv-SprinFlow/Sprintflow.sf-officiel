@@ -10,6 +10,7 @@ import { View } from './types';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRecords } from './hooks/useRecords';
+import { supabase } from './lib/supabase';
 
 // Lazy loading des composants lourds
 const AthletePlanning = lazy(() => import('./components/planning/AthletePlanning').then(m => ({ default: m.AthletePlanning || m.default })));
@@ -39,6 +40,44 @@ function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isFabOpen, setFabOpen] = useState(false);
   const [showForm, setShowForm] = useState<View | null>(null);
+  const [isConfirmingEmail, setIsConfirmingEmail] = useState(false);
+
+  useEffect(() => {
+    const handleEmailConfirmation = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
+      const refreshToken = hashParams.get('refresh_token');
+
+      if (type === 'signup' && accessToken && refreshToken) {
+        console.log('📧 Détection d\'une confirmation d\'email...');
+        setIsConfirmingEmail(true);
+
+        try {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            console.error('❌ Erreur lors de la confirmation:', error);
+            toast.error('Erreur lors de la confirmation de votre email. Veuillez réessayer.');
+          } else {
+            console.log('✅ Email confirmé avec succès!');
+            toast.success('Votre email a été confirmé avec succès! Bienvenue sur SprintFlow.');
+            window.history.replaceState({}, document.title, '/');
+          }
+        } catch (err) {
+          console.error('❌ Exception lors de la confirmation:', err);
+          toast.error('Une erreur est survenue lors de la confirmation.');
+        } finally {
+          setIsConfirmingEmail(false);
+        }
+      }
+    };
+
+    handleEmailConfirmation();
+  }, []);
 
   useEffect(() => {
     const handleViewChange = (event: Event) => {
@@ -129,7 +168,7 @@ function App() {
     ) : null;
   };
 
-  if (loading) {
+  if (loading || isConfirmingEmail) {
     return <LoadingScreen />;
   }
 
