@@ -20,24 +20,19 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
 
   const { fetchJoinRequests, respondToRequest } = useGroups();
 
-  // Load coach information with data transformation
+  // Load coach information
   useEffect(() => {
     const loadCoachProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, prenom, nom, avatar_url, role')
+        .select('id, first_name, last_name, avatar_url, role')
         .eq('id', group.coach_id)
         .single();
-      
+
       if (error) {
         console.error("Erreur chargement profil coach:", error);
       } else if (data) {
-        // Transform data to match frontend expectations
-        setCoachProfile({
-          ...data,
-          first_name: data.prenom,
-          last_name: data.nom,
-        });
+        setCoachProfile(data);
       }
     };
     loadCoachProfile();
