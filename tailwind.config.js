@@ -8,7 +8,7 @@ export default {
       colors: {
         'sprintflow-blue': '#00B8FF',
         
-        // Light Mode Palette
+        // Light Mode Palette (inchangée)
         light: {
           background: '#F9F9F9',
           card: '#FFFFFF',
@@ -17,19 +17,18 @@ export default {
           label: '#666666',
         },
         
-        // Dark Mode Palette
+        // Dark Mode Palette (MISE À JOUR)
         dark: {
-          background: '#121212',
-          card: 'rgba(20, 20, 20, 0.8)',
-          text: '#E0E0E0',
-          title: '#FFFFFF',
-          label: '#A0A0A0',
+          background: '#0F172A', // Fond bleu nuit très sombre
+          card: '#1E293B',       // Cartes plus claires pour le contraste
+          text: '#F1F5F9',        // Texte unifié en blanc cassé
+          title: '#F1F5F9',       // -- (unifié)
+          label: '#F1F5F9',       // -- (unifié)
         },
       },
       
       // 2. Font Family
       fontFamily: {
-        // Set Manrope as the default sans-serif font
         sans: ['Manrope', 'sans-serif'],
       },
       
@@ -37,16 +36,16 @@ export default {
       fontSize: {
         'micro': ['12px', '16px'],
         'label': ['14px', '20px'],
-        'base': ['16px', '24px'], // Corresponds to 'Texte normal / Body'
+        'base': ['16px', '24px'],
         'h3': ['22px', '28px'],
         'h2': ['28px', '36px'],
         'h1': ['36px', '44px'],
       },
       
-      // 4. Box Shadows for Cards
+      // 4. Box Shadows for Cards (MISE À JOUR)
       boxShadow: {
         'card-light': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'card-dark': '0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
+        'card-dark': '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2)', // Ombre douce pour le mode sombre
         'button-glow': '0 0 12px 0 #00B8FF',
       },
 
