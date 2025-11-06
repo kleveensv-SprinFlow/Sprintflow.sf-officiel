@@ -11,12 +11,14 @@ import { SaveTemplateModal } from './SaveTemplateModal';
 import { TemplateSelectionModal } from './TemplateSelectionModal';
 
 interface NewWorkoutFormProps {
+  userRole: 'coach' | 'athlete';
   onSave: (payload: {
     tag_seance: string;
     blocs: WorkoutBlock[];
     type: 'guidé' | 'manuscrit' | 'modèle';
     notes?: string;
     templateName?: string;
+    workoutId?: string;
   }) => Promise<void>;
   onCancel: () => void;
   initialData?: {
@@ -28,10 +30,12 @@ interface NewWorkoutFormProps {
   };
 }
 
-export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutFormProps) {
+export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewWorkoutFormProps) {
+  const isAthlete = userRole === 'athlete';
+  const isCompletingWorkout = isAthlete && !!initialData?.id;
   const [tagSeance, setTagSeance] = useState<string | null>(initialData?.tag_seance || null);
   const [blocks, setBlocks] = useState<WorkoutBlock[]>(initialData?.blocs || []);
-  const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit' | 'modèle'>(initialData?.type || 'guidé');
+  const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit' | 'modèle'>(initialData?.type || (isAthlete ? 'guidé' : 'modèle'));
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [saving, setSaving] = useState(false);
   const [isCustomModalOpen, setCustomModalOpen] = useState(false);
@@ -57,7 +61,11 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     const blockToEdit = blocks.find(b => b.id === id);
     if (blockToEdit) {
       setEditingBlockId(id);
-      setAddingBlockType(blockToEdit.type as 'course' | 'musculation');
+      if (isAthlete) {
+        setAddingBlockType(null);
+      } else {
+        setAddingBlockType(blockToEdit.type as 'course' | 'musculation');
+      }
     }
   };
 
@@ -67,6 +75,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   };
 
   const handleRemoveBlock = (id: string) => {
+    if (isCompletingWorkout) return;
     setBlocks(prev => prev.filter(block => block.id !== id));
   };
   
@@ -80,14 +89,13 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   };
 
   const handleSelectTemplate = (template: WorkoutTemplate) => {
-    setTagSeance('aerobie'); // Exemple
-    setBlocks([
-      { id: '1', type: 'course', series: 2, reps: 5, distance: 500, restBetweenReps: '01:30', restBetweenSeries: '03:00' },
-      { id: '2', type: 'musculation', exerciceId: 'xyz', exerciceNom: 'Squat', series: 3, reps: 8, poids: 80, restTime: '02:00' }
-    ]);
-    setNotes('Chargé depuis le modèle: ' + template.name);
+    if (template.workout_data) {
+      setTagSeance(template.workout_data.tag_seance || null);
+      setBlocks(template.workout_data.blocs || []);
+      setNotes(template.workout_data.notes || '');
+      setWorkoutType(template.workout_data.type || 'guidé');
+    }
     setTemplateSelectionOpen(false);
-    setWorkoutType('modèle');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,7 +110,13 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
     }
     setSaving(true);
     try {
-      await onSave({ tag_seance: tagSeance, type: workoutType, notes, blocs });
+      await onSave({
+        tag_seance: tagSeance,
+        type: workoutType,
+        notes,
+        blocs,
+        workoutId: initialData?.id
+      });
     } finally {
       setSaving(false);
     }
@@ -110,6 +124,7 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
   
   const isFormActive = !!addingBlockType || !!editingBlockId;
   const editingBlockData = useMemo(() => editingBlockId ? blocks.find(b => b.id === editingBlockId) : undefined, [editingBlockId, blocks]);
+  const modalTitle = isCompletingWorkout ? 'Entrer mes performances' : (initialData?.id ? 'Modifier la séance' : 'Nouvelle séance');
 
   return (
     <>
@@ -121,29 +136,45 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
           className="card-glass shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
         >
           <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{initialData?.id ? 'Modifier la séance' : 'Nouvelle séance'}</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{modalTitle}</h2>
             <button onClick={onCancel} className="p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl transition-colors"><X className="w-6 h-6 text-gray-700 dark:text-gray-300" /></button>
           </div>
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
-            <WorkoutTypeSelector selectedType={tagSeance} onSelectType={setTagSeance} onOpenCustomModal={() => setCustomModalOpen(true)} />
+            <WorkoutTypeSelector selectedType={tagSeance} onSelectType={setTagSeance} onOpenCustomModal={() => setCustomModalOpen(true)} disabled={isCompletingWorkout} />
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Méthode de création</label>
-              <div className="flex items-center p-1 rounded-xl bg-gray-200/80 dark:bg-gray-900/80">
-                <button type="button" onClick={() => setWorkoutType('guidé')} className={`w-full py-2 px-3 rounded-lg text-sm font-semibold transition-all ${workoutType === 'guidé' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}>Guidée</button>
-                <button type="button" onClick={() => setWorkoutType('manuscrit')} className={`w-full py-2 px-3 rounded-lg text-sm font-semibold transition-all ${workoutType === 'manuscrit' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}>Manuscrite</button>
-                <button type="button" onClick={() => setTemplateSelectionOpen(true)} className={`w-full py-2 px-3 rounded-lg text-sm font-semibold transition-all ${workoutType === 'modèle' ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-white shadow' : 'text-gray-600 dark:text-gray-400'}`}>Modèle</button>
+            {!isAthlete && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Méthode de création</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button type="button" onClick={() => setWorkoutType('guidé')} className={`py-2 px-3 rounded-lg text-sm transition-all ${workoutType === 'guidé' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>Guidée</button>
+                  <button type="button" onClick={() => setWorkoutType('manuscrit')} className={`py-2 px-3 rounded-lg text-sm transition-all ${workoutType === 'manuscrit' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>Manuscrite</button>
+                  <button type="button" onClick={() => setTemplateSelectionOpen(true)} className={`py-2 px-3 rounded-lg text-sm transition-all ${workoutType === 'modèle' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>Modèle</button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {isAthlete && !isCompletingWorkout && (
+              <button type="button" onClick={() => setTemplateSelectionOpen(true)} className="w-full py-2 px-3 rounded-lg text-sm bg-blue-500 text-white">Charger un modèle</button>
+            )}
 
             {workoutType !== 'manuscrit' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contenu de la séance *</label>
-                <div className="flex gap-2 mb-4">
-                  <button type="button" onClick={() => setAddingBlockType('course')} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg font-semibold shadow hover:bg-primary-700 transition-colors"><Navigation size={16}/>Course</button>
-                  <button type="button" onClick={() => setAddingBlockType('musculation')} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-semibold shadow hover:bg-green-700 transition-colors"><Dumbbell size={16}/>Muscu</button>
-                </div>
-                <WorkoutBuilder blocks={blocks} onChange={handleUpdateBlocks} onRemoveBlock={handleRemoveBlock} onEditBlock={handleEditBlock} isAddingOrEditing={isFormActive} />
+                {!isCompletingWorkout && (
+                  <div className="flex gap-2 mb-4">
+                    <button type="button" onClick={() => setAddingBlockType('course')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Navigation size={16}/>Course</button>
+                    <button type="button" onClick={() => setAddingBlockType('musculation')} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Dumbbell size={16}/>Muscu</button>
+                  </div>
+                )}
+                <WorkoutBuilder
+                  blocks={blocks}
+                  onChange={handleUpdateBlocks}
+                  onRemoveBlock={handleRemoveBlock}
+                  onEditBlock={handleEditBlock}
+                  isAddingOrEditing={isFormActive}
+                  isReadOnly={isCompletingWorkout}
+                  userRole={userRole}
+                />
               </div>
             )}
 
@@ -161,10 +192,10 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
                 )}
               </AnimatePresence>
               <div className="flex flex-wrap gap-3 justify-end">
-                <button type="button" onClick={() => setSaveTemplateModalOpen(true)} className="px-4 py-2 border border-primary-500 text-primary-500 rounded-lg flex items-center gap-2 font-semibold hover:bg-primary-500/10 transition-colors"><Bookmark size={16}/>Sauver modèle</button>
+                {!isAthlete && <button type="button" onClick={() => setSaveTemplateModalOpen(true)} className="px-4 py-2 border rounded-lg flex items-center gap-2"><Bookmark size={16}/>Sauver modèle</button>}
                 <div className="flex-grow flex gap-3">
-                    <button type="button" onClick={onCancel} className="w-full px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Annuler</button>
-                    <button type="submit" disabled={saving} className="w-full bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors shadow-lg">{saving ? '...' : 'Enregistrer'}</button>
+                    <button type="button" onClick={onCancel} className="w-full px-6 py-3 border rounded-xl">Annuler</button>
+                    <button type="submit" disabled={saving} className="w-full bg-blue-500 text-white px-6 py-3 rounded-xl">{saving ? '...' : (isCompletingWorkout ? 'Terminer la séance' : 'Enregistrer')}</button>
                 </div>
               </div>
             </div>
@@ -177,12 +208,14 @@ export function NewWorkoutForm({ onSave, onCancel, initialData }: NewWorkoutForm
         onSave={handleUpsertBlock}
         onCancel={handleCancelForm}
         initialData={editingBlockData?.type === 'course' ? editingBlockData as CourseBlock : undefined}
+        userRole={userRole}
       />
-      <MuscuBlockForm 
+      <MuscuBlockForm
         isOpen={addingBlockType === 'musculation' || (!!editingBlockId && editingBlockData?.type === 'musculation')}
         onSave={handleUpsertBlock}
         onCancel={handleCancelForm}
         initialData={editingBlockData?.type === 'musculation' ? editingBlockData as MuscuBlock : undefined}
+        userRole={userRole}
       />
       
       <AnimatePresence>

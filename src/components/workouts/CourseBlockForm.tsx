@@ -3,19 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TimePicker from '../common/TimePicker';
 import PickerWheel from '../common/PickerWheel';
 import { CourseBlock, WorkoutBlock } from '../../types/workout';
+import { ChronoInput } from './ChronoInput';
 
 interface CourseBlockFormProps {
   onSave: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
   onCancel: () => void;
   initialData?: CourseBlock;
   isOpen: boolean;
+  userRole: 'coach' | 'athlete';
 }
 
 const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
 const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
 const distanceValues = Array.from({ length: 200 }, (_, i) => (i + 1) * 50);
 
-const defaultState: Omit<CourseBlock, 'id'> = {
+const defaultState: Omit<CourseBlock, 'id' | 'chronos'> = {
   type: 'course',
   series: 1,
   reps: 1,
@@ -24,20 +26,79 @@ const defaultState: Omit<CourseBlock, 'id'> = {
   restBetweenSeries: '05:00',
 };
 
-export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCancel, initialData, isOpen }) => {
-  const [block, setBlock] = useState(initialData || defaultState);
+export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCancel, initialData, isOpen, userRole }) => {
+  const [block, setBlock] = useState(initialData || { ...defaultState, chronos: [] });
+  const isAthlete = userRole === 'athlete';
 
   useEffect(() => {
-    setBlock(initialData || defaultState);
-  }, [initialData, isOpen]);
+    const data = initialData || { ...defaultState, chronos: [] };
+    if (isAthlete && (!data.chronos || data.chronos.length !== data.series || data.chronos[0]?.length !== data.reps)) {
+      const newChronos = Array(data.series).fill(null).map(() => Array(data.reps).fill(null));
+      setBlock({ ...data, chronos: newChronos });
+    } else {
+      setBlock(data);
+    }
+  }, [initialData, isOpen, isAthlete]);
 
   const updateBlock = (updatedFields: Partial<Omit<CourseBlock, 'id'>>) => {
     setBlock(prev => ({ ...prev, ...updatedFields }));
   };
 
+  const handleChronoChange = (serieIndex: number, repIndex: number, value: number | null) => {
+    const newChronos = [...(block.chronos || [])];
+    if (!newChronos[serieIndex]) {
+      newChronos[serieIndex] = [];
+    }
+    newChronos[serieIndex][repIndex] = value;
+    updateBlock({ chronos: newChronos });
+  };
+
   const handleValidate = () => {
     onSave(block);
   };
+
+  const renderCoachForm = () => (
+    <>
+      <div className="grid grid-cols-2 gap-4">
+        <PickerWheel label="Séries" values={seriesValues} initialValue={block.series} onChange={(val) => updateBlock({ series: val })} />
+        <PickerWheel label="Répétitions" values={repsValues} initialValue={block.reps} onChange={(val) => updateBlock({ reps: val })} />
+      </div>
+      <PickerWheel label="Distance" values={distanceValues} initialValue={block.distance} onChange={(val) => updateBlock({ distance: val })} suffix="m" />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-center text-gray-700 dark:text-gray-300 mb-2">Repos Répétitions</label>
+          <TimePicker initialTime={block.restBetweenReps} onChange={(val) => updateBlock({ restBetweenReps: val })} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-center text-gray-700 dark:text-gray-300 mb-2">Repos Séries</label>
+          <TimePicker initialTime={block.restBetweenSeries} onChange={(val) => updateBlock({ restBetweenSeries: val })} />
+        </div>
+      </div>
+    </>
+  );
+
+  const renderAthleteForm = () => (
+    <div className="space-y-4">
+      <div className="text-center font-semibold">{block.series} x {block.reps} x {block.distance}m</div>
+      <div className="max-h-60 overflow-y-auto space-y-3 p-1">
+        {Array.from({ length: block.series }).map((_, serieIndex) => (
+          <div key={serieIndex} className="p-2 border rounded-md dark:border-gray-600">
+            <h4 className="font-medium text-sm mb-2">Série {serieIndex + 1}</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: block.reps }).map((_, repIndex) => (
+                <ChronoInput
+                  key={repIndex}
+                  label={`Rep ${repIndex + 1}`}
+                  value={block.chronos?.[serieIndex]?.[repIndex] || null}
+                  onChange={(val) => handleChronoChange(serieIndex, repIndex, val)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <AnimatePresence>
@@ -58,26 +119,14 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
           >
             <div className="space-y-6 p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                {initialData ? 'Modifier le bloc Course' : 'Ajouter un bloc Course'}
+                {isAthlete ? 'Saisir les chronos' : (initialData ? 'Modifier le bloc Course' : 'Ajouter un bloc Course')}
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <PickerWheel label="Séries" values={seriesValues} initialValue={block.series} onChange={(val) => updateBlock({ series: val })} />
-                <PickerWheel label="Répétitions" values={repsValues} initialValue={block.reps} onChange={(val) => updateBlock({ reps: val })} />
-              </div>
-              <PickerWheel label="Distance" values={distanceValues} initialValue={block.distance} onChange={(val) => updateBlock({ distance: val })} suffix="m" />
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-center text-gray-700 dark:text-gray-300 mb-2">Repos Répétitions</label>
-                  <TimePicker initialTime={block.restBetweenReps} onChange={(val) => updateBlock({ restBetweenReps: val })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-center text-gray-700 dark:text-gray-300 mb-2">Repos Séries</label>
-                  <TimePicker initialTime={block.restBetweenSeries} onChange={(val) => updateBlock({ restBetweenSeries: val })} />
-                </div>
-              </div>
+
+              {isAthlete ? renderAthleteForm() : renderCoachForm()}
+
               <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" onClick={handleValidate} className="flex-1 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium">
-                  {initialData ? 'Modifier' : 'Ajouter'}
+                  {isAthlete ? 'Valider les chronos' : (initialData ? 'Modifier' : 'Ajouter')}
                 </button>
                 <button type="button" onClick={onCancel} className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-medium">
                   Annuler

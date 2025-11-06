@@ -159,10 +159,35 @@ function App() {
     try {
       await saveRecord(record);
       toast.success('Record enregistré avec succès !');
-      setShowForm(null);
+      closeForm();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du record:', error);
       toast.error('Erreur lors de la sauvegarde du record');
+    }
+  };
+
+  const handleSaveWorkout = async (workoutData: any) => {
+    try {
+      if (workoutData.workoutId) {
+        await completeWorkout(workoutData.workoutId, {
+          workout_data: { blocs: workoutData.blocs },
+          notes: workoutData.notes,
+          rpe: 5,
+        });
+        toast.success('Performances enregistrées !');
+      } else {
+        await createCompletedWorkout({
+          tag_seance: workoutData.tag_seance,
+          type: workoutData.type,
+          notes: workoutData.notes,
+          blocs: workoutData.blocs,
+        });
+        toast.success('Nouvelle séance enregistrée !');
+      }
+      closeForm();
+    } catch (error: any) {
+      console.error("Erreur lors de la sauvegarde de la séance:", error);
+      toast.error(`Erreur: ${error.message}`);
     }
   };
 
@@ -170,15 +195,30 @@ function App() {
     const formComponent = (() => {
       switch (showForm) {
         case 'add-workout':
-          return <NewWorkoutForm onSave={() => setShowForm(null)} onCancel={() => setShowForm(null)} />;
+          const initialData = workoutToComplete ? {
+            id: workoutToComplete.id,
+            tag_seance: workoutToComplete.tag_seance,
+            blocs: workoutToComplete.planned_data.blocs,
+            type: workoutToComplete.type,
+            notes: workoutToComplete.notes
+          } : undefined;
+
+          return (
+            <NewWorkoutForm
+              userRole={profile?.role as 'athlete' | 'coach'}
+              onSave={handleSaveWorkout}
+              onCancel={closeForm}
+              initialData={initialData}
+            />
+          );
         case 'add-record':
-          return <RecordsForm records={records} onSave={handleSaveRecord} onCancel={() => setShowForm(null)} />;
+          return <RecordsForm records={records} onSave={handleSaveRecord} onCancel={closeForm} />;
         case 'add-food':
-          return <FoodSearchModal onClose={() => setShowForm(null)} onFoodSelected={() => setShowForm(null)} />;
+          return <FoodSearchModal onClose={closeForm} onFoodSelected={closeForm} />;
         case 'sleep':
-          return <SleepForm onClose={() => setShowForm(null)} />;
+          return <SleepForm onClose={closeForm} />;
         case 'share-performance':
-          return <ShareView onClose={() => setShowForm(null)} />;
+          return <ShareView onClose={closeForm} />;
         default:
           return null;
       }
