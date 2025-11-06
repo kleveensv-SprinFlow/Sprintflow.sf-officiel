@@ -1,14 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'media', // Uses the OS setting (light/dark)
+  darkMode: 'media',
   theme: {
     extend: {
-      // 1. Brand Colors defined from the brief
       colors: {
         'sprintflow-blue': '#00B8FF',
         
-        // Light Mode Palette (inchangée)
         light: {
           background: '#F9F9F9',
           card: '#FFFFFF',
@@ -19,20 +17,18 @@ export default {
         
         // Dark Mode Palette (MISE À JOUR)
         dark: {
-          background: '#0F172A', // Fond bleu nuit très sombre
-          card: '#1E293B',       // Cartes plus claires pour le contraste
-          text: '#F1F5F9',        // Texte unifié en blanc cassé
-          title: '#F1F5F9',       // -- (unifié)
-          label: '#F1F5F9',       // -- (unifié)
+          background: '#0F172A', // Fond bleu nuit (inchangé)
+          card: '#334155',       // Cartes plus claires pour plus de contraste
+          text: '#F1F5F9',
+          title: '#F1F5F9',
+          label: '#F1F5F9',
         },
       },
       
-      // 2. Font Family
       fontFamily: {
         sans: ['Manrope', 'sans-serif'],
       },
       
-      // 3. Typographic Scale (Font size and Line height)
       fontSize: {
         'micro': ['12px', '16px'],
         'label': ['14px', '20px'],
@@ -42,14 +38,13 @@ export default {
         'h1': ['36px', '44px'],
       },
       
-      // 4. Box Shadows for Cards (MISE À JOUR)
+      // Box Shadows for Cards (MISE À JOUR)
       boxShadow: {
         'card-light': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'card-dark': '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2)', // Ombre douce pour le mode sombre
+        'card-dark': '0 10px 20px -5px rgba(0, 0, 0, 0.4)', // Ombre plus forte et plus diffuse
         'button-glow': '0 0 12px 0 #00B8FF',
       },
 
-      // 5. Animations & Keyframes
       keyframes: {
         'fadeIn-slideUp': {
           'from': { opacity: '0', transform: 'translateY(5px)' },
