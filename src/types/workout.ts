@@ -6,6 +6,7 @@ export interface CourseBlock {
   distance: number;
   restBetweenReps: string;
   restBetweenSeries: string;
+  chronos?: (number | null)[][];
 }
 
 export interface MuscuBlock {
@@ -15,8 +16,9 @@ export interface MuscuBlock {
   exerciceNom: string;
   series: number;
   reps: number;
-  poids: number;
+  poids: number | null;
   restTime: string;
+  charges?: (number | null)[][];
 }
 
 export type WorkoutBlock = CourseBlock | MuscuBlock;

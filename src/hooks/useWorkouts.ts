@@ -153,6 +153,38 @@ export function useWorkouts(selection?: Selection) {
     setWorkouts(prev => prev.filter(w => w.id !== workoutId));
   };
 
+  const createCompletedWorkout = async (
+    workoutData: {
+      tag_seance: string;
+      type: 'guidé' | 'manuscrit';
+      notes?: string;
+      blocs: any[];
+    }
+  ) => {
+    if (!user) throw new Error('Action non autorisée.');
+
+    const { data, error } = await supabase
+      .from('workouts')
+      .insert({
+        user_id: user.id,
+        coach_id: null,
+        status: 'completed',
+        date: new Date().toISOString().split('T')[0],
+        tag_seance: workoutData.tag_seance,
+        type: workoutData.type,
+        notes: workoutData.notes,
+        workout_data: { blocs: workoutData.blocs },
+        planned_data: workoutData.type === 'guidé' ? { blocs: workoutData.blocs } : undefined,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (data) {
+      setWorkouts(prev => [data, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    }
+    return data;
+  };
 
   return {
     workouts,
@@ -160,6 +192,7 @@ export function useWorkouts(selection?: Selection) {
     error,
     planWorkout,
     completeWorkout,
+    createCompletedWorkout,
     updateWorkout,
     deleteWorkout,
     refresh: fetchWorkouts,
