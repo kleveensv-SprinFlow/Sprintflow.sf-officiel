@@ -244,7 +244,7 @@ function App() {
   }
 
   return (
-    <div className="bg-transparent min-h-screen">
+    <div className="bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text min-h-screen">
       <Header
         userRole={profile?.role as 'athlete' | 'coach'}
         isDashboard={currentView === 'dashboard'}
