@@ -260,7 +260,7 @@ function App() {
         onClose={() => setMenuOpen(false)}
         onNavigate={handleMenuNavigate}
       />
-      <main className="pb-20">
+      <main className="pb-20 px-4">
         {renderView()}
       </main>
       {showForm && (
