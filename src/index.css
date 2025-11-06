@@ -1,252 +1,89 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap');
+/* 1. Import Manrope Font with specified weights */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap');
 
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* 2. Base layer and animations */
 @layer base {
-  :root {
-    --primary-50: #eff6ff;
-    --primary-100: #dbeafe;
-    --primary-200: #bfdbfe;
-    --primary-300: #93c5fd;
-    --primary-400: #60a5fa;
-    --primary-500: #3b82f6;
-    --primary-600: #2563eb;
-    --primary-700: #1d4ed8;
-    --primary-800: #1e40af;
-    --primary-900: #1e3a8a;
-
-    --secondary-50: #fef3c7;
-    --secondary-100: #fde68a;
-    --secondary-200: #fcd34d;
-    --secondary-300: #fbbf24;
-    --secondary-400: #f59e0b;
-    --secondary-500: #d97706;
-    --secondary-600: #b45309;
-    --secondary-700: #92400e;
-    --secondary-800: #78350f;
-    --secondary-900: #451a03;
-
-    --accent-50: #fce7f3;
-    --accent-100: #fbcfe8;
-    --accent-200: #f9a8d4;
-    --accent-300: #f472b6;
-    --accent-400: #ec4899;
-    --accent-500: #db2777;
-    --accent-600: #be185d;
-    --accent-700: #9f1239;
-    --accent-800: #831843;
-    --accent-900: #500724;
+  body {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Base background colors will be applied via Tailwind classes on a root element */
   }
 
-  .dark {
-    --primary-50: #1e3a8a;
-    --primary-100: #1e40af;
-    --primary-200: #1d4ed8;
-    --primary-300: #2563eb;
-    --primary-400: #3b82f6;
-    --primary-500: #60a5fa;
-    --primary-600: #93c5fd;
-    --primary-700: #bfdbfe;
-    --primary-800: #dbeafe;
-    --primary-900: #eff6ff;
-  }
-}
-
-@layer utilities {
-  .text-primary-500 {
-    color: var(--primary-500);
+  /* Define custom animations based on the brief */
+  @keyframes fadeIn-slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
-  .bg-primary-500 {
-    background-color: var(--primary-500);
-  }
-
-  .bg-primary-600 {
-    background-color: var(--primary-600);
-  }
-
-  .text-secondary-500 {
-    color: var(--secondary-500);
-  }
-
-  .bg-secondary-500 {
-    background-color: var(--secondary-500);
-  }
-
-  .bg-secondary-600 {
-    background-color: var(--secondary-600);
-  }
-
-  .text-accent-500 {
-    color: var(--accent-500);
-  }
-
-  .bg-accent-500 {
-    background-color: var(--accent-500);
-  }
-
-  .bg-accent-600 {
-    background-color: var(--accent-600);
-  }
-
-  .font-system {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    sans-serif;
-  }
-
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent;
-  }
-
-  .card-glass {
-    background-color: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    @apply rounded-2xl border border-white/20;
-  }
-
-  .dark .card-glass {
-    background-color: rgba(30, 41, 59, 0.6); /* slate-800 with alpha */
-    @apply border-white/10;
-  }
-
-  .text-shadow-light {
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
   }
   
-  .text-shadow-dark {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  }
-
-  .btn-primary {
-    @apply px-6 py-3 font-semibold rounded-lg text-white transition-all duration-300 ease-in-out shadow-lg;
-    @apply border border-white/20;
-    background-image: linear-gradient(to right, var(--primary-500) 0%, var(--accent-500) 75%, var(--primary-500) 100%);
-    background-size: 200% auto;
-  }
-
-  .btn-primary:hover {
-    background-position: right center;
-    transform: scale(1.03);
-  }
-
-  .btn-primary:active {
-    transform: scale(0.98);
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    80% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+/* 3. Custom utility classes */
+@layer utilities {
+  /* Utility for the subtle background shimmer effect */
+  .bg-shimmer-dark {
+    background: #121212 linear-gradient(
+      to right,
+      #121212 0%,
+      rgba(0, 184, 255, 0.03) 50%,
+      #121212 100%
+    );
+    background-size: 2000px 100%;
+    animation: shimmer 15s linear infinite;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .bg-shimmer-light {
+    background: #F9F9F9 linear-gradient(
+      to right,
+      #F9F9F9 0%,
+      rgba(0, 184, 255, 0.08) 50%,
+      #F9F9F9 100%
+    );
+    background-size: 2000px 100%;
+    animation: shimmer 15s linear infinite;
   }
-}
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  position: relative;
-  background-color: #f9fafb; /* bg-gray-50 */
-  color: #1f2937; /* text-gray-800 */
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #111827; /* bg-gray-900 */
-    color: #f9fafb; /* text-gray-50 */
+  /* Hide scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
-.bg-primary-100 {
-  background-color: var(--primary-100);
-}
-
-.text-primary-700 {
-  color: var(--primary-700);
-}
-
-.border-primary-200 {
-  border-color: var(--primary-200);
-}
-
-.bg-secondary-100 {
-  background-color: var(--secondary-100);
-}
-
-.text-secondary-700 {
-  color: var(--secondary-700);
-}
-
-.border-secondary-200 {
-  border-color: var(--secondary-200);
-}
-
-/* CSS pour masquer la barre de défilement */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-@keyframes spin-float {
-  0% {
-    transform: translateY(0) rotateY(0deg);
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
-  50% {
-    transform: translateY(-10px) rotateY(180deg);
-  }
-  100% {
-    transform: translateY(0) rotateY(360deg);
-  }
-}
-
-.animate-spin-float {
-  animation: spin-float 4s ease-in-out infinite;
-  transform-style: preserve-3d;
-}
-
-@keyframes progress-bar {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-.animate-progress-bar {
-  animation: progress-bar 2s linear infinite;
-  background-image: linear-gradient(
-    90deg,
-    transparent,
-    var(--primary-500),
-    transparent
-  );
-  background-size: 200% 100%;
 }
