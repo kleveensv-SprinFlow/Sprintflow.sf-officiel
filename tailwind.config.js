@@ -18,7 +18,7 @@ export default {
         // Dark Mode Palette (MISE À JOUR)
         dark: {
           background: '#0F172A', // Fond bleu nuit
-          card: '#1E293B',       // Carte très légèrement plus claire
+          card: '#334155',       // Carte nettement plus claire pour un contraste évident
           text: '#F1F5F9',
           title: '#F1F5F9',
           label: '#F1F5F9',
@@ -41,7 +41,7 @@ export default {
       // Box Shadows for Cards (MISE À JOUR)
       boxShadow: {
         'card-light': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'card-dark': '0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6)', // Ombre bien plus prononcée
+        'card-dark': '0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6)', // Ombre bien prononcée
         'button-glow': '0 0 12px 0 #00B8FF',
       },
 
