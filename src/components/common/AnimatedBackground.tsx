@@ -46,7 +46,7 @@ const AnimatedBackground = () => {
       ></div>
       {/* Dark theme background */}
       <div
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0 dark:opacity-40"
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0 dark:opacity-100"
         style={{ backgroundImage: "url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fdc-Sombre.png')" }}
       ></div>
 
