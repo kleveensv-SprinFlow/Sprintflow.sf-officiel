@@ -14,6 +14,7 @@ import { useRecords } from './hooks/useRecords';
 import { supabase } from './lib/supabase';
 
 // Lazy loading des composants lourds
+const Styleguide = lazy(() => import('./pages/Styleguide'));
 const AthletePlanning = lazy(() => import('./components/planning/AthletePlanning').then(m => ({ default: m.AthletePlanning || m.default })));
 const CoachPlanning = lazy(() => import('./components/planning/CoachPlanning').then(m => ({ default: m.CoachPlanning || m.default })));
 const NutritionModule = lazy(() => import('./components/nutrition/NutritionModule').then(m => ({ default: m.NutritionModule || m.default })));
@@ -230,6 +231,10 @@ function App() {
       </Suspense>
     ) : null;
   };
+
+  if (window.location.pathname === '/styleguide') {
+    return <Suspense fallback={<LoadingScreen />}><Styleguide /></Suspense>;
+  }
 
   if (loading || isConfirmingEmail) {
     return <LoadingScreen />;
