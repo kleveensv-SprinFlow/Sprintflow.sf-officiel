@@ -1,5 +1,5 @@
 import React from 'react';
-import Card from './Card';
+import Card from './Card.tsx';
 import Button from './Button';
 import { H2, Label, P } from './Typography';
 
