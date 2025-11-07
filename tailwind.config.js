@@ -49,6 +49,10 @@ export default {
         'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
         'card-dark': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2)',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+        'neumorphic-extrude': '3px 3px 6px #b8b9be, -3px -3px 6px #ffffff',
+        'neumorphic-press': 'inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff',
+        'neumorphic-extrude-dark': '3px 3px 6px #1a232f, -3px -3px 6px #242f3f',
+        'neumorphic-press-dark': 'inset 3px 3px 6px #1a232f, inset -3px -3px 6px #242f3f',
       },
       fontFamily: {
         manrope: ['Manrope', 'sans-serif'],
