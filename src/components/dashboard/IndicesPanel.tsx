@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, PanInfo, AnimatePresence, useMotionValue, animate, useTransform } from 'framer-motion';
 import { Loader2, Zap, HeartPulse } from 'lucide-react';
-import AdviceModal from './AdviceModal';
-import CircularProgress from '../common/CircularProgress';
+import AdviceModal from './AdviceModal.tsx'; // Correction ici
+import CircularProgress from '../common/CircularProgress.tsx'; // Correction ici
 
 interface AnimatedScoreCircleProps {
   score: number | null;
