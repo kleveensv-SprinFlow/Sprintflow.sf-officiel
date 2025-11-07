@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { X } from 'lucide-react';
-import { CardCarousel } from './common/CardCarousel.tsx';
-import Toast from './common/Toast';
+import { CardCarousel } from './common/CardCarousel'; // Importation corrigée, sans .tsx
+import { Toast } from './common/Toast'; // Importation corrigée
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
