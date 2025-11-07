@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { EXERCICES_REFERENCE } from '../../data/exercices_reference';
 
 export interface ExerciceReference {
   id: string;
@@ -10,11 +9,11 @@ export interface ExerciceReference {
   creator_id?: string;
 }
 
-const mapSupabaseToExerciceReference = (item: any): ExerciceReference => ({
+const mapSupabaseToExerciceReference = (item: any, type: 'reference' | 'custom'): ExerciceReference => ({
   id: item.id,
   nom: item.nom,
   categorie: item.categorie,
-  type: 'custom',
+  type,
   creator_id: item.creator_id,
 });
 
@@ -27,24 +26,37 @@ export const useExercices = () => {
     setLoading(true);
     setError(null);
     try {
+      // Fetch reference exercises from Supabase
+      const { data: referenceExercicesData, error: referenceError } = await supabase
+        .from('exercices_reference')
+        .select('id, nom, categorie')
+        .order('nom');
+
+      if (referenceError) {
+        throw new Error(`Erreur lors du chargement des exercices de référence: ${referenceError.message}`);
+      }
+
+      // Fetch custom exercises from Supabase
       const { data: customExercicesData, error: customError } = await supabase
         .from('exercices_personnalises')
         .select('id, nom, categorie, creator_id');
 
       if (customError) {
-        throw new Error(`Erreur Supabase: ${customError.message}`);
+        throw new Error(`Erreur lors du chargement des exercices personnalisés: ${customError.message}`);
       }
-      
-      const customExercices = customExercicesData.map(mapSupabaseToExerciceReference);
-      
-      const allExercices = [...EXERCICES_REFERENCE, ...customExercices];
+
+      const referenceExercices = (referenceExercicesData || []).map((item) => mapSupabaseToExerciceReference(item, 'reference'));
+      const customExercices = (customExercicesData || []).map((item) => mapSupabaseToExerciceReference(item, 'custom'));
+
+      // Combine reference and custom exercises
+      const allExercices = [...referenceExercices, ...customExercices];
 
       setExercices(allExercices);
 
     } catch (err: any) {
       console.error("Erreur lors du chargement des exercices:", err);
       setError(err.message || 'Une erreur est survenue.');
-      setExercices(EXERCICES_REFERENCE);
+      setExercices([]);
     } finally {
       setLoading(false);
     }
