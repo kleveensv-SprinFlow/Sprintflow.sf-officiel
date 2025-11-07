@@ -10,54 +10,44 @@ interface TiroirDeSelectionProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectExercice: (exercice: ExerciceReference) => void;
-  exercices: ExerciceReference[]; // Gardé pour la prop, mais on utilisera celui du hook interne
   title: string;
 }
 
 export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, onClose, onSelectExercice, title }) => {
-  const { profile } = useAuth();
-  const { exercices, loadExercices } = useExercices(); // On utilise le hook ici
+  const { user } = useAuth();
+  const { exercices, loadExercices } = useExercices();
   const [selectedCategory, setSelectedCategory] = useState<string | null>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCustomFormOpen, setIsCustomFormOpen] = useState(false);
 
-  const myExercices = useMemo(() => 
-    exercices.filter(ex => ex.type === 'custom' && ex.coach_id === profile?.id)
-  , [exercices, profile]);
-
   const categories = useMemo(() => {
     const cats = [...EXERCISE_CATEGORIES];
-    if (myExercices.length > 0) {
+    // Show "Mes exercices" if there are any custom exercises available to the user
+    if (exercices.some(ex => ex.type === 'custom')) {
       cats.unshift({ key: 'custom', label: 'Mes exercices', emoji: '⭐' });
     }
     cats.unshift({ key: 'all', label: 'Tout', emoji: '🗂️' });
     return cats;
-  }, [myExercices]);
+  }, [exercices]);
 
   const filteredExercices = useMemo(() => {
     let list = exercices;
 
     if (selectedCategory === 'custom') {
-      list = myExercices;
+      list = exercices.filter(ex => ex.type === 'custom');
     } else if (selectedCategory && selectedCategory !== 'all') {
-      // Afficher les exercices custom dans leur catégorie d'origine aussi
-      list = exercices.filter(ex => 
-        ex.categorie === selectedCategory || 
-        (ex.type === 'custom' && ex.categorie === selectedCategory)
-      );
+      list = exercices.filter(ex => ex.categorie === selectedCategory);
     }
 
     if (searchTerm) {
       list = list.filter(ex => ex.nom.toLowerCase().includes(searchTerm.toLowerCase()));
     }
 
-    // Deduplicate and sort
     const uniqueList = Array.from(new Map(list.map(item => [item.id, item])).values());
     return uniqueList.sort((a, b) => a.nom.localeCompare(b.nom));
 
-  }, [exercices, selectedCategory, searchTerm, myExercices]);
+  }, [exercices, selectedCategory, searchTerm]);
   
-  // Reset search and category when opening
   useEffect(() => {
     if (isOpen) {
       setSearchTerm('');
@@ -66,7 +56,7 @@ export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, on
   }, [isOpen]);
 
   const handleSaveCustom = () => {
-    loadExercices(); // On rafraîchit la liste
+    loadExercices();
     setIsCustomFormOpen(false);
   };
 
@@ -139,17 +129,15 @@ export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, on
                 ))}
               </div>
 
-              {profile?.role === 'coach' && (
-                <footer className="p-4 border-t dark:border-gray-700 flex-shrink-0">
-                  <button
-                    onClick={() => setIsCustomFormOpen(true)}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold"
-                  >
-                    <PlusCircle size={20} />
-                    Créer un exercice
-                  </button>
-                </footer>
-              )}
+              <footer className="p-4 border-t dark:border-gray-700 flex-shrink-0">
+                <button
+                  onClick={() => setIsCustomFormOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold"
+                >
+                  <PlusCircle size={20} />
+                  Créer un exercice
+                </button>
+              </footer>
             </motion.div>
           </motion.div>
         )}
