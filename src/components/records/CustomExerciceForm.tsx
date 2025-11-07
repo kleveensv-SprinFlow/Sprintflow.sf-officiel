@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
-import { useExercices, ExerciceReference } from '../../hooks/useExercices';
+import { EXERCISE_CATEGORIES } from '../../data/categories';
+import { X } from 'lucide-react';
 
 interface CustomExerciceFormProps {
   onSave: () => void;
@@ -9,123 +11,112 @@ interface CustomExerciceFormProps {
 
 export const CustomExerciceForm: React.FC<CustomExerciceFormProps> = ({ onSave, onCancel }) => {
   const [nom, setNom] = useState('');
-  const [qualiteCible, setQualiteCible] = useState('Force Maximale');
-  const [exerciceReferenceId, setExerciceReferenceId] = useState('');
+  const [categorie, setCategorie] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadingSubmit, setLoadingSubmit] = useState(false);
-  
-  const { exercices, loading: loadingExercices } = useExercices();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nom || !qualiteCible || !exerciceReferenceId) {
+    if (!nom || !categorie) {
       setError('Veuillez remplir tous les champs.');
       return;
     }
-    setLoadingSubmit(true);
+
+    setIsSaving(true);
     setError(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        setError('Vous devez être connecté pour créer un exercice.');
-        setLoadingSubmit(false);
-        return;
-    }
+    const { error: insertError } = await supabase
+      .from('exercices_personnalises')
+      .insert({ nom, categorie });
 
-    try {
-      const { error: insertError } = await supabase.from('exercices_personnalises').insert({
-        nom,
-        qualite_cible: qualiteCible,
-        exercice_reference_id: exerciceReferenceId,
-        athlete_id: user.id,
-      });
+    setIsSaving(false);
 
-      if (insertError) throw insertError;
-      
+    if (insertError) {
+      console.error("Erreur lors de la création de l'exercice:", insertError);
+      setError(insertError.message);
+    } else {
       onSave();
-
-    } catch (err) {
-      console.error("Error creating custom exercice:", err);
-      setError((err as Error).message);
-    } finally {
-      setLoadingSubmit(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-          Créer un exercice personnalisé
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Nom de l'exercice
-            </label>
-            <input
-              type="text"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
-              placeholder="Ex: Squat Zercher"
-              required
-            />
-          </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md"
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md m-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Créer un exercice</h3>
+                <button onClick={onCancel} className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <X size={20} />
+                </button>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Qualité Cible
-            </label>
-            <select
-              value={qualiteCible}
-              onChange={(e) => setQualiteCible(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
-            >
-              <option>Force Maximale</option>
-              <option>Explosivité</option>
-              {/* Add other qualities if needed in the future */}
-            </select>
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="nom" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nom de l'exercice
+              </label>
+              <input
+                id="nom"
+                type="text"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                className="w-full h-11 px-4 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"
+                placeholder="Ex: Squat"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Exercice de Référence (pour le barème)
-            </label>
-            <select
-              value={exerciceReferenceId}
-              onChange={(e) => setExerciceReferenceId(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
-              required
-              disabled={loadingExercices}
-            >
-              <option value="">Sélectionner un exercice de référence</option>
-              {exercices.map((ex) => (
-                <option key={ex.id} value={ex.id}>{ex.nom_fr}</option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label htmlFor="categorie" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Catégorie
+              </label>
+              <select
+                id="categorie"
+                value={categorie}
+                onChange={(e) => setCategorie(e.target.value)}
+                className="w-full h-11 px-4 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg"
+                required
+              >
+                <option value="" disabled>Sélectionner une catégorie</option>
+                {EXERCISE_CATEGORIES.map(cat => (
+                  <option key={cat.key} value={cat.key}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
-          <div className="flex space-x-3 pt-6">
-            <button
-              type="submit"
-              disabled={loadingSubmit}
-              className="flex-1 bg-accent-500 hover:bg-accent-600 px-4 py-3 rounded-lg text-white font-medium transition-all duration-200"
-            >
-              {loadingSubmit ? 'Création...' : 'Créer l\'exercice'}
-            </button>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300"
-            >
-              Annuler
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="w-full px-6 py-3 border-2 rounded-xl"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-xl disabled:opacity-50"
+              >
+                {isSaving ? 'Création...' : 'Créer'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 };
