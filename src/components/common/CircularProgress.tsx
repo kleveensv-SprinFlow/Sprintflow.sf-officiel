@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 
 interface CircularProgressProps {
   value: number; // 0-100
@@ -7,18 +8,23 @@ interface CircularProgressProps {
 }
 
 const CircularProgress: React.FC<CircularProgressProps> = ({ value, strokeWidth = 10, className }) => {
-  const size = 100; // Use a fixed viewBox size for consistent calculations
+  const size = 100;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference;
 
-  const getGradientColor = (percentage: number) => {
-    const p = Math.max(0, Math.min(100, percentage));
-    const hue = (p / 100) * 120; // 0 (red) to 120 (green)
-    return `hsl(${hue}, 80%, 50%)`;
-  };
+  const motionValue = useMotionValue(0);
+  
+  const strokeDashoffset = useTransform(motionValue, [0, 100], [circumference, 0]);
+  const color = useTransform(motionValue, [0, 50, 100], ["#FF5733", "#FFC300", "#66DE93"]); // Red -> Yellow -> Green
 
-  const color = getGradientColor(value);
+  useEffect(() => {
+    const controls = animate(motionValue, value, {
+      duration: 1.5,
+      delay: 0.5,
+      ease: "easeOut",
+    });
+    return controls.stop;
+  }, [value, motionValue]);
 
   return (
     <svg viewBox={`0 0 ${size} ${size}`} className={`${className} -rotate-90`}>
@@ -31,7 +37,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, strokeWidth 
         fill="transparent"
         stroke="currentColor"
       />
-      <circle
+      <motion.circle
         cx={size / 2}
         cy={size / 2}
         r={radius}
@@ -39,10 +45,9 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ value, strokeWidth 
         fill="transparent"
         stroke={color}
         strokeDasharray={circumference}
-        strokeDashoffset={offset}
         strokeLinecap="round"
         style={{
-          transition: 'stroke-dashoffset 0.5s ease-out, stroke 0.5s ease-out',
+          strokeDashoffset: strokeDashoffset,
         }}
       />
     </svg>
