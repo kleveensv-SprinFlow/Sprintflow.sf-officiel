@@ -78,46 +78,4 @@ export default {
 
       // --- 7. NOUVELLES ANIMATIONS ---
       keyframes: {
-        'fadeIn-slideUp': { from: { opacity: '0', transform: 'translateY(5px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
-        'pop-in': { '0%': { opacity: '0', transform: 'scale(0.95)' }, '80%': { opacity: '1', transform: 'scale(1.02)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
-        
-        // Pour les squelettes de chargement "premium"
-        'shimmer': { '100%': { transform: 'translateX(100%)' } },
-        
-        // Pour l'arrière-plan animé "vivant"
-        'breathe': { '0%, 100%': { opacity: '0.8' }, '50%': { opacity: '1' } },
-      },
-      animation: {
-        'fade-in-slide-up': 'fadeIn-slideUp 300ms ease-out forwards',
-        'pop-in': 'pop-in 200ms ease-out forwards',
-        'shimmer': 'shimmer 1.5s infinite linear',
-        'breathe': 'breathe 4s ease-in-out infinite',
-      },
-    },
-  },
-  
-  plugins: [
-    // Plugin officiel pour de plus beaux formulaires par défaut
-    require('@tailwindcss/forms'),
-    
-    // Plugin custom pour ajouter des utilitaires "premium"
-    plugin(function({ addUtilities }) {
-      addUtilities({
-        // Utilitaire pour le Glassmorphism (à appliquer sur 'card-glass')
-        '.glass-effect': {
-          'backdrop-filter': 'blur(12px)',
-          '-webkit-backdrop-filter': 'blur(12px)',
-          'border': '1px solid var(--tw-color-card-glass-border)',
-        },
-        
-        // Utilitaire pour un texte "premium"
-        '.text-shadow': {
-          'text-shadow': '0 1px 3px rgba(0, 0, 0, 0.1)',
-        },
-        '.text-shadow-dark': {
-          'text-shadow': '0 1px 3px rgba(0, 0, 0, 0.4)',
-        }
-      })
-    })
-  ],
-};
+        'fadeIn-slideUp': { from:
