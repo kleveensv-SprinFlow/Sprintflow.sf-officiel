@@ -1,10 +1,11 @@
+// src/components/dashboard/DailyPlanCarousel.tsx
 import React, { useState } from 'react';
 import { format, addDays, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Workout } from '../../types';
-import { DayCard } from '../common/DayCard'; // CHEMIN D'IMPORTATION CORRIGÉ
-import { groupWorkoutsByDay } from '../../utils/groupWorkoutsByDay';
+import { DayCard } from '../common/DayCard';
+import { groupWorkoutsByDay } from '../../utils/groupWorkoutsByDay'; // CHEMIN FINAL
 
 interface DailyPlanCarouselProps {
   workouts: Workout[];
