@@ -1,170 +1,78 @@
 // src/components/dashboard/StrengthRecordsCarousel.tsx
-import React, { useMemo, useState, useRef } from 'react';
+import React from 'react';
 import { useRecords } from '../../hooks/useRecords';
-import { useBodycomp } from '../../hooks/useBodycomp';
-import useAuth from '../../hooks/useAuth';
-import { motion, useSpring, useMotionValue } from 'framer-motion';
-import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { Record } from '../../types';
-import { Loader, ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
+import { GenericCardCarousel } from '../common/GenericCardCarousel';
+import { RecordCard } from '../common/RecordCard';
+import useAuth from '../../hooks/useAuth';
 
 interface StrengthRecordsCarouselProps {
-  onNavigate: () => void;
-  userId?: string;
+  onNavigate: (view: string) => void;
 }
 
-export const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = ({ onNavigate, userId }) => {
+export const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = ({ onNavigate }) => {
   const { user } = useAuth();
-  const { records, loading: recordsLoading } = useRecords(userId || user?.id);
-  const { lastWeight, loading: weightLoading } = useBodycomp(userId || user?.id);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const { records, loading } = useRecords(user?.id);
 
-  const containerRef = useRef<HTMLUListElement>(null);
-  const itemsRef = useRef<(HTMLLIElement | null)[]>([]);
+  const strengthRecords = records.filter(r => r.type === 'exercise' || r.unit === 'kg');
 
-  const offsetX = useMotionValue(0);
-  const animatedX = useSpring(offsetX, { damping: 20, stiffness: 150 });
+  const getLatestUniqueRecords = (allRecords: Record[]): Record[] => {
+    if (!allRecords || allRecords.length === 0) {
+      return [];
+    }
 
-  const strengthRecords = useMemo(() => {
-    if (!records || !lastWeight) return [];
-    const exerciseRecords = records.filter(r => r.type === 'exercise');
-    const grouped: { [key:string]: Record[] } = {};
-    exerciseRecords.forEach(record => {
-      if (!grouped[record.name]) {
-        grouped[record.name] = [];
+    const latestRecordsMap = new Map<string, Record>();
+    const sortedRecords = [...allRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    sortedRecords.forEach(record => {
+      if (!latestRecordsMap.has(record.exercise_name)) {
+        latestRecordsMap.set(record.exercise_name, record);
       }
-      grouped[record.name].push(record);
     });
-    return Object.values(grouped).map(group => {
-      group.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const bestRecord = group.reduce((best, current) => current.value > best.value ? current : best, group[0]);
-      return {
-        name: group[0].name,
-        best: bestRecord.value,
-        ratio: (bestRecord.value / lastWeight.weight).toFixed(2),
-        history: group.map((r, index) => ({ date: index, value: r.value })),
-      };
-    });
-  }, [records, lastWeight]);
 
-  const scrollPrev = () => {
-    if (activeIndex > 0) {
-      const newIndex = activeIndex - 1;
-      const newOffset = (itemsRef.current.slice(0, newIndex).reduce((acc, item) => acc + (item?.offsetWidth || 0), 0)) * -1;
-      offsetX.set(newOffset);
-      setActiveIndex(newIndex);
-    }
+    return Array.from(latestRecordsMap.values());
   };
 
-  const scrollNext = () => {
-    if (activeIndex < strengthRecords.length - 1) {
-      const newIndex = activeIndex + 1;
-      const newOffset = (itemsRef.current.slice(0, newIndex).reduce((acc, item) => acc + (item?.offsetWidth || 0), 0)) * -1;
-      offsetX.set(newOffset);
-      setActiveIndex(newIndex);
-    }
+  const latestUniqueStrengthRecords = getLatestUniqueRecords(strengthRecords);
+
+  const handleCardClick = () => {
+    onNavigate('records');
   };
 
-  if (recordsLoading || weightLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader className="animate-spin text-secondary-500" size={32} />
+      <div className="py-4">
+        <h2 className="text-xl font-bold text-light-title dark:text-dark-title px-4 mb-4">Mes Records de Force</h2>
+        <div className="px-4">
+          <div className="h-[180px] w-full bg-light-card dark:bg-dark-card/50 rounded-2xl animate-pulse" />
+        </div>
       </div>
     );
   }
-
-  if (strengthRecords.length === 0) {
-    return (
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
-          Mes Records de Force
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 text-center">Aucun record de force trouvé.</p>
-      </div>
-    );
-  }
-
+  
   return (
-    <div className="relative w-full">
-      <div className="flex justify-between items-center mb-4 px-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Records de Force</h2>
-        <button
-          onClick={onNavigate}
-          className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          Voir tout <ChevronRight className="w-4 h-4 ml-1" />
-        </button>
+    <div className="py-4">
+      <div className="flex justify-between items-center px-4 mb-4">
+        <h2 className="text-xl font-bold text-light-title dark:text-dark-title">Records de Force</h2>
       </div>
-      <div className="relative h-64 w-full overflow-hidden">
-        <motion.ul
-            ref={containerRef}
-            className="flex items-center h-full"
-            style={{ x: animatedX }}
-        >
-          {strengthRecords.map((record, index) => {
-            const active = index === activeIndex;
-            return (
-              <motion.li
-                layout
-                key={record.name}
-                ref={(el) => (itemsRef.current[index] = el)}
-                className="group relative shrink-0 select-none px-2 h-full"
-                animate={{ scale: active ? 1 : 0.8, opacity: active ? 1 : 0.5 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                style={{ flexBasis: '50%', perspective: '1000px' }}
-              >
-                <motion.div 
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 h-full flex flex-col justify-between"
-                  whileHover={{ scale: 1.05 }}
-                  style={{ transformStyle: 'preserve-3d' }}
-                >
-                  <div>
-                    <h3 className="text-md font-semibold text-center truncate">{record.name}</h3>
-                    <p className="text-2xl font-bold text-secondary-500 text-center my-1">
-                      {record.best}kg
-                    </p>
-                    <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-                      <Repeat size={14} className="inline-block mr-1" />
-                      {record.ratio}x PdC
-                    </p>
-                  </div>
-                  <div className="h-24 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={record.history}>
-                        <Tooltip
-                          formatter={(value: number) => [`${value}kg`, "Poids"]}
-                          labelFormatter={() => ''}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#f97316"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </motion.div>
-              </motion.li>
-            )
-          })}
-        </motion.ul>
-      </div>
-      <button
-        onClick={scrollPrev}
-        disabled={activeIndex === 0}
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full disabled:opacity-30 z-10"
-      >
-        <ChevronLeft size={24} />
-      </button>
-      <button
-        onClick={scrollNext}
-        disabled={activeIndex === strengthRecords.length - 1}
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 text-white p-2 rounded-full disabled:opacity-30 z-10"
-      >
-        <ChevronRight size={24} />
-      </button>
+
+      {latestUniqueStrengthRecords.length === 0 ? (
+        <div className="px-4">
+            <div className="text-center p-8 bg-light-glass dark:bg-dark-glass rounded-2xl">
+                <p className="text-light-label dark:text-dark-label">Aucun record de force n'a encore été enregistré.</p>
+            </div>
+        </div>
+      ) : (
+        <GenericCardCarousel>
+          {latestUniqueStrengthRecords.map((record) => (
+            <RecordCard 
+              key={record.id} 
+              record={record} 
+              onClick={handleCardClick}
+            />
+          ))}
+        </GenericCardCarousel>
+      )}
     </div>
   );
 };
