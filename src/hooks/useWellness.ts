@@ -2,15 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 export type WellnessLog = {
-  id: string;
+  id?: string;
   user_id: string;
   date: string;
-  sleep_quality: number;
-  stress_level: number;
-  muscle_fatigue: number;
+  ressenti_sommeil: number | null;
+  stress_level: number | null;
+  muscle_fatigue: number | null;
+  heure_coucher: string | null;
+  heure_lever: string | null;
+  duree_sommeil_calculee: number | null;
   rpe_difficulty?: number;
   workout_id?: string;
 };
+
+export type DailyCheckinData = Omit<WellnessLog, 'id' | 'user_id' | 'rpe_difficulty' | 'workout_id'>;
 
 export const useWellness = (userId: string | undefined) => {
   const [wellnessData, setWellnessData] = useState<WellnessLog[]>([]);
@@ -29,7 +34,7 @@ export const useWellness = (userId: string | undefined) => {
         .order('date', { ascending: false });
 
       if (error) throw error;
-      setWellnessData(data || []);
+      setWellnessData(data as WellnessLog[] || []);
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -37,8 +42,8 @@ export const useWellness = (userId: string | undefined) => {
     }
   }, [userId]);
 
-  const logDailyCheckin = async (log: Omit<WellnessLog, 'id' | 'user_id' | 'rpe_difficulty' | 'workout_id' | 'created_at'>) => {
-    if (!userId) return;
+  const logDailyCheckin = async (log: DailyCheckinData) => {
+    if (!userId) throw new Error("User not found");
     setLoading(true);
     setError(null);
     try {
@@ -50,6 +55,31 @@ export const useWellness = (userId: string | undefined) => {
       await fetchWellnessData();
     } catch (err) {
       setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getIndiceForme = async (data: {
+    heure_coucher: string,
+    heure_lever: string,
+    ressenti_sommeil: number,
+    stress_level: number,
+    muscle_fatigue: number
+  }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data: indiceData, error } = await supabase.functions.invoke('get_indice_forme', {
+        body: data,
+      });
+
+      if (error) throw error;
+      return indiceData;
+    } catch (err) {
+      setError(err as Error);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -60,7 +90,6 @@ export const useWellness = (userId: string | undefined) => {
     setLoading(true);
     setError(null);
     try {
-      // We need to find the wellness log for today and update it
       const today = new Date().toISOString().split('T')[0];
       const { error } = await supabase
         .from('wellness_log')
@@ -83,5 +112,13 @@ export const useWellness = (userId: string | undefined) => {
     }
   }, [userId, fetchWellnessData]);
 
-  return { wellnessData, loading, error, logDailyCheckin, logRpe, refresh: fetchWellnessData };
+  return {
+    wellnessData,
+    loading,
+    error,
+    logDailyCheckin,
+    getIndiceForme,
+    logRpe,
+    refresh: fetchWellnessData
+  };
 };

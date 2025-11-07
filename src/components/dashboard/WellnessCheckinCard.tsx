@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useWellness } from '../../hooks/useWellness';
 import useAuth from '../../hooks/useAuth';
+import { SemanticSlider } from '../common/SemanticSlider';
 
 interface WellnessCheckinCardProps {
   onClose?: () => void;
@@ -8,31 +9,59 @@ interface WellnessCheckinCardProps {
 
 export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClose }) => {
   const { user } = useAuth();
-  const { wellnessData, logDailyCheckin, loading } = useWellness(user?.id);
-  const [sleep, setSleep] = useState(3);
-  const [stress, setStress] = useState(3);
-  const [fatigue, setFatigue] = useState(3);
+  const { wellnessData, logDailyCheckin, getIndiceForme, loading } = useWellness(user?.id);
+
+  const [bedtime, setBedtime] = useState('22:30');
+  const [wakeupTime, setWakeupTime] = useState('07:00');
+  const [sleepQuality, setSleepQuality] = useState(75);
+  const [stress, setStress] = useState(25);
+  const [fatigue, setFatigue] = useState(25);
   const [submitted, setSubmitted] = useState(false);
 
-  if (!user) {
-    return null;
-  }
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-  const today = new Date().toISOString().split('T')[0];
-  const hasSubmittedToday = wellnessData?.some(log => log.date === today && log.sleep_quality) || false;
+  const hasSubmittedToday = useMemo(() =>
+    wellnessData?.some(log => log.date === today && log.ressenti_sommeil !== null) || false,
+    [wellnessData, today]
+  );
 
-  if (hasSubmittedToday || submitted) {
-    return null;
-  }
+  if (!user) return null;
+  if (hasSubmittedToday || submitted) return null;
 
   const handleSubmit = async () => {
     try {
-      await logDailyCheckin({
+      const bedtimeDate = new Date(`${today}T${bedtime}:00`);
+      const wakeupDate = new Date(`${today}T${wakeupTime}:00`);
+
+      if (wakeupDate < bedtimeDate) {
+        wakeupDate.setDate(wakeupDate.getDate() + 1);
+      }
+
+      const bedtimeISO = bedtimeDate.toISOString();
+      const wakeupISO = wakeupDate.toISOString();
+
+      const checkinData = {
         date: today,
-        sleep_quality: sleep,
+        heure_coucher: bedtimeISO,
+        heure_lever: wakeupISO,
+        duree_sommeil_calculee: Math.round((wakeupDate.getTime() - bedtimeDate.getTime()) / (1000 * 60)),
+        ressenti_sommeil: sleepQuality,
         stress_level: stress,
         muscle_fatigue: fatigue,
+      };
+
+      await logDailyCheckin(checkinData);
+
+      const indiceResult = await getIndiceForme({
+          heure_coucher: bedtimeISO,
+          heure_lever: wakeupISO,
+          ressenti_sommeil: sleepQuality,
+          stress_level: stress,
+          muscle_fatigue: fatigue
       });
+
+      console.log('Indice de Forme calculé:', indiceResult);
+
       setSubmitted(true);
       if (onClose) onClose();
     } catch (error) {
@@ -42,39 +71,66 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
 
   return (
     <div className="p-4">
-      <h3 className="font-bold text-xl text-center mb-4 text-light-title dark:text-dark-title">Check-in du jour</h3>
-      <div className="space-y-4">
+      <h3 className="font-bold text-xl text-center mb-6 text-light-title dark:text-dark-title">Check-in du matin</h3>
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
         <div>
-          <label className="block text-sm font-medium text-light-label dark:text-dark-label">Qualité du sommeil</label>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Mauvaise</span>
-            <span>Excellente</span>
-          </div>
-          <input type="range" min="1" max="5" value={sleep} onChange={e => setSleep(parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
+          <label className="block text-sm font-medium text-light-label dark:text-dark-label mb-2">
+            Heure de coucher
+          </label>
+          <input
+            type="time"
+            value={bedtime}
+            onChange={(e) => setBedtime(e.target.value)}
+            className="w-full h-11 px-4 bg-white dark:bg-gray-700 rounded-xl text-base font-medium text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+          />
         </div>
         <div>
-          <label className="block text-sm font-medium text-light-label dark:text-dark-label">Niveau de stress</label>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Faible</span>
-            <span>Élevé</span>
-          </div>
-          <input type="range" min="1" max="5" value={stress} onChange={e => setStress(parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-light-label dark:text-dark-label">Fatigue musculaire</label>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Faible</span>
-            <span>Élevée</span>
-          </div>
-          <input type="range" min="1" max="5" value={fatigue} onChange={e => setFatigue(parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
+          <label className="block text-sm font-medium text-light-label dark:text-dark-label mb-2">
+            Heure de lever
+          </label>
+          <input
+            type="time"
+            value={wakeupTime}
+            onChange={(e) => setWakeupTime(e.target.value)}
+            className="w-full h-11 px-4 bg-white dark:bg-gray-700 rounded-xl text-base font-medium text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+          />
         </div>
       </div>
-      <button 
-        onClick={handleSubmit} 
+
+      <div className="space-y-6">
+        <SemanticSlider
+          label="Ressenti du sommeil"
+          minLabel="Mauvais"
+          maxLabel="Excellent"
+          value={sleepQuality}
+          onChange={setSleepQuality}
+          inverted={false}
+        />
+        <SemanticSlider
+          label="Niveau de stress"
+          minLabel="Faible"
+          maxLabel="Élevé"
+          value={stress}
+          onChange={setStress}
+          inverted={true}
+        />
+        <SemanticSlider
+          label="Fatigue musculaire"
+          minLabel="Faible"
+          maxLabel="Élevée"
+          value={fatigue}
+          onChange={setFatigue}
+          inverted={true}
+        />
+      </div>
+
+      <button
+        onClick={handleSubmit}
         disabled={loading}
-        className="mt-6 w-full bg-primary-500 hover:bg-primary-600 text-white font-bold py-3 rounded-lg transition-colors duration-300 disabled:opacity-50"
+        className="mt-8 w-full bg-primary-500 hover:bg-primary-600 text-white font-bold py-3 rounded-lg transition-colors duration-300 disabled:opacity-50"
       >
-        {loading ? 'Enregistrement...' : 'Enregistrer'}
+        {loading ? 'Calcul en cours...' : 'Valider mon état de forme'}
       </button>
     </div>
   );
