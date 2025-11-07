@@ -1,31 +1,79 @@
+// src/components/dashboard/AthleteRecordsCarousel.tsx
 import React from 'react';
 import { useRecords } from '../../hooks/useRecords';
 import { Record } from '../../types';
+import { CardCarousel } from '../common/CardCarousel';
+import { RecordCard } from '../common/RecordCard';
 
 interface AthleteRecordsCarouselProps {
-  onNavigate: () => void;
+  onNavigate: (view: string) => void;
 }
 
 export const AthleteRecordsCarousel: React.FC<AthleteRecordsCarouselProps> = ({ onNavigate }) => {
   const { records, loading } = useRecords();
 
-  const latestRecords = records.slice(0, 5);
+  const getLatestUniqueRecords = (allRecords: Record[]): Record[] => {
+    if (!allRecords || allRecords.length === 0) {
+      return [];
+    }
+
+    const latestRecordsMap = new Map<string, Record>();
+
+    const sortedRecords = [...allRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    sortedRecords.forEach(record => {
+      if (!latestRecordsMap.has(record.exercise_name)) {
+        latestRecordsMap.set(record.exercise_name, record);
+      }
+    });
+
+    return Array.from(latestRecordsMap.values());
+  };
+
+  const latestUniqueRecords = getLatestUniqueRecords(records);
+
+  const handleCardClick = () => {
+    onNavigate('records');
+  };
+
+  if (loading) {
+    return (
+      <div className="py-4">
+        <h2 className="text-xl font-bold text-light-title dark:text-dark-title px-4 mb-4">Mes Records</h2>
+        <p className="px-4 text-light-label dark:text-dark-label">Chargement des records...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-lg p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-light-title dark:text-dark-title">Derniers Records</h2>
-        <button onClick={onNavigate} className="text-sm text-sprintflow-blue font-semibold">Voir tout</button>
+    <div className="py-4">
+      <div className="flex justify-between items-center px-4 mb-4">
+        <h2 className="text-xl font-bold text-light-title dark:text-dark-title">Mes Records</h2>
       </div>
-      {loading && <p>Chargement...</p>}
-      <div className="space-y-2">
-        {latestRecords.map((record: Record) => (
-          <div key={record.id} className="flex justify-between p-2 rounded-md bg-light-background dark:bg-dark-background">
-            <span className="font-semibold">{record.exercice_name}</span>
-            <span>{record.value} {record.unit}</span>
-          </div>
-        ))}
-      </div>
+
+      {latestUniqueRecords.length === 0 ? (
+        <div className="px-4">
+            <div className="text-center p-8 bg-light-glass dark:bg-dark-glass rounded-2xl">
+                <p className="text-light-label dark:text-dark-label">Aucun record n'a encore été enregistré.</p>
+                <button
+                    onClick={() => onNavigate('add-record')}
+                    className="mt-4 px-4 py-2 font-semibold rounded-lg text-white bg-sprintflow-blue hover:opacity-90 transition-all"
+                >
+                    Ajouter un record
+                </button>
+            </div>
+        </div>
+      ) : (
+        <CardCarousel>
+          {latestUniqueRecords.map((record) => (
+            <RecordCard 
+              key={record.id} 
+              record={record} 
+              onClick={handleCardClick}
+            />
+          ))}
+        </CardCarousel>
+      )}
     </div>
   );
 };
