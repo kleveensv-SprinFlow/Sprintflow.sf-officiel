@@ -1,97 +1,60 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { EXERCICES_REFERENCE } from '../../data/exercices_reference';
 
 export interface ExerciceReference {
   id: string;
   nom: string;
-  nom_alternatif: string[] | null;
   categorie: string;
-  groupe_exercice: string | null;
-  bareme_intermediaire: number | null;
-  bareme_avance: number | null;
-  bareme_elite: number | null;
-  description: string | null;
-  created_at: string;
+  type: 'reference' | 'custom';
+  coach_id?: string;
 }
 
-import { EXERCISE_CATEGORIES } from '../data/categories';
+const mapSupabaseToExerciceReference = (item: any): ExerciceReference => ({
+  id: item.id,
+  nom: item.nom,
+  categorie: item.categorie,
+  type: 'custom',
+  coach_id: item.coach_id,
+});
 
-// This is for backwards compatibility for now, we'll phase it out.
-export const CATEGORIES = Object.fromEntries(
-  EXERCISE_CATEGORIES.map(cat => [cat.key, cat.label])
-);
-
-export function useExercices() {
+export const useExercices = () => {
   const [exercices, setExercices] = useState<ExerciceReference[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadExercices();
-  }, []);
-
-  const loadExercices = async () => {
+  const loadExercices = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
-        .from('exercices_reference')
-        .select('*')
-        .order('nom');
+      // Fetch custom exercises from Supabase
+      const { data: customExercicesData, error: customError } = await supabase
+        .from('exercices_personnalises')
+        .select('id, nom, categorie, coach_id');
 
-      if (error) throw error;
-      setExercices(data || []);
-    } catch (error) {
-      console.error('Error loading exercices:', error);
+      if (customError) {
+        throw new Error(`Erreur Supabase: ${customError.message}`);
+      }
+      
+      const customExercices = customExercicesData.map(mapSupabaseToExerciceReference);
+      
+      // Combine reference and custom exercises
+      const allExercices = [...EXERCICES_REFERENCE, ...customExercices];
+
+      setExercices(allExercices);
+
+    } catch (err: any) {
+      console.error("Erreur lors du chargement des exercices:", err);
+      setError(err.message || 'Une erreur est survenue.');
+      setExercices(EXERCICES_REFERENCE); // Fallback to reference exercises
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const getExercicesByCategorie = (categorie: string) => {
-    return exercices.filter(ex => ex.categorie === categorie);
-  };
+  useEffect(() => {
+    loadExercices();
+  }, [loadExercices]);
 
-  const searchExercices = (query: string, categorie?: string) => {
-    const normalizedQuery = query.toLowerCase().trim();
-
-    let filtered = categorie
-      ? exercices.filter(ex => ex.categorie === categorie)
-      : exercices;
-
-    if (!normalizedQuery) return filtered;
-
-    const results = filtered.filter(ex => {
-      const matchesNom = ex.nom.toLowerCase().includes(normalizedQuery);
-      const matchesAlternatif = ex.nom_alternatif?.some(alt =>
-        alt.toLowerCase().includes(normalizedQuery)
-      );
-      return matchesNom || matchesAlternatif;
-    });
-
-    return results.sort((a, b) => {
-      const aStartsWith = a.nom.toLowerCase().startsWith(normalizedQuery);
-      const bStartsWith = b.nom.toLowerCase().startsWith(normalizedQuery);
-
-      if (aStartsWith && !bStartsWith) return -1;
-      if (!aStartsWith && bStartsWith) return 1;
-
-      return a.nom.localeCompare(b.nom);
-    });
-  };
-
-  const getExerciceById = (id: string) => {
-    return exercices.find(ex => ex.id === id);
-  };
-
-  // The calculateScore function is removed, as this logic is now on the backend.
-
-  return {
-    exercices,
-    categories: EXERCISE_CATEGORIES,
-    loading,
-    loadExercices,
-    getExercicesByCategorie,
-    searchExercices,
-    getExerciceById,
-  };
-}
-
-export default useExercices;
+  return { exercices, loading, error, loadExercices };
+};
