@@ -1,13 +1,11 @@
 // src/components/Auth.tsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { X } from 'lucide-react';
-import { CardCarousel } from './common/CardCarousel.tsx'; // MODIFICATION ICI
+import { CardCarousel } from './common/CardCarousel.tsx';
 import Toast from './common/Toast';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -44,7 +42,6 @@ export default function Auth() {
     setLoading(true);
     setError(null);
 
-    // Vérification des champs requis pour le rôle 'athlete'
     if (isSignUp && formData.sexe === 'athlete' && !formData.discipline) {
       setError("Veuillez sélectionner une discipline.");
       setLoading(false);
@@ -60,7 +57,7 @@ export default function Auth() {
           last_name: formData.last_name,
           role: formData.sexe === 'athlete' ? 'athlete' : 'coach',
           sexe: formData.sexe,
-          date_of_birth: formData.date_of_birth || null, // Envoyer null si vide
+          date_of_birth: formData.date_of_birth || null,
           discipline: formData.sexe === 'athlete' ? formData.discipline : null,
           role_specifique: formData.sexe !== 'athlete' ? formData.role_specifique : null,
           full_name: `${formData.first_name} ${formData.last_name}`,
@@ -201,7 +198,7 @@ export default function Auth() {
                   )}
                   {formData.sexe === 'athlete' && (
                     <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-400 mb-2">Discipline</g-emoji></label>
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Discipline</label>
                       <CardCarousel options={[{ value: 'sprint', label: 'Sprint' }, { value: 'haies', label: 'Haies' }, { value: 'sauts', label: 'Sauts' }, { value: 'lancers', label: 'Lancers' }, { value: 'demi-fond', label: 'Demi-fond / Fond' }, { value: 'marche', label: 'Marche' }, { value: 'combinees', label: 'Combinées' }]} selectedValue={formData.discipline} onSelect={value => setFormData(prev => ({ ...prev, discipline: value }))} />
                     </div>
                   )}
