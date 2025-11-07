@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { ChronoSelector } from './ChronoSelector';
 
 interface ChronoInputProps {
   label: string;
@@ -6,49 +8,52 @@ interface ChronoInputProps {
   onChange: (value: number | null) => void;
 }
 
-const formatTime = (time: number | null): string => {
-  if (time === null) return '';
-  const minutes = Math.floor(time / 60);
-  const seconds = Math.floor(time % 60);
-  const centiseconds = Math.round((time - Math.floor(time)) * 100);
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
-};
+const formatDisplayTime = (timeInSeconds: number | null): string => {
+  if (timeInSeconds === null) return 'mm:ss.cc';
+  const minutes = Math.floor(timeInSeconds / 60);
+  const seconds = Math.floor(timeInSeconds % 60);
+  const centiseconds = Math.round((timeInSeconds - (minutes * 60) - seconds) * 100);
 
-const parseTime = (str: string): number | null => {
-  const parts = str.split(/[:.]/);
-  if (parts.length !== 3) return null;
-  const [minutes, seconds, centiseconds] = parts.map(Number);
-  if (isNaN(minutes) || isNaN(seconds) || isNaN(centiseconds)) return null;
-  return minutes * 60 + seconds + centiseconds / 100;
+  const pad = (num: number) => num.toString().padStart(2, '0');
+
+  if (minutes > 0) {
+    return `${pad(minutes)}:${pad(seconds)}.${pad(centiseconds)}`;
+  }
+  return `${pad(seconds)}.${pad(centiseconds)}`;
 };
 
 export const ChronoInput: React.FC<ChronoInputProps> = ({ label, value, onChange }) => {
-  const [displayValue, setDisplayValue] = useState(formatTime(value));
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
-  useEffect(() => {
-    setDisplayValue(formatTime(value));
-  }, [value]);
-
-  const handleBlur = () => {
-    const numericValue = parseTime(displayValue);
-    onChange(numericValue);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDisplayValue(e.target.value);
+  const handleSelect = (newValue: number) => {
+    onChange(newValue);
+    setIsSelectorOpen(false);
   };
 
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 text-center">{label}</label>
-      <input
-        type="text"
-        value={displayValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        className="w-full mt-1 p-1.5 text-center bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
-        placeholder="mm:ss.cc"
-      />
+      <label className="block text-xs text-center text-gray-500 dark:text-gray-400">{label}</label>
+      <button
+        type="button"
+        onClick={() => setIsSelectorOpen(true)}
+        className={`w-full mt-1 p-1.5 text-center rounded-md border ${
+          value === null
+            ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-400'
+            : 'bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 font-semibold'
+        }`}
+      >
+        {formatDisplayTime(value)}
+      </button>
+
+      <AnimatePresence>
+        {isSelectorOpen && (
+          <ChronoSelector
+            initialValue={value}
+            onChange={handleSelect}
+            onClose={() => setIsSelectorOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
