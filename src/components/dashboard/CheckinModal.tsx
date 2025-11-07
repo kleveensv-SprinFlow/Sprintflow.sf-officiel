@@ -1,18 +1,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { WellnessCheckinCard } from './WellnessCheckinCard.tsx'; // Correction ici
+import { WellnessCheckinCard } from './WellnessCheckinCard.tsx';
 
 interface CheckinModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess: () => void;
 }
 
-export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose }) => {
+export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -21,7 +21,6 @@ export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose }) =
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
       />
 
-      {/* Modal */}
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: '0%' }}
@@ -30,7 +29,7 @@ export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose }) =
         className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-light-card dark:bg-dark-card rounded-t-2xl"
       >
         <div className="w-16 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4" />
-        <WellnessCheckinCard onClose={onClose} />
+        <WellnessCheckinCard onClose={onClose} onSuccess={onSuccess} />
       </motion.div>
     </>
   );
