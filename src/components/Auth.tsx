@@ -1,410 +1,276 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn, ArrowLeft, User, Briefcase, CheckCircle } from 'lucide-react';
+// src/components/Auth.tsx
+
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
-import { SelectionCard } from './common/SelectionCard';
-import { CardCarousel } from './common/CardCarousel';
+import { X } from 'lucide-react';
+import { CardCarousel } from './common/CardCarousel.tsx'; // MODIFICATION ICI
+import Toast from './common/Toast';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-const videoUrl = "https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/Fond-Video.mp4";
 
-const VideoBackground = () => (
-  <video
-    className="fixed top-0 left-0 w-full h-full object-cover"
-    src={videoUrl}
-    autoPlay
-    loop
-    muted
-    playsInline
-  />
-);
-
-interface AuthProps {
-  initialError?: string | null;
-}
-
-export default function Auth({ initialError }: AuthProps = {}) {
-  const { signIn, signUp, resendConfirmationEmail } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+export default function Auth() {
   const [loading, setLoading] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resendEmail, setResendEmail] = useState('');
-  const [resetSent, setResetSent] = useState(false);
-  const [resendSent, setResendSent] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(initialError || null);
-  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    role: 'athlète' as 'athlète' | 'encadrant',
-    role_specifique: '',
-    discipline: '',
+    first_name: '',
+    last_name: '',
     sexe: '',
-    date_de_naissance: '',
-    height: '',
+    date_of_birth: '',
+    discipline: 'sprint',
+    role_specifique: 'Coach',
   });
+  const [step, setStep] = useState(1);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
-    setAuthError(null);
-
-    try {
-      if (isLogin) {
-        await signIn(formData.email, formData.password);
-      } else {
-        if (formData.password !== formData.confirmPassword) {
-          throw new Error("Les mots de passe ne correspondent pas.");
-        }
-        if (formData.password.length < 6) {
-          throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
-        }
-
-        const result = await signUp(
-          formData.email,
-          formData.password,
-          {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            role: formData.role,
-            role_specifique: formData.role_specifique,
-            date_de_naissance: formData.date_de_naissance || null,
-            discipline: formData.discipline,
-            sexe: formData.sexe,
-            height: formData.height ? parseInt(formData.height, 10) : null,
-          }
-        );
-
-        if (result?.user && !result.session) {
-          setRegisteredEmail(formData.email);
-          setShowEmailConfirmation(true);
-        }
-      }
-    } catch (error: any) {
-      console.error('Erreur auth:', error);
-      setAuthError(error.message || 'Une erreur est survenue');
-    } finally {
-      setLoading(false);
-    }
+    setError(null);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) setError(error.message);
+    setLoading(false);
   };
 
-  const handlePasswordReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resetEmail.trim()) return;
+  const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (step === 1) {
+      setStep(2);
+      return;
+    }
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      setResetSent(true);
-    } catch (error: any) {
-      console.error('Erreur reset password:', error);
-      alert(error.message || "Erreur lors de l'envoi du lien de réinitialisation");
-    } finally {
+    setError(null);
+
+    // Vérification des champs requis pour le rôle 'athlete'
+    if (isSignUp && formData.sexe === 'athlete' && !formData.discipline) {
+      setError("Veuillez sélectionner une discipline.");
       setLoading(false);
+      return;
     }
-  };
 
-  const resetForgotPasswordState = () => {
-    setShowForgotPassword(false);
-    setResetSent(false);
-    setResetEmail('');
-  };
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          role: formData.sexe === 'athlete' ? 'athlete' : 'coach',
+          sexe: formData.sexe,
+          date_of_birth: formData.date_of_birth || null, // Envoyer null si vide
+          discipline: formData.sexe === 'athlete' ? formData.discipline : null,
+          role_specifique: formData.sexe !== 'athlete' ? formData.role_specifique : null,
+          full_name: `${formData.first_name} ${formData.last_name}`,
+        },
+      },
+    });
 
-  const handleResendConfirmation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resendEmail.trim()) return;
-    setLoading(true);
-    try {
-      await resendConfirmationEmail(resendEmail);
-      setResendSent(true);
-    } catch (error: any) {
-      console.error('Erreur renvoi confirmation:', error);
-      alert(error.message || "Erreur lors du renvoi de l'email de confirmation");
-    } finally {
-      setLoading(false);
+    if (error) {
+      setError(error.message);
+    } else if (data.user) {
+      toast.success("Compte créé avec succès ! Vous pouvez maintenant vous connecter.");
+      setIsSignUp(false);
+      setStep(1);
     }
+    setLoading(false);
   };
 
-  const resetResendState = () => {
-    setShowResendConfirmation(false);
-    setResendSent(false);
-    setResendEmail('');
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  if (showResendConfirmation) {
-    return (
-        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-auto bg-[#100f2b]">
-        <VideoBackground />
-        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 my-auto">
-            <div className="flex items-center mb-6">
-            <button
-                onClick={resetResendState}
-                className="absolute top-4 left-4 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-            >
-                <ArrowLeft className="w-5 h-5 text-white" />
-            </button>
-            <div className="w-full text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-white">Renvoyer l'email de confirmation</h1>
-            </div>
-            </div>
-
-            {!resendSent ? (
-            <>
-                <p className="text-white/80 text-center mb-6">
-                Entrez votre adresse email pour recevoir à nouveau l'email de confirmation.
-                </p>
-
-                <form onSubmit={handleResendConfirmation} className="space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                    Adresse email
-                    </label>
-                    <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
-                    <input
-                        type="email"
-                        value={resendEmail}
-                        onChange={(e) => setResendEmail(e.target.value)}
-                        required
-                        className="w-full pl-10 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                        placeholder="votre@email.com"
-                    />
-                    </div>
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={loading || !resendEmail.trim()}
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-800 disabled:opacity-50"
-                >
-                    {loading ? "Envoi..." : "Renvoyer l'email"}
-                </button>
-                </form>
-            </>
-            ) : (
-            <div className="text-center">
-                <h2 className="text-xl font-bold text-white mb-4">Email envoyé !</h2>
-                <p className="text-white/80 mb-6">
-                Un nouvel email de confirmation a été envoyé à <strong>{resendEmail}</strong>.
-                </p>
-                <button
-                onClick={resetResendState}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg"
-                >
-                Retour à la connexion
-                </button>
-            </div>
-            )}
+  const commonFields = (
+    <>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-400" htmlFor="first_name">
+            Prénom
+          </label>
+          <input
+            id="first_name"
+            className="w-full mt-1 p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+            type="text"
+            placeholder="Jean"
+            value={formData.first_name}
+            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+            required
+          />
         </div>
-        </div>
-    );
-  }
-
-  if (showForgotPassword) {
-    return (
-        <div className="relative min-h-screen flex items-center justify-center p-4 overflow-auto bg-[#100f2b]">
-        <VideoBackground />
-        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 my-auto">
-            <div className="flex items-center mb-6">
-            <button
-                onClick={resetForgotPasswordState}
-                className="absolute top-4 left-4 p-2 rounded-lg bg-white/10 hover:bg-white/20"
-            >
-                <ArrowLeft className="w-5 h-5 text-white" />
-            </button>
-            <div className="w-full text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-white">Mot de passe oublié</h1>
-            </div>
-            </div>
-
-            {!resetSent ? (
-            <>
-                <p className="text-white/80 text-center mb-6">
-                Entrez votre email pour recevoir un lien de réinitialisation.
-                </p>
-                <form onSubmit={handlePasswordReset} className="space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                    Adresse email
-                    </label>
-                    <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
-                    <input
-                        type="email"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        required
-                        className="w-full pl-10 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white"
-                        placeholder="votre@email.com"
-                    />
-                    </div>
-                </div>
-                <button
-                    type="submit"
-                    disabled={loading || !resetEmail.trim()}
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg"
-                >
-                    {loading ? "Envoi..." : "Envoyer le lien"}
-                </button>
-                </form>
-            </>
-            ) : (
-            <div className="text-center">
-                <h2 className="text-xl font-bold text-white mb-4">Email envoyé !</h2>
-                <p className="text-white/80 mb-6">
-                Un lien a été envoyé à <strong>{resetEmail}</strong>.
-                </p>
-                <button
-                onClick={resetForgotPasswordState}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg"
-                >
-                Retour
-                </button>
-            </div>
-            )}
-        </div>
-        </div>
-    );
-  }
-
-  if (showEmailConfirmation) {
-    return (
-      <div className="relative min-h-screen flex items-center justify-center p-4 overflow-auto bg-[#100f2b]">
-        <VideoBackground />
-        <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
-        <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 my-auto">
-          <div className="text-center">
-            <div className="w-20 h-20 mx-auto mb-6 bg-green-500 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-12 h-12 text-white" />
-            </div>
-            <h2 className="text-3xl font-bold text-white mb-4">Vérifiez votre email</h2>
-            <p className="text-white/90 mb-6 text-lg">
-              Un email de confirmation a été envoyé à <strong className="text-white">{registeredEmail}</strong>
-            </p>
-            <p className="text-white/80 mb-8">
-              Veuillez cliquer sur le lien dans l'email pour activer votre compte et vous connecter.
-            </p>
-            <button
-              onClick={() => {
-                setShowEmailConfirmation(false);
-                setIsLogin(true);
-              }}
-              className="w-full bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg font-medium transition-colors border border-white/30"
-            >
-              Retour à la connexion
-            </button>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-400" htmlFor="last_name">
+            Nom
+          </label>
+          <input
+            id="last_name"
+            className="w-full mt-1 p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+            type="text"
+            placeholder="Dupont"
+            value={formData.last_name}
+            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+            required
+          />
         </div>
       </div>
-    );
-  }
+      <div>
+        <label className="block text-sm font-medium text-gray-400" htmlFor="date_of_birth">
+          Date de naissance
+        </label>
+        <input
+          id="date_of_birth"
+          className="w-full mt-1 p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+          type="date"
+          value={formData.date_of_birth}
+          onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+        />
+      </div>
+    </>
+  );
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-auto bg-[#100f2b]">
-      <VideoBackground />
-      <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 backdrop-blur-md dark:backdrop-blur-sm"></div>
-      <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md dark:backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20 my-auto">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-4">
+      <Toast />
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white tracking-wider [text-shadow:0_2px_4px_rgba(0,0,0,0.6)] font-system">
-            Sprint<span className="text-blue-500">Flow</span>
-          </h1>
-          <p className="text-white/80 mt-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
-            {isLogin ? 'Connectez-vous à votre compte' : 'Créez votre compte'}
-          </p>
+          <h1 className="text-4xl font-bold mb-2">SprintFlow</h1>
+          <p className="text-gray-400">Votre partenaire de performance</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {!isLogin && (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} required className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white" placeholder="Prénom" />
-                <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} required className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white" placeholder="Nom" />
-              </div>
-              <input type="date" name="date_de_naissance" value={formData.date_de_naissance} onChange={handleInputChange} required className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white" />
-              <div className="grid grid-cols-2 gap-4">
-                <SelectionCard label="Athlète" isSelected={formData.role === 'athlète'} onClick={() => setFormData(prev => ({ ...prev, role: 'athlète' }))} icon={<User />} />
-                <SelectionCard label="Encadrant" isSelected={formData.role === 'encadrant'} onClick={() => setFormData(prev => ({ ...prev, role: 'encadrant' }))} icon={<Briefcase />} />
-              </div>
-              {formData.role === 'encadrant' && (
-                  <CardCarousel options={[{ value: 'Coach', label: 'Coach' }, { value: 'Kinesitherapeute', label: 'Kinésithérapeute' }, { value: 'Nutritionniste', label: 'Nutritionniste' }, { value: 'Preparateur Physique', label: 'Prép. Physique' }, { value: 'Preparateur Mental', label: 'Prép. Mental' }]} selectedValue={formData.role_specifique} onSelect={value => setFormData(prev => ({ ...prev, role_specifique: value }))} />
-              )}
-              {formData.role === 'athlète' && (
+        <div className="bg-gray-800 p-8 rounded-lg shadow-lg">
+          {isSignUp ? (
+            <form onSubmit={handleSignUp}>
+              {step === 1 ? (
                 <>
-                  <input type="number" name="height" value={formData.height} onChange={handleInputChange} className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white" placeholder="Taille (cm)" />
-                  <CardCarousel options={[{ value: 'sprint', label: 'Sprint' }, { value: 'haies', label: 'Haies' }, { value: 'sauts', label: 'Sauts' }, { value: 'lancers', label: 'Lancers' }, { value: 'demi-fond', label: 'Demi-fond / Fond' }, { value: 'marche', label: 'Marche' }, { value: 'combinees', label: 'Combinées' }]} selectedValue={formData.discipline} onSelect={value => setFormData(prev => ({ ...prev, discipline: value }))} />
+                  <h2 className="text-2xl font-bold mb-6 text-center">Créer un compte</h2>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400" htmlFor="email">
+                      Email
+                    </label>
+                    <input
+                      id="email"
+                      className="w-full mt-1 p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                      type="email"
+                      placeholder="votre@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-400" htmlFor="password">
+                      Mot de passe
+                    </label>
+                    <input
+                      id="password"
+                      className="w-full mt-1 p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full mt-6 p-3 bg-blue-600 rounded-md font-semibold hover:bg-blue-700 transition"
+                    disabled={loading}
+                  >
+                    {loading ? 'Chargement...' : 'Suivant'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setStep(1)} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+                    <X size={20} />
+                  </button>
+                  <h2 className="text-2xl font-bold mb-1 text-center">Finalisation</h2>
+                  <p className="text-center text-gray-400 mb-6 text-sm">Dites-nous en plus sur vous</p>
+
+                  {commonFields}
+                  
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Je suis un(e)...</label>
+                    <div className="flex justify-around">
+                      <button type="button" onClick={() => setFormData({ ...formData, sexe: 'athlete' })} className={`px-4 py-2 rounded-md transition ${formData.sexe === 'athlete' ? 'bg-blue-600' : 'bg-gray-700'}`}>Athlète</button>
+                      <button type="button" onClick={() => setFormData({ ...formData, sexe: 'coach' })} className={`px-4 py-2 rounded-md transition ${formData.sexe === 'coach' ? 'bg-blue-600' : 'bg-gray-700'}`}>Coach</button>
+                    </div>
+                  </div>
+
+                  {formData.sexe === 'coach' && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Spécialité</label>
+                      <CardCarousel options={[{ value: 'Coach', label: 'Coach' }, { value: 'Kinesitherapeute', label: 'Kinésithérapeute' }, { value: 'Nutritionniste', label: 'Nutritionniste' }, { value: 'Preparateur Physique', label: 'Prép. Physique' }, { value: 'Preparateur Mental', label: 'Prép. Mental' }]} selectedValue={formData.role_specifique} onSelect={value => setFormData(prev => ({ ...prev, role_specifique: value }))} />
+                    </div>
+                  )}
+                  {formData.sexe === 'athlete' && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-400 mb-2">Discipline</g-emoji></label>
+                      <CardCarousel options={[{ value: 'sprint', label: 'Sprint' }, { value: 'haies', label: 'Haies' }, { value: 'sauts', label: 'Sauts' }, { value: 'lancers', label: 'Lancers' }, { value: 'demi-fond', label: 'Demi-fond / Fond' }, { value: 'marche', label: 'Marche' }, { value: 'combinees', label: 'Combinées' }]} selectedValue={formData.discipline} onSelect={value => setFormData(prev => ({ ...prev, discipline: value }))} />
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full mt-6 p-3 bg-blue-600 rounded-md font-semibold hover:bg-blue-700 transition"
+                    disabled={loading}
+                  >
+                    {loading ? 'Création...' : 'Terminer l\'inscription'}
+                  </button>
                 </>
               )}
-              <div className="grid grid-cols-3 gap-4">
-                <SelectionCard label="Homme" isSelected={formData.sexe === 'homme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'homme' }))} />
-                <SelectionCard label="Femme" isSelected={formData.sexe === 'femme'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'femme' }))} />
-                <SelectionCard label="Autre" isSelected={formData.sexe === 'autre'} onClick={() => setFormData(prev => ({ ...prev, sexe: 'autre' }))} />
+            </form>
+          ) : (
+            <form onSubmit={handleLogin}>
+              <h2 className="text-2xl font-bold mb-6 text-center">Connexion</h2>
+              <div>
+                <label className="block text-sm font-medium text-gray-400" htmlFor="email">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  className="w-full mt-1 p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                  type="email"
+                  placeholder="votre@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
-            </>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-400" htmlFor="password">
+                  Mot de passe
+                </label>
+                <input
+                  id="password"
+                  className="w-full mt-1 p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full mt-6 p-3 bg-blue-600 rounded-md font-semibold hover:bg-blue-700 transition"
+                disabled={loading}
+              >
+                {loading ? 'Connexion...' : 'Se connecter'}
+              </button>
+            </form>
           )}
 
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
-            <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full pl-10 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white" placeholder="Email" />
-          </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
-            <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleInputChange} required className="w-full pl-10 pr-12 py-3 bg-white/20 border border-white/30 rounded-lg text-white" placeholder="Mot de passe" />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50"><EyeOff className="w-5 h-5" /></button>
-          </div>
-          {!isLogin && (
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-5 h-5" />
-              <input type={showPassword ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} required className="w-full pl-10 pr-12 py-3 bg-white/20 border border-white/30 rounded-lg text-white" placeholder="Confirmer le mot de passe" />
-            </div>
-          )}
+          {error && <p className="mt-4 text-red-400 text-center">{error}</p>}
 
-          {authError && (
-            <div className="text-center text-sm font-medium p-3 mb-4 bg-red-900/50 rounded-lg">
-              <p className="text-red-400">{authError}</p>
-              {authError.includes('confirmer votre email') && (
-                <button type="button" onClick={() => setShowResendConfirmation(true)} className="mt-2 text-blue-400 hover:text-blue-300 font-semibold underline">
-                  Renvoyer l'email de confirmation
-                </button>
-              )}
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg font-semibold disabled:opacity-50">
-            {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" /> : (isLogin ? 'Se connecter' : 'Créer un compte')}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center space-y-3">
-          {isLogin && (
-            <>
-              <button onClick={() => setShowForgotPassword(true)} className="text-blue-400 hover:text-blue-300 font-medium block w-full">Mot de passe oublié ?</button>
-              <button onClick={() => setShowResendConfirmation(true)} className="text-blue-400 hover:text-blue-300 font-medium block w-full">Renvoyer l'email de confirmation</button>
-            </>
-          )}
-          <button onClick={() => setIsLogin(!isLogin)} className="text-blue-400 hover:text-blue-300 font-medium block w-full">
-            {isLogin ? "Pas encore de compte ? Créez-en un" : "Déjà un compte ? Connectez-vous"}
-          </button>
+          <p className="mt-6 text-center text-sm text-gray-400">
+            {isSignUp ? 'Vous avez déjà un compte ?' : 'Pas encore de compte ?'}{' '}
+            <button
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setStep(1);
+                setError(null);
+              }}
+              className="font-semibold text-blue-400 hover:underline"
+            >
+              {isSignUp ? 'Se connecter' : 'S\'inscrire'}
+            </button>
+          </p>
         </div>
       </div>
     </div>
