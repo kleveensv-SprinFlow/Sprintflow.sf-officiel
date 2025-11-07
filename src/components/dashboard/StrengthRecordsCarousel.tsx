@@ -16,24 +16,7 @@ export const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = (
 
   const strengthRecords = records.filter(r => r.type === 'exercise' || r.unit === 'kg');
 
-  const getLatestUniqueRecords = (allRecords: Record[]): Record[] => {
-    if (!allRecords || allRecords.length === 0) {
-      return [];
-    }
-
-    const latestRecordsMap = new Map<string, Record>();
-    const sortedRecords = [...allRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    sortedRecords.forEach(record => {
-      if (!latestRecordsMap.has(record.exercise_name)) {
-        latestRecordsMap.set(record.exercise_name, record);
-      }
-    });
-
-    return Array.from(latestRecordsMap.values());
-  };
-
-  const latestUniqueStrengthRecords = getLatestUniqueRecords(strengthRecords);
+  const sortedStrengthRecords = [...strengthRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleCardClick = () => {
     onNavigate('records');
@@ -56,7 +39,7 @@ export const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = (
         <h2 className="text-xl font-bold text-light-title dark:text-dark-title">Records de Force</h2>
       </div>
 
-      {latestUniqueStrengthRecords.length === 0 ? (
+      {sortedStrengthRecords.length === 0 ? (
         <div className="px-4">
             <div className="text-center p-8 bg-light-glass dark:bg-dark-glass rounded-2xl">
                 <p className="text-light-label dark:text-dark-label">Aucun record de force n'a encore été enregistré.</p>
@@ -64,7 +47,7 @@ export const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = (
         </div>
       ) : (
         <GenericCardCarousel>
-          {latestUniqueStrengthRecords.map((record) => (
+          {sortedStrengthRecords.map((record) => (
             <RecordCard 
               key={record.id} 
               record={record} 
