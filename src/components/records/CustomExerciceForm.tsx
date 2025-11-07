@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { EXERCISE_CATEGORIES } from '../../data/categories';
 import { X } from 'lucide-react';
+import useAuth from '../../hooks/useAuth';
 
 interface CustomExerciceFormProps {
   onSave: () => void;
@@ -10,6 +11,7 @@ interface CustomExerciceFormProps {
 }
 
 export const CustomExerciceForm: React.FC<CustomExerciceFormProps> = ({ onSave, onCancel }) => {
+  const { user } = useAuth();
   const [nom, setNom] = useState('');
   const [categorie, setCategorie] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -17,7 +19,7 @@ export const CustomExerciceForm: React.FC<CustomExerciceFormProps> = ({ onSave, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nom || !categorie) {
+    if (!nom || !categorie || !user) {
       setError('Veuillez remplir tous les champs.');
       return;
     }
@@ -27,7 +29,7 @@ export const CustomExerciceForm: React.FC<CustomExerciceFormProps> = ({ onSave, 
 
     const { error: insertError } = await supabase
       .from('exercices_personnalises')
-      .insert({ nom, categorie });
+      .insert({ nom, categorie, creator_id: user.id });
 
     setIsSaving(false);
 
