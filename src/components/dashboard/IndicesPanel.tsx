@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, PanInfo, AnimatePresence, useMotionValue, animate, useTransform } from 'framer-motion';
 import { Loader2, Zap, HeartPulse } from 'lucide-react';
-import AdviceModal from './AdviceModal.tsx'; // Correction ici
-import CircularProgress from '../common/CircularProgress.tsx'; // Correction ici
+import AdviceModal from './AdviceModal.tsx';
+import CircularProgress from '../common/CircularProgress.tsx';
 
 interface AnimatedScoreCircleProps {
   score: number | null;
@@ -89,7 +89,7 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8 bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-2xl h-[244px]">
+      <div className="flex justify-center items-center p-8 bg-light-glass dark:bg-dark-glass shadow-glass backdrop-blur-md border border-white/20 rounded-2xl h-[244px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
         <p className="ml-4 text-lg text-light-label dark:text-dark-label">Calcul des indices...</p>
       </div>
@@ -105,7 +105,7 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.3 }}
-          className="bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-2xl p-4 sm:p-6 text-center"
+          className="bg-light-glass dark:bg-dark-glass shadow-glass backdrop-blur-md border border-white/20 rounded-2xl p-4 sm:p-6 text-center"
         >
           <h2 className="text-xl sm:text-2xl font-bold text-light-title dark:text-dark-title mb-4">Vos Indices</h2>
           <p className="text-light-label dark:text-dark-label mb-4">Votre indice de forme attend.</p>
@@ -120,7 +120,7 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-2xl p-4 sm:p-6 overflow-hidden"
+          className="bg-light-glass dark:bg-dark-glass shadow-glass backdrop-blur-md border border-white/20 rounded-2xl p-4 sm:p-6 overflow-hidden"
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl sm:text-2xl font-bold text-light-title dark:text-dark-title">Vos Indices</h2>
