@@ -1,58 +1,72 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'media',
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  darkMode: 'class', // Activation du mode sombre via une classe sur l'élément HTML
   theme: {
     extend: {
       colors: {
-        'sprintflow-blue': '#00B8FF',
-        
-        light: {
-          background: '#F9F9F9',
-          card: '#FFFFFF',
-          text: '#333333',
-          title: '#111111',
-          label: '#666666',
+        // Palette de base
+        'sprintflow-blue': {
+          DEFAULT: '#007AFF',
+          light: '#EBF5FF',
+          dark: '#0056B3',
         },
-        
-        // Dark Mode Palette (MISE À JOUR)
-        dark: {
-          background: '#0F172A', // Fond bleu nuit
-          card: '#334155',       // Carte nettement plus claire pour un contraste évident
-          text: '#F1F5F9',
-          title: '#F1F5F9',
-          label: '#F1F5F9',
+        'primary': {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+          950: '#172554',
         },
-      },
-      
-      fontFamily: {
-        sans: ['Manrope', 'sans-serif'],
-      },
-      
-      fontSize: {
-        'micro': ['12px', '16px'],
-        'label': ['14px', '20px'],
-        'base': ['16px', '24px'],
-        'h3': ['22px', '28px'],
-        'h2': ['28px', '36px'],
-        'h1': ['36px', '44px'],
-      },
-      
-      boxShadow: {
-        'card-light': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'card-dark': '0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6)', // Ombre bien prononcée
-        'button-glow': '0 0 12px 0 #00B8FF',
-      },
+        // Thème clair
+        'light-background': '#F0F2F5', // Un gris très clair, presque blanc
+        'light-card': '#FFFFFF',
+        'light-title': '#1A202C', // Titres en noir/gris foncé
+        'light-text': '#2D3748',  // Texte principal
+        'light-label': '#718096', // Labels et textes secondaires
 
-      keyframes: {
-        'fadeIn-slideUp': { 'from': { opacity: '0', transform: 'translateY(5px)' }, 'to': { opacity: '1', transform: 'translateY(0)' } },
-        'pop-in': { '0%': { opacity: '0', transform: 'scale(0.95)' }, '80%': { opacity: '1', transform: 'scale(1.02)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+        // Thème sombre
+        'dark-background': '#0D1117', // Fond très sombre, bleu nuit
+        'dark-card': '#161B22',       // Cartes légèrement plus claires
+        'dark-title': '#E6EDF3',      // Titres en blanc cassé
+        'dark-text': '#C9D1D9',       // Texte principal
+        'dark-label': '#8B949E',      // Labels et textes secondaires
       },
-      animation: {
-        'fade-in-slide-up': 'fadeIn-slideUp 300ms ease-out forwards',
-        'pop-in': 'pop-in 200ms ease-out forwards',
+      boxShadow: {
+        'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+        'card-dark': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2)',
+      },
+      fontFamily: {
+        manrope: ['Manrope', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+        'noto-sans': ['"Noto Sans"', 'sans-serif'],
+        din: ['"DIN 1451"', 'sans-serif'],
+      },
+      textShadow: {
+        light: '1px 1px 3px rgba(0, 0, 0, 0.1)',
+        dark: '1px 1px 3px rgba(0, 0, 0, 0.7)',
       },
     },
   },
-  plugins: [],
-};
+  plugins: [
+    function({ addUtilities }) {
+      addUtilities({
+        '.text-shadow-light': {
+          textShadow: '1px 1px 3px rgba(0, 0, 0, 0.1)',
+        },
+        '.text-shadow-dark': {
+          textShadow: '1px 1px 3px rgba(0, 0, 0, 0.7)',
+        },
+      })
+    }
+  ],
+}
