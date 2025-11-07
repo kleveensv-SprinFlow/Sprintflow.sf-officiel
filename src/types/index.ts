@@ -62,3 +62,13 @@ export interface Objectif {
   created_at: string;
   epreuve?: EpreuveAthletisme;
 }
+
+export interface Record {
+  id: string;
+  type: 'exercise' | 'run' | 'jump' | 'throw';
+  name: string;
+  value: number;
+  unit: 'kg' | 's' | 'm';
+  date: string;
+  exercice_reference_id?: string | null;
+}

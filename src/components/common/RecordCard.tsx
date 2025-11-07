@@ -10,7 +10,7 @@ interface RecordCardProps {
 }
 
 export const RecordCard: React.FC<RecordCardProps> = ({ record, onClick }) => {
-  const { exercise_name, value, date, unit } = record;
+  const { name, value, date, unit } = record;
 
   const displayPerformance = () => {
     if (unit === 'kg') return `${value} kg`;
@@ -22,7 +22,7 @@ export const RecordCard: React.FC<RecordCardProps> = ({ record, onClick }) => {
     <>
       <header>
         <h3 className="font-bold text-xl text-light-title dark:text-dark-title truncate">
-          {exercise_name}
+          {name}
         </h3>
       </header>
 
