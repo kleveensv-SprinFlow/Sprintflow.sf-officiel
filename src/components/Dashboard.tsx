@@ -86,7 +86,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
         )}
       </AnimatePresence>
 
-      {/* ... (le reste du dashboard ne change pas) ... */}
+      <AthleteDailyPlanCarousel userId={user?.id} onNavigate={onViewChange} />
+
+      <TrackRecordsCarousel userId={user?.id} onNavigate={onViewChange} />
+
+      <StrengthRecordsCarousel userId={user?.id} onNavigate={onViewChange} />
     </div>
   );
 };
