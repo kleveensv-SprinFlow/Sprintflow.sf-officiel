@@ -143,4 +143,3 @@ const PickerWheel: React.FC<PickerWheelProps> = ({ values, initialValue, onChang
 };
 
 export default PickerWheel;
-export { PickerWheel };

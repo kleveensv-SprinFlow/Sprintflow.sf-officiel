@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useWellness } from '../../hooks/useWellness.ts';
 import useAuth from '../../hooks/useAuth.tsx';
-import { PickerWheel } from '../common/PickerWheel.tsx';
+import PickerWheel from '../common/PickerWheel.tsx';
 import { SemanticSlider } from '../common/SemanticSlider.tsx';
 
 interface WellnessCheckinCardProps {
