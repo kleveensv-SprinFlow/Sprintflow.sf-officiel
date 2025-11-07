@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { WellnessCheckinCard } from './WellnessCheckinCard';
+import { WellnessCheckinCard } from './WellnessCheckinCard.tsx'; // Correction ici
 
 interface CheckinModalProps {
   isOpen: boolean;
