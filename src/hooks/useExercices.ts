@@ -6,7 +6,7 @@ export interface ExerciceReference {
   nom: string;
   categorie: string;
   type: 'reference' | 'custom';
-  coach_id?: string;
+  creator_id?: string;
 }
 
 const mapSupabaseToExerciceReference = (item: any, type: 'reference' | 'custom'): ExerciceReference => ({
@@ -14,7 +14,7 @@ const mapSupabaseToExerciceReference = (item: any, type: 'reference' | 'custom')
   nom: item.nom,
   categorie: item.categorie,
   type,
-  coach_id: item.coach_id,
+  creator_id: item.creator_id,
 });
 
 export const useExercices = () => {
@@ -39,7 +39,7 @@ export const useExercices = () => {
       // Fetch custom exercises from Supabase
       const { data: customExercicesData, error: customError } = await supabase
         .from('exercices_personnalises')
-        .select('id, nom, categorie, coach_id');
+        .select('id, nom, categorie, creator_id');
 
       if (customError) {
         throw new Error(`Erreur lors du chargement des exercices personnalisés: ${customError.message}`);
