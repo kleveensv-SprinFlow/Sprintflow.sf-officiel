@@ -6,8 +6,11 @@ import { IndicesPanel } from './dashboard/IndicesPanel';
 import { RecentWorkouts } from './dashboard/RecentWorkouts';
 import { AthleteRecordsCarousel } from './dashboard/AthleteRecordsCarousel';
 import { GroupOverview } from './dashboard/GroupOverview';
-import { WellnessCheckinCard } from './dashboard/WellnessCheckinCard';
 import { AthleteDailyPlanCarousel } from './dashboard/AthleteDailyPlanCarousel';
+import { useWellness } from '../hooks/useWellness';
+import useAuth from '../hooks/useAuth';
+import { CheckinModal } from './dashboard/CheckinModal';
+import { toast } from 'react-toastify';
 
 interface DashboardProps {
   userRole?: 'athlete' | 'coach' | 'developer';
@@ -16,6 +19,9 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ userRole, onViewChange, onScoresLoad }: DashboardProps) {
+  const { user } = useAuth();
+  const { wellnessData } = useWellness(user?.id);
+
   const [scores, setScores] = useState({
     forme: null,
     performance: null,
@@ -23,13 +29,17 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
   });
   const [loadingScores, setLoadingScores] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckinModalOpen, setCheckinModalOpen] = useState(false);
+  
+  const today = new Date().toISOString().split('T')[0];
+  const hasCheckedInToday = wellnessData?.some(log => log.date === today && log.sleep_quality !== null);
 
   useEffect(() => {
     loadScores();
     if (onScoresLoad) {
       onScoresLoad(loadScores);
     }
-  }, []);
+  }, [user, wellnessData]);
 
   const loadScores = async () => {
     setLoadingScores(true);
@@ -88,22 +98,28 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
     );
   }
 
+  const handleCloseModal = () => {
+    setCheckinModalOpen(false);
+    // On vérifie à nouveau l'état après la fermeture pour être sûr
+    const today = new Date().toISOString().split('T')[0];
+    const justCheckedIn = wellnessData?.some(log => log.date === today && log.sleep_quality !== null);
+    
+    // Pour éviter le double toast si l'utilisateur ferme manuellement la modale
+    // On peut ajouter un état pour suivre si la soumission a eu lieu
+    if (justCheckedIn) {
+        toast.success('Check-in enregistré ! Vos indices sont à jour.');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <WellnessCheckinCard />
-
-      <div className="text-center py-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-          Bienvenue sur <span className="text-blue-600 dark:text-blue-400">Sprintflow</span>
-        </h1>
-      </div>
-
       <IndicesPanel
         loading={loadingScores}
         scoreForme={scores.forme}
         scorePerformance={scores.performance}
-        scoreEvolution={scores.evolution}
         onNavigate={() => onViewChange('ai')}
+        hasCheckedInToday={hasCheckedInToday}
+        onCheckinClick={() => setCheckinModalOpen(true)}
       />
 
       <AthleteDailyPlanCarousel />
@@ -112,6 +128,8 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
       <GroupOverview onNavigate={() => onViewChange('groups')} />
 
       <RecentWorkouts onNavigate={() => onViewChange('workouts')} />
+
+      <CheckinModal isOpen={isCheckinModalOpen} onClose={handleCloseModal} />
     </div>
   );
 }
