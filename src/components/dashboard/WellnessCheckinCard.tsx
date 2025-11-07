@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { useWellness } from '../../hooks/useWellness';
-import useAuth from '../../hooks/useAuth';
-import { SemanticSlider } from '../common/SemanticSlider';
+import { useWellness } from '../../hooks/useWellness.ts';
+import useAuth from '../../hooks/useAuth.tsx';
+import { PickerWheel } from '../common/PickerWheel.tsx';
+import { SemanticSlider } from '../common/SemanticSlider.tsx';
 
 interface WellnessCheckinCardProps {
   onClose?: () => void;
@@ -10,7 +11,7 @@ interface WellnessCheckinCardProps {
 
 export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClose, onSuccess }) => {
   const { user } = useAuth();
-  const { wellnessData, logDailyCheckin, getIndiceForme, loading } = useWellness(user?.id);
+  const { wellnessData, logDailyCheckin, loading } = useWellness(user?.id);
 
   const [bedtime, setBedtime] = useState('22:30');
   const [wakeupTime, setWakeupTime] = useState('07:00');
@@ -37,13 +38,10 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
         wakeupDate.setDate(wakeupDate.getDate() + 1);
       }
       
-      const bedtimeISO = bedtimeDate.toISOString();
-      const wakeupISO = wakeupDate.toISOString();
-
       const checkinData = {
         date: today,
-        heure_coucher: bedtimeISO,
-        heure_lever: wakeupISO,
+        heure_coucher: bedtimeDate.toISOString(),
+        heure_lever: wakeupDate.toISOString(),
         duree_sommeil_calculee: Math.round((wakeupDate.getTime() - bedtimeDate.getTime()) / (1000 * 60)),
         ressenti_sommeil: sleepQuality,
         stress_level: stress,
@@ -51,16 +49,6 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
       };
 
       await logDailyCheckin(checkinData);
-      
-      const indiceResult = await getIndiceForme({
-          heure_coucher: bedtimeISO,
-          heure_lever: wakeupISO,
-          ressenti_sommeil: sleepQuality,
-          stress_level: stress,
-          muscle_fatigue: fatigue
-      });
-
-      console.log('Indice de Forme calculé:', indiceResult);
       
       if (onSuccess) onSuccess();
 
@@ -121,7 +109,7 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
         disabled={loading}
         className="mt-8 w-full bg-primary hover:bg-primary-focus text-white font-bold py-3 rounded-lg transition-colors duration-300 disabled:opacity-50"
       >
-        {loading ? 'Calcul en cours...' : 'Valider mon état de forme'}
+        {loading ? 'Enregistrement...' : 'Valider mon état de forme'}
       </button>
     </div>
   );
