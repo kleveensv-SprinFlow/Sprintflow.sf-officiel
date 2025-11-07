@@ -17,6 +17,7 @@ export type WellnessLog = {
 
 export type DailyCheckinData = Omit<WellnessLog, 'id' | 'user_id' | 'rpe_difficulty' | 'workout_id'>;
 
+
 export const useWellness = (userId: string | undefined) => {
   const [wellnessData, setWellnessData] = useState<WellnessLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,30 +62,6 @@ export const useWellness = (userId: string | undefined) => {
     }
   };
 
-  const getIndiceForme = async (data: {
-    heure_coucher: string,
-    heure_lever: string,
-    ressenti_sommeil: number,
-    stress_level: number,
-    muscle_fatigue: number
-  }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data: indiceData, error } = await supabase.functions.invoke('get_indice_forme', {
-        body: data,
-      });
-
-      if (error) throw error;
-      return indiceData;
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const logRpe = async (workoutId: string, rpe: number) => {
     if (!userId) return;
     setLoading(true);
@@ -112,13 +89,5 @@ export const useWellness = (userId: string | undefined) => {
     }
   }, [userId, fetchWellnessData]);
 
-  return {
-    wellnessData,
-    loading,
-    error,
-    logDailyCheckin,
-    getIndiceForme,
-    logRpe,
-    refresh: fetchWellnessData
-  };
+  return { wellnessData, loading, error, logDailyCheckin, logRpe, refresh: fetchWellnessData };
 };
