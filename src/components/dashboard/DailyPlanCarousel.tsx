@@ -3,7 +3,7 @@ import { format, addDays, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Workout } from '../../types';
-import { DayCard } from '../planning/DayCard';
+import { DayCard } from '../common/DayCard'; // CHEMIN D'IMPORTATION CORRIGÉ
 import { groupWorkoutsByDay } from '../../utils/groupWorkoutsByDay';
 
 interface DailyPlanCarouselProps {
