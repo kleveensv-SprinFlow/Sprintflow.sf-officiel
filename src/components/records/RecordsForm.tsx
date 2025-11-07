@@ -37,7 +37,7 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const exerciceName = type === 'exercise' ? selectedExercice?.nom : customExerciceName;
+    const exerciceName = type === 'exercise' ? selectedExercice?.nom : String(customExerciceName || '');
 
     if (value === null || !date || !exerciceName) {
       alert('Veuillez remplir tous les champs obligatoires');
@@ -158,6 +158,7 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
               </label>
               {type === 'run' ? (
                 <ChronoInput
+                  label="Temps"
                   value={value}
                   onChange={setValue}
                 />
