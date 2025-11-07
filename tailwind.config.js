@@ -40,10 +40,15 @@ export default {
         'dark-title': '#E6EDF3',      // Titres en blanc cassé
         'dark-text': '#C9D1D9',       // Texte principal
         'dark-label': '#8B949E',      // Labels et textes secondaires
+
+        // Couleurs pour l'effet Glassmorphism
+        'light-glass': 'rgba(255, 255, 255, 0.3)',
+        'dark-glass': 'rgba(22, 27, 34, 0.4)',
       },
       boxShadow: {
         'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
         'card-dark': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2)',
+        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
       },
       fontFamily: {
         manrope: ['Manrope', 'sans-serif'],
