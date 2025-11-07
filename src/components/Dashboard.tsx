@@ -124,7 +124,7 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
 
       <AthleteDailyPlanCarousel />
 
-      <AthleteRecordsCarousel onNavigate={() => onViewChange('records')} />
+      <AthleteRecordsCarousel onNavigate={onViewChange} />
       <GroupOverview onNavigate={() => onViewChange('groups')} />
 
       <RecentWorkouts onNavigate={() => onViewChange('workouts')} />
