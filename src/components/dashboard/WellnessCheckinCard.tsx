@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { useWellness } from '../../hooks/useWellness.ts';
-import useAuth from '../../hooks/useAuth.tsx';
-import { PickerWheel } from '../common/PickerWheel.tsx';
-import { SemanticSlider } from '../common/SemanticSlider.tsx';
+import { useWellness } from '../../hooks/useWellness';
+import useAuth from '../../hooks/useAuth';
+import { SemanticSlider } from '../common/SemanticSlider';
 
 interface WellnessCheckinCardProps {
   onClose?: () => void;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 
 interface CircularProgressProps {
