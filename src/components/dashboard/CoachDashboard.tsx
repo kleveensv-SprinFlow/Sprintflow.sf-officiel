@@ -123,18 +123,18 @@ export const CoachDashboard: React.FC = () => {
     if (!selection) {
       return (
         <motion.div 
-          className="text-center py-16 px-4 card-glass shadow-lg"
+          className="text-center py-16 px-4 bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Bienvenue, {profile?.first_name} !</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-8">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
+          <h2 className="text-2xl font-bold mb-4 text-light-title dark:text-dark-title">Bienvenue, {profile?.first_name} !</h2>
+          <p className="text-light-text dark:text-dark-text mb-8">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-            <button onClick={() => setAthleteModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
+            <button onClick={() => setAthleteModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-white bg-sprintflow-blue hover:opacity-90 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
               <User /> Athlète
             </button>
-            <button onClick={() => setGroupModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-gray-800 dark:text-white bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
+            <button onClick={() => setGroupModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-light-title dark:text-dark-title bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
               <Users /> Groupe
             </button>
           </div>
@@ -143,7 +143,7 @@ export const CoachDashboard: React.FC = () => {
     }
 
     if (loading) {
-      return <div className="flex justify-center items-center py-16"><Loader className="w-12 h-12 animate-spin text-primary-500" /></div>;
+      return <div className="flex justify-center items-center py-16"><Loader className="w-12 h-12 animate-spin text-sprintflow-blue" /></div>;
     }
     if (error) {
       return <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md flex items-center"><AlertTriangle className="w-6 h-6 mr-3" /><p>{error}</p></div>;
@@ -164,9 +164,9 @@ export const CoachDashboard: React.FC = () => {
           <div className="absolute top-6 right-6 z-20">
             <button
               onClick={() => setMenuOpen(!isMenuOpen)}
-              className="p-2 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg rounded-full shadow-lg border border-white/20 dark:border-white/10"
+              className="p-2 bg-light-card dark:bg-dark-card/60 backdrop-blur-lg rounded-full shadow-lg border border-white/20 dark:border-white/10"
             >
-              <Settings2 size={20} className="text-gray-700 dark:text-gray-300" />
+              <Settings2 size={20} className="text-light-text dark:text-dark-text" />
             </button>
             <AnimatePresence>
               {isMenuOpen && (
@@ -175,18 +175,18 @@ export const CoachDashboard: React.FC = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-48 card-glass shadow-xl origin-top-right"
+                  className="absolute right-0 mt-2 w-48 bg-light-card dark:bg-dark-card shadow-xl origin-top-right rounded-lg"
                 >
-                  <p className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-white/20 dark:border-white/10">Changer de vue</p>
+                  <p className="px-4 py-2 text-xs text-light-label dark:text-dark-label border-b border-gray-200 dark:border-gray-700">Changer de vue</p>
                   <button
                     onClick={() => { setAthleteModalOpen(true); setMenuOpen(false); }}
-                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10"
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <User size={16} /> Athlète
                   </button>
                   <button
                     onClick={() => { setGroupModalOpen(true); setMenuOpen(false); }}
-                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <Users size={16} /> Groupe
                   </button>
