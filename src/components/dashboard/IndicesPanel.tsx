@@ -22,11 +22,11 @@ const ScoreCircle: React.FC<ScoreCircleProps> = ({ score, title, icon: Icon }) =
           className="w-full h-full"
         />
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-4xl font-bold text-gray-800 dark:text-white text-shadow-light dark:text-shadow-dark">{score ?? '-'}</span>
+          <span className="text-4xl font-bold text-light-title dark:text-dark-title">{score ?? '-'}</span>
         </div>
       </div>
-      <h3 className="text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-        <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+      <h3 className="text-base font-bold text-light-text dark:text-dark-text flex items-center gap-1.5">
+        <Icon className="w-4 h-4 text-light-label dark:text-dark-label" />
         {title}
       </h3>
     </div>
@@ -72,17 +72,17 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
   
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8 card-glass shadow-lg h-[244px]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-        <p className="ml-4 text-lg text-gray-700 dark:text-gray-300">Calcul des indices...</p>
+      <div className="bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-lg flex justify-center items-center p-8 h-[244px]">
+        <Loader2 className="w-8 h-8 animate-spin text-sprintflow-blue" />
+        <p className="ml-4 text-lg text-light-text dark:text-dark-text">Calcul des indices...</p>
       </div>
     );
   }
 
   return (
-    <div className="card-glass shadow-lg p-4 sm:p-6 overflow-hidden">
+    <div className="bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-lg p-4 sm:p-6 overflow-hidden">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Vos Indices</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-light-title dark:text-dark-title">Vos Indices</h2>
       </div>
 
       <div className="relative w-full h-[160px]">
@@ -116,7 +116,7 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
             key={index}
             onClick={() => setActiveIndex(index)}
             className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-              activeIndex === index ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
+              activeIndex === index ? 'bg-sprintflow-blue' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
             }`}
             aria-label={`Afficher l'indice ${index + 1}`}
           />
