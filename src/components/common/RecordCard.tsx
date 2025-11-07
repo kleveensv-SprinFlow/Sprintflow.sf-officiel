@@ -10,12 +10,12 @@ interface RecordCardProps {
 }
 
 export const RecordCard: React.FC<RecordCardProps> = ({ record, onClick }) => {
-  const { exercise_name, performance, date, unit } = record;
+  const { exercise_name, value, date, unit } = record;
 
   const displayPerformance = () => {
-    if (unit === 'kg') return `${performance} kg`;
-    if (unit === 's') return `${performance} s`;
-    return performance;
+    if (unit === 'kg') return `${value} kg`;
+    if (unit === 's') return `${value} s`;
+    return value;
   };
 
   const cardContent = (
