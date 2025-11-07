@@ -17,14 +17,14 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
   const { user } = useAuth();
-  const { wellnessData } = useWellness(user?.id);
+  const { wellnessData, refresh: refreshWellnessData } = useWellness(user?.id);
   const [isCheckinOpen, setCheckinOpen] = useState(false);
   const [scoreForme, setScoreForme] = useState<{ indice: number | null } | null>(null);
   const [scorePerformance, setScorePerformance] = useState<{ indice: number | null } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const today = new Date().toISOString().split('T')[0];
-  const hasCheckedInToday = wellnessData?.some(log => log.date === today && log.sleep_quality) || false;
+  const hasCheckedInToday = wellnessData?.some(log => log.date === today && log.ressenti_sommeil !== null) || false;
 
   useEffect(() => {
     const loadScores = async () => {
@@ -32,12 +32,12 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
 
       try {
         setLoading(true);
-
-        const { data: formeData } = await supabase.rpc('get_score_forme', { user_id_param: user.id });
-        const { data: perfData } = await supabase.rpc('get_indice_poids_puissance', { user_id_param: user.id });
-
-        setScoreForme(formeData ? { indice: formeData } : null);
-        setScorePerformance(perfData ? { indice: perfData } : null);
+        if (hasCheckedInToday) {
+          const { data: formeData } = await supabase.rpc('get_score_forme', { user_id_param: user.id });
+          const { data: perfData } = await supabase.rpc('get_indice_poids_puissance', { user_id_param: user.id });
+          setScoreForme(formeData ? { indice: formeData } : null);
+          setScorePerformance(perfData ? { indice: perfData } : null);
+        }
       } catch (error) {
         console.error('Erreur chargement scores:', error);
       } finally {
@@ -48,15 +48,21 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
     loadScores();
   }, [user?.id, hasCheckedInToday]);
 
+  const handleCheckinSuccess = () => {
+    setCheckinOpen(false);
+    refreshWellnessData();
+  };
+
   if (userRole === 'coach') {
     return <CoachDashboard onViewChange={onViewChange} />;
   }
 
-  // Athlete Dashboard
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+        Bonjour !
+      </h1>
 
-      {/* Panneau des indices de performance */}
       <IndicesPanel
         loading={loading}
         scoreForme={scoreForme}
@@ -71,11 +77,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
           <CheckinModal
             isOpen={isCheckinOpen}
             onClose={() => setCheckinOpen(false)}
+            onSuccess={handleCheckinSuccess}
           />
         )}
       </AnimatePresence>
 
-      {/* Planning du jour */}
       <div>
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-3">
           Votre planning du jour
@@ -83,7 +89,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
         <AthleteDailyPlanCarousel />
       </div>
 
-      {/* Records de force */}
       <div>
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
@@ -99,7 +104,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
         <StrengthRecordsCarousel />
       </div>
 
-      {/* Records de course */}
       <div>
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
