@@ -1,26 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useExercices, ExerciceReference } from '../../hooks/useExercices';
-import TimePicker from '../common/TimePicker';
-import PickerWheel from '../common/PickerWheel';
 import { TiroirDeSelection } from '../common/TiroirDeSelection';
 import { MuscuBlock, WorkoutBlock } from '../../types/workout';
 import { ChevronDown } from 'lucide-react';
+import PickerWheel from '../common/PickerWheel';
+import WeightStepper from '../common/WeightStepper';
+import RestTimeSelector from '../common/RestTimeSelector';
 
 interface MuscuBlockFormProps {
   onSave: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
   onCancel: () => void;
   initialData?: MuscuBlock;
   isOpen: boolean;
-  userRole: 'coach' | 'athlete'; // Gardé pour la cohérence, même si non utilisé pour l'affichage
+  userRole: 'coach' | 'athlete';
 }
 
-// Valeurs pour les sélecteurs "roulette"
 const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
 const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
-const poidsValues = [0, ...Array.from({ length: 400 }, (_, i) => parseFloat(((i + 1) * 0.5).toFixed(2)))];
 
-// État par défaut d'un nouveau bloc
 const defaultState: Omit<MuscuBlock, 'id' | 'charges'> = {
   type: 'musculation',
   exerciceId: '',
@@ -37,7 +35,6 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
   const [noWeight, setNoWeight] = useState(false);
   const [isTiroirOpen, setIsTiroirOpen] = useState(false);
 
-  // Initialisation du formulaire quand il s'ouvre
   useEffect(() => {
     if (isOpen) {
       const data = initialData || defaultState;
@@ -46,34 +43,30 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
     }
   }, [initialData, isOpen]);
 
-  // Met à jour le state du bloc
   const updateBlock = (updatedFields: Partial<Omit<MuscuBlock, 'id'>>) => {
     setBlock(prev => ({ ...prev, ...updatedFields }));
   };
 
-  // Gère la sélection d'un exercice depuis le tiroir
   const handleSelectExercice = (exercice: ExerciceReference) => {
     updateBlock({ exerciceId: exercice.id, exerciceNom: exercice.nom });
     setIsTiroirOpen(false);
   };
   
-  // Gère la soumission du formulaire
   const handleValidate = () => {
     if (!block.exerciceId) {
       alert("Veuillez sélectionner un exercice.");
       return;
     }
-    onSave(noWeight ? { ...block, poids: null } : block);
+    onSave(block);
   };
 
-  // Gère la checkbox "Aucun poids"
   const handleNoWeightToggle = () => {
     const isTogglingToNoWeight = !noWeight;
     setNoWeight(isTogglingToNoWeight);
     if (isTogglingToNoWeight) {
       updateBlock({ poids: null });
     } else {
-      updateBlock({ poids: initialData?.poids || defaultState.poids });
+      updateBlock({ poids: initialData?.poids || defaultState.poids || 0 });
     }
   };
 
@@ -84,16 +77,12 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" 
             onClick={onCancel}
           >
             <motion.div 
-              initial={{ scale: 0.9, y: 20 }} 
-              animate={{ scale: 1, y: 0 }} 
-              exit={{ scale: 0.9, y: 20 }} 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} 
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4" 
               onClick={(e) => e.stopPropagation()}
             >
@@ -106,7 +95,7 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
                     <button
                       type="button"
                       onClick={() => setIsTiroirOpen(true)}
-                      className="w-full flex justify-between items-center px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                      className="w-full flex justify-between items-center px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
                     >
                       <span className={block.exerciceNom ? '' : 'text-gray-400'}>
                         {block.exerciceNom || 'Sélectionner un exercice'}
@@ -129,37 +118,31 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
                       onChange={(val) => updateBlock({ reps: val })} 
                     />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4 items-end">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Poids</label>
-                        <div className="flex items-center">
-                          <input 
-                            type="checkbox" 
-                            id="noWeight"
-                            checked={noWeight} 
-                            onChange={handleNoWeightToggle} 
-                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                          />
-                          <label htmlFor="noWeight" className="ml-2 text-xs text-gray-500 dark:text-gray-400">Aucun</label>
-                        </div>
+                  
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Poids</label>
+                      <div className="flex items-center">
+                        <input 
+                          type="checkbox" id="noWeight" checked={noWeight} onChange={handleNoWeightToggle} 
+                          className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        />
+                        <label htmlFor="noWeight" className="ml-2 text-xs text-gray-500 dark:text-gray-400">Poids du corps</label>
                       </div>
-                      <PickerWheel 
-                        values={poidsValues} 
-                        initialValue={block.poids || 0} 
-                        onChange={(val) => updateBlock({ poids: val })} 
-                        suffix="kg" 
-                        disabled={noWeight} 
-                      />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-center mb-2 text-gray-700 dark:text-gray-300">Repos</label>
-                      <TimePicker 
-                        initialTime={block.restTime} 
-                        onChange={(val) => updateBlock({ restTime: val })} 
-                      />
-                    </div>
+                    <WeightStepper 
+                      initialValue={block.poids}
+                      onChange={(val) => updateBlock({ poids: val })}
+                      disabled={noWeight}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Repos</label>
+                    <RestTimeSelector
+                       initialTime={block.restTime}
+                       onChange={(val) => updateBlock({ restTime: val })}
+                    />
                   </div>
                 </div>
 
