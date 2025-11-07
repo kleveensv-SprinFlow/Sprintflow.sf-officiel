@@ -2,7 +2,7 @@
 import React from 'react';
 import { useRecords } from '../../hooks/useRecords';
 import { Record } from '../../types';
-import { CardCarousel } from '../common/CardCarousel';
+import { GenericCardCarousel } from '../common/GenericCardCarousel'; // MODIFIÉ
 import { RecordCard } from '../common/RecordCard';
 
 interface AthleteRecordsCarouselProps {
@@ -40,11 +40,13 @@ export const AthleteRecordsCarousel: React.FC<AthleteRecordsCarouselProps> = ({ 
     return (
       <div className="py-4">
         <h2 className="text-xl font-bold text-light-title dark:text-dark-title px-4 mb-4">Mes Records</h2>
-        <p className="px-4 text-light-label dark:text-dark-label">Chargement des records...</p>
+        <div className="px-4">
+          <div className="h-[180px] w-full bg-light-card dark:bg-dark-card/50 rounded-2xl animate-pulse" />
+        </div>
       </div>
     );
   }
-
+  
   return (
     <div className="py-4">
       <div className="flex justify-between items-center px-4 mb-4">
@@ -64,7 +66,7 @@ export const AthleteRecordsCarousel: React.FC<AthleteRecordsCarouselProps> = ({ 
             </div>
         </div>
       ) : (
-        <CardCarousel>
+        <GenericCardCarousel>
           {latestUniqueRecords.map((record) => (
             <RecordCard 
               key={record.id} 
@@ -72,7 +74,7 @@ export const AthleteRecordsCarousel: React.FC<AthleteRecordsCarouselProps> = ({ 
               onClick={handleCardClick}
             />
           ))}
-        </CardCarousel>
+        </GenericCardCarousel>
       )}
     </div>
   );
