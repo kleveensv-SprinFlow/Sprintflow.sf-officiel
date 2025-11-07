@@ -4,6 +4,7 @@ import TimePicker from '../common/TimePicker';
 import PickerWheel from '../common/PickerWheel';
 import { CourseBlock, WorkoutBlock } from '../../types/workout';
 import { ChronoInput } from './ChronoInput';
+import DistanceSelector from '../common/DistanceSelector'; // Importez le nouveau composant
 
 interface CourseBlockFormProps {
   onSave: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
@@ -15,7 +16,6 @@ interface CourseBlockFormProps {
 
 const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
 const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
-const distanceValues = Array.from({ length: 200 }, (_, i) => (i + 1) * 50);
 
 const defaultState: Omit<CourseBlock, 'id' | 'chronos'> = {
   type: 'course',
@@ -63,7 +63,13 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
         <PickerWheel label="Séries" values={seriesValues} initialValue={block.series} onChange={(val) => updateBlock({ series: val })} />
         <PickerWheel label="Répétitions" values={repsValues} initialValue={block.reps} onChange={(val) => updateBlock({ reps: val })} />
       </div>
-      <PickerWheel label="Distance" values={distanceValues} initialValue={block.distance} onChange={(val) => updateBlock({ distance: val })} suffix="m" />
+      
+      {/* Remplacez le PickerWheel par le nouveau DistanceSelector */}
+      <DistanceSelector 
+        initialValue={block.distance} 
+        onChange={(val) => updateBlock({ distance: val })} 
+      />
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-center text-gray-700 dark:text-gray-300 mb-2">Repos Répétitions</label>
@@ -125,11 +131,11 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
               {isAthlete ? renderAthleteForm() : renderCoachForm()}
 
               <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button type="button" onClick={handleValidate} className="flex-1 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium">
-                  {isAthlete ? 'Valider les chronos' : (initialData ? 'Modifier' : 'Ajouter')}
-                </button>
-                <button type="button" onClick={onCancel} className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-medium">
+                <button type="button" onClick={onCancel} className="w-full px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-medium">
                   Annuler
+                </button>
+                <button type="button" onClick={handleValidate} className="w-full bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium">
+                  {isAthlete ? 'Valider les chronos' : (initialData ? 'Modifier' : 'Ajouter')}
                 </button>
               </div>
             </div>
