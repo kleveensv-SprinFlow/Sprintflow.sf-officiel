@@ -18,14 +18,22 @@ interface HeaderProps {
 export default function Header({ userRole, onRefreshData, onProfileClick, onHomeClick, onMenuClick, isDashboard, canGoBack, onBack, title, showWelcome = false }: HeaderProps) {
   const { profile } = useAuth();
   const [displayWelcome, setDisplayWelcome] = useState(showWelcome);
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     if (showWelcome) {
       setDisplayWelcome(true);
-      const timer = setTimeout(() => {
+      setIsExiting(false);
+      const exitTimer = setTimeout(() => {
+        setIsExiting(true);
+      }, 2200);
+      const hideTimer = setTimeout(() => {
         setDisplayWelcome(false);
-      }, 2500);
-      return () => clearTimeout(timer);
+      }, 2800);
+      return () => {
+        clearTimeout(exitTimer);
+        clearTimeout(hideTimer);
+      };
     }
   }, [showWelcome]);
 
@@ -66,12 +74,11 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
         
         <div className="flex-1 flex justify-center min-w-0">
           {isDashboard && displayWelcome ? (
-            <div className="flex items-center gap-2 animate-fade-in">
-              <Flame className="h-5 w-5 text-orange-500 animate-pulse" />
-              <h1 className="text-lg font-bold bg-gradient-to-r from-orange-600 via-red-500 to-yellow-600 bg-clip-text text-transparent">
-                Bonjour {firstName}
-              </h1>
-            </div>
+            <h1 className={`text-lg font-bold bg-gradient-to-r from-orange-600 via-red-500 to-yellow-600 bg-clip-text text-transparent whitespace-nowrap ${
+              isExiting ? 'animate-welcome-exit' : 'animate-welcome-enter'
+            }`}>
+              Bonjour {firstName}
+            </h1>
           ) : !isDashboard ? (
             <h1 className="text-lg font-bold text-gray-800 dark:text-gray-200 truncate">{title || ''}</h1>
           ) : null}
