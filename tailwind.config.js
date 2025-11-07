@@ -35,7 +35,7 @@ export default {
         'light-label': '#718096', // Labels et textes secondaires
 
         // Thème sombre
-        'dark-background': '#0D1117', // Fond très sombre, bleu nuit
+        'dark-background': '#1F2937', // Fond gris anthracite
         'dark-card': '#161B22',       // Cartes légèrement plus claires
         'dark-title': '#E6EDF3',      // Titres en blanc cassé
         'dark-text': '#C9D1D9',       // Texte principal
@@ -43,7 +43,7 @@ export default {
 
         // Couleurs pour l'effet Glassmorphism
         'light-glass': 'rgba(255, 255, 255, 0.3)',
-        'dark-glass': 'rgba(22, 27, 34, 0.4)',
+        'dark-glass': 'rgba(55, 65, 81, 0.5)',
       },
       boxShadow: {
         'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
