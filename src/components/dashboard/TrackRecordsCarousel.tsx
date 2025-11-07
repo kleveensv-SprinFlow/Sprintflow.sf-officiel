@@ -1,4 +1,3 @@
-// src/components/dashboard/TrackRecordsCarousel.tsx
 import React from 'react';
 import { useRecords } from '../../hooks/useRecords';
 import { Record } from '../../types';
@@ -16,24 +15,7 @@ export const TrackRecordsCarousel: React.FC<TrackRecordsCarouselProps> = ({ onNa
 
   const trackRecords = records.filter(r => r.type === 'run' || r.unit === 's');
 
-  const getLatestUniqueRecords = (allRecords: Record[]): Record[] => {
-    if (!allRecords || allRecords.length === 0) {
-      return [];
-    }
-
-    const latestRecordsMap = new Map<string, Record>();
-    const sortedRecords = [...allRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    sortedRecords.forEach(record => {
-      if (!latestRecordsMap.has(record.exercise_name)) {
-        latestRecordsMap.set(record.exercise_name, record);
-      }
-    });
-
-    return Array.from(latestRecordsMap.values());
-  };
-
-  const latestUniqueTrackRecords = getLatestUniqueRecords(trackRecords);
+  const sortedTrackRecords = [...trackRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleCardClick = () => {
     onNavigate('records');
@@ -56,7 +38,7 @@ export const TrackRecordsCarousel: React.FC<TrackRecordsCarouselProps> = ({ onNa
         <h2 className="text-xl font-bold text-light-title dark:text-dark-title">Records de Course</h2>
       </div>
 
-      {latestUniqueTrackRecords.length === 0 ? (
+      {sortedTrackRecords.length === 0 ? (
         <div className="px-4">
             <div className="text-center p-8 bg-light-glass dark:bg-dark-glass rounded-2xl">
                 <p className="text-light-label dark:text-dark-label">Aucun record de course n'a encore été enregistré.</p>
@@ -64,7 +46,7 @@ export const TrackRecordsCarousel: React.FC<TrackRecordsCarouselProps> = ({ onNa
         </div>
       ) : (
         <GenericCardCarousel>
-          {latestUniqueTrackRecords.map((record) => (
+          {sortedTrackRecords.map((record) => (
             <RecordCard 
               key={record.id} 
               record={record} 
