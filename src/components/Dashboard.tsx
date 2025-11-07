@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase';
 import { CoachDashboard } from './dashboard/CoachDashboard';
 import { IndicesPanel } from './dashboard/IndicesPanel';
 import { RecentWorkouts } from './dashboard/RecentWorkouts';
-import { AthleteRecordsCarousel } from './dashboard/AthleteRecordsCarousel';
+import { StrengthRecordsCarousel } from './dashboard/StrengthRecordsCarousel';
+import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';
 import { GroupOverview } from './dashboard/GroupOverview';
 import { AthleteDailyPlanCarousel } from './dashboard/AthleteDailyPlanCarousel';
 import { useWellness } from '../hooks/useWellness';
@@ -124,7 +125,8 @@ export default function Dashboard({ userRole, onViewChange, onScoresLoad }: Dash
 
       <AthleteDailyPlanCarousel />
 
-      <AthleteRecordsCarousel onNavigate={onViewChange} />
+      <StrengthRecordsCarousel onNavigate={() => onViewChange('records')} />
+      <TrackRecordsCarousel onNavigate={() => onViewChange('records')} />
       <GroupOverview onNavigate={() => onViewChange('groups')} />
 
       <RecentWorkouts onNavigate={() => onViewChange('workouts')} />
