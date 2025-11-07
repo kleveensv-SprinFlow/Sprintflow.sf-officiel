@@ -1,143 +1,168 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search } from 'lucide-react';
+import { X, Search, PlusCircle } from 'lucide-react';
+import { ExerciceReference, useExercices } from '../../hooks/useExercices';
 import { EXERCISE_CATEGORIES } from '../../data/categories';
-import { ExerciceReference } from '../../hooks/useExercices';
+import { CustomExerciceForm } from '../records/CustomExerciceForm';
+import useAuth from '../../hooks/useAuth';
 
 interface TiroirDeSelectionProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectExercice: (exercice: ExerciceReference) => void;
-  exercices: ExerciceReference[];
+  exercices: ExerciceReference[]; // Gardé pour la prop, mais on utilisera celui du hook interne
   title: string;
 }
 
-export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({
-  isOpen,
-  onClose,
-  onSelectExercice,
-  exercices,
-  title,
-}) => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, onClose, onSelectExercice, title }) => {
+  const { profile } = useAuth();
+  const { exercices, loadExercices } = useExercices(); // On utilise le hook ici
+  const [selectedCategory, setSelectedCategory] = useState<string | null>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isCustomFormOpen, setIsCustomFormOpen] = useState(false);
 
-  const handleSelectCategory = (categoryKey: string) => {
-    setSelectedCategory(prev => (prev === categoryKey ? null : categoryKey));
-    setSearchQuery(''); 
-  };
-  
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setSelectedCategory(null);
-  };
+  const myExercices = useMemo(() => 
+    exercices.filter(ex => ex.type === 'custom' && ex.coach_id === profile?.id)
+  , [exercices, profile]);
+
+  const categories = useMemo(() => {
+    const cats = [...EXERCISE_CATEGORIES];
+    if (myExercices.length > 0) {
+      cats.unshift({ key: 'custom', label: 'Mes exercices', emoji: '⭐' });
+    }
+    cats.unshift({ key: 'all', label: 'Tout', emoji: '🗂️' });
+    return cats;
+  }, [myExercices]);
 
   const filteredExercices = useMemo(() => {
-    if (searchQuery) {
-      const normalizedQuery = searchQuery.toLowerCase().trim();
-      return exercices.filter(ex => 
-        ex.nom.toLowerCase().includes(normalizedQuery) || 
-        ex.nom_alternatif?.some(alt => alt.toLowerCase().includes(normalizedQuery))
+    let list = exercices;
+
+    if (selectedCategory === 'custom') {
+      list = myExercices;
+    } else if (selectedCategory && selectedCategory !== 'all') {
+      // Afficher les exercices custom dans leur catégorie d'origine aussi
+      list = exercices.filter(ex => 
+        ex.categorie === selectedCategory || 
+        (ex.type === 'custom' && ex.categorie === selectedCategory)
       );
     }
-    if (selectedCategory) {
-      return exercices.filter(ex => ex.categorie === selectedCategory);
-    }
-    return exercices;
-  }, [searchQuery, selectedCategory, exercices]);
 
-  const handleSelectExercice = (exercice: ExerciceReference) => {
-    onSelectExercice(exercice);
-    onClose();
-  };
+    if (searchTerm) {
+      list = list.filter(ex => ex.nom.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+
+    // Deduplicate and sort
+    const uniqueList = Array.from(new Map(list.map(item => [item.id, item])).values());
+    return uniqueList.sort((a, b) => a.nom.localeCompare(b.nom));
+
+  }, [exercices, selectedCategory, searchTerm, myExercices]);
   
-  // Reset state when closing
-  React.useEffect(() => {
-    if (!isOpen) {
-      setSelectedCategory(null);
-      setSearchQuery('');
+  // Reset search and category when opening
+  useEffect(() => {
+    if (isOpen) {
+      setSearchTerm('');
+      setSelectedCategory('all');
     }
   }, [isOpen]);
 
+  const handleSaveCustom = () => {
+    loadExercices(); // On rafraîchit la liste
+    setIsCustomFormOpen(false);
+  };
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
+    <>
+      <AnimatePresence>
+        {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { duration: 0.3 } }}
-            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-50"
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 z-40"
-            style={{ transform: 'translateZ(0)' }} // Promote to its own layer
-          />
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: '0%' }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 h-[90vh] bg-gray-900 rounded-t-2xl z-50 flex flex-col shadow-2xl"
           >
-            <header className="flex items-center justify-between p-4 border-b border-gray-700 flex-shrink-0">
-              <h2 className="text-xl font-bold text-white">{title}</h2>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </header>
-            
-            <div className="p-4 flex-shrink-0">
-                <h3 className="text-sm font-semibold text-gray-400 mb-3">Catégories</h3>
-                <div className="grid grid-cols-3 gap-3">
-                    {EXERCISE_CATEGORIES.map(cat => (
-                        <button
-                            key={cat.key}
-                            onClick={() => handleSelectCategory(cat.key)}
-                            className={`p-3 rounded-lg text-center transition-colors duration-200 ${selectedCategory === cat.key ? 'bg-accent-500 text-white shadow-lg' : 'bg-gray-800 text-gray-200 hover:bg-gray-700'}`}
-                        >
-                            <span className="text-2xl">{cat.icon}</span>
-                            <span className="block text-xs font-medium mt-1">{cat.label}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="absolute bottom-0 left-0 right-0 h-[90vh] bg-white dark:bg-gray-800 rounded-t-2xl flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              <header className="p-4 border-b dark:border-gray-700 flex items-center justify-between flex-shrink-0">
+                <h3 className="text-lg font-bold">{title}</h3>
+                <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <X size={20} />
+                </button>
+              </header>
 
-            <div className="p-4 flex-shrink-0">
-                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                    <input
+              <div className="p-4 flex-shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input
                     type="text"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    placeholder="Ou rechercher un exercice..."
-                    className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                    />
+                    placeholder="Rechercher un exercice..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full bg-gray-100 dark:bg-gray-700 border-transparent rounded-lg pl-10 pr-4 py-2"
+                  />
                 </div>
-            </div>
+              </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
-              <ul className="divide-y divide-gray-800">
-                {filteredExercices.map(ex => (
-                  <li 
-                    key={ex.id} 
-                    onClick={() => handleSelectExercice(ex)}
-                    className="py-4 px-2 text-gray-300 hover:bg-gray-800 rounded-md cursor-pointer"
-                  >
-                    {ex.nom}
-                  </li>
-                ))}
-              </ul>
-              {filteredExercices.length === 0 && (
-                <div className="text-center py-10">
-                    <p className="text-gray-500">Aucun exercice trouvé.</p>
+              <div className="flex-shrink-0">
+                <div className="flex gap-2 p-4 pt-0 overflow-x-auto no-scrollbar">
+                  {categories.map(cat => (
+                    <button
+                      key={cat.key}
+                      onClick={() => setSelectedCategory(cat.key)}
+                      className={`px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors ${
+                        selectedCategory === cat.key
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                      }`}
+                    >
+                      {cat.emoji} {cat.label}
+                    </button>
+                  ))}
                 </div>
+              </div>
+
+              <div className="flex-grow overflow-y-auto px-4">
+                {filteredExercices.map(exercice => (
+                  <div
+                    key={exercice.id}
+                    onClick={() => onSelectExercice(exercice)}
+                    className="p-4 border-b dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    {exercice.nom}
+                  </div>
+                ))}
+              </div>
+
+              {profile?.role === 'coach' && (
+                <footer className="p-4 border-t dark:border-gray-700 flex-shrink-0">
+                  <button
+                    onClick={() => setIsCustomFormOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold"
+                  >
+                    <PlusCircle size={20} />
+                    Créer un exercice
+                  </button>
+                </footer>
               )}
-            </div>
+            </motion.div>
           </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+          {isCustomFormOpen && (
+              <CustomExerciceForm 
+                  onSave={handleSaveCustom}
+                  onCancel={() => setIsCustomFormOpen(false)}
+              />
+          )}
+      </AnimatePresence>
+    </>
   );
 };
