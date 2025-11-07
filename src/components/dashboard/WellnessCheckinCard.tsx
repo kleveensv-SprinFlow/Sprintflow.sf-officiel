@@ -36,31 +36,28 @@ export const WellnessCheckinCard = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
-      <h3 className="font-semibold mb-2">Check-in du jour</h3>
+    <div className="bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark p-4 rounded-lg">
+      <h3 className="font-semibold mb-2 text-light-title dark:text-dark-title">Check-in du jour</h3>
       <div className="space-y-3">
-        {/* Sleep */}
         <div>
-          <label className="block text-sm">Qualité du sommeil</label>
-          <div className="flex justify-between text-xs text-gray-500">
+          <label className="block text-sm text-light-label dark:text-dark-label">Qualité du sommeil</label>
+          <div className="flex justify-between text-xs text-light-label dark:text-dark-label opacity-70">
             <span>Mauvaise</span>
             <span>Excellente</span>
           </div>
           <input type="range" min="1" max="5" value={sleep} onChange={e => setSleep(parseInt(e.target.value))} className="w-full" />
         </div>
-        {/* Stress */}
         <div>
-          <label className="block text-sm">Niveau de stress</label>
-          <div className="flex justify-between text-xs text-gray-500">
+          <label className="block text-sm text-light-label dark:text-dark-label">Niveau de stress</label>
+          <div className="flex justify-between text-xs text-light-label dark:text-dark-label opacity-70">
             <span>Faible</span>
             <span>Élevé</span>
           </div>
           <input type="range" min="1" max="5" value={stress} onChange={e => setStress(parseInt(e.target.value))} className="w-full" />
         </div>
-        {/* Fatigue */}
         <div>
-          <label className="block text-sm">Fatigue musculaire</label>
-          <div className="flex justify-between text-xs text-gray-500">
+          <label className="block text-sm text-light-label dark:text-dark-label">Fatigue musculaire</label>
+          <div className="flex justify-between text-xs text-light-label dark:text-dark-label opacity-70">
             <span>Faible</span>
             <span>Élevée</span>
           </div>
@@ -70,7 +67,7 @@ export const WellnessCheckinCard = () => {
       <button 
         onClick={handleSubmit} 
         disabled={loading}
-        className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg"
+        className="mt-4 w-full bg-sprintflow-blue text-white py-2 rounded-lg font-semibold"
       >
         {loading ? 'Enregistrement...' : 'Enregistrer'}
       </button>
