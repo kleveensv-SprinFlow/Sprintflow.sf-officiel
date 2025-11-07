@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useWellness } from '../../hooks/useWellness';
 import useAuth from '../../hooks/useAuth';
 
-export const WellnessCheckinCard = () => {
+interface WellnessCheckinCardProps {
+  onClose?: () => void;
+}
+
+export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClose }) => {
   const { user } = useAuth();
   const { wellnessData, logDailyCheckin, loading } = useWellness(user?.id);
   const [sleep, setSleep] = useState(3);
@@ -30,44 +34,45 @@ export const WellnessCheckinCard = () => {
         muscle_fatigue: fatigue,
       });
       setSubmitted(true);
+      if (onClose) onClose();
     } catch (error) {
       console.error('Erreur lors de la soumission du check-in:', error);
     }
   };
 
   return (
-    <div className="bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark p-4 rounded-lg">
-      <h3 className="font-semibold mb-2 text-light-title dark:text-dark-title">Check-in du jour</h3>
-      <div className="space-y-3">
+    <div className="p-4">
+      <h3 className="font-bold text-xl text-center mb-4 text-light-title dark:text-dark-title">Check-in du jour</h3>
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm text-light-label dark:text-dark-label">Qualité du sommeil</label>
-          <div className="flex justify-between text-xs text-light-label dark:text-dark-label opacity-70">
+          <label className="block text-sm font-medium text-light-label dark:text-dark-label">Qualité du sommeil</label>
+          <div className="flex justify-between text-xs text-gray-500">
             <span>Mauvaise</span>
             <span>Excellente</span>
           </div>
-          <input type="range" min="1" max="5" value={sleep} onChange={e => setSleep(parseInt(e.target.value))} className="w-full" />
+          <input type="range" min="1" max="5" value={sleep} onChange={e => setSleep(parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
         </div>
         <div>
-          <label className="block text-sm text-light-label dark:text-dark-label">Niveau de stress</label>
-          <div className="flex justify-between text-xs text-light-label dark:text-dark-label opacity-70">
+          <label className="block text-sm font-medium text-light-label dark:text-dark-label">Niveau de stress</label>
+          <div className="flex justify-between text-xs text-gray-500">
             <span>Faible</span>
             <span>Élevé</span>
           </div>
-          <input type="range" min="1" max="5" value={stress} onChange={e => setStress(parseInt(e.target.value))} className="w-full" />
+          <input type="range" min="1" max="5" value={stress} onChange={e => setStress(parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
         </div>
         <div>
-          <label className="block text-sm text-light-label dark:text-dark-label">Fatigue musculaire</label>
-          <div className="flex justify-between text-xs text-light-label dark:text-dark-label opacity-70">
+          <label className="block text-sm font-medium text-light-label dark:text-dark-label">Fatigue musculaire</label>
+          <div className="flex justify-between text-xs text-gray-500">
             <span>Faible</span>
             <span>Élevée</span>
           </div>
-          <input type="range" min="1" max="5" value={fatigue} onChange={e => setFatigue(parseInt(e.target.value))} className="w-full" />
+          <input type="range" min="1" max="5" value={fatigue} onChange={e => setFatigue(parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
         </div>
       </div>
       <button 
         onClick={handleSubmit} 
         disabled={loading}
-        className="mt-4 w-full bg-sprintflow-blue text-white py-2 rounded-lg font-semibold"
+        className="mt-6 w-full bg-primary-500 hover:bg-primary-600 text-white font-bold py-3 rounded-lg transition-colors duration-300 disabled:opacity-50"
       >
         {loading ? 'Enregistrement...' : 'Enregistrer'}
       </button>
