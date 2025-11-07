@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, Home, RefreshCw, Crown, User as UserIcon, Menu } from 'lucide-react';
+import { ChevronLeft, Home, RefreshCw, Flame, User as UserIcon } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
 interface HeaderProps {
@@ -27,54 +27,31 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
     <header className="sticky top-0 z-30 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg">
       <div className="px-4 py-3 flex items-center justify-between min-w-0">
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
-          {userRole === 'athlete' ? (
+          {canGoBack ? (
             <button
-              onClick={onMenuClick}
+              onClick={onBack}
               className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              aria-label="Ouvrir le menu"
+              aria-label="Retour"
             >
-              <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+              <ChevronLeft className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+            </button>
+          ) : !isDashboard ? (
+            <button
+              onClick={onHomeClick}
+              className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              aria-label="Accueil"
+            >
+              <Home className="h-6 w-6 text-gray-700 dark:text-gray-300" />
             </button>
           ) : (
-            <>
-              {canGoBack && (
-                <button
-                  onClick={onBack}
-                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                  aria-label="Retour"
-                >
-                  <ChevronLeft className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-                </button>
-              )}
-              {!isDashboard && !canGoBack && (
-                <button
-                  onClick={onHomeClick}
-                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                  aria-label="Accueil"
-                >
-                  <Home className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-                </button>
-              )}
-            </>
+            <div className="p-2">
+              <Flame className="h-6 w-6 text-orange-500" />
+            </div>
           )}
         </div>
         
         <div className="flex-1 flex justify-center min-w-0">
-          {isDashboard && !canGoBack ? (
-            <div className="flex items-center space-x-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
-              {(userRole === 'coach' || userRole === 'developer') ? (
-                <>
-                  <Crown className="w-4 h-4 text-secondary-500" />
-                  <span>{userRole === 'developer' ? 'Développeur' : 'Coach'}</span>
-                </>
-              ) : (
-                <>
-                  <UserIcon className="w-4 h-4 text-primary-500" />
-                  <span>Athlète</span>
-                </>
-              )}
-            </div>
-          ) : (
+          {!isDashboard && (
             <h1 className="text-lg font-bold text-gray-800 dark:text-gray-200 truncate">{title || ''}</h1>
           )}
         </div>

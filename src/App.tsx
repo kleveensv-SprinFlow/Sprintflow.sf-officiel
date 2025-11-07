@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard.tsx';
 import TabBar from './components/TabBar.tsx';
 import Header from './components/navigation/Header.tsx';
 import SideMenu from './components/navigation/SideMenu.tsx';
+import { WelcomeAnimation } from './components/navigation/WelcomeAnimation.tsx';
 import { View } from './types';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -43,6 +44,8 @@ function App() {
   const [showForm, setShowForm] = useState<View | null>(null);
   const [isConfirmingEmail, setIsConfirmingEmail] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
   const handleMenuNavigate = (view: View) => {
     setCurrentView(view);
@@ -86,6 +89,13 @@ function App() {
     window.addEventListener('change-view', handleViewChange);
     return () => window.removeEventListener('change-view', handleViewChange);
   }, []);
+
+  useEffect(() => {
+    if (session && !loading && !hasShownWelcome && currentView === 'dashboard') {
+      setShowWelcome(true);
+      setHasShownWelcome(true);
+    }
+  }, [session, loading, hasShownWelcome, currentView]);
 
   const handleFabAction = (view: View) => {
     setShowForm(view);
@@ -142,6 +152,9 @@ function App() {
 
   return (
     <div className="bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text min-h-screen">
+      {showWelcome && hasShownWelcome && (
+        <WelcomeAnimation onComplete={() => setShowWelcome(false)} />
+      )}
       <Header
         userRole={profile?.role as any}
         isDashboard={currentView === 'dashboard'}
