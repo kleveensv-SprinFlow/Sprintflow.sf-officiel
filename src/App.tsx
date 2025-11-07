@@ -28,12 +28,12 @@ const DeveloperPanel = lazy(() => import('./components/developer/DeveloperPanel.
 const ChatManager = lazy(() => import('./components/chat/ChatManager.tsx').then(m => ({ default: m.ChatManager || m.default })));
 
 // Lazy loading des formulaires
-const NewWorkoutForm = lazy(() => import('./components/workouts/NewWorkoutForm.tsx'));
-const RecordsForm = lazy(() => import('./components/records/RecordsForm.tsx'));
-const RecordsList = lazy(() => import('./components/records/RecordsList.tsx'));
-const FoodSearchModal = lazy(() => import('./components/nutrition/FoodSearchModal.tsx'));
-const SleepForm = lazy(() => import('./components/sleep/SleepForm.tsx'));
-const ShareView = lazy(() => import('./components/sharing/ShareView.tsx'));
+const NewWorkoutForm = lazy(() => import('./components/workouts/NewWorkoutForm.tsx').then(m => ({ default: m.NewWorkoutForm })));
+const RecordsForm = lazy(() => import('./components/records/RecordsForm.tsx').then(m => ({ default: m.RecordsForm || m.default })));
+const RecordsList = lazy(() => import('./components/records/RecordsList.tsx').then(m => ({ default: m.RecordsList || m.default })));
+const FoodSearchModal = lazy(() => import('./components/nutrition/FoodSearchModal.tsx').then(m => ({ default: m.FoodSearchModal || m.default })));
+const SleepForm = lazy(() => import('./components/sleep/SleepForm.tsx').then(m => ({ default: m.SleepForm || m.default })));
+const ShareView = lazy(() => import('./components/sharing/ShareView.tsx').then(m => ({ default: m.default })));
 
 function App() {
   const { session, loading, profile } = useAuth();
