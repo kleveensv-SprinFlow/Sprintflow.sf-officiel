@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Home, RefreshCw, Flame, User as UserIcon } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
@@ -12,16 +12,30 @@ interface HeaderProps {
   canGoBack?: boolean;
   onBack?: () => void;
   title?: string;
+  showWelcome?: boolean;
 }
 
-export default function Header({ userRole, onRefreshData, onProfileClick, onHomeClick, onMenuClick, isDashboard, canGoBack, onBack, title }: HeaderProps) {
+export default function Header({ userRole, onRefreshData, onProfileClick, onHomeClick, onMenuClick, isDashboard, canGoBack, onBack, title, showWelcome = false }: HeaderProps) {
   const { profile } = useAuth();
+  const [displayWelcome, setDisplayWelcome] = useState(showWelcome);
+
+  useEffect(() => {
+    if (showWelcome) {
+      setDisplayWelcome(true);
+      const timer = setTimeout(() => {
+        setDisplayWelcome(false);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [showWelcome]);
 
   const handleRefresh = () => {
     if (onRefreshData) {
       onRefreshData();
     }
   };
+
+  const firstName = profile?.first_name || profile?.full_name?.split(' ')[0] || 'Athlète';
 
   return (
     <header className="sticky top-0 z-30 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg">
@@ -51,9 +65,16 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
         </div>
         
         <div className="flex-1 flex justify-center min-w-0">
-          {!isDashboard && (
+          {isDashboard && displayWelcome ? (
+            <div className="flex items-center gap-2 animate-fade-in">
+              <Flame className="h-5 w-5 text-orange-500 animate-pulse" />
+              <h1 className="text-lg font-bold bg-gradient-to-r from-orange-600 via-red-500 to-yellow-600 bg-clip-text text-transparent">
+                Bonjour {firstName}
+              </h1>
+            </div>
+          ) : !isDashboard ? (
             <h1 className="text-lg font-bold text-gray-800 dark:text-gray-200 truncate">{title || ''}</h1>
-          )}
+          ) : null}
         </div>
         
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">

@@ -152,9 +152,6 @@ function App() {
 
   return (
     <div className="bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text min-h-screen">
-      {showWelcome && hasShownWelcome && (
-        <WelcomeAnimation onComplete={() => setShowWelcome(false)} />
-      )}
       <Header
         userRole={profile?.role as any}
         isDashboard={currentView === 'dashboard'}
@@ -164,6 +161,7 @@ function App() {
         onProfileClick={() => setCurrentView('profile')}
         onHomeClick={() => setCurrentView('dashboard')}
         onMenuClick={() => setMenuOpen(true)}
+        showWelcome={showWelcome && hasShownWelcome}
       />
       <SideMenu isOpen={isMenuOpen} onClose={() => setMenuOpen(false)} onNavigate={handleMenuNavigate} />
       <main className="pb-20 pt-16 px-4">{renderView()}</main>
