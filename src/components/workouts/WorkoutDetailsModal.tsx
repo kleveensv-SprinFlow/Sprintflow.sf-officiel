@@ -1,0 +1,96 @@
+// src/components/workouts/WorkoutDetailsModal.tsx
+import React from 'react';
+import { Workout, CourseBlock, MuscuBlock } from '../../types';
+import { X, Calendar, Dumbbell, Navigation, Type, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+interface WorkoutDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  workout: Workout | null;
+}
+
+const BlocDetail: React.FC<{ bloc: any, index: number }> = ({ bloc, index }) => {
+  if (bloc.type === 'course') {
+    const b = bloc as CourseBlock;
+    return (
+      <div className="flex items-start space-x-3">
+        <Navigation size={18} className="text-blue-400 mt-1" />
+        <div>
+          <p className="font-semibold">{`Bloc ${index + 1}: Course`}</p>
+          <p className="text-sm text-gray-400">{`${b.series}x ${b.distance}m | Récup: ${b.recup}s`}</p>
+        </div>
+      </div>
+    );
+  }
+  if (bloc.type === 'musculation') {
+    const b = bloc as MuscuBlock;
+    return (
+      <div className="flex items-start space-x-3">
+        <Dumbbell size={18} className="text-green-400 mt-1" />
+        <div>
+          <p className="font-semibold">{`Bloc ${index + 1}: ${b.exerciceNom}`}</p>
+          <p className="text-sm text-gray-400">{`${b.series}x ${b.reps} @ ${b.poids || 'PDC'}kg | Récup: ${b.recup}s`}</p>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+export const WorkoutDetailsModal: React.FC<WorkoutDetailsModalProps> = ({ isOpen, onClose, workout }) => {
+  if (!isOpen || !workout) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex justify-center items-center" onClick={onClose}>
+      <div className="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg m-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <header className="p-4 border-b border-gray-700 flex justify-between items-center shrink-0">
+          <h2 className="text-xl font-bold">{workout.tag_seance}</h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700">
+            <X size={24} />
+          </button>
+        </header>
+
+        <div className="overflow-y-auto p-6 space-y-6">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center space-x-2">
+              <Calendar size={16} className="text-gray-400" />
+              <span>{format(new Date(workout.date), 'EEEE d MMMM yyyy', { locale: fr })}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Type size={16} className="text-gray-400" />
+              <span className="capitalize">{workout.type}</span>
+            </div>
+            {workout.duration_minutes && (
+              <div className="flex items-center space-x-2">
+                <Clock size={16} className="text-gray-400" />
+                <span>{`${workout.duration_minutes} minutes`}</span>
+              </div>
+            )}
+          </div>
+          
+          {workout.notes && (
+            <div>
+              <h3 className="font-semibold mb-2">Notes du coach</h3>
+              <p className="text-gray-300 bg-gray-700/50 p-3 rounded-lg">{workout.notes}</p>
+            </div>
+          )}
+
+          <div>
+            <h3 className="font-semibold mb-3">Contenu de la séance</h3>
+            <div className="space-y-4">
+              {workout.planned_data?.blocs && workout.planned_data.blocs.length > 0 ? (
+                workout.planned_data.blocs.map((bloc, index) => (
+                  <BlocDetail key={bloc.id || index} bloc={bloc} index={index} />
+                ))
+              ) : (
+                <p className="text-gray-400">Aucun bloc planifié pour cette séance.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
