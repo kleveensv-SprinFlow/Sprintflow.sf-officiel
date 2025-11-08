@@ -95,14 +95,20 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
 
   const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between bg-light-glass dark:bg-dark-glass shadow-glass backdrop-blur-lg border border-white/10 transition-all duration-300 group";
 
-  if (isReadOnly && mainWorkout && onCardClick) {
+  // La carte devient un bouton cliquable s'il y a une séance et une action "onCardClick",
+  // que ce soit en lecture seule (athlète) ou non (coach).
+  if (mainWorkout && onCardClick) {
     return (
-      <button onClick={() => onCardClick(mainWorkout.id)} className={`${baseClasses} text-left`}>
+      <button 
+        onClick={() => onCardClick(mainWorkout.id)} 
+        className={`${baseClasses} text-left hover:scale-[1.02] active:scale-[0.98]`}
+      >
         {cardContent}
       </button>
     );
   }
 
+  // Sinon, c'est une div simple (pour la carte vide avec le bouton "Planifier")
   return (
     <div className={baseClasses}>
       {cardContent}
