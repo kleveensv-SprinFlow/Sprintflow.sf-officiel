@@ -124,9 +124,9 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
               className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
               title="Mon Profil"
             >
-              {profile?.avatar_url ? (
+              {profile?.photo_url ? (
                 <img
-                  src={profile.avatar_url}
+                  src={profile.photo_url}
                   alt="Photo de profil"
                   className="w-full h-full object-cover"
                   onError={(e) => { e.currentTarget.style.display = 'none' }}
