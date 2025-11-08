@@ -1,3 +1,146 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Edit, Settings, LogOut, Camera, Shield, Lock, Trash2, MessageSquare, Loader2, Target, Handshake } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
+import { EditProfileModal } from './EditProfileModal';
+import { ChangePasswordModal } from './ChangePasswordModal';
+import { DeleteAccountModal } from './DeleteAccountModal';
+import { SetObjectifModal } from './SetObjectifModal';
+import { toast } from 'react-toastify';
+
+type View = 'dashboard' | 'workouts' | 'planning' | 'profile' | 'sleep' | 'records' | 'groups' | 'chat' | 'video-analysis' | 'advice' | 'nutrition' | 'settings' | 'contact' | 'partnerships';
+
+interface ProfileData {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+  role_specifique?: string | null;
+  date_de_naissance: string | null;
+  discipline: string | null;
+  sexe: string | null;
+  height: number | null;
+  avatar_url: string | null;
+  license_number: string | null;
+}
+
+interface Objectif {
+  id: string;
+  user_id: string;
+  epreuve_id: string;
+  valeur: string;
+  date_echeance: string | null;
+  epreuve?: {
+    nom: string;
+    unite: string;
+  };
+}
+
+const ProfilePage: React.FC = () => {
+  const { user, signOut, profile: authProfile, refreshProfile } = useAuth();
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [objectif, setObjectif] = useState<Objectif | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [showObjectifModal, setShowObjectifModal] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user) {
+      loadProfileAndObjectif();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (authProfile) {
+      setProfile(authProfile as ProfileData);
+    }
+  }, [authProfile]);
+
+  const loadProfileAndObjectif = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+      if (profileData) setProfile(profileData);
+
+      await refreshProfile();
+      await fetchObjectif(user.id);
+    } catch (error) {
+      console.error('Erreur chargement profil:', error);
+      toast.error('Erreur lors du chargement du profil');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchObjectif = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('objectifs')
+        .select(`
+          id,
+          user_id,
+          epreuve_id,
+          valeur,
+          date_echeance,
+          epreuve:epreuves_athletisme(nom, unite)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      setObjectif(data);
+    } catch (error) {
+      console.error('Erreur chargement objectif:', error);
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !user) return;
+
+    const file = e.target.files[0];
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image valide');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La taille de l\'image ne doit pas dépasser 5 Mo');
+      return;
+    }
+
+    setUploadingPhoto(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      console.log('📤 Upload photo vers:', filePath);
+
+      const { error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
 
       console.log('✅ Upload réussi!');
 
@@ -13,9 +156,9 @@
         .eq('id', user.id);
 
       if (updateError) throw updateError;
-      
+
       await refreshProfile();
-      
+
       toast.success('Photo de profil mise à jour avec succès !');
 
     } catch (err: any) {
@@ -25,7 +168,7 @@
       setUploadingPhoto(false);
     }
   };
-  
+
   const getInitials = (p: ProfileData) => (p.first_name?.[0] || '') + (p.last_name?.[0] || '');
   const getFullName = (p: ProfileData) => `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Utilisateur';
   const formatDate = (date: string | null) => date ? new Date(date).toLocaleDateString('fr-FR') : 'Non renseigné';
@@ -36,7 +179,7 @@
   if (!profile) {
     return <div className="flex items-center justify-center h-screen"><p>Profil non trouvé. Veuillez vous reconnecter.</p></div>;
   }
-  
+
     const ProfileCard = ({ profile, onEdit }: { profile: ProfileData, onEdit: () => void }) => (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 relative overflow-hidden">
       <div className="absolute top-4 right-4">
