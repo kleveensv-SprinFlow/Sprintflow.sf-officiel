@@ -12,6 +12,8 @@ import { useWorkoutTypes } from '../../hooks/useWorkoutTypes';
 
 import { TemplateSelectionModal } from '../workouts/TemplateSelectionModal';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
+import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal';
+import { Workout } from '../../types';
 
 type ActiveFilter = {
   type: 'group' | 'athlete';
@@ -44,6 +46,7 @@ export const CoachPlanning: React.FC = () => {
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [initialWorkoutData, setInitialWorkoutData] = useState<any>(null);
+  const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
 
   useEffect(() => {
     // Set default filter to the first group when data is available
@@ -259,7 +262,8 @@ export const CoachPlanning: React.FC = () => {
                   return (
                     <div
                       key={w.id}
-                      className="p-2 rounded-lg shadow-sm truncate bg-gray-50 dark:bg-gray-700/50"
+                      onClick={() => setViewingWorkout(w)}
+                      className="p-2 rounded-lg shadow-sm truncate bg-gray-50 dark:bg-gray-700/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       style={{
                         borderLeft: `4px solid ${workoutColor}`
                       }}
@@ -286,6 +290,12 @@ export const CoachPlanning: React.FC = () => {
           );
         })}
       </div>
+
+      <WorkoutDetailsModal
+        isOpen={!!viewingWorkout}
+        onClose={() => setViewingWorkout(null)}
+        workout={viewingWorkout}
+      />
     </div>
   );
 };

@@ -15,11 +15,17 @@ const BlocDetail: React.FC<{ bloc: any, index: number }> = ({ bloc, index }) => 
   if (bloc.type === 'course') {
     const b = bloc as CourseBlock;
     return (
-      <div className="flex items-start space-x-3">
-        <Navigation size={18} className="text-blue-400 mt-1" />
-        <div>
-          <p className="font-semibold">{`Bloc ${index + 1}: Course`}</p>
-          <p className="text-sm text-gray-400">{`${b.series}x ${b.distance}m | Récup: ${b.recup}s`}</p>
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+        <div className="flex items-start space-x-3">
+          <Navigation size={20} className="text-blue-500 dark:text-blue-400 mt-1" />
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900 dark:text-gray-100">{`Bloc ${index + 1}: Course`}</p>
+            <div className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+              <p>{`${b.series} série${b.series > 1 ? 's' : ''} de ${b.reps} x ${b.distance}m`}</p>
+              <p>{`Récup entre répétitions: ${b.restBetweenReps}`}</p>
+              {b.series > 1 && <p>{`Récup entre séries: ${b.restBetweenSeries}`}</p>}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -27,11 +33,17 @@ const BlocDetail: React.FC<{ bloc: any, index: number }> = ({ bloc, index }) => 
   if (bloc.type === 'musculation') {
     const b = bloc as MuscuBlock;
     return (
-      <div className="flex items-start space-x-3">
-        <Dumbbell size={18} className="text-green-400 mt-1" />
-        <div>
-          <p className="font-semibold">{`Bloc ${index + 1}: ${b.exerciceNom}`}</p>
-          <p className="text-sm text-gray-400">{`${b.series}x ${b.reps} @ ${b.poids || 'PDC'}kg | Récup: ${b.recup}s`}</p>
+      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+        <div className="flex items-start space-x-3">
+          <Dumbbell size={20} className="text-purple-500 dark:text-purple-400 mt-1" />
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900 dark:text-gray-100">{`Bloc ${index + 1}: ${b.exerciceNom}`}</p>
+            <div className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+              <p>{`${b.series} série${b.series > 1 ? 's' : ''} de ${b.reps} répétitions`}</p>
+              <p>{`Poids: ${b.poids ? `${b.poids}kg` : 'Poids du corps'}`}</p>
+              <p>{`Temps de repos: ${b.restTime}`}</p>
+            </div>
+          </div>
         </div>
       </div>
     );
