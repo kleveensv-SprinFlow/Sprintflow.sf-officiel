@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Home, RefreshCw, Flame, User as UserIcon } from 'lucide-react';
+import { ChevronLeft, Home, RefreshCw, User as UserIcon } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import LevelBadge from '../common/LevelBadge';
 
 interface HeaderProps {
   userRole?: 'athlete' | 'coach' | 'developer';
@@ -19,21 +20,37 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
   const { profile } = useAuth();
   const [displayWelcome, setDisplayWelcome] = useState(showWelcome);
   const [isExiting, setIsExiting] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
+  const [isLogoEntering, setIsLogoEntering] = useState(false);
 
   useEffect(() => {
     if (showWelcome) {
       setDisplayWelcome(true);
       setIsExiting(false);
+      setShowLogo(false);
+      setIsLogoEntering(false);
+
       const exitTimer = setTimeout(() => {
         setIsExiting(true);
-      }, 2200);
+        setShowLogo(true);
+        setIsLogoEntering(true);
+      }, 4400);
+
       const hideTimer = setTimeout(() => {
         setDisplayWelcome(false);
-      }, 2800);
+      }, 5000);
+
+      const logoAnimationTimer = setTimeout(() => {
+        setIsLogoEntering(false);
+      }, 5400);
+
       return () => {
         clearTimeout(exitTimer);
         clearTimeout(hideTimer);
+        clearTimeout(logoAnimationTimer);
       };
+    } else {
+      setShowLogo(true);
     }
   }, [showWelcome]);
 
@@ -67,21 +84,29 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
             </button>
           ) : (
             <div className="p-2">
-              <Flame className="h-6 w-6 text-orange-500" />
+              <LevelBadge level={0} />
             </div>
           )}
         </div>
         
-        <div className="flex-1 flex justify-center min-w-0">
-          {isDashboard && displayWelcome ? (
-            <h1 className={`text-lg font-bold bg-gradient-to-r from-orange-600 via-red-500 to-yellow-600 bg-clip-text text-transparent whitespace-nowrap ${
+        <div className="flex-1 flex justify-center min-w-0 h-8">
+          {isDashboard && displayWelcome && (
+            <h1 className={`absolute text-lg font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap ${
               isExiting ? 'animate-welcome-exit' : 'animate-welcome-enter'
             }`}>
               Bonjour {firstName}
             </h1>
-          ) : !isDashboard ? (
+          )}
+          {isDashboard && showLogo && (
+            <img 
+              src="https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/logo/Logo-sans-fond-sprintflow.png" 
+              alt="SprintFlow Logo" 
+              className={`h-8 transition-opacity duration-500 ${isLogoEntering ? 'opacity-0' : 'opacity-100'}`}
+            />
+          )}
+          {!isDashboard && (
             <h1 className="text-lg font-bold text-gray-800 dark:text-gray-200 truncate">{title || ''}</h1>
-          ) : null}
+          )}
         </div>
         
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">
