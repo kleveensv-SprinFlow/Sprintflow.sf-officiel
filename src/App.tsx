@@ -44,12 +44,13 @@ function App() {
   const [showForm, setShowForm] = useState<View | null>(null);
   const [isConfirmingEmail, setIsConfirmingEmail] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
   const handleMenuNavigate = (view: View) => {
     setCurrentView(view);
-    setMenuOpen(false);
+    setIsSideMenuOpen(false);
   };
 
   useEffect(() => {
@@ -158,12 +159,11 @@ function App() {
         title={currentView.charAt(0).toUpperCase() + currentView.slice(1)}
         canGoBack={currentView !== 'dashboard'}
         onBack={() => setCurrentView('dashboard')}
-        onProfileClick={() => setCurrentView('profile')}
+        onProfileClick={() => setIsSideMenuOpen(true)}
         onHomeClick={() => setCurrentView('dashboard')}
-        onMenuClick={() => setMenuOpen(true)}
         showWelcome={showWelcome && hasShownWelcome}
       />
-      <SideMenu isOpen={isMenuOpen} onClose={() => setMenuOpen(false)} onNavigate={handleMenuNavigate} />
+      <SideMenu isOpen={isSideMenuOpen} onClose={() => setIsSideMenuOpen(false)} onNavigate={handleMenuNavigate} />
       <main className="pb-20 pt-16 px-4">{renderView()}</main>
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40">{renderForm()}</div>
