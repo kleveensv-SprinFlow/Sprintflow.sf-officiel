@@ -12,6 +12,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRecords } from './hooks/useRecords.ts';
 import { supabase } from './lib/supabase.ts';
+import UpdateNotification from './components/common/UpdateNotification.tsx';
 
 // Lazy loading des composants lourds
 const Styleguide = lazy(() => import('./pages/Styleguide.tsx'));
@@ -20,7 +21,7 @@ const CoachPlanning = lazy(() => import('./components/planning/CoachPlanning.tsx
 const NutritionModule = lazy(() => import('./components/nutrition/NutritionModule.tsx').then(m => ({ default: m.NutritionModule || m.default })));
 const AdvicePage = lazy(() => import('./components/advice/AdvicePage.tsx').then(m => ({ default: m.AdvicePage || m.default })));
 const ProfilePage = lazy(() => import('./components/profile/ProfilePage.tsx').then(m => ({ default: m.ProfilePage || m.default })));
-const GroupManagement = lazy(() => import('./components/groups/GroupManagement.tsx'));
+const GroupManagement = lazy(() => import('./components/groups/GroupManagement.tsx').then(m => ({ default: m.GroupManagement || m.default })));
 const AthleteGroupView = lazy(() => import('./components/groups/AthleteGroupView.tsx').then(m => ({ default: m.AthleteGroupView || m.default })));
 const SettingsPage = lazy(() => import('./components/static/SettingsPage.tsx').then(m => ({ default: m.SettingsPage || m.default })));
 const ContactPage = lazy(() => import('./components/static/ContactPage.tsx').then(m => ({ default: m.ContactPage || m.default })));
@@ -176,6 +177,7 @@ function App() {
         setCurrentView={setCurrentView}
         userRole={profile?.role as any}
       />
+      <UpdateNotification />
       <ToastContainer position="bottom-center" theme="dark" />
     </div>
   );
