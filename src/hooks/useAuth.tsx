@@ -243,10 +243,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log('⏳ [useAuth] Construction de la requête...');
 
-        // Test avec uniquement les colonnes de base
+        // Charger toutes les colonnes du profil
         const queryPromise = supabase
           .from('profiles')
-          .select('id, role, first_name, last_name, email, avatar_url')
+          .select('*')
           .eq('id', userId)
           .maybeSingle();
 
@@ -271,15 +271,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (error) {
           console.error('❌ [useAuth] Erreur profil:', error);
-          // En cas d'erreur, créer un profil minimal pour débloquer
-          setProfile({
-            id: userId,
-            role: 'athlete',
-            email: '',
-            first_name: 'Utilisateur',
-            last_name: '',
-          } as any);
-          return;
+          // Ne pas créer de profil minimal, laisser null pour que l'Edge Function soit appelée
+          throw error;
         }
 
         if (data) {
@@ -346,16 +339,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.error('❌ [useAuth] Edge Function échouée aussi:', edgeFuncErr);
         }
 
-        // En dernier recours, créer un profil minimal
+        // En dernier recours, laisser le profil null pour forcer un rechargement
         if (isMountedRef.current) {
-          console.warn('⚠️ [useAuth] Timeout - Création profil minimal');
-          setProfile({
-            id: userId,
-            role: 'athlete',
-            email: '',
-            first_name: 'Chargement',
-            last_name: '...',
-          } as any);
+          console.warn('⚠️ [useAuth] Toutes les tentatives ont échoué - profil null');
+          setProfile(null);
         }
       }
     };
