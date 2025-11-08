@@ -328,7 +328,9 @@ export const AthleteDetails: React.FC<AthleteDetailsProps> = ({ athlete, onBack 
               {athlete.first_name} {athlete.last_name}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Membre depuis le {format(new Date(athlete.joined_at), 'd MMMM yyyy', { locale: fr })}
+              {athlete.joined_at
+                ? `Membre depuis le ${format(new Date(athlete.joined_at), 'd MMMM yyyy', { locale: fr })}`
+                : 'Membre'}
             </p>
           </div>
         </div>
