@@ -8,21 +8,20 @@ import { AthleteSelectionModal } from './AthleteSelectionModal';
 import { GroupSelectionModal } from './GroupSelectionModal';
 import { CoachDailyPlanCarousel } from './CoachDailyPlanCarousel';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
-import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal'; // Importation du modal
+import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal';
 import { useWorkouts } from '../../hooks/useWorkouts';
 import useAuth from '../../hooks/useAuth';
 import { useGroups } from '../../hooks/useGroups';
 import { AthleteMarquee } from './AthleteMarquee';
 import { AthleteDetails } from '../groups/AthleteDetails';
 import { Profile, Workout } from '../../types';
+import { WorkoutBlock } from '../workouts/WorkoutBuilder';
 
 type Selection = {
   type: 'athlete' | 'group';
   id: string;
   name: string;
 } | null;
-
-import { WorkoutBlock } from '../workouts/WorkoutBuilder';
 
 type FormState = {
   isOpen: boolean;
@@ -45,7 +44,7 @@ export const CoachDashboard: React.FC = () => {
   const [isGroupModalOpen, setGroupModalOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [formState, setFormState] = useState<FormState>({ isOpen: false });
-  const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null); // État pour le modal
+  const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
 
   const { coachAthletes } = useGroups();
   const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
@@ -81,8 +80,12 @@ export const CoachDashboard: React.FC = () => {
     setFormState({
       isOpen: true,
       initialData: {
-        ...workoutToEdit,
+        id: workoutToEdit.id,
+        tag_seance: workoutToEdit.tag_seance,
         blocs: workoutToEdit.planned_data?.blocs || [],
+        type: workoutToEdit.type,
+        notes: workoutToEdit.notes,
+        date: workoutToEdit.date,
       }
     });
   };
@@ -99,26 +102,29 @@ export const CoachDashboard: React.FC = () => {
 
     const isEditing = !!formState.initialData?.id;
 
+    // Prépare le payload de base avec les données du formulaire
     const workoutPayload = {
       tag_seance: payload.tag_seance,
       type: payload.type,
       notes: payload.notes,
       planned_data: { blocs: payload.blocs },
-      date: isEditing ? formState.initialData.date : format(formState.date!, 'yyyy-MM-dd'),
-      assigned_to_user_id: selection.type === 'athlete' ? selection.id : undefined,
-      assigned_to_group_id: selection.type === 'group' ? selection.id : undefined,
     };
 
     try {
       if (isEditing) {
-        await updateWorkout(formState.initialData.id, {
-          ...formState.initialData,
-          ...workoutPayload
-        });
+        // En mode édition, on appelle `updateWorkout` avec l'ID et le payload
+        await updateWorkout(formState.initialData!.id, workoutPayload);
       } else {
-        await planWorkout(workoutPayload);
+        // En mode création, on ajoute la date et l'assignation
+        const creationPayload = {
+            ...workoutPayload,
+            date: format(formState.date!, 'yyyy-MM-dd'),
+            assigned_to_user_id: selection.type === 'athlete' ? selection.id : undefined,
+            assigned_to_group_id: selection.type === 'group' ? selection.id : undefined,
+        };
+        await planWorkout(creationPayload);
       }
-      setFormState({ isOpen: false });
+      setFormState({ isOpen: false, initialData: undefined, date: undefined });
     } catch (e) {
       if (e instanceof Error) {
         alert(`Erreur: ${e.message}`);
@@ -212,6 +218,7 @@ export const CoachDashboard: React.FC = () => {
           </div>
           
           <div className="space-y-4">
+            {selection && <h1 className="text-2xl font-bold text-light-title dark:text-dark-title">Planning de <span className="text-sprintflow-blue">{selection.name}</span></h1>}
             {renderContent()}
 
             <AthleteMarquee athletes={coachAthletes || []} onAthleteClick={handleAthleteMarqueeClick} />
@@ -227,7 +234,7 @@ export const CoachDashboard: React.FC = () => {
         <NewWorkoutForm
           userRole="coach"
           onSave={handleSaveWorkout}
-          onCancel={() => setFormState({ isOpen: false })}
+          onCancel={() => setFormState({ isOpen: false, initialData: undefined, date: undefined })}
           initialData={formState.initialData}
         />
       )}
