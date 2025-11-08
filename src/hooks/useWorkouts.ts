@@ -1,3 +1,4 @@
+// src/hooks/useWorkouts.ts
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
@@ -25,7 +26,8 @@ export function useWorkouts(selection?: Selection) {
     setError(null);
 
     try {
-      let query = supabase.from('workouts').select('*');
+      // CORRECTION : Rend la sélection explicite pour inclure les colonnes JSON
+      let query = supabase.from('workouts').select('*, planned_data, workout_data');
 
       if (profile?.role === 'coach' && selection) {
         if (selection.type === 'athlete') {
@@ -71,9 +73,8 @@ export function useWorkouts(selection?: Selection) {
 
   const planWorkout = async (
     planning: {
-      title: string;
       date: string;
-      type: 'guidé' | 'manuscrit';
+      type: 'guidé' | 'manuscrit' | 'modèle';
       tag_seance?: string;
       notes?: string;
       planned_data?: { blocs: any[] };
@@ -102,7 +103,7 @@ export function useWorkouts(selection?: Selection) {
     const { data, error } = await supabase
       .from('workouts')
       .insert(insertData)
-      .select()
+      .select('*, planned_data, workout_data')
       .single();
 
     if (error) throw error;
@@ -132,7 +133,7 @@ export function useWorkouts(selection?: Selection) {
         date: new Date().toISOString().split('T')[0],
       })
       .eq('id', plannedWorkoutId)
-      .select()
+      .select('*, planned_data, workout_data')
       .single();
 
     if (error) throw error;
@@ -147,7 +148,7 @@ export function useWorkouts(selection?: Selection) {
       .from('workouts')
       .update(updates)
       .eq('id', workoutId)
-      .select()
+      .select('*, planned_data, workout_data')
       .single();
 
     if (error) throw error;
@@ -187,7 +188,7 @@ export function useWorkouts(selection?: Selection) {
         workout_data: { blocs: workoutData.blocs },
         planned_data: workoutData.type === 'guidé' ? { blocs: workoutData.blocs } : undefined,
       })
-      .select()
+      .select('*, planned_data, workout_data')
       .single();
 
     if (error) throw error;
