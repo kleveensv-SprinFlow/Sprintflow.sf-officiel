@@ -4,16 +4,17 @@ import { useLocalStorage } from 'react-use';
 import { Loader, AlertTriangle, Users, User, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DailyPlanCarousel } from './DailyPlanCarousel';
 import { AthleteSelectionModal } from './AthleteSelectionModal';
 import { GroupSelectionModal } from './GroupSelectionModal';
+import { CoachDailyPlanCarousel } from './CoachDailyPlanCarousel';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
+import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal'; // Importation du modal
 import { useWorkouts } from '../../hooks/useWorkouts';
 import useAuth from '../../hooks/useAuth';
 import { useGroups } from '../../hooks/useGroups';
 import { AthleteMarquee } from './AthleteMarquee';
 import { AthleteDetails } from '../groups/AthleteDetails';
-import { Profile } from '../../types';
+import { Profile, Workout } from '../../types';
 
 type Selection = {
   type: 'athlete' | 'group';
@@ -44,6 +45,7 @@ export const CoachDashboard: React.FC = () => {
   const [isGroupModalOpen, setGroupModalOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [formState, setFormState] = useState<FormState>({ isOpen: false });
+  const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null); // État pour le modal
 
   const { coachAthletes } = useGroups();
   const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
@@ -84,14 +86,21 @@ export const CoachDashboard: React.FC = () => {
       }
     });
   };
+  
+  const handleViewWorkout = (workoutId: string) => {
+    const workoutToShow = workouts.find(w => w.id === workoutId);
+    if (workoutToShow) {
+      setViewingWorkout(workoutToShow);
+    }
+  };
 
-  const handleSaveWorkout = async (payload: { title: string; type: 'guidé' | 'manuscrit' | 'modèle'; notes?: string; blocs: WorkoutBlock[] }) => {
+  const handleSaveWorkout = async (payload: { tag_seance: string; type: 'guidé' | 'manuscrit' | 'modèle'; notes?: string; blocs: WorkoutBlock[] }) => {
     if (!selection) return;
 
     const isEditing = !!formState.initialData?.id;
 
     const workoutPayload = {
-      title: payload.title,
+      tag_seance: payload.tag_seance,
       type: payload.type,
       notes: payload.notes,
       planned_data: { blocs: payload.blocs },
@@ -149,7 +158,14 @@ export const CoachDashboard: React.FC = () => {
       return <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md flex items-center"><AlertTriangle className="w-6 h-6 mr-3" /><p>{error}</p></div>;
     }
 
-    return <DailyPlanCarousel workouts={workouts} onPlanClick={handlePlanClick} onEditClick={handleEditClick} />;
+    return (
+      <CoachDailyPlanCarousel 
+        selection={selection} 
+        onPlanWorkout={handlePlanClick}
+        onEditWorkout={handleEditClick}
+        onViewWorkout={handleViewWorkout}
+      />
+    );
   };
 
   if (selectedAthlete) {
@@ -209,11 +225,18 @@ export const CoachDashboard: React.FC = () => {
 
       {formState.isOpen && (
         <NewWorkoutForm
+          userRole="coach"
           onSave={handleSaveWorkout}
           onCancel={() => setFormState({ isOpen: false })}
           initialData={formState.initialData}
         />
       )}
+      
+      <WorkoutDetailsModal 
+        isOpen={!!viewingWorkout}
+        onClose={() => setViewingWorkout(null)}
+        workout={viewingWorkout}
+      />
     </>
   );
 };
