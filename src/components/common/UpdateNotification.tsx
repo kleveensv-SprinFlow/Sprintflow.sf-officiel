@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 
 function UpdateNotification() {
   const {
@@ -34,7 +33,7 @@ function UpdateNotification() {
     }
   }, [needRefresh, updateServiceWorker]);
 
-  return <ToastContainer />;
+  return null;
 }
 
 export default UpdateNotification;

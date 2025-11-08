@@ -28,10 +28,15 @@ interface ProfileData {
 interface Objectif {
   id: string;
   user_id: string;
-  epreuve_id: string;
+  epreuve_id: string | null;
+  exercice_id: string | null;
   valeur: string;
   date_echeance: string | null;
   epreuve?: {
+    nom: string;
+    unite: string;
+  };
+  exercice?: {
     nom: string;
     unite: string;
   };
@@ -93,16 +98,21 @@ const ProfilePage: React.FC = () => {
           id,
           user_id,
           epreuve_id,
+          exercice_id,
           valeur,
           date_echeance,
-          epreuve:epreuves_athletisme(nom, unite)
+          epreuve:epreuves_athletisme(nom, unite),
+          exercice:exercices_reference(nom, unite)
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur chargement objectif:', error);
+        return;
+      }
       setObjectif(data);
     } catch (error) {
       console.error('Erreur chargement objectif:', error);
@@ -293,8 +303,13 @@ const ProfilePage: React.FC = () => {
           </h2>
           {objectif ? (
             <div className="text-center">
-              <p className="text-gray-600 dark:text-gray-300">{objectif.epreuve?.nom}</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{objectif.valeur} {objectif.epreuve?.unite}</p>
+              <p className="text-gray-600 dark:text-gray-300">{objectif.epreuve?.nom || objectif.exercice?.nom}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{objectif.valeur} {objectif.epreuve?.unite || objectif.exercice?.unite}</p>
+              {objectif.date_echeance && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Échéance : {new Date(objectif.date_echeance).toLocaleDateString('fr-FR')}
+                </p>
+              )}
               <button onClick={() => setShowObjectifModal(true)} className="mt-2 text-sm text-blue-500 hover:underline">Modifier</button>
             </div>
           ) : (
