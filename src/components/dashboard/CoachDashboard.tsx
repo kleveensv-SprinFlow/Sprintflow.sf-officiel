@@ -180,7 +180,7 @@ export const CoachDashboard: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 bg-transparent min-h-screen relative">
+      <div className="pt-2 sm:pt-4 p-4 bg-transparent min-h-screen relative">
         <div className="max-w-7xl mx-auto">
           {/* Menu flottant pour changer la vue */}
           <div className="absolute top-6 right-6 z-20">
@@ -217,7 +217,7 @@ export const CoachDashboard: React.FC = () => {
             </AnimatePresence>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-2">
             {selection && <h1 className="text-2xl font-bold text-light-title dark:text-dark-title">Planning de <span className="text-sprintflow-blue">{selection.name}</span></h1>}
             {renderContent()}
 
