@@ -1,378 +1,190 @@
-import { useState, useEffect, useRef } from 'react'
-import useAuth from './useAuth'
-import { useProfile } from './useProfile.ts'
-import { supabase } from '../lib/supabase'
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { supabase } from '../lib/supabase';
+import useAuth from './useAuth';
+import { Profile } from '../types';
 
-interface GroupChatMessage {
-  id: string
-  group_id: string
-  user_id: string
-  message: string
-  is_system: boolean
-  created_at: string
-  user_name: string
-  user_photo?: string
-  is_coach: boolean
+
+export interface Group {
+  id: string;
+  name: string;
+  coach_id: string;
+  created_at: string;
+  invitation_code: string;
+  group_members: { athlete_id: string; profiles: Profile | null }[];
 }
 
-interface TypingUser {
-  user_id: string
-  user_name: string
-  timestamp: number
+export interface JoinRequest {
+  id: string;
+  group_id: string;
+  athlete_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  profiles: Pick<Profile, 'id' | 'first_name' | 'last_name' | 'photo_url'> | null;
 }
 
-export function useGroupChat(groupId: string | null) {
-  const { user } = useAuth()
-  const { profile } = useProfile()
-  const [messages, setMessages] = useState<GroupChatMessage[]>([])
-  const [loading, setLoading] = useState(false)
-  const [typingUsers, setTypingUsers] = useState<TypingUser[]>([])
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const channelRef = useRef<any>(null)
+export const useGroups = () => {
+  const { user, profile } = useAuth();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Nettoyer les utilisateurs qui tapent (timeout après 3 secondes)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now()
-      setTypingUsers(prev => prev.filter(user => now - user.timestamp < 3000))
-    }, 1000)
-    
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    if (groupId && user) {
-      loadMessages()
-      setupRealtimeSubscription()
-    } else {
-      setMessages([])
-      setLoading(false)
-      cleanupSubscription()
-    }
-    
-    return () => cleanupSubscription()
-  }, [groupId, user])
-
-  const setupRealtimeSubscription = () => {
-    if (!groupId || !user) return
-    
-    console.log('🔄 Configuration temps réel pour groupe:', groupId)
-    console.log('🔄 User ID:', user.id)
-    console.log('🔄 Supabase configuré:', import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co')
-    
-    // Nettoyer l'ancienne souscription
-    cleanupSubscription()
-    
-    // Écouter les nouveaux messages
-    const messagesChannel = supabase
-      .channel(`group_chat_${groupId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'group_chat_messages',
-          filter: `group_id=eq.${groupId}`
-        },
-        (payload) => {
-          console.log('📨 Nouveau message temps réel:', payload.new)
-          
-          const newMessage: GroupChatMessage = {
-            id: payload.new.id,
-            group_id: payload.new.group_id,
-            user_id: payload.new.user_id,
-            message: payload.new.message,
-            is_system: payload.new.is_system,
-            created_at: payload.new.created_at,
-            user_name: payload.new.user_id === user.id 
-              ? 'Vous' 
-              : (payload.new.user_id === 'demo-coach' ? 'Coach Martin' : 'Utilisateur'),
-            is_coach: payload.new.user_id === 'demo-coach' || false
-          }
-          
-          // Ajouter le message seulement s'il n'existe pas déjà
-          setMessages(prev => {
-            const exists = prev.some(msg => msg.id === newMessage.id)
-            if (exists) return prev
-            return [...prev, newMessage]
-          })
-          
-          // Notification si l'utilisateur n'est pas l'expéditeur
-          if (payload.new.user_id !== user.id) {
-            showNotification(newMessage)
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 Statut souscription messages:', status)
-      })
-    
-    // Écouter les indicateurs de frappe
-    const typingChannel = supabase
-      .channel(`typing_${groupId}`)
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        console.log('⌨️ Indicateur frappe reçu:', payload)
-        
-        if (payload.payload.user_id !== user.id) {
-          setTypingUsers(prev => {
-            const filtered = prev.filter(u => u.user_id !== payload.payload.user_id)
-            return [...filtered, {
-              user_id: payload.payload.user_id,
-              user_name: payload.payload.user_name,
-              timestamp: Date.now()
-            }]
-          })
-        }
-      })
-      .on('broadcast', { event: 'stop_typing' }, (payload) => {
-        console.log('⏹️ Arrêt frappe reçu:', payload)
-        
-        setTypingUsers(prev => prev.filter(u => u.user_id !== payload.payload.user_id))
-      })
-      .subscribe((status) => {
-        console.log('📡 Statut souscription frappe:', status)
-      })
-    
-    channelRef.current = { messagesChannel, typingChannel }
-  }
-
-  const cleanupSubscription = () => {
-    if (channelRef.current) {
-      console.log('🧹 Nettoyage souscriptions temps réel')
-      channelRef.current.messagesChannel?.unsubscribe()
-      channelRef.current.typingChannel?.unsubscribe()
-      channelRef.current = null
-    }
-  }
-
-  const showNotification = (message: GroupChatMessage) => {
-    // Vérifier si les notifications sont supportées et autorisées
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        new Notification(`💬 ${message.user_name}`, {
-          body: message.message,
-          icon: '/PhotoRoom-20250915_123950.png',
-          tag: `group_${groupId}`,
-          requireInteraction: false
-        })
-      } else if (Notification.permission === 'default') {
-        // Demander la permission
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            new Notification(`💬 ${message.user_name}`, {
-              body: message.message,
-              icon: '/PhotoRoom-20250915_123950.png',
-              tag: `group_${groupId}`
-            })
-          }
-        })
-      }
-    }
-    
-    // Notification visuelle dans l'app
-    const notificationDiv = document.createElement('div')
-    notificationDiv.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-          ${message.user_name[0]}
-        </div>
-        <div>
-          <div class="font-medium text-white">${message.user_name}</div>
-          <div class="text-white/90 text-sm">${message.message.substring(0, 50)}${message.message.length > 50 ? '...' : ''}</div>
-        </div>
-      </div>
-    `
-    notificationDiv.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #7c6df2, #f97316);
-      color: white;
-      padding: 16px;
-      border-radius: 12px;
-      font-weight: 500;
-      z-index: 9999;
-      box-shadow: 0 8px 25px rgba(124, 109, 242, 0.3);
-      max-width: 300px;
-      animation: slideIn 0.3s ease-out;
-    `
-    
-    document.body.appendChild(notificationDiv)
-    setTimeout(() => {
-      notificationDiv.style.animation = 'slideOut 0.3s ease-in'
-      setTimeout(() => notificationDiv.remove(), 300)
-    }, 4000)
-  }
-
-  const loadMessages = async () => {
-    if (!groupId || !user) return
-    
-    setLoading(true)
-    
+  const fetchGroups = useCallback(async () => {
+    if (!user || !profile) return;
+    setLoading(true);
+    setError(null);
     try {
-      console.log('💬 Chargement messages pour groupe:', groupId)
-      
-      const { data, error } = await supabase
-        .from('group_chat_messages')
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name,
-            photo_url,
-            role
-          )
-        `)
-        .eq('group_id', groupId)
-        .order('created_at', { ascending: true })
-        .limit(100)
-      
-      if (error) {
-        console.error('❌ Erreur chargement messages:', error.message)
-        setMessages([])
+      let rawData;
+
+      if (profile.role === 'coach') {
+        // For a coach: fetch the groups they created
+        const { data: coachGroups, error: coachError } = await supabase
+          .from('groups')
+          .select(`
+            id, name, coach_id, created_at, invitation_code,
+            group_members (
+              athlete_id,
+              profiles (
+                id, first_name, last_name, photo_url, role,
+                date_de_naissance, sexe, height, discipline, license_number
+              )
+            )
+          `)
+          .eq('coach_id', user.id);
+        if (coachError) throw coachError;
+        rawData = coachGroups;
       } else {
-        console.log('✅ Messages chargés:', data?.length || 0)
-        
-        const enrichedMessages: GroupChatMessage[] = data?.map(msg => ({
-          id: msg.id,
-          group_id: msg.group_id,
-          user_id: msg.user_id,
-          message: msg.message,
-          is_system: msg.is_system,
-          created_at: msg.created_at,
-          user_name: msg.profiles 
-            ? `${msg.profiles.first_name || ''} ${msg.profiles.last_name || ''}`.trim() || 'Utilisateur'
-            : (msg.user_id === user.id ? 'Vous' : 'Utilisateur'),
-          user_photo: msg.profiles?.photo_url,
-          is_coach: msg.profiles?.role === 'coach' || false
-        })) || []
-        
-        setMessages(enrichedMessages)
+        // For an athlete: fetch the groups they are a member of
+        const { data: athleteGroups, error: athleteError } = await supabase
+          .from('group_members')
+          .select(`
+            groups (
+              id, name, coach_id, created_at, invitation_code,
+              group_members (
+                athlete_id,
+                profiles (
+                  id, first_name, last_name, photo_url, role,
+                  date_de_naissance, sexe, height, discipline, license_number
+                )
+              )
+            )
+          `)
+          .eq('athlete_id', user.id);
+        if (athleteError) throw athleteError;
+        rawData = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
       }
-    } catch (error) {
-      console.error('💥 Erreur réseau messages:', error)
-      setMessages([])
+
+      // Set the data
+      if (rawData && rawData.length > 0) {
+        setGroups(rawData);
+      } else {
+        setGroups([]);
+      }
+
+    } catch (e: any) {
+      console.error("Erreur lors de la récupération des groupes:", e);
+      setError(e);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [user, profile]);
 
-  const sendTypingIndicator = () => {
-    if (!groupId || !user || !profile) return
-    
-    // Envoyer l'indicateur de frappe
-    if (channelRef.current?.typingChannel) {
-      channelRef.current.typingChannel.send({
-        type: 'broadcast',
-        event: 'typing',
-        payload: {
-          user_id: user.id,
-          user_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Utilisateur'
-        }
-      })
-    }
-    
-    // Programmer l'arrêt automatique après 3 secondes
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-    
-    typingTimeoutRef.current = setTimeout(() => {
-      stopTypingIndicator()
-    }, 3000)
-  }
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
 
-  const stopTypingIndicator = () => {
-    if (!groupId || !user) return
-    
-    if (channelRef.current?.typingChannel) {
-      channelRef.current.typingChannel.send({
-        type: 'broadcast',
-        event: 'stop_typing',
-        payload: {
-          user_id: user.id
-        }
-      })
-    }
-    
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-      typingTimeoutRef.current = null
-    }
-  }
-
-  const sendMessage = async (messageText: string) => {
-    if (!groupId || !user || !messageText.trim()) return
-    
-    // Arrêter l'indicateur de frappe
-    stopTypingIndicator()
-    
-    // Créer le message local immédiatement
-    const localMessage: GroupChatMessage = {
-      id: `msg_${Date.now()}`,
-      group_id: groupId,
-      user_id: user.id,
-      message: messageText.trim(),
-      is_system: false,
-      created_at: new Date().toISOString(),
-      user_name: 'Vous',
-      user_photo: profile?.photo_url,
-      is_coach: profile?.role === 'coach'
-    }
-    
-    // Ajouter immédiatement à l'interface
-    setMessages(prev => [...prev, localMessage])
-    
+  const coachAthletes = useMemo(() => {
     try {
-      // Sauvegarder sur Supabase (le temps réel se chargera de la diffusion)
-      const { data, error } = await supabase
-        .from('group_chat_messages')
-        .insert({
-          group_id: groupId,
-          user_id: user.id,
-          message: messageText.trim(),
-          is_system: false
-        })
-        .select()
-        .single()
+      const allAthletes = new Map<string, Profile>();
+      if (!groups) return [];
       
-      if (error) {
-        console.warn('Erreur envoi message:', error.message)
-        return localMessage
-      }
-      
-      // Remplacer le message local par celui de Supabase
-      const supabaseMessage: GroupChatMessage = {
-        id: data.id,
-        group_id: data.group_id,
-        user_id: data.user_id,
-        message: data.message,
-        is_system: data.is_system,
-        created_at: data.created_at,
-        user_name: localMessage.user_name,
-        user_photo: localMessage.user_photo,
-        is_coach: localMessage.is_coach
-      }
-      
-      setMessages(prev => 
-        prev.map(msg => msg.id === localMessage.id ? supabaseMessage : msg)
-      )
-      
-      return supabaseMessage
-      
-    } catch (error) {
-      console.warn('Erreur envoi message:', error)
-      return localMessage
+      groups.forEach(group => {
+        if (group && group.group_members) {
+          group.group_members.forEach(member => {
+            if (member && member.profiles && !allAthletes.has(member.athlete_id)) {
+              allAthletes.set(member.athlete_id, member.profiles);
+            }
+          });
+        }
+      });
+      return Array.from(allAthletes.values());
+    } catch (e) {
+      console.error("Erreur critique lors du calcul de coachAthletes:", e);
+      return [];
     }
-  }
+  }, [groups]);
+
+  const createGroup = async (name: string) => {
+    if (!user) throw new Error("Utilisateur non authentifié.");
+    const { data, error } = await supabase
+      .from('groups')
+      .insert({ name, coach_id: user.id })
+      .select().single();
+    if (error) throw error;
+    if (data) await fetchGroups();
+    return data;
+  };
+
+  const deleteGroup = async (groupId: string) => {
+    // Appel de la fonction RPC pour une suppression sécurisée
+    const { error } = await supabase.rpc('delete_group', {
+      group_id_param: groupId
+    });
+    
+    if (error) {
+        // Si l'erreur vient de la fonction (ex: accès non autorisé), afficher le message
+        if (error.message.includes('Accès non autorisé')) {
+            throw new Error('Vous n\'êtes pas autorisé à supprimer ce groupe.');
+        }
+        throw error;
+    }
+    
+    // Mettre à jour l'état local pour refléter la suppression
+    setGroups(prev => prev.filter(g => g.id !== groupId));
+  };
+
+  const fetchJoinRequests = useCallback(async (groupId: string): Promise<JoinRequest[]> => {
+    const { data, error } = await supabase
+      .from('group_join_requests')
+      .select(`*, profiles ( id, first_name, last_name, photo_url )`)
+      .eq('group_id', groupId)
+      .eq('status', 'pending');
+    if (error) throw error;
+
+    return data || [];
+  }, []);
+
+  const respondToRequest = async (requestId: string, newStatus: 'accepted' | 'rejected') => {
+    const { data, error } = await supabase.rpc('respond_to_join_request', {
+      request_id_param: requestId,
+      new_status_param: newStatus
+    });
+    if (error) throw error;
+    const result = data as { status: string; message: string };
+    if (result.status === 'error') throw new Error(result.message);
+    if (newStatus === 'accepted') await fetchGroups();
+    return result;
+  };
+
+  const joinGroupWithCode = async (invitationCode: string) => {
+    const { data, error } = await supabase.rpc('join_group_with_code', {
+      invitation_code_param: invitationCode
+    });
+    if (error) throw error;
+    const result = data as { status: string; message: string };
+    if (result.status === 'error') throw new Error(result.message);
+    return result;
+  };
 
   return {
-    messages,
+    groups,
     loading,
-    typingUsers,
-    sendMessage,
-    sendTypingIndicator,
-    stopTypingIndicator,
-    loadMessages
-  }
-}
+    error,
+    coachAthletes,
+    createGroup,
+    deleteGroup,
+    fetchGroups,
+    fetchJoinRequests,
+    respondToRequest,
+    joinGroupWithCode,
+  };
+};
