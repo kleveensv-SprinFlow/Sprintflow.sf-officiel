@@ -146,6 +146,7 @@ export const CoachPlanning: React.FC = () => {
       )}
       {isWorkoutFormOpen && (
         <NewWorkoutForm
+          userRole="coach"
           onCancel={() => setWorkoutFormOpen(false)}
           onSave={handleSaveWorkout}
           initialData={initialWorkoutData}
