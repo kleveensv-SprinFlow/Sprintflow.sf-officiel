@@ -1,63 +1,98 @@
 import React from 'react';
-import { X } from 'lucide-react';
-import { View } from '../../types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { X, User, BarChart2, Lightbulb, LogOut } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import useAuth from '../../hooks/useAuth';
 
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (view: View) => void;
+  onNavigate: (view: 'profile' | 'records' | 'advice') => void;
 }
 
 const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate }) => {
-  const menuItems: { label: string; view: View }[] = [
-    { label: 'Mes records', view: 'records' },
-    { label: 'Mes entraînements', view: 'workouts' },
-    { label: 'Composition corporelle', view: 'dashboard' }, // Lien temporaire
-    { label: 'Conseils', view: 'ai' },
-  ];
+  const { profile, signOut } = useAuth();
+
+  const handleNavigation = (view: 'profile' | 'records' | 'advice') => {
+    onNavigate(view);
+    onClose();
+  };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          onClick={onClose}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black z-40"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ x: '-100%' }}
+            initial={{ x: '100%' }}
             animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
+            exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-900 shadow-xl z-50 p-6 flex flex-col"
+            className="absolute right-0 top-0 h-full w-full max-w-xs bg-white dark:bg-gray-800 shadow-lg z-50 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Menu</h2>
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                <X className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+            <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Menu</h2>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                aria-label="Fermer le menu"
+              >
+                <X className="h-6 w-6 text-gray-700 dark:text-gray-300" />
               </button>
             </div>
-            <nav>
-              <ul>
-                {menuItems.map((item) => (
-                  <li key={item.view} className="mb-4">
-                    <button
-                      onClick={() => onNavigate(item.view)}
-                      className="w-full text-left text-lg text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors"
-                    >
-                      {item.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+            
+            <div className="flex-grow p-4 space-y-4">
+              <div 
+                className="flex items-center space-x-4 p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                onClick={() => handleNavigation('profile')}
+              >
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Profil" className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                    <User className="w-6 h-6 text-gray-500" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-bold text-gray-800 dark:text-gray-200">{profile?.first_name || 'Mon Profil'}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Voir le profil</p>
+                </div>
+              </div>
+
+              <nav className="space-y-2">
+                <button
+                  onClick={() => handleNavigation('records')}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <BarChart2 className="w-5 h-5" />
+                  <span>Mes records</span>
+                </button>
+                <button
+                  onClick={() => handleNavigation('advice')}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Lightbulb className="w-5 h-5" />
+                  <span>Conseil</span>
+                </button>
+              </nav>
+            </div>
+
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => signOut()}
+                className="w-full flex items-center space-x-3 p-3 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Déconnexion</span>
+              </button>
+            </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
