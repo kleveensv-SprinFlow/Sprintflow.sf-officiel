@@ -352,8 +352,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log(`🔐 [useAuth] Événement: ${_event}`);
         if (!isMountedRef.current) return;
 
-        setLoading(true);
-
         try {
           setSession(session);
           const currentUser = session?.user ?? null;
