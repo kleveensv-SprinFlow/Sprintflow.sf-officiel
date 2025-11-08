@@ -57,8 +57,7 @@ export const CoachDailyPlanCarousel: React.FC<CoachDailyPlanCarouselProps> = ({
   }, [loading]);
 
   return (
-    <div className="space-y-4 py-4">
-      <h2 className="text-xl font-bold text-light-title dark:text-dark-title px-4">Planning de la semaine</h2>
+    <div>
       {error ? (
         <p className="text-center text-red-500 px-4">{error}</p>
       ) : (
