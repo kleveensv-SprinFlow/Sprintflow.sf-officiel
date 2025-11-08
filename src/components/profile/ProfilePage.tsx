@@ -109,6 +109,41 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const deleteOldAvatar = async (userId: string) => {
+    try {
+      const { data: files, error: listError } = await supabase.storage
+        .from('profiles')
+        .list('avatars', {
+          search: userId
+        });
+
+      if (listError) {
+        console.warn('⚠️ Erreur lors de la liste des anciens avatars:', listError);
+        return;
+      }
+
+      if (files && files.length > 0) {
+        const filesToDelete = files
+          .filter(file => file.name.startsWith(userId))
+          .map(file => `avatars/${file.name}`);
+
+        if (filesToDelete.length > 0) {
+          const { error: deleteError } = await supabase.storage
+            .from('profiles')
+            .remove(filesToDelete);
+
+          if (deleteError) {
+            console.warn('⚠️ Erreur lors de la suppression des anciens avatars:', deleteError);
+          } else {
+            console.log('🗑️ Anciens avatars supprimés:', filesToDelete.length);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Erreur silencieuse lors du nettoyage des avatars:', err);
+    }
+  };
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !user) return;
 
@@ -128,16 +163,18 @@ const ProfilePage: React.FC = () => {
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      const fileName = `${user.id}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
 
       console.log('📤 Upload photo vers:', filePath);
+
+      await deleteOldAvatar(user.id);
 
       const { error: uploadError } = await supabase.storage
         .from('profiles')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         });
 
       if (uploadError) throw uploadError;
