@@ -8,7 +8,6 @@ export interface Profile {
   email?: string;
   full_name?: string | null;
   photo_url?: string | null;
-  avatar_url?: string | null;
   height?: number | null;
   weight?: number | null;
   body_fat_percentage?: number | null;
