@@ -22,7 +22,7 @@ export interface JoinRequest {
   profiles: Pick<Profile, 'id' | 'first_name' | 'last_name' | 'photo_url'> | null;
 }
 
-export const useGroups = () => {
+export const useGroupChat = () => {
   const { user, profile } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
