@@ -52,8 +52,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate }) => {
                 className="flex items-center space-x-4 p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 onClick={() => handleNavigation('profile')}
               >
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Profil" className="w-12 h-12 rounded-full object-cover" />
+                {profile?.photo_url ? (
+                  <img src={profile.photo_url} alt="Profil" className="w-12 h-12 rounded-full object-cover" />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
                     <User className="w-6 h-6 text-gray-500" />
