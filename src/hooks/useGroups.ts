@@ -125,8 +125,20 @@ export const useGroups = () => {
   };
 
   const deleteGroup = async (groupId: string) => {
-    const { error } = await supabase.from('groups').delete().eq('id', groupId);
-    if (error) throw error;
+    // Appel de la fonction RPC pour une suppression sécurisée
+    const { error } = await supabase.rpc('delete_group', {
+      group_id_param: groupId
+    });
+    
+    if (error) {
+        // Si l'erreur vient de la fonction (ex: accès non autorisé), afficher le message
+        if (error.message.includes('Accès non autorisé')) {
+            throw new Error('Vous n''êtes pas autorisé à supprimer ce groupe.');
+        }
+        throw error;
+    }
+    
+    // Mettre à jour l'état local pour refléter la suppression
     setGroups(prev => prev.filter(g => g.id !== groupId));
   };
 
