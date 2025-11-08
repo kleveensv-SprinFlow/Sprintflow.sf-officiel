@@ -6,6 +6,7 @@ import { AthleteDetails } from './AthleteDetails';
 import { Profile } from '../../types';
 import { toast } from 'react-toastify';
 import { supabase } from '../../lib/supabase';
+import ConfirmationModal from '../common/ConfirmationModal'; // Ajout de l'import
 
 // Modale pour la création de groupe
 const CreateGroupModal: React.FC<{ onClose: () => void; onCreate: (name: string) => Promise<void>; }> = ({ onClose, onCreate }) => {
@@ -57,15 +58,19 @@ export const GroupManagement: React.FC = () => {
   const { groups, loading, createGroup, deleteGroup } = useGroups();
   const [currentView, setCurrentView] = useState<'list' | 'details' | 'athlete'>('list');
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null); // Pour la fiche athlète
+  const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  
+  // --- NOUVEAU : États pour la modale de confirmation ---
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<string | null>(null);
+
 
   const handleSelectGroup = (group: Group) => {
     setSelectedGroup(group);
     setCurrentView('details');
   };
   
-  // Cette fonction sera passée à GroupDetailsPage
   const handleViewAthlete = async (athleteId: string) => {
       const athleteProfile = selectedGroup?.group_members.find(m => m.athlete_id === athleteId)?.profiles as Profile;
 
@@ -114,15 +119,24 @@ export const GroupManagement: React.FC = () => {
     }
   };
   
-  const handleDeleteGroup = async (groupId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Empêche le clic de sélectionner le groupe
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce groupe ? Toutes les données associées seront perdues.')) {
-        try {
-            await deleteGroup(groupId);
-            toast.success("Groupe supprimé.");
-        } catch (error: any) {
-            toast.error(error.message || "Erreur lors de la suppression.");
-        }
+  // --- MODIFIÉ : Ouvre la modale de confirmation ---
+  const handleDeleteClick = (groupId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setGroupToDelete(groupId);
+    setDeleteModalOpen(true);
+  };
+
+  // --- NOUVEAU : Gère la suppression après confirmation ---
+  const handleConfirmDelete = async () => {
+    if (!groupToDelete) return;
+    try {
+        await deleteGroup(groupToDelete);
+        toast.success("Groupe supprimé.");
+    } catch (error: any) {
+        toast.error(error.message || "Erreur lors de la suppression.");
+    } finally {
+        setDeleteModalOpen(false);
+        setGroupToDelete(null);
     }
   };
 
@@ -138,14 +152,12 @@ export const GroupManagement: React.FC = () => {
   }
   
   if (currentView === 'athlete' && selectedAthlete) {
-    // Note: AthleteDetails attend un format de données spécifique.
-    // On doit l'adapter ici.
     const athleteDataForDetails = {
         id: selectedAthlete.id,
         first_name: selectedAthlete.first_name || '',
         last_name: selectedAthlete.last_name || '',
         photo_url: selectedAthlete.avatar_url,
-        joined_at: new Date().toISOString(), // Placeholder, car cette info n'est pas dans le profil
+        joined_at: new Date().toISOString(), // Placeholder
     };
     return <AthleteDetails athlete={athleteDataForDetails} onBack={handleBackToDetails} />;
   }
@@ -155,7 +167,17 @@ export const GroupManagement: React.FC = () => {
     <div className="p-4 space-y-5">
        {isCreateModalOpen && <CreateGroupModal onClose={() => setCreateModalOpen(false)} onCreate={handleCreateGroup} />}
        
-       {/* Le header est géré par App.tsx, on met juste le titre de la page ici */}
+       {/* --- NOUVEAU : Ajout de la modale de confirmation --- */}
+       {isDeleteModalOpen && (
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title="Supprimer le groupe"
+          message="Êtes-vous sûr de vouloir supprimer ce groupe ? Cette action est irréversible."
+        />
+       )}
+       
        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mes Groupes</h1>
 
        {groups.length === 0 ? (
@@ -177,8 +199,9 @@ export const GroupManagement: React.FC = () => {
                             <p className="text-sm text-gray-500 dark:text-gray-400">{group.group_members.length} membre(s)</p>
                         </div>
                         <div className="flex items-center space-x-2">
-                             <button onClick={(e) => handleDeleteGroup(group.id, e)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors">
-                                <Trash2 size={18} />
+                             {/* --- MODIFIÉ : Style et onClick du bouton de suppression --- */}
+                             <button onClick={(e) => handleDeleteClick(group.id, e)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors">
+                                <Trash2 size={18} className="text-red-500" />
                             </button>
                         </div>
                     </div>
