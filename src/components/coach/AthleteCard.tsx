@@ -61,7 +61,7 @@ export const AthleteCard: React.FC<AthleteCardProps> = ({ athlete, onSelect }) =
     >
       <div className="flex items-start gap-3">
         <Avatar
-          src={athlete.avatar_url}
+          src={athlete.photo_url}
           alt={`${athlete.first_name} ${athlete.last_name}`}
           size="lg"
         />
