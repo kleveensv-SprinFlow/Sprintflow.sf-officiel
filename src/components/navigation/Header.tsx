@@ -89,7 +89,7 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
           )}
         </div>
         
-        <div className="flex-1 flex justify-center min-w-0 h-8">
+        <div className="flex-1 flex justify-center min-w-0 h-10">
           {isDashboard && displayWelcome && (
             <h1 className={`absolute text-lg font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap ${
               isExiting ? 'animate-welcome-exit' : 'animate-welcome-enter'
@@ -101,7 +101,7 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
             <img 
               src="https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/logo/Logo-sans-fond-sprintflow.png" 
               alt="SprintFlow Logo" 
-              className={`h-8 transition-opacity duration-500 ${isLogoEntering ? 'opacity-0' : 'opacity-100'}`}
+              className={`h-10 transition-opacity duration-500 ${isLogoEntering ? 'opacity-0' : 'opacity-100'}`}
             />
           )}
           {!isDashboard && (
