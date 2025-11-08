@@ -83,14 +83,25 @@ export function useWorkouts(selection?: Selection) {
   ) => {
     if (!user || profile?.role !== 'coach') throw new Error('Action non autorisée.');
 
+    if (!planning.assigned_to_user_id && !planning.assigned_to_group_id) {
+      throw new Error('La séance doit être assignée à un athlète ou à un groupe.');
+    }
+
+    const insertData: any = {
+      ...planning,
+      coach_id: user.id,
+      status: 'planned',
+    };
+
+    if (planning.assigned_to_user_id) {
+      insertData.user_id = planning.assigned_to_user_id;
+    } else if (planning.assigned_to_group_id) {
+      insertData.user_id = user.id;
+    }
+
     const { data, error } = await supabase
       .from('workouts')
-      .insert({
-        ...planning,
-        coach_id: user.id,
-        status: 'planned',
-        user_id: planning.assigned_to_user_id,
-      })
+      .insert(insertData)
       .select()
       .single();
 
