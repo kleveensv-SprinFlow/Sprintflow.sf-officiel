@@ -1,171 +1,3 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { User, Edit, Lock, LogOut, Mail, Loader2, Camera, Trash2, Shield, Settings, MessageSquare, Handshake, Target } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import useAuth from '../../hooks/useAuth';
-import useObjectif from '../../hooks/useObjectif';
-import { EditProfileModal } from './EditProfileModal';
-import { ChangePasswordModal } from './ChangePasswordModal';
-import { DeleteAccountModal } from './DeleteAccountModal';
-import { SetObjectifModal } from './SetObjectifModal';
-import { View, Objectif } from '../../types';
-import { toast } from 'react-toastify'; // Ajout pour des notifications plus jolies
-
-interface ProfileData {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  full_name: string | null;
-  email: string;
-  date_de_naissance: string | null;
-  height: number | null;
-  avatar_url: string | null;
-  sexe: 'homme' | 'femme' | 'autre' | null;
-  discipline: string | null;
-  license_number: string | null;
-  role: 'athlete' | 'encadrant' | null;
-}
-
-const convertHeicToJpeg = async (file: File): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Canvas context non disponible'));
-          return;
-        }
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const convertedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            });
-            resolve(convertedFile);
-          } else {
-            reject(new Error('Conversion échouée'));
-          }
-        }, 'image/jpeg', 0.9);
-      };
-      img.onerror = () => reject(new Error('Impossible de charger l\'image'));
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => reject(new Error('Impossible de lire le fichier'));
-    reader.readAsDataURL(file);
-  });
-};
-
-export function ProfilePage() {
-  const { user, signOut, profile: authProfile, refreshProfile } = useAuth();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { objectif, fetchObjectif } = useObjectif();
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-  const [showObjectifModal, setShowObjectifModal] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (authProfile && user) {
-      console.log('📋 [ProfilePage] authProfile reçu:', authProfile);
-      setProfile({
-        ...authProfile,
-        email: user.email || '',
-      });
-      setIsLoading(false);
-    }
-  }, [authProfile, user]);
-
-  useEffect(() => {
-    if (authProfile?.role === 'athlete' && user) {
-      fetchObjectif(user.id).catch(err => {
-        console.error('Erreur lors du chargement de l\'objectif:', err);
-      });
-    }
-  }, [authProfile?.role, user]);
-
-  const loadProfileAndObjectif = async () => {
-    if (!user) return;
-    try {
-      await refreshProfile();
-      if (authProfile?.role === 'athlete') {
-        await fetchObjectif(user.id);
-      }
-    } catch (error: any) {
-      console.error('Erreur lors du chargement des données:', error.message);
-      toast.error("Impossible de charger toutes les données.");
-    }
-  };
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    console.log('📸 Fichier sélectionné:', {
-      name: file.name,
-      type: file.type,
-      size: file.size
-    });
-
-    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
-
-    const isValidType = file.type.startsWith('image/') || validImageTypes.includes(file.type);
-    const isValidExtension = fileExtension && validExtensions.includes(fileExtension);
-
-    if (!isValidType && !isValidExtension) {
-      console.error('❌ Type de fichier invalide:', file.type, 'Extension:', fileExtension);
-      toast.warn('Veuillez sélectionner un fichier image valide (JPG, PNG, GIF, WebP)');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.warn('La taille du fichier ne doit pas dépasser 5 MB');
-      return;
-    }
-
-    setUploadingPhoto(true);
-    try {
-      let fileToUpload = file;
-      let fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-
-      if (fileExt === 'heic' || fileExt === 'heif') {
-        console.log('🔄 Conversion HEIC/HEIF vers JPEG...');
-        fileToUpload = await convertHeicToJpeg(file);
-        fileExt = 'jpg';
-      }
-
-      const filePath = `avatars/${user.id}.${fileExt}`;
-
-      console.log('⬆️ Upload vers:', filePath);
-
-      if (profile?.avatar_url) {
-          const oldAvatarPath = profile.avatar_url.split('/profiles/').pop()?.split('?')[0];
-          if (oldAvatarPath) {
-              console.log('🗑️ Suppression ancien avatar:', oldAvatarPath);
-              await supabase.storage.from('profiles').remove([oldAvatarPath]);
-          }
-      }
-
-      const { error: uploadError } = await supabase.storage
-        .from('profiles')
-        .upload(filePath, fileToUpload, {
-          upsert: true,
-          contentType: fileToUpload.type || 'image/jpeg'
-        });
-
-      if (uploadError) {
-        console.error('❌ Erreur upload:', uploadError);
-        throw uploadError;
-      }
 
       console.log('✅ Upload réussi!');
 
@@ -182,8 +14,7 @@ export function ProfilePage() {
 
       if (updateError) throw updateError;
       
-      // --- LA CORRECTION EST ICI ---
-      await refreshProfile(); // On rafraîchit le contexte d'authentification global
+      await refreshProfile();
       
       toast.success('Photo de profil mise à jour avec succès !');
 
@@ -195,8 +26,6 @@ export function ProfilePage() {
     }
   };
   
-  // Le reste du fichier reste identique mais je le fournis pour être complet
-
   const getInitials = (p: ProfileData) => (p.first_name?.[0] || '') + (p.last_name?.[0] || '');
   const getFullName = (p: ProfileData) => `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Utilisateur';
   const formatDate = (date: string | null) => date ? new Date(date).toLocaleDateString('fr-FR') : 'Non renseigné';
@@ -207,9 +36,6 @@ export function ProfilePage() {
   if (!profile) {
     return <div className="flex items-center justify-center h-screen"><p>Profil non trouvé. Veuillez vous reconnecter.</p></div>;
   }
-  
-  // ... (Le reste du JSX reste le même que dans le fichier original, pas besoin de le copier ici pour la lisibilité)
-  // ... Je vais le remettre en entier pour vous
   
     const ProfileCard = ({ profile, onEdit }: { profile: ProfileData, onEdit: () => void }) => (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 relative overflow-hidden">
@@ -231,7 +57,6 @@ export function ProfilePage() {
             ref={fileInputRef}
             type="file"
             accept="image/*,.heic,.heif"
-            capture="environment"
             onChange={handlePhotoUpload}
             className="hidden"
           />
