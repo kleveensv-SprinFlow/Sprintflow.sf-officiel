@@ -25,7 +25,7 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
     const loadCoachProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url, role')
+        .select('id, first_name, last_name, photo_url, role')
         .eq('id', group.coach_id)
         .maybeSingle();
 
@@ -125,7 +125,7 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
               >
                 <div className="relative">
                   <img
-                    src={coachProfile.avatar_url || `https://ui-avatars.com/api/?name=${coachProfile.first_name}+${coachProfile.last_name}&background=f97316`}
+                    src={coachProfile.photo_url || `https://ui-avatars.com/api/?name=${coachProfile.first_name}+${coachProfile.last_name}&background=f97316`}
                     alt="avatar"
                     className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
                   />
@@ -147,7 +147,7 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
                 className="cursor-pointer text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border-2 border-blue-400"
               >
                 <img
-                  src={member.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${member.profiles?.first_name}+${member.profiles?.last_name}&background=3b82f6`}
+                  src={member.profiles?.photo_url || `https://ui-avatars.com/api/?name=${member.profiles?.first_name}+${member.profiles?.last_name}&background=3b82f6`}
                   alt="avatar"
                   className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
                 />
@@ -168,7 +168,7 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
               <div key={req.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg shadow">
                 <div className="flex items-center space-x-3">
                     <img 
-                      src={req.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${req.profiles?.first_name}+${req.profiles?.last_name}&background=random`} 
+                      src={req.profiles?.photo_url || `https://ui-avatars.com/api/?name=${req.profiles?.first_name}+${req.profiles?.last_name}&background=random`} 
                       alt="avatar" 
                       className="w-10 h-10 rounded-full object-cover"
                     />
