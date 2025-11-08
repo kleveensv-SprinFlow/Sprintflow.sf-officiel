@@ -133,7 +133,7 @@ export const useGroups = () => {
     if (error) {
         // Si l'erreur vient de la fonction (ex: accès non autorisé), afficher le message
         if (error.message.includes('Accès non autorisé')) {
-            throw new Error('Vous n''êtes pas autorisé à supprimer ce groupe.');
+            throw new Error('Vous n\'êtes pas autorisé à supprimer ce groupe.');
         }
         throw error;
     }

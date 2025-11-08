@@ -54,7 +54,7 @@ const CreateGroupModal: React.FC<{ onClose: () => void; onCreate: (name: string)
 };
 
 // --- Composant principal ---
-export const GroupManagement: React.FC = () => {
+const GroupManagement: React.FC = () => {
   const { groups, loading, createGroup, deleteGroup } = useGroups();
   const [currentView, setCurrentView] = useState<'list' | 'details' | 'athlete'>('list');
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
