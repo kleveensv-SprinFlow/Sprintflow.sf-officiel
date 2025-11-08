@@ -1,18 +1,19 @@
 import React from 'react';
-import { X, User, BarChart2, Lightbulb, LogOut } from 'lucide-react';
+import { X, User, BarChart2, Lightbulb, LogOut, Users, Settings, Handshake, Mail } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import useAuth from '../../hooks/useAuth';
+import { View } from '../../types';
 
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (view: 'profile' | 'records' | 'advice') => void;
+  onNavigate: (view: View) => void;
 }
 
 const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate }) => {
   const { profile, signOut } = useAuth();
 
-  const handleNavigation = (view: 'profile' | 'records' | 'advice') => {
+  const handleNavigation = (view: View) => {
     onNavigate(view);
     onClose();
   };
@@ -64,7 +65,16 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate }) => {
                 </div>
               </div>
 
-              <nav className="space-y-2">
+              <nav className="space-y-2 flex-grow flex flex-col">
+                {profile?.role === 'athlete' && (
+                  <button
+                    onClick={() => handleNavigation('groups')}
+                    className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Users className="w-5 h-5" />
+                    <span>Mon groupe</span>
+                  </button>
+                )}
                 <button
                   onClick={() => handleNavigation('records')}
                   className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -73,16 +83,38 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate }) => {
                   <span>Mes records</span>
                 </button>
                 <button
-                  onClick={() => handleNavigation('advice')}
+                  onClick={() => handleNavigation('ai')}
                   className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Lightbulb className="w-5 h-5" />
                   <span>Conseil</span>
                 </button>
+                <button
+                  onClick={() => handleNavigation('settings')}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>Paramètres</span>
+                </button>
+                <button
+                  onClick={() => handleNavigation('partnerships')}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Handshake className="w-5 h-5" />
+                  <span>Partenaires</span>
+                </button>
+                <div className="flex-grow" />
+                <button
+                  onClick={() => handleNavigation('contact')}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Mail className="w-5 h-5" />
+                  <span>Contact</span>
+                </button>
               </nav>
             </div>
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="p-4 mt-auto border-t border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => signOut()}
                 className="w-full flex items-center space-x-3 p-3 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
