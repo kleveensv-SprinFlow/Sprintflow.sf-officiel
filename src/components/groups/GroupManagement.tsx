@@ -81,7 +81,7 @@ const GroupManagement: React.FC = () => {
           try {
               const { data, error } = await supabase
                   .from('profiles')
-                  .select('id, first_name, last_name, avatar_url, role, date_de_naissance, sexe, height, discipline, license_number')
+                  .select('id, first_name, last_name, photo_url, role, date_de_naissance, sexe, height, discipline, license_number')
                   .eq('id', athleteId)
                   .maybeSingle();
 
@@ -156,7 +156,7 @@ const GroupManagement: React.FC = () => {
         id: selectedAthlete.id,
         first_name: selectedAthlete.first_name || '',
         last_name: selectedAthlete.last_name || '',
-        photo_url: selectedAthlete.avatar_url,
+        photo_url: selectedAthlete.photo_url,
         joined_at: new Date().toISOString(), // Placeholder
     };
     return <AthleteDetails athlete={athleteDataForDetails} onBack={handleBackToDetails} />;
