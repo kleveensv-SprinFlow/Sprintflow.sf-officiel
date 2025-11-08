@@ -1,9 +1,38 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [
     react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      manifest: {
+        name: 'SprintFlow',
+        short_name: 'SprintFlow',
+        description: 'Votre application de suivi pour athlètes.',
+        theme_color: '#1F2937',
+        background_color: '#1F2937',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        orientation: 'portrait',
+        icons: [
+          {
+            src: 'logo.jpg', // Assurez-vous que public/logo.jpg existe
+            sizes: '512x512',
+            type: 'image/jpeg',
+            purpose: 'any maskable',
+          },
+          {
+            src: 'logo.jpg',
+            sizes: '192x192',
+            type: 'image/jpeg',
+          },
+        ],
+      },
+    }),
   ],
   optimizeDeps: {
     exclude: ['lucide-react'],
@@ -17,30 +46,6 @@ export default defineConfig({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
-        /* manualChunks: (id) => {
-          // Séparation intelligente des chunks
-          if (id.includes('node_modules')) {
-            // Librairies lourdes dans leurs propres chunks
-            if (id.includes('recharts')) return 'charts';
-            if (id.includes('framer-motion')) return 'motion';
-            if (id.includes('@mediapipe')) return 'mediapipe';
-            if (id.includes('html5-qrcode')) return 'qrcode';
-            if (id.includes('@supabase')) return 'supabase';
-            if (id.includes('react') || id.includes('react-dom')) return 'vendor';
-            if (id.includes('date-fns')) return 'date-utils';
-            if (id.includes('lucide-react')) return 'icons';
-            // Autres dépendances dans un chunk commun
-            return 'libs';
-          }
-
-          // Grouper les composants par fonctionnalité
-          if (id.includes('/components/nutrition/')) return 'nutrition';
-          if (id.includes('/components/workouts/')) return 'workouts';
-          if (id.includes('/components/groups/')) return 'groups';
-          if (id.includes('/components/chat/')) return 'chat';
-          if (id.includes('/components/video_analysis/')) return 'video-analysis';
-        }, */
-        // Optimisation des noms de fichiers pour le cache
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
@@ -49,7 +54,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
   },
   esbuild: {
-    // Suppression des console.log en production
     drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
   },
   base: '/',
