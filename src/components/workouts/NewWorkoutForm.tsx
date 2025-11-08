@@ -114,7 +114,7 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
         tag_seance: tagSeance,
         type: workoutType,
         notes,
-        blocs,
+        blocks,
         workoutId: initialData?.id
       });
     } finally {
