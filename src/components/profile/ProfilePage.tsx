@@ -21,7 +21,7 @@ interface ProfileData {
   discipline: string | null;
   sexe: string | null;
   height: number | null;
-  avatar_url: string | null;
+  photo_url: string | null;
   license_number: string | null;
 }
 
@@ -210,7 +210,7 @@ const ProfilePage: React.FC = () => {
       if (updateError) throw updateError;
 
       if (profile) {
-        setProfile({ ...profile, avatar_url: urlWithCacheBuster });
+        setProfile({ ...profile, photo_url: urlWithCacheBuster });
       }
 
       await refreshProfile();
@@ -255,7 +255,7 @@ const ProfilePage: React.FC = () => {
       <div className="flex items-center space-x-6">
         <div className="relative">
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-4 border-white dark:border-gray-800">
-            {profile.avatar_url ? <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" /> : getInitials(profile)}
+            {profile.photo_url ? <img src={profile.photo_url} alt="Avatar" className="w-full h-full object-cover" /> : getInitials(profile)}
           </div>
           <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} className="absolute -bottom-1 -right-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md">
             {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
