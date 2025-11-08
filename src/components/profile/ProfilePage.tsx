@@ -77,14 +77,19 @@ const ProfilePage: React.FC = () => {
         .eq('id', user.id)
         .maybeSingle();
 
-      if (profileError) throw profileError;
-      if (profileData) setProfile(profileData);
+      if (profileError) {
+        console.error('Erreur chargement profil:', profileError);
+        toast.error('Erreur lors du chargement du profil');
+        return;
+      }
 
-      await refreshProfile();
+      if (profileData) {
+        setProfile(profileData);
+      }
+
       await fetchObjectif(user.id);
     } catch (error) {
-      console.error('Erreur chargement profil:', error);
-      toast.error('Erreur lors du chargement du profil');
+      console.error('Erreur inattendue:', error);
     } finally {
       setIsLoading(false);
     }
@@ -204,13 +209,25 @@ const ProfilePage: React.FC = () => {
 
       if (updateError) throw updateError;
 
+      if (profile) {
+        setProfile({ ...profile, avatar_url: urlWithCacheBuster });
+      }
+
       await refreshProfile();
 
-      toast.success('Photo de profil mise à jour avec succès !');
+      try {
+        toast.success('Photo de profil mise à jour avec succès !');
+      } catch (toastErr) {
+        console.log('✅ Photo mise à jour (toast error ignoré)');
+      }
 
     } catch (err: any) {
       console.error('❌ Erreur upload photo:', err);
-      toast.error(`Erreur lors de l'upload: ${err.message || 'Veuillez réessayer'}`);
+      try {
+        toast.error(`Erreur lors de l'upload: ${err.message || 'Veuillez réessayer'}`);
+      } catch (toastErr) {
+        console.error('Erreur toast:', toastErr);
+      }
     } finally {
       setUploadingPhoto(false);
     }
