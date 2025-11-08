@@ -3,7 +3,7 @@ import React from 'react';
 import { format, isToday, isYesterday, isTomorrow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Plus, Edit3 } from 'lucide-react';
-import { Workout, WorkoutType } from '../../types';
+import { Workout } from '../../types';
 import { useWorkoutTypes } from '../../hooks/useWorkoutTypes';
 
 interface DayCardProps {
@@ -28,7 +28,7 @@ const WorkoutTagBadge: React.FC<{ name: string; color?: string }> = ({ name, col
 };
 
 export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, onEditClick, onCardClick, isReadOnly = false }) => {
-  const { workoutTypes } = useWorkoutTypes();
+  const { allTypes: workoutTypes, loading: typesLoading } = useWorkoutTypes();
 
   const getDayLabel = () => {
     if (isToday(date)) return "Aujourd'hui";
@@ -38,7 +38,8 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   };
   
   // Fonction pour trouver les détails d'un type de séance (nom, couleur) par son ID
-  const findWorkoutType = (tagId: string): WorkoutType | undefined => {
+  const findWorkoutType = (tagId: string) => {
+    if (!workoutTypes || workoutTypes.length === 0) return undefined;
     return workoutTypes.find(wt => wt.id === tagId);
   };
 
@@ -67,11 +68,11 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         return (
           <div className="text-center space-y-3">
             <h4 className="font-bold text-lg text-light-title dark:text-dark-title truncate px-2">
-              {workoutType?.nom || 'Entraînement'}
+              {workoutType?.name || 'Entraînement'}
             </h4>
             {workoutType && (
               <div className="flex justify-center">
-                <WorkoutTagBadge name={workoutType.nom} color={workoutType.couleur} />
+                <WorkoutTagBadge name={workoutType.name} color={workoutType.color} />
               </div>
             )}
           </div>
@@ -86,8 +87,8 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
               Entraînement Bi-Quotidien
             </h4>
             <div className="flex justify-center items-center gap-2 flex-wrap">
-              {workoutType1 && <WorkoutTagBadge name={workoutType1.nom} color={workoutType1.couleur} />}
-              {workoutType2 && <WorkoutTagBadge name={workoutType2.nom} color={workoutType2.couleur} />}
+              {workoutType1 && <WorkoutTagBadge name={workoutType1.name} color={workoutType1.color} />}
+              {workoutType2 && <WorkoutTagBadge name={workoutType2.name} color={workoutType2.color} />}
             </div>
           </div>
         );
@@ -111,9 +112,9 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
           <p className="text-sm text-light-label dark:text-dark-label">{format(date, 'd MMMM', { locale: fr })}</p>
         </div>
         {!isReadOnly && onEditClick && mainWorkout && (
-          <button onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} className="p-2 rounded-full transition-all bg-black/5 dark:bg-white/10 opacity-0 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/20 z-10">
+          <div onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} className="p-2 rounded-full transition-all bg-black/5 dark:bg-white/10 opacity-0 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/20 z-10 cursor-pointer">
             <Edit3 size={16} className="text-gray-700 dark:text-gray-300" />
-          </button>
+          </div>
         )}
       </header>
 
