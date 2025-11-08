@@ -8,11 +8,11 @@ import { Profile } from '../../types';
 
 // --- MOCKED DATA FOR PREVIEW ---
 const MOCKED_ATHLETES: Athlete[] = [
-  { id: '1', first_name: 'Alex', last_name: 'Martin', avatar_url: 'https://i.pravatar.cc/150?img=1', date_of_birth: '1998-05-20', discipline: '100m' },
-  { id: '2', first_name: 'Léa', last_name: 'Dubois', avatar_url: 'https://i.pravatar.cc/150?img=2', date_of_birth: '2000-11-12', discipline: 'Saut en longueur' },
-  { id: '3', first_name: 'Lucas', last_name: 'Garcia', avatar_url: 'https://i.pravatar.cc/150?img=3', date_of_birth: '1999-02-03', discipline: 'Lancer de poids' },
-  { id: '4', first_name: 'Chloé', last_name: 'Bernard', avatar_url: 'https://i.pravatar.cc/150?img=4', date_of_birth: '2001-08-25', discipline: '400m haies' },
-  { id: '5', first_name: 'Enzo', last_name: 'Petit', avatar_url: 'https://i.pravatar.cc/150?img=5', date_of_birth: '2002-01-30', discipline: 'Triple saut' },
+  { id: '1', first_name: 'Alex', last_name: 'Martin', photo_url: 'https://i.pravatar.cc/150?img=1', date_of_birth: '1998-05-20', discipline: '100m' },
+  { id: '2', first_name: 'Léa', last_name: 'Dubois', photo_url: 'https://i.pravatar.cc/150?img=2', date_of_birth: '2000-11-12', discipline: 'Saut en longueur' },
+  { id: '3', first_name: 'Lucas', last_name: 'Garcia', photo_url: 'https://i.pravatar.cc/150?img=3', date_of_birth: '1999-02-03', discipline: 'Lancer de poids' },
+  { id: '4', first_name: 'Chloé', last_name: 'Bernard', photo_url: 'https://i.pravatar.cc/150?img=4', date_of_birth: '2001-08-25', discipline: '400m haies' },
+  { id: '5', first_name: 'Enzo', last_name: 'Petit', photo_url: 'https://i.pravatar.cc/150?img=5', date_of_birth: '2002-01-30', discipline: 'Triple saut' },
 ];
 // --- END MOCKED DATA ---
 
@@ -20,7 +20,7 @@ const MOCKED_ATHLETES: Athlete[] = [
 interface Athlete extends Profile {
   first_name: string;
   last_name: string;
-  avatar_url?: string;
+  photo_url?: string;
   date_of_birth?: string;
   discipline?: string;
 }
@@ -61,7 +61,7 @@ const AthleteCard: React.FC<{
     >
       <motion.div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${athlete.avatar_url || '/default-avatar.png'})` }}
+        style={{ backgroundImage: `url(${athlete.photo_url || '/default-avatar.png'})` }}
         whileHover={{ scale: 1.1 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
       />
