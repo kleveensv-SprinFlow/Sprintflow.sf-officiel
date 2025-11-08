@@ -97,28 +97,51 @@ const ProfilePage: React.FC = () => {
 
   const fetchObjectif = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: objectifData, error: objectifError } = await supabase
         .from('objectifs')
-        .select(`
-          id,
-          user_id,
-          epreuve_id,
-          exercice_id,
-          valeur,
-          date_echeance,
-          epreuve:epreuves_athletisme(nom, unite),
-          exercice:exercices_reference(nom, unite)
-        `)
+        .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error('Erreur chargement objectif:', error);
+      if (objectifError) {
+        console.error('Erreur chargement objectif:', objectifError);
         return;
       }
-      setObjectif(data);
+
+      if (!objectifData) {
+        setObjectif(null);
+        return;
+      }
+
+      // Fetch epreuve details if epreuve_id exists
+      let epreuveData = null;
+      if (objectifData.epreuve_id) {
+        const { data: epreuve } = await supabase
+          .from('epreuves_athletisme')
+          .select('nom, unite')
+          .eq('id', objectifData.epreuve_id)
+          .maybeSingle();
+        epreuveData = epreuve;
+      }
+
+      // Fetch exercice details if exercice_id exists
+      let exerciceData = null;
+      if (objectifData.exercice_id) {
+        const { data: exercice } = await supabase
+          .from('exercices_reference')
+          .select('nom, unite')
+          .eq('id', objectifData.exercice_id)
+          .maybeSingle();
+        exerciceData = exercice;
+      }
+
+      setObjectif({
+        ...objectifData,
+        epreuve: epreuveData,
+        exercice: exerciceData
+      });
     } catch (error) {
       console.error('Erreur chargement objectif:', error);
     }
@@ -177,7 +200,7 @@ const ProfilePage: React.FC = () => {
     setUploadingPhoto(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name?.split('.')?.pop() || 'jpg';
       const fileName = `${user.id}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
