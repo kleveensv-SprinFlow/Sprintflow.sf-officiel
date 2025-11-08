@@ -20,14 +20,14 @@ interface TeamHealth {
 interface PendingWellness {
   athlete_id: string;
   full_name: string;
-  avatar_url?: string;
+  photo_url?: string;
 }
 
 interface PendingValidation {
   workout_id: string;
   athlete_id: string;
   full_name: string;
-  avatar_url?: string;
+  photo_url?: string;
   workout_title: string;
   scheduled_date: string;
 }
