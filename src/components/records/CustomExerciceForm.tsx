@@ -4,9 +4,10 @@ import { supabase } from '../../lib/supabase';
 import { EXERCISE_CATEGORIES } from '../../data/categories';
 import { X } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import { ExerciceReference } from '../../hooks/useExercices';
 
 interface CustomExerciceFormProps {
-  onSave: () => void;
+  onSave: (newExercice: ExerciceReference) => void;
   onCancel: () => void;
 }
 
@@ -27,17 +28,23 @@ export const CustomExerciceForm: React.FC<CustomExerciceFormProps> = ({ onSave, 
     setIsSaving(true);
     setError(null);
 
-    const { error: insertError } = await supabase
+    const { data: newExercice, error: insertError } = await supabase
       .from('exercices_personnalises')
-      .insert({ nom, categorie, creator_id: user.id });
+      .insert({ nom, categorie, creator_id: user.id })
+      .select()
+      .single();
 
     setIsSaving(false);
 
     if (insertError) {
       console.error("Erreur lors de la création de l'exercice:", insertError);
       setError(insertError.message);
-    } else {
-      onSave();
+    } else if (newExercice) {
+      const newExerciceReference: ExerciceReference = {
+          ...newExercice,
+          type: 'custom'
+      };
+      onSave(newExerciceReference);
     }
   };
 
