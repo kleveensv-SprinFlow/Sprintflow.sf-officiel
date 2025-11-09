@@ -17,50 +17,68 @@ interface CourseBlockFormProps {
 const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
 const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
 
-const defaultState: Omit<CourseBlock, 'id' | 'chronos'> = {
+// Le chronos: [] est inclus pour avoir un état de base cohérent
+const defaultState: Omit<CourseBlock, 'id'> = {
   type: 'course',
   series: 1,
   reps: 1,
   distance: 400,
   restBetweenReps: '02:00',
   restBetweenSeries: '05:00',
+  chronos: [],
 };
 
 export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCancel, initialData, isOpen, userRole }) => {
-  const [block, setBlock] = useState(initialData || { ...defaultState, chronos: [] });
+  const [block, setBlock] = useState(initialData || defaultState);
   const isAthlete = userRole === 'athlete';
 
+  // Effet pour initialiser ou réinitialiser l'état quand la modale s'ouvre
   useEffect(() => {
     if (isOpen) {
-      const data = initialData || { ...defaultState, chronos: [] };
-      setBlock(data);
-    }
-  }, [initialData, isOpen]);
-
-  // Met à jour la structure des chronos lorsque les séries/réps changent
-  useEffect(() => {
-    if (isAthlete) {
-      const { series, reps, chronos = [] } = block;
-      const newChronos = Array(series).fill(null).map((_, sIdx) =>
-        Array(reps).fill(null).map((_, rIdx) => 
-          chronos[sIdx]?.[rIdx] || null
-        )
-      );
-      // Compare pour éviter une boucle de re-rendu infinie
-      if (JSON.stringify(chronos) !== JSON.stringify(newChronos)) {
-        setBlock(prev => ({ ...prev, chronos: newChronos }));
+      const baseData = initialData || defaultState;
+      // Pour l'athlète, on s'assure que la structure des chronos est toujours correcte dès le début
+      if (isAthlete) {
+        const { series, reps, chronos = [] } = baseData;
+        const newChronos = Array(series).fill(null).map((_, sIdx) =>
+          Array(reps).fill(null).map((_, rIdx) =>
+            chronos[sIdx]?.[rIdx] || null
+          )
+        );
+        setBlock({ ...baseData, chronos: newChronos });
+      } else {
+        setBlock(baseData);
       }
     }
-  }, [block.series, block.reps, isAthlete]);
+  }, [initialData, isOpen, isAthlete]);
 
+
+  // Fonction de mise à jour de l'état qui gère aussi le redimensionnement des chronos
   const updateBlock = (updatedFields: Partial<Omit<CourseBlock, 'id'>>) => {
-    setBlock(prev => ({ ...prev, ...updatedFields }));
+    setBlock(prevBlock => {
+      const newBlock = { ...prevBlock, ...updatedFields };
+
+      // Si les séries ou répétitions ont changé, on reconstruit la matrice des chronos
+      // pour qu'elle corresponde, tout en préservant les valeurs existantes.
+      if (isAthlete && (updatedFields.series !== undefined || updatedFields.reps !== undefined)) {
+        const { series, reps, chronos = [] } = newBlock;
+        const newChronos = Array(series).fill(null).map((_, sIdx) =>
+          Array(reps).fill(null).map((_, rIdx) =>
+            chronos[sIdx]?.[rIdx] || null
+          )
+        );
+        newBlock.chronos = newChronos;
+      }
+      return newBlock;
+    });
   };
 
   const handleChronoChange = (serieIndex: number, repIndex: number, value: number | null) => {
-    const newChronos = JSON.parse(JSON.stringify(block.chronos || []));
-    newChronos[serieIndex][repIndex] = value;
-    updateBlock({ chronos: newChronos });
+    setBlock(prevBlock => {
+      const newChronos = JSON.parse(JSON.stringify(prevBlock.chronos || []));
+      if (!newChronos[serieIndex]) newChronos[serieIndex] = [];
+      newChronos[serieIndex][repIndex] = value;
+      return { ...prevBlock, chronos: newChronos };
+    });
   };
 
   const handleValidate = () => {
@@ -76,7 +94,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {Array.from({ length: block.reps }).map((_, repIndex) => (
               <ChronoPicker
-                key={repIndex}
+                key={`${serieIndex}-${repIndex}`}
                 label={`Rép ${repIndex + 1}`}
                 initialValue={block.chronos?.[serieIndex]?.[repIndex] || null}
                 onChange={(val) => handleChronoChange(serieIndex, repIndex, val)}
