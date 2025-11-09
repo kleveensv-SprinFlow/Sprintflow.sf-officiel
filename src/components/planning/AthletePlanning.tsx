@@ -48,17 +48,14 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
 
   const variants = {
     enter: {
-      x: '100%',
       opacity: 0,
     },
     center: {
       zIndex: 1,
-      x: 0,
       opacity: 1,
     },
     exit: {
       zIndex: 0,
-      x: '-100%',
       opacity: 0,
     },
   };
@@ -66,29 +63,23 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
   return (
     <div className="p-4 space-y-4">
       <div className="flex justify-center mb-4">
-        <div className="relative flex p-1 bg-white/20 backdrop-blur-lg border border-white/10 rounded-full shadow-lg">
+        <div className="flex items-center justify-around w-full max-w-xs p-1 bg-primary-500 rounded-full">
           <button
             onClick={() => setCurrentView('planning')}
-            className={`relative w-32 py-2 text-sm font-semibold rounded-full transition-colors ${
-              currentView === 'planning' ? 'text-white' : 'text-gray-800 dark:text-gray-200'
+            className={`w-1/2 py-2 text-sm font-semibold text-white rounded-full transition-opacity ${
+              currentView === 'planning' ? 'opacity-100' : 'opacity-60'
             }`}
           >
             Planning
           </button>
           <button
             onClick={() => setCurrentView('entrainement')}
-            className={`relative w-32 py-2 text-sm font-semibold rounded-full transition-colors ${
-              currentView === 'entrainement' ? 'text-white' : 'text-gray-800 dark:text-gray-200'
+            className={`w-1/2 py-2 text-sm font-semibold text-white rounded-full transition-opacity ${
+              currentView === 'entrainement' ? 'opacity-100' : 'opacity-60'
             }`}
           >
             Entraînement
           </button>
-          <motion.div
-            layoutId="active-pill"
-            className="absolute inset-0 z-[-1] bg-primary-500 rounded-full"
-            animate={{ x: currentView === 'planning' ? '0%' : '100%' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          />
         </div>
       </div>
 
@@ -111,10 +102,7 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{
-            x: { type: "spring", stiffness: 300, damping: 30 },
-            opacity: { duration: 0.2 }
-          }}
+          transition={{ opacity: { duration: 0.2 } }}
           className="grid grid-cols-1 md:grid-cols-7 gap-2"
         >
           {days.map((day, index) => {
