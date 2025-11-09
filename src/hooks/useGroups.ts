@@ -19,7 +19,7 @@ export interface JoinRequest {
   athlete_id: string;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
-  profiles: Pick<Profile, 'id' | 'first_name' | 'last_name' | 'avatar_url'> | null;
+  profiles: Pick<Profile, 'id' | 'first_name' | 'last_name' | 'photo_url'> | null;
 }
 
 export const useGroups = () => {
@@ -44,7 +44,7 @@ export const useGroups = () => {
             group_members (
               athlete_id,
               profiles (
-                id, first_name, last_name, avatar_url, role,
+                id, first_name, last_name, photo_url, role,
                 date_de_naissance, sexe, height, discipline, license_number
               )
             )
@@ -62,7 +62,7 @@ export const useGroups = () => {
               group_members (
                 athlete_id,
                 profiles (
-                  id, first_name, last_name, avatar_url, role,
+                  id, first_name, last_name, photo_url, role,
                   date_de_naissance, sexe, height, discipline, license_number
                 )
               )
@@ -145,7 +145,7 @@ export const useGroups = () => {
   const fetchJoinRequests = useCallback(async (groupId: string): Promise<JoinRequest[]> => {
     const { data, error } = await supabase
       .from('group_join_requests')
-      .select(`*, profiles ( id, first_name, last_name, avatar_url )`)
+      .select(`*, profiles ( id, first_name, last_name, photo_url )`)
       .eq('group_id', groupId)
       .eq('status', 'pending');
     if (error) throw error;
