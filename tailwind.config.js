@@ -28,7 +28,7 @@ export default {
           950: '#172554',
         },
         // Thème clair
-        'light-background': '#F0F2F5', // Un gris très clair, presque blanc
+        'light-background': '#E5E7EB', // Fond gris pour un contraste plus élevé
         'light-card': '#FFFFFF',
         'light-title': '#1A202C', // Titres en noir/gris foncé
         'light-text': '#2D3748',  // Texte principal
@@ -36,7 +36,7 @@ export default {
 
         // Thème sombre
         'dark-background': '#1F2937', // Fond gris anthracite
-        'dark-card': '#2D3748',       // Cartes plus claires pour un meilleur contraste
+        'dark-card': '#374151',       // Cartes nettement plus claires pour un contraste élevé
         'dark-title': '#E6EDF3',      // Titres en blanc cassé
         'dark-text': '#C9D1D9',       // Texte principal
         'dark-label': '#8B949E',      // Labels et textes secondaires
