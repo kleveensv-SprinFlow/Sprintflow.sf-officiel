@@ -106,6 +106,26 @@ function App() {
 
   const closeForm = () => setShowForm(null);
 
+  const mainViews: View[] = ['dashboard', 'workouts', 'nutrition', 'groups', 'planning', 'chat'];
+
+  const viewTitles: Record<View, string> = {
+      dashboard: 'Accueil',
+      workouts: 'Calendrier',
+      planning: 'Planning',
+      nutrition: 'Nutrition',
+      ai: 'Conseils',
+      profile: 'Mon Profil',
+      records: 'Mes Records',
+      groups: 'Mon Groupe',
+      settings: 'Réglages',
+      contact: 'Contact',
+      partnerships: 'Partenaires',
+      'developer-panel': 'Développeur',
+      chat: 'Messages',
+  };
+
+  const headerTitle = viewTitles[currentView] || currentView.charAt(0).toUpperCase() + currentView.slice(1);
+
   const renderView = () => {
     const commonProps = { userRole: profile?.role as 'athlete' | 'coach', onViewChange: setCurrentView };
     const viewMap: Record<View, React.ReactNode> = {
@@ -157,8 +177,8 @@ function App() {
       <Header
         userRole={profile?.role as any}
         isDashboard={currentView === 'dashboard'}
-        title={currentView.charAt(0).toUpperCase() + currentView.slice(1)}
-        canGoBack={currentView !== 'dashboard'}
+        title={headerTitle}
+        canGoBack={!mainViews.includes(currentView)}
         onBack={() => setCurrentView('dashboard')}
         onProfileClick={() => setIsSideMenuOpen(true)}
         onHomeClick={() => setCurrentView('dashboard')}
