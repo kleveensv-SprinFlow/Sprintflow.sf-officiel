@@ -7,6 +7,8 @@ import { ChevronDown } from 'lucide-react';
 import PickerWheel from '../common/PickerWheel';
 import WeightStepper from '../common/WeightStepper';
 import RestTimeSelector from '../common/RestTimeSelector';
+import { ChoiceModal } from '../common/ChoiceModal';
+import { CustomExerciceForm } from '../records/CustomExerciceForm';
 
 interface MuscuBlockFormProps {
   onSave: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
@@ -30,10 +32,13 @@ const defaultState: Omit<MuscuBlock, 'id' | 'charges'> = {
 };
 
 export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel, initialData, isOpen }) => {
-  const { exercices } = useExercices();
+  const { exercices, loadExercices } = useExercices();
   const [block, setBlock] = useState(initialData || defaultState);
   const [noWeight, setNoWeight] = useState(false);
+  
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
   const [isTiroirOpen, setIsTiroirOpen] = useState(false);
+  const [isCustomFormOpen, setIsCustomFormOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -51,6 +56,12 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
     updateBlock({ exerciceId: exercice.id, exerciceNom: exercice.nom });
     setIsTiroirOpen(false);
   };
+
+  const handleSaveCustomExercice = (newExercice: ExerciceReference) => {
+    loadExercices();
+    handleSelectExercice(newExercice);
+    setIsCustomFormOpen(false);
+  }
   
   const handleValidate = () => {
     if (!block.exerciceId) {
@@ -69,6 +80,11 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
       updateBlock({ poids: initialData?.poids || defaultState.poids || 0 });
     }
   };
+  
+  const exerciceChoices = [
+    { label: 'Choisir un exercice existant', action: () => setIsTiroirOpen(true), style: 'primary' as const },
+    { label: 'Créer un nouvel exercice', action: () => setIsCustomFormOpen(true), style: 'default' as const },
+  ];
 
   const title = initialData ? 'Modifier le bloc Musculation' : 'Ajouter un bloc Musculation';
 
@@ -94,11 +110,11 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Exercice</label>
                     <button
                       type="button"
-                      onClick={() => setIsTiroirOpen(true)}
+                      onClick={() => setIsChoiceModalOpen(true)}
                       className="w-full flex justify-between items-center px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
                     >
                       <span className={block.exerciceNom ? '' : 'text-gray-400'}>
-                        {block.exerciceNom || 'Sélectionner un exercice'}
+                        {block.exerciceNom || 'Sélectionner / Créer'}
                       </span>
                       <ChevronDown className="w-5 h-5 text-gray-400" />
                     </button>
@@ -109,13 +125,13 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
                       label="Séries" 
                       values={seriesValues} 
                       initialValue={block.series} 
-                      onChange={(val) => updateBlock({ series: val })} 
+                      onChange={(val) => updateBlock({ series: val as number })} 
                     />
                     <PickerWheel 
                       label="Répétitions" 
                       values={repsValues} 
                       initialValue={block.reps} 
-                      onChange={(val) => updateBlock({ reps: val })} 
+                      onChange={(val) => updateBlock({ reps: val as number })} 
                     />
                   </div>
                   
@@ -160,13 +176,30 @@ export const MuscuBlockForm: React.FC<MuscuBlockFormProps> = ({ onSave, onCancel
         )}
       </AnimatePresence>
 
+      <ChoiceModal 
+        isOpen={isChoiceModalOpen}
+        onClose={() => setIsChoiceModalOpen(false)}
+        choices={exerciceChoices}
+        title="Exercice"
+      />
+
       <TiroirDeSelection
         isOpen={isTiroirOpen}
         onClose={() => setIsTiroirOpen(false)}
         onSelectExercice={handleSelectExercice}
         exercices={exercices}
         title="Sélectionner un exercice"
+        showCreateButton={false}
       />
+
+      <AnimatePresence>
+          {isCustomFormOpen && (
+              <CustomExerciceForm 
+                  onSave={handleSaveCustomExercice}
+                  onCancel={() => setIsCustomFormOpen(false)}
+              />
+          )}
+      </AnimatePresence>
     </>
   );
 };
