@@ -71,25 +71,25 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-grow overflow-y-auto p-2 pb-0">
-        <h3 className="font-bold text-lg text-center mb-2 text-light-title dark:text-dark-title">Check-in du matin</h3>
+      <div className="flex-grow overflow-y-auto p-4">
+        <h3 className="font-bold text-xl text-center mb-6 text-light-title dark:text-dark-title">Check-in du matin</h3>
         
-        <div className="grid grid-cols-2 gap-x-2">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <PickerWheel label="Heure de coucher" value={bedtime} onChange={setBedtime} type="time" />
           <PickerWheel label="Heure de lever" value={wakeupTime} onChange={setWakeupTime} type="time" />
         </div>
 
-        <div className="flex justify-center -my-2">
+        <div className="flex justify-center">
           <SleepDurationGauge sleepDuration={sleepDuration} />
         </div>
 
-        <div className="space-y-2 px-2">
+        <div className="space-y-6">
           <SemanticSlider label="Ressenti du sommeil" minLabel="Mauvais" maxLabel="Excellent" value={sleepQuality} onChange={setSleepQuality} inverted={false} />
           <SemanticSlider label="Niveau de stress" minLabel="Faible" maxLabel="Élevé" value={stress} onChange={setStress} inverted={true} />
           <SemanticSlider label="Fatigue musculaire" minLabel="Faible" maxLabel="Élevée" value={fatigue} onChange={setFatigue} inverted={true} />
         </div>
       </div>
-      <div className="p-2">
+      <div className="p-4">
         <button 
           onClick={handleSubmit} 
           disabled={loading}
