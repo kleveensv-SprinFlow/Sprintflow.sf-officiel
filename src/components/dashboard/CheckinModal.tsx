@@ -24,7 +24,7 @@ export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onS
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+        className="fixed inset-0 h-full bg-black/50 backdrop-blur-sm z-40"
       />
 
       <motion.div
