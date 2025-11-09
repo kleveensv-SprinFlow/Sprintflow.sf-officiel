@@ -11,6 +11,12 @@ interface CheckinModalProps {
 export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
+  const handleDragEnd = (event: any, info: any) => {
+    if (info.offset.y > 200) {
+      onClose();
+    }
+  };
+
   return (
     <>
       <motion.div
@@ -26,10 +32,15 @@ export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onS
         animate={{ y: '0%' }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-light-card dark:bg-dark-card rounded-t-2xl"
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        onDragEnd={handleDragEnd}
+        className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-light-card dark:bg-dark-card rounded-t-2xl max-h-[95vh] flex flex-col"
       >
-        <div className="w-16 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4" />
-        <WellnessCheckinCard onClose={onClose} onSuccess={onSuccess} />
+        <div className="w-16 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 cursor-grab active:cursor-grabbing" />
+        <div className="overflow-y-auto">
+          <WellnessCheckinCard onClose={onClose} onSuccess={onSuccess} />
+        </div>
       </motion.div>
     </>
   );
