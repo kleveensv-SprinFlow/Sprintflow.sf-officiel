@@ -134,7 +134,7 @@
     background: #121212 linear-gradient(
       to right,
       #121212 0%,
-      rgba(0, 184, 255, 0.03) 50%,
+      rgba(255, 255, 255, 0.02) 50%, /* Couleur neutralisée */
       #121212 100%
     );
     background-size: 2000px 100%;
@@ -145,7 +145,7 @@
     background: #F9F9F9 linear-gradient(
       to right,
       #F9F9F9 0%,
-      rgba(0, 184, 255, 0.08) 50%,
+      rgba(0, 0, 0, 0.03) 50%, /* Couleur neutralisée */
       #F9F9F9 100%
     );
     background-size: 2000px 100%;
