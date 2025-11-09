@@ -9,6 +9,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
+  updateProfile: (updatedProfileData: Partial<Profile>) => void;
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<any>;
   signUp: (email: string, password: string, profileData: any) => Promise<any>;
@@ -67,6 +68,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const refreshProfile = useCallback(async () => {
     if (user) await fetchProfile(user);
   }, [user, fetchProfile]);
+
+  const updateProfile = useCallback((updatedProfileData: Partial<Profile>) => {
+    setProfile(prevProfile => {
+      if (!prevProfile) return null;
+      return { ...prevProfile, ...updatedProfileData };
+    });
+  }, []);
   
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -384,7 +392,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
   
-  const contextValue = { session, user, profile, loading, refreshProfile, signOut, signIn, signUp, resendConfirmationEmail };
+  const contextValue = { session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail };
 
   return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
 };
