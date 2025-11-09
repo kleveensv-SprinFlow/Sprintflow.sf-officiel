@@ -1,3 +1,4 @@
+// v2.0.1 - Fixed avatar_url references
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
