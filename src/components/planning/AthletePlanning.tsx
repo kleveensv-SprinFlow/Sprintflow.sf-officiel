@@ -66,27 +66,27 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
   return (
     <div className="p-4 space-y-4">
       <div className="flex justify-center mb-4">
-        <div className="relative flex p-1 bg-gray-200 dark:bg-gray-700 rounded-full">
+        <div className="relative flex p-1 bg-white/20 backdrop-blur-lg border border-white/10 rounded-full shadow-lg">
           <button
             onClick={() => setCurrentView('planning')}
-            className={`w-32 py-2 text-sm font-semibold rounded-full transition-colors ${
-              currentView === 'planning' ? 'text-white' : 'text-gray-600 dark:text-gray-300'
+            className={`relative w-32 py-2 text-sm font-semibold rounded-full transition-colors ${
+              currentView === 'planning' ? 'text-white' : 'text-gray-800 dark:text-gray-200'
             }`}
           >
             Planning
           </button>
           <button
             onClick={() => setCurrentView('entrainement')}
-            className={`w-32 py-2 text-sm font-semibold rounded-full transition-colors ${
-              currentView === 'entrainement' ? 'text-white' : 'text-gray-600 dark:text-gray-300'
+            className={`relative w-32 py-2 text-sm font-semibold rounded-full transition-colors ${
+              currentView === 'entrainement' ? 'text-white' : 'text-gray-800 dark:text-gray-200'
             }`}
           >
             Entraînement
           </button>
           <motion.div
             layoutId="active-pill"
-            className="absolute inset-0 z-0 bg-primary-500 rounded-full"
-            animate={{ x: currentView === 'planning' ? 0 : '100%' }}
+            className="absolute inset-0 z-[-1] bg-primary-500 rounded-full"
+            animate={{ x: currentView === 'planning' ? '0%' : '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           />
         </div>
@@ -124,7 +124,7 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
             return (
               <div
                 key={day.toString()}
-                className={`min-h-[12rem] rounded-lg p-2 flex flex-col relative transition-shadow hover:shadow-lg ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-white dark:bg-gray-800'}`}
+                className={`min-h-[12rem] rounded-lg p-2 flex flex-col relative transition-shadow hover:shadow-lg card-glass ${isToday ? 'border-2 border-primary-500' : ''}`}
               >
                 <div className="flex justify-between items-center mb-2">
                   <span className={`font-bold md:hidden ${isToday ? 'text-primary-600' : ''}`}>{weekDays[index]}</span>
