@@ -1,22 +1,9 @@
 import { useState, useEffect } from 'react';
 import useAuth from './useAuth';
 import { supabase } from '../lib/supabase';
+import { Profile } from '../types';
 
-interface Profile {
-  id: string;
-  role: 'athlete' | 'coach';
-  first_name?: string;
-  last_name?: string;
-  photo_url?: string;
-  height?: number;
-  weight?: number;
-  body_fat_percentage?: number;
-  training_frequency?: string;
-  dietary_preferences?: string[];
-  personal_records?: Record<string, any>;
-  created_at: string;
-  updated_at?: string;
-}
+const PROFILE_COLUMNS = 'id, role, first_name, last_name, email, full_name, photo_url, height, weight, body_fat_percentage, training_frequency, dietary_preferences, personal_records, created_at, updated_at, date_de_naissance, sexe, discipline, license_number, role_specifique';
 
 export function useProfile() {
   const { user } = useAuth();
@@ -34,28 +21,11 @@ export function useProfile() {
 
   const loadProfile = async () => {
     if (!user) return;
-
     try {
       console.log('📡 [useProfile] Chargement du profil pour:', user.id);
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('❌ [useProfile] Erreur Supabase:', error);
-        throw error;
-      }
-
-      if (data) {
-        console.log('✅ [useProfile] Profil chargé:', data);
-        setProfile(data);
-      } else {
-        console.log('⚠️ [useProfile] Aucun profil trouvé pour cet utilisateur');
-        setProfile(null);
-      }
+      const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', user.id).maybeSingle();
+      if (error) throw error;
+      setProfile(data as Profile);
     } catch (error: any) {
       console.error('❌ [useProfile] Erreur lors du chargement:', error.message);
       setProfile(null);
@@ -66,130 +36,57 @@ export function useProfile() {
 
   const createProfile = async () => {
     if (!user) return;
-
-    const newProfile = {
-      id: user.id,
-      role: (user.user_metadata?.role as 'coach' | 'athlete') || 'athlete',
-      first_name: user.user_metadata?.first_name || '',
-      last_name: user.user_metadata?.last_name || '',
-    };
-
+    const newProfile = { id: user.id, role: (user.user_metadata?.role as 'coach' | 'athlete') || 'athlete', first_name: user.user_metadata?.first_name || '', last_name: user.user_metadata?.last_name || '' };
     try {
-      console.log('📝 [useProfile] Création du profil:', newProfile);
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert(newProfile)
-        .select()
-        .maybeSingle();
-
-      if (error) {
-        console.error('❌ [useProfile] Erreur création:', error);
-        throw error;
-      }
-
-      if (data) {
-        console.log('✅ [useProfile] Profil créé:', data);
-        setProfile(data);
+        const { data, error } = await supabase.from('profiles').insert(newProfile).select(PROFILE_COLUMNS).maybeSingle();
+        if (error) throw error;
+        setProfile(data as Profile);
         return data;
-      }
     } catch (error: any) {
-      console.error('❌ [useProfile] Erreur lors de la création:', error.message);
-      throw error;
-    }
-  };
-
-  const updateProfile = async (updates: Partial<Profile>) => {
-    if (!profile) {
-      console.error('❌ [useProfile] Pas de profil à mettre à jour');
-      return;
-    }
-
-    try {
-      console.log('📝 [useProfile] Mise à jour du profil avec:', updates);
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', profile.id)
-        .select()
-        .maybeSingle();
-
-      if (error) {
-        console.error('❌ [useProfile] Erreur mise à jour:', error);
+        console.error('❌ [useProfile] Erreur lors de la création:', error.message);
         throw error;
-      }
+    }
+};
 
-      if (data) {
-        console.log('✅ [useProfile] Profil mis à jour:', data);
-        setProfile(data);
-
-        // Déclencher un événement global pour synchroniser les autres composants
+const updateProfile = async (updates: Partial<Profile>) => {
+    if (!profile) return;
+    try {
+        const { data, error } = await supabase.from('profiles').update(updates).eq('id', profile.id).select(PROFILE_COLUMNS).maybeSingle();
+        if (error) throw error;
+        setProfile(data as Profile);
         window.dispatchEvent(new CustomEvent('profile-updated', { detail: data }));
-
         return data;
-      }
     } catch (error: any) {
-      console.error('❌ [useProfile] Erreur lors de la mise à jour:', error.message);
-      throw error;
+        console.error('❌ [useProfile] Erreur lors de la mise à jour:', error.message);
+        throw error;
     }
-  };
+};
 
-  const uploadProfilePhoto = async (file: File) => {
+const uploadProfilePhoto = async (file: File) => {
     if (!profile) throw new Error('Profil non chargé');
-
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${profile.id}/avatar.${fileExt}`;
-
-      console.log('📤 [useProfile] Upload de la photo vers:', fileName);
-
-      const { error: uploadError } = await supabase.storage
-        .from('profiles')
-        .upload(`avatars/${fileName}`, file, { upsert: true });
-
-      if (uploadError) {
-        console.error('❌ [useProfile] Erreur upload:', uploadError);
-        throw uploadError;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('profiles')
-        .getPublicUrl(`avatars/${fileName}`);
-
-      console.log('✅ [useProfile] Photo uploadée, URL:', publicUrl);
-
-      // Mettre à jour le profil avec la nouvelle URL
-      await updateProfile({ photo_url: publicUrl });
-
-      return publicUrl;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${profile.id}/profile.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('profiles').upload(`avatars/${fileName}`, file, { upsert: true });
+        if (uploadError) throw uploadError;
+        const publicUrlWithCacheBuster = `${supabase.storage.from('profiles').getPublicUrl(`avatars/${fileName}`).data.publicUrl}?t=${new Date().getTime()}`;
+        await updateProfile({ photo_url: publicUrlWithCacheBuster });
+        return publicUrlWithCacheBuster;
     } catch (error: any) {
-      console.error('❌ [useProfile] Erreur uploadProfilePhoto:', error.message);
-      throw error;
+        console.error('❌ [useProfile] Erreur uploadProfilePhoto:', error.message);
+        throw error;
     }
-  };
+};
 
-  // Écouter les événements de mise à jour du profil
   useEffect(() => {
     const handleProfileUpdate = (event: any) => {
       if (event.detail && user && event.detail.id === user.id) {
-        console.log('🔄 [useProfile] Mise à jour reçue via événement');
         setProfile(event.detail);
       }
     };
-
     window.addEventListener('profile-updated', handleProfileUpdate);
-
-    return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdate);
-    };
+    return () => window.removeEventListener('profile-updated', handleProfileUpdate);
   }, [user]);
 
-  return {
-    profile,
-    loading,
-    updateProfile,
-    uploadProfilePhoto,
-    createProfile
-  };
+  return { profile, loading, updateProfile, uploadProfilePhoto, createProfile };
 }
