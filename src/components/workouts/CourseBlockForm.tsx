@@ -37,40 +37,44 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
     if (isOpen) {
       const data = initialData || { ...defaultState, chronos: [] };
       setBlock(data);
+      // Pour l'athlète comme pour le coach, on commence toujours par la vue structure
+      // pour permettre la modification des paramètres avant la saisie des temps.
+      setView('structure');
       setCurrentSerieIndex(0);
-
-      if (isAthlete && initialData) {
-        setView('chronos');
-        const { series, reps } = data;
-        const newChronos = Array(series).fill(null).map(() => Array(reps).fill(null));
-        setBlock(prev => ({ ...prev, chronos: newChronos }));
-      } else {
-        setView('structure');
-      }
     }
-  }, [initialData, isOpen, isAthlete]);
+  }, [initialData, isOpen]);
 
   const updateBlock = (updatedFields: Partial<Omit<CourseBlock, 'id'>>) => {
     setBlock(prev => ({ ...prev, ...updatedFields }));
   };
 
   const handleChronoChange = (serieIndex: number, repIndex: number, value: number | null) => {
+    // Crée une copie profonde pour éviter les mutations directes
     const newChronos = JSON.parse(JSON.stringify(block.chronos || []));
-    if (!newChronos[serieIndex]) newChronos[serieIndex] = [];
+    // S'assure que le tableau de la série existe
+    while (newChronos.length <= serieIndex) {
+      newChronos.push([]);
+    }
     newChronos[serieIndex][repIndex] = value;
     updateBlock({ chronos: newChronos });
   };
 
   const goToChronoView = () => {
+    // Initialise ou réinitialise la structure des chronos en fonction des séries/reps actuelles
     const { series, reps } = block;
-    const newChronos = Array(series).fill(null).map(() => Array(reps).fill(null));
+    const currentChronos = block.chronos || [];
+    const newChronos = Array(series).fill(null).map((_, sIdx) => 
+      Array(reps).fill(null).map((_, rIdx) => 
+        currentChronos[sIdx]?.[rIdx] || null
+      )
+    );
     setBlock(prev => ({ ...prev, chronos: newChronos }));
     setView('chronos');
   };
 
   const handleValidate = () => {
     onSave(block);
-    setView('structure'); // Reset view for next time
+    setView('structure'); // Réinitialise la vue pour la prochaine ouverture
   };
 
   const renderStructureForm = () => (
@@ -99,14 +103,13 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
         <p className="font-semibold text-lg">{block.series} x {block.reps} x {block.distance}m</p>
         <p className="text-blue-500 font-bold text-xl">Série {currentSerieIndex + 1} / {block.series}</p>
       </div>
-
       <motion.div
         key={currentSerieIndex}
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -50 }}
         transition={{ duration: 0.3 }}
-        className="space-y-3 p-1"
+        className="space-y-3 p-1 max-h-72 overflow-y-auto"
       >
         {Array.from({ length: block.reps }).map((_, repIndex) => (
           <ChronoPicker
@@ -117,7 +120,6 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
           />
         ))}
       </motion.div>
-      
       <div className="flex justify-between items-center pt-4">
         <button
           onClick={() => setCurrentSerieIndex(i => i - 1)}
@@ -146,19 +148,15 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
   );
 
   const renderContent = () => {
-    if (isAthlete) {
-      if (view === 'structure') {
-        return renderStructureForm();
-      }
+    if (isAthlete && view === 'chronos') {
       return renderAthleteChronoForm();
     }
-    return renderStructureForm(); // Coach view
+    return renderStructureForm();
   };
-
+  
   const getModalTitle = () => {
     if (isAthlete) {
-      if (view === 'chronos' || initialData) return 'Saisir les chronos';
-      return 'Ajouter un bloc Course';
+      return view === 'chronos' ? 'Saisir les chronos' : 'Définir le bloc Course';
     }
     return initialData ? 'Modifier le bloc Course' : 'Ajouter un bloc Course';
   };
@@ -168,16 +166,15 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
       return (
         <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <button type="button" onClick={onCancel} className="w-full px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-medium">Annuler</button>
-          <button type="button" onClick={goToChronoView} className="w-full bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium">Suivant</button>
+          <button type="button" onClick={goToChronoView} className="w-full bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium">
+            {initialData ? 'Saisir les chronos' : 'Suivant'}
+          </button>
         </div>
       );
     }
-    
     if (isAthlete && view === 'chronos') {
-      return null; // Buttons are inside the chrono form
+      return null;
     }
-
-    // Coach buttons or athlete edit (legacy)
     return (
       <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
         <button type="button" onClick={onCancel} className="w-full px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-medium">Annuler</button>
