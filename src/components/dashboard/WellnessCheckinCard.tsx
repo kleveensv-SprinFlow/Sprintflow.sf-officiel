@@ -21,7 +21,7 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
   const [fatigue, setFatigue] = useState(25);
 
   const sleepDuration = useMemo(() => {
-    const bedtimeDate = new date(`2000-01-01T${bedtime}:00`);
+    const bedtimeDate = new Date(`2000-01-01T${bedtime}:00`);
     const wakeupDate = new Date(`2000-01-01T${wakeupTime}:00`);
 
     if (wakeupDate < bedtimeDate) {
