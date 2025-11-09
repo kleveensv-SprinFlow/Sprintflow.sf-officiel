@@ -27,21 +27,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const isMountedRef = useRef(true);
 
-  const fetchProfile = useCallback(async (user: User) => {
-    console.log(`📡 [useAuth] Chargement du profil pour: ${user.id}`);
+  const refreshProfile = useCallback(async () => {
+    if (!user) return;
+    console.log(`🔄 [useAuth] Rafraîchissement du profil pour: ${user.id}`);
     try {
       const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', user.id).maybeSingle();
       if (error) throw error;
       if (isMountedRef.current) setProfile(data);
     } catch (e: any) {
-      console.error("❌ [useAuth] Exception lors du chargement du profil:", e);
+      console.error("❌ [useAuth] Erreur lors du rafraîchissement:", e);
       if (isMountedRef.current) setProfile(null);
     }
-  }, []);
-
-  const refreshProfile = useCallback(async () => {
-    if (user) await fetchProfile(user);
-  }, [user, fetchProfile]);
+  }, [user]);
 
   const updateProfile = useCallback((updatedProfileData: Partial<Profile>) => {
     setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updatedProfileData } : null);
@@ -92,13 +89,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     isMountedRef.current = true;
+
+    const loadProfileInline = async (userId: string) => {
+      console.log(`📡 [useAuth] Chargement du profil pour: ${userId}`);
+      try {
+        const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
+        if (error) throw error;
+        if (isMountedRef.current) setProfile(data);
+      } catch (e: any) {
+        console.error("❌ [useAuth] Exception lors du chargement du profil:", e);
+        if (isMountedRef.current) setProfile(null);
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!isMountedRef.current) return;
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
-        await fetchProfile(currentUser);
+        await loadProfileInline(currentUser.id);
       } else {
         setProfile(null);
       }
@@ -108,7 +118,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isMountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, []);
   
   const contextValue = { session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail };
 
