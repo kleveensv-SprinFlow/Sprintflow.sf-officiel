@@ -35,10 +35,10 @@ export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onS
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
         onDragEnd={handleDragEnd}
-        className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-light-card dark:bg-dark-card rounded-t-2xl max-h-[95vh] flex flex-col"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-light-card dark:bg-dark-card rounded-t-2xl max-h-[95vh] flex flex-col"
       >
-        <div className="w-16 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 cursor-grab active:cursor-grabbing" />
-        <div className="overflow-y-auto">
+        <div className="w-16 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto my-3 cursor-grab active:cursor-grabbing flex-shrink-0" />
+        <div className="flex-grow overflow-hidden">
           <WellnessCheckinCard onClose={onClose} onSuccess={onSuccess} />
         </div>
       </motion.div>
