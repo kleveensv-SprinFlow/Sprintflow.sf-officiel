@@ -22,7 +22,7 @@ export const useCoachLinks = (userId: string | undefined) => {
     try {
       const { data, error } = await supabase
         .from('coach_athlete_links')
-        .select('athlete_id, profiles:athlete_id (*)')
+        .select('athlete_id, profiles:athlete_id (id, role, first_name, last_name, photo_url, email, full_name)')
         .eq('coach_id', userId)
         .eq('status', 'ACCEPTED');
 
@@ -42,7 +42,7 @@ export const useCoachLinks = (userId: string | undefined) => {
     try {
       const { data, error } = await supabase
         .from('coach_athlete_links')
-        .select('*, profiles:coach_id (*)')
+        .select('*, profiles:coach_id (id, role, first_name, last_name, photo_url, email, full_name)')
         .eq('athlete_id', userId)
         .eq('status', 'PENDING');
 
