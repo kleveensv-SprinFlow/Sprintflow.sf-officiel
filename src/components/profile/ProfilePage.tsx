@@ -43,7 +43,7 @@ interface Objectif {
 }
 
 const ProfilePage: React.FC = () => {
-  const { user, signOut, profile: authProfile, refreshProfile } = useAuth();
+  const { user, signOut, profile: authProfile, updateProfile } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [objectif, setObjectif] = useState<Objectif | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -256,9 +256,9 @@ const ProfilePage: React.FC = () => {
       if (data) {
         console.log('✅ [ProfilePage] Profil mis à jour avec nouvelle photo:', data);
         setProfile({ ...profile, photo_url: urlWithCacheBuster } as ProfileData);
+        // Mettre à jour le profil global de l'application
+        updateProfile({ photo_url: urlWithCacheBuster });
       }
-
-      await refreshProfile();
 
       toast.success('Photo de profil mise à jour avec succès !');
 
