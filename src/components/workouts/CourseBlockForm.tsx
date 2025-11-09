@@ -4,7 +4,7 @@ import TimePicker from '../common/TimePicker';
 import PickerWheel from '../common/PickerWheel';
 import { CourseBlock, WorkoutBlock } from '../../types/workout';
 import { ChronoInput } from './ChronoInput';
-import DistanceSelector from '../common/DistanceSelector'; // Importez le nouveau composant
+import DistanceSelector from '../common/DistanceSelector';
 
 interface CourseBlockFormProps {
   onSave: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
@@ -32,12 +32,17 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
 
   useEffect(() => {
     const data = initialData || { ...defaultState, chronos: [] };
-    if (isAthlete && (!data.chronos || data.chronos.length !== data.series || data.chronos[0]?.length !== data.reps)) {
-      const newChronos = Array(data.series).fill(null).map(() => Array(data.reps).fill(null));
-      setBlock({ ...data, chronos: newChronos });
-    } else {
-      setBlock(data);
+    // Pour un athlète, on initialise la matrice des chronos seulement s'il modifie un bloc existant
+    if (isAthlete && initialData) {
+      const { series, reps, chronos } = data;
+      // Si la structure des chronos ne correspond pas au plan, on la réinitialise.
+      if (!chronos || chronos.length !== series || (series > 0 && chronos[0]?.length !== reps)) {
+        const newChronos = Array(series).fill(null).map(() => Array(reps).fill(null));
+        setBlock({ ...data, chronos: newChronos });
+        return;
+      }
     }
+    setBlock(data);
   }, [initialData, isOpen, isAthlete]);
 
   const updateBlock = (updatedFields: Partial<Omit<CourseBlock, 'id'>>) => {
@@ -64,7 +69,6 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
         <PickerWheel label="Répétitions" values={repsValues} initialValue={block.reps} onChange={(val) => updateBlock({ reps: val })} />
       </div>
       
-      {/* Remplacez le PickerWheel par le nouveau DistanceSelector */}
       <DistanceSelector 
         initialValue={block.distance} 
         onChange={(val) => updateBlock({ distance: val })} 
@@ -106,6 +110,14 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
     </div>
   );
 
+  const showChronoForm = isAthlete && !!initialData;
+  const modalTitle = showChronoForm 
+    ? 'Saisir les chronos' 
+    : (initialData ? 'Modifier le bloc Course' : 'Ajouter un bloc Course');
+  const buttonText = showChronoForm 
+    ? 'Valider les chronos' 
+    : (initialData ? 'Modifier' : 'Ajouter');
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -125,17 +137,17 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
           >
             <div className="space-y-6 p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                {isAthlete ? 'Saisir les chronos' : (initialData ? 'Modifier le bloc Course' : 'Ajouter un bloc Course')}
+                {modalTitle}
               </h3>
 
-              {isAthlete ? renderAthleteForm() : renderCoachForm()}
+              {showChronoForm ? renderAthleteForm() : renderCoachForm()}
 
               <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" onClick={onCancel} className="w-full px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-medium">
                   Annuler
                 </button>
                 <button type="button" onClick={handleValidate} className="w-full bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium">
-                  {isAthlete ? 'Valider les chronos' : (initialData ? 'Modifier' : 'Ajouter')}
+                  {buttonText}
                 </button>
               </div>
             </div>
