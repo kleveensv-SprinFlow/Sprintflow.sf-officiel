@@ -33,7 +33,7 @@ export function useProfile() {
       setLoading(false);
     }
   };
-
+  
   const createProfile = async () => {
     if (!user) return;
     const newProfile = { id: user.id, role: (user.user_metadata?.role as 'coach' | 'athlete') || 'athlete', first_name: user.user_metadata?.first_name || '', last_name: user.user_metadata?.last_name || '' };
