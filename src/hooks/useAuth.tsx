@@ -93,27 +93,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const loadProfileInline = async (userId: string) => {
       console.log(`📡 [useAuth] Chargement du profil pour: ${userId}`);
       try {
-        const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
-        if (error) throw error;
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout après 5 secondes')), 5000)
+        );
+
+        const queryPromise = supabase
+          .from('profiles')
+          .select(PROFILE_COLUMNS)
+          .eq('id', userId)
+          .maybeSingle();
+
+        const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+        const { data, error } = result;
+
+        if (error) {
+          console.error("❌ [useAuth] Erreur Supabase:", error);
+          throw error;
+        }
+
+        console.log("✅ [useAuth] Profil chargé:", data ? 'OK' : 'NULL');
         if (isMountedRef.current) setProfile(data);
       } catch (e: any) {
-        console.error("❌ [useAuth] Exception lors du chargement du profil:", e);
+        console.error("❌ [useAuth] Exception:", e.message || e);
         if (isMountedRef.current) setProfile(null);
       }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log(`🔐 [useAuth] Auth event: ${_event}`);
       if (!isMountedRef.current) return;
+
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
+
       if (currentUser) {
+        console.log('👤 [useAuth] User exists, loading profile...');
         await loadProfileInline(currentUser.id);
       } else {
+        console.log('🚫 [useAuth] No user');
         setProfile(null);
       }
+
+      console.log('🏁 [useAuth] Setting loading to false');
       setLoading(false);
     });
+
     return () => {
       isMountedRef.current = false;
       subscription.unsubscribe();
