@@ -13,22 +13,20 @@ const MINUTES_VALUES = generatePaddedArray(60);
 const SECONDS_VALUES = generatePaddedArray(60);
 const CENTISECONDS_VALUES = generatePaddedArray(100);
 
-// --- Reusable Wheel Component (from PickerWheel) ---
+// --- Reusable Wheel Component ---
 interface WheelProps {
   values: string[];
   initialValue: string;
   onChange: (value: string) => void;
-  suffix?: string;
 }
 
-const Wheel: React.FC<WheelProps> = ({ values, initialValue, onChange, suffix }) => {
+const Wheel: React.FC<WheelProps> = ({ values, initialValue, onChange }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const scrollToIndex = useCallback((index: number, behavior: 'smooth' | 'auto' = 'smooth') => {
     const container = scrollContainerRef.current;
     if (container) {
-      const scrollTop = index * ITEM_HEIGHT;
-      container.scrollTo({ top: scrollTop, behavior });
+      container.scrollTo({ top: index * ITEM_HEIGHT, behavior });
     }
   }, []);
 
@@ -56,10 +54,6 @@ const Wheel: React.FC<WheelProps> = ({ values, initialValue, onChange, suffix })
     [values, onChange]
   );
 
-  if (!values || values.length === 0) {
-    return <div className="h-48 w-24 relative" style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }} />;
-  }
-
   return (
     <div className="h-48 w-24 relative" style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}>
       <div className="absolute top-1/2 left-0 right-0 h-9 bg-gray-200 dark:bg-gray-700/50 rounded-lg transform -translate-y-1/2 z-0 pointer-events-none" />
@@ -76,7 +70,7 @@ const Wheel: React.FC<WheelProps> = ({ values, initialValue, onChange, suffix })
             className="h-9 w-full flex items-center justify-center text-xl font-semibold select-none cursor-pointer snap-center text-gray-900 dark:text-white"
             style={{ height: ITEM_HEIGHT }}
           >
-            {val}{suffix}
+            {val}
           </div>
         ))}
         <div style={{ height: ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2) }} />
@@ -94,11 +88,22 @@ interface ChronoPickerProps {
 }
 
 const formatChrono = (totalSeconds: number | null): string => {
-  if (totalSeconds === null || totalSeconds === undefined) return '00:00,00';
-  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-  const seconds = String(Math.floor(totalSeconds % 60)).padStart(2, '0');
-  const centiseconds = String(Math.round((totalSeconds - Math.floor(totalSeconds)) * 100)).padStart(2, '0');
-  return `${minutes}:${seconds},${centiseconds}`;
+  if (totalSeconds === null || totalSeconds === undefined) return '00,00';
+  
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  // Correction pour gérer les arrondis de centièmes
+  const centiseconds = Math.round((totalSeconds * 100) % 100);
+
+  const paddedSeconds = String(seconds).padStart(2, '0');
+  const paddedCentiseconds = String(centiseconds).padStart(2, '0');
+
+  if (minutes > 0) {
+    const paddedMinutes = String(minutes).padStart(2, '0');
+    return `${paddedMinutes}:${paddedSeconds},${paddedCentiseconds}`;
+  } else {
+    return `${paddedSeconds},${paddedCentiseconds}`;
+  }
 };
 
 export const ChronoPicker: React.FC<ChronoPickerProps> = ({ initialValue, onChange, label, disabled = false }) => {
@@ -114,7 +119,7 @@ export const ChronoPicker: React.FC<ChronoPickerProps> = ({ initialValue, onChan
     const val = totalSeconds || 0;
     setMinutes(String(Math.floor(val / 60)).padStart(2, '0'));
     setSeconds(String(Math.floor(val % 60)).padStart(2, '0'));
-    setCentiseconds(String(Math.round((val - Math.floor(val)) * 100)).padStart(2, '0'));
+    setCentiseconds(String(Math.round((val * 100) % 100)).padStart(2, '0'));
   };
 
   const handleOpen = () => {
@@ -157,12 +162,21 @@ export const ChronoPicker: React.FC<ChronoPickerProps> = ({ initialValue, onChan
               className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg flex flex-col items-center gap-4"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-1">
-                <Wheel values={MINUTES_VALUES} initialValue={minutes} onChange={setMinutes} />
-                <span className="text-2xl font-bold pb-4">:</span>
-                <Wheel values={SECONDS_VALUES} initialValue={seconds} onChange={setSeconds} />
-                <span className="text-2xl font-bold pb-4">,</span>
-                <Wheel values={CENTISECONDS_VALUES} initialValue={centiseconds} onChange={setCentiseconds} />
+              <div className="flex items-start gap-2 text-center">
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">min</span>
+                  <Wheel values={MINUTES_VALUES} initialValue={minutes} onChange={setMinutes} />
+                </div>
+                <span className="text-2xl font-bold pt-6">:</span>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">sec</span>
+                  <Wheel values={SECONDS_VALUES} initialValue={seconds} onChange={setSeconds} />
+                </div>
+                <span className="text-2xl font-bold pt-6">,</span>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">cs</span>
+                  <Wheel values={CENTISECONDS_VALUES} initialValue={centiseconds} onChange={setCentiseconds} />
+                </div>
               </div>
               <button
                 type="button"
