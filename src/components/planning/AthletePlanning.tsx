@@ -63,19 +63,23 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
   return (
     <div className="p-4 space-y-4">
       <div className="flex justify-center mb-4">
-        <div className="flex items-center justify-around w-full max-w-xs p-1 bg-primary-500 rounded-full">
+        <div className="flex w-full max-w-xs p-1 space-x-1 bg-slate-200 dark:bg-slate-700 rounded-full">
           <button
             onClick={() => setCurrentView('planning')}
-            className={`w-1/2 py-2 text-sm font-semibold text-white rounded-full transition-opacity ${
-              currentView === 'planning' ? 'opacity-100' : 'opacity-60'
+            className={`w-1/2 py-2 text-sm font-semibold rounded-full transition-colors ${
+              currentView === 'planning'
+                ? 'bg-white text-slate-900 dark:bg-slate-100 dark:text-slate-900 shadow'
+                : 'text-slate-600 dark:text-slate-200'
             }`}
           >
             Planning
           </button>
           <button
             onClick={() => setCurrentView('entrainement')}
-            className={`w-1/2 py-2 text-sm font-semibold text-white rounded-full transition-opacity ${
-              currentView === 'entrainement' ? 'opacity-100' : 'opacity-60'
+            className={`w-1/2 py-2 text-sm font-semibold rounded-full transition-colors ${
+              currentView === 'entrainement'
+                ? 'bg-white text-slate-900 dark:bg-slate-100 dark:text-slate-900 shadow'
+                : 'text-slate-600 dark:text-slate-200'
             }`}
           >
             Entraînement
@@ -112,7 +116,7 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
             return (
               <div
                 key={day.toString()}
-                className={`min-h-[12rem] rounded-lg p-2 flex flex-col relative transition-shadow hover:shadow-lg card-glass ${isToday ? 'border-2 border-primary-500' : ''}`}
+                className={`min-h-[9rem] rounded-lg p-2 flex flex-col relative transition-shadow hover:shadow-lg card-glass ${isToday ? 'border-2 border-primary-500' : ''}`}
               >
                 <div className="flex justify-between items-center mb-2">
                   <span className={`font-bold md:hidden ${isToday ? 'text-primary-600' : ''}`}>{weekDays[index]}</span>
