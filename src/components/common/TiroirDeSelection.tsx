@@ -4,17 +4,16 @@ import { X, Search, PlusCircle } from 'lucide-react';
 import { ExerciceReference, useExercices } from '../../hooks/useExercices';
 import { EXERCISE_CATEGORIES } from '../../data/categories';
 import { CustomExerciceForm } from '../records/CustomExerciceForm';
-import useAuth from '../../hooks/useAuth';
 
 interface TiroirDeSelectionProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectExercice: (exercice: ExerciceReference) => void;
   title: string;
+  showCreateButton?: boolean;
 }
 
-export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, onClose, onSelectExercice, title }) => {
-  const { user } = useAuth();
+export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, onClose, onSelectExercice, title, showCreateButton = true }) => {
   const { exercices, loadExercices } = useExercices();
   const [selectedCategory, setSelectedCategory] = useState<string | null>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,7 +21,6 @@ export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, on
 
   const categories = useMemo(() => {
     const cats = [...EXERCISE_CATEGORIES];
-    // Show "Mes exercices" if there are any custom exercises available to the user
     if (exercices.some(ex => ex.type === 'custom')) {
       cats.unshift({ key: 'custom', label: 'Mes exercices', emoji: '⭐' });
     }
@@ -55,9 +53,10 @@ export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, on
     }
   }, [isOpen]);
 
-  const handleSaveCustom = () => {
+  const handleSaveCustom = (newExercice: ExerciceReference) => {
     loadExercices();
     setIsCustomFormOpen(false);
+    onSelectExercice(newExercice);
   };
 
   return (
@@ -129,15 +128,17 @@ export const TiroirDeSelection: React.FC<TiroirDeSelectionProps> = ({ isOpen, on
                 ))}
               </div>
 
-              <footer className="p-4 border-t dark:border-gray-700 flex-shrink-0">
-                <button
-                  onClick={() => setIsCustomFormOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold"
-                >
-                  <PlusCircle size={20} />
-                  Créer un exercice
-                </button>
-              </footer>
+              {showCreateButton && (
+                <footer className="p-4 border-t dark:border-gray-700 flex-shrink-0">
+                  <button
+                    onClick={() => setIsCustomFormOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold"
+                  >
+                    <PlusCircle size={20} />
+                    Créer un exercice
+                  </button>
+                </footer>
+              )}
             </motion.div>
           </motion.div>
         )}
