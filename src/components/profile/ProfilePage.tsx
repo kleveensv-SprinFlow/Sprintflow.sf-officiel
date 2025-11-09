@@ -67,9 +67,14 @@ const ProfilePage: React.FC = () => {
   }, [authProfile]);
 
   const loadProfileAndObjectif = async () => {
-    if (!user) return;
+    if (!user) {
+      console.warn('⚠️ [ProfilePage] Pas d\'utilisateur connecté');
+      return;
+    }
 
+    console.log('📡 [ProfilePage] Chargement du profil pour:', user.id);
     setIsLoading(true);
+
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -78,18 +83,24 @@ const ProfilePage: React.FC = () => {
         .maybeSingle();
 
       if (profileError) {
-        console.error('Erreur chargement profil:', profileError);
+        console.error('❌ [ProfilePage] Erreur chargement profil:', profileError);
         toast.error('Erreur lors du chargement du profil');
+        setIsLoading(false);
         return;
       }
 
       if (profileData) {
+        console.log('✅ [ProfilePage] Profil chargé depuis Supabase:', profileData);
         setProfile(profileData);
+      } else {
+        console.warn('⚠️ [ProfilePage] Aucun profil trouvé dans Supabase pour cet utilisateur');
+        toast.warning('Profil non trouvé. Veuillez compléter vos informations.');
       }
 
       await fetchObjectif(user.id);
-    } catch (error) {
-      console.error('Erreur inattendue:', error);
+    } catch (error: any) {
+      console.error('❌ [ProfilePage] Erreur inattendue:', error);
+      toast.error('Erreur lors du chargement des données');
     } finally {
       setIsLoading(false);
     }
@@ -204,7 +215,7 @@ const ProfilePage: React.FC = () => {
       const fileName = `${user.id}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      console.log('📤 Upload photo vers:', filePath);
+      console.log('📤 [ProfilePage] Upload photo vers:', filePath);
 
       await deleteOldAvatar(user.id);
 
@@ -215,9 +226,12 @@ const ProfilePage: React.FC = () => {
           upsert: true
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('❌ [ProfilePage] Erreur upload storage:', uploadError);
+        throw uploadError;
+      }
 
-      console.log('✅ Upload réussi!');
+      console.log('✅ [ProfilePage] Upload réussi dans storage');
 
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
@@ -225,32 +239,32 @@ const ProfilePage: React.FC = () => {
 
       const urlWithCacheBuster = `${publicUrl}?t=${new Date().getTime()}`;
 
-      const { error: updateError } = await supabase
+      console.log('📝 [ProfilePage] Mise à jour du profil avec URL:', urlWithCacheBuster);
+
+      const { data, error: updateError } = await supabase
         .from('profiles')
         .update({ photo_url: urlWithCacheBuster })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select()
+        .maybeSingle();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ [ProfilePage] Erreur mise à jour profil:', updateError);
+        throw updateError;
+      }
 
-      if (profile) {
-        setProfile({ ...profile, avatar_url: urlWithCacheBuster });
+      if (data) {
+        console.log('✅ [ProfilePage] Profil mis à jour avec nouvelle photo:', data);
+        setProfile({ ...profile, avatar_url: urlWithCacheBuster } as ProfileData);
       }
 
       await refreshProfile();
 
-      try {
-        toast.success('Photo de profil mise à jour avec succès !');
-      } catch (toastErr) {
-        console.log('✅ Photo mise à jour (toast error ignoré)');
-      }
+      toast.success('Photo de profil mise à jour avec succès !');
 
     } catch (err: any) {
-      console.error('❌ Erreur upload photo:', err);
-      try {
-        toast.error(`Erreur lors de l'upload: ${err.message || 'Veuillez réessayer'}`);
-      } catch (toastErr) {
-        console.error('Erreur toast:', toastErr);
-      }
+      console.error('❌ [ProfilePage] Erreur upload photo complète:', err);
+      toast.error(`Erreur lors de l'upload: ${err.message || 'Veuillez réessayer'}`);
     } finally {
       setUploadingPhoto(false);
     }

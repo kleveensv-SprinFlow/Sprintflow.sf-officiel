@@ -42,22 +42,37 @@ export function EditProfileModal({ currentProfileData, onClose, onSaved }: EditP
         height: formData.height ? parseInt(String(formData.height), 10) : null,
       };
 
-      const { error } = await supabase
+      console.log('📝 [EditProfileModal] Mise à jour du profil avec:', updates);
+
+      const { data, error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select()
+        .maybeSingle();
 
-      if (error) throw error;
-      
-      // --- LA CORRECTION EST ICI ---
-      await refreshProfile(); // On rafraîchit le contexte global
-      
-      toast.success("Profil mis à jour !");
-      onSaved(); // Appelle la fonction du parent (qui ferme la modale et recharge la page de profil)
-    
+      if (error) {
+        console.error('❌ [EditProfileModal] Erreur Supabase:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('Aucune donnée retournée après la mise à jour');
+      }
+
+      console.log('✅ [EditProfileModal] Profil mis à jour dans Supabase:', data);
+
+      // Rafraîchir le contexte global pour synchroniser les données
+      await refreshProfile();
+
+      toast.success("Profil mis à jour avec succès !");
+
+      // Fermer la modale et recharger
+      onSaved();
+
     } catch (err: any) {
-      toast.error(err.message || "Erreur lors de la mise à jour.");
-      console.error("Erreur lors de la mise à jour du profil:", err);
+      console.error("❌ [EditProfileModal] Erreur complète:", err);
+      toast.error(err.message || "Erreur lors de la mise à jour du profil.");
     } finally {
       setLoading(false);
     }
