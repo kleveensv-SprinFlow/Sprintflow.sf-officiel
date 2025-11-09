@@ -16,7 +16,7 @@ const TabBar: React.FC<TabBarProps> = ({ currentView, setCurrentView, onFabActio
 
   const athleteNavItems = [
     { view: 'dashboard' as View, icon: Home, label: 'Accueil' },
-    { view: 'workouts' as View, icon: Activity, label: 'Entraînements' },
+    { view: 'workouts' as View, icon: Calendar, label: 'Calendrier' },
     null, // Placeholder for the FAB
     { view: 'nutrition' as View, icon: Apple, label: 'Nutrition' },
     { view: 'groups' as View, icon: Users, label: 'Groupe' },
