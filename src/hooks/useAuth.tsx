@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
 
-const PROFILE_COLUMNS = 'id, role, first_name, last_name, photo_url';
+const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role';
 
 interface AuthContextType {
   session: Session | null;
