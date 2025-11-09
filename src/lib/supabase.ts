@@ -8,7 +8,20 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    storageKey: 'sb-auth-token'
+  },
+  global: {
+    fetch: (url, options = {}) => {
+      const urlString = url.toString();
+      if (urlString.includes('avatar_url')) {
+        console.warn('🔧 [Supabase] Blocking legacy avatar_url request:', urlString);
+        const fixedUrl = urlString.replace(/,?\s*avatar_url/g, '');
+        console.log('✅ [Supabase] Fixed URL:', fixedUrl);
+        return fetch(fixedUrl, options);
+      }
+      return fetch(url, options);
+    }
   }
 });
 
