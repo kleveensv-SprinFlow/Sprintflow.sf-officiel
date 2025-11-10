@@ -59,14 +59,21 @@ function App() {
   return (
     // --- MODIFICATION PRINCIPALE ICI ---
     <div className="min-h-screen bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text transition-colors duration-300">
-      <Header onProfileClick={() => setCurrentView('profile')} />
+      <Header 
+        onProfileClick={() => setCurrentView('profile')}
+        isDashboard={currentView === 'dashboard'}
+        userRole={profile?.role}
+      />
       <main className="pb-24 pt-16 px-4">
         {renderView()}
       </main>
       <TabBar 
+        currentView={currentView}
+        setCurrentView={setCurrentView}
         onFabAction={handleFabAction} 
         isFabOpen={isFabOpen} 
         setFabOpen={setFabOpen} 
+        userRole={profile?.role}
       />
       <ToastContainer 
         position="bottom-center"
