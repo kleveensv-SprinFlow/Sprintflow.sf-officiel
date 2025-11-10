@@ -15,12 +15,11 @@ interface DayCardProps {
   isReadOnly?: boolean;
 }
 
-// Le nouveau composant pour afficher le badge du tag de séance
 const WorkoutTagBadge: React.FC<{ name: string; color?: string }> = ({ name, color }) => {
   return (
     <div
       className="px-3 py-1 rounded-full text-sm font-semibold text-white shadow-sm"
-      style={{ backgroundColor: color || '#6B7280' }} // Couleur grise par défaut si non spécifiée
+      style={{ backgroundColor: color || '#6B7280' }}
     >
       {name}
     </div>
@@ -28,7 +27,7 @@ const WorkoutTagBadge: React.FC<{ name: string; color?: string }> = ({ name, col
 };
 
 export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, onEditClick, onCardClick, isReadOnly = false }) => {
-  const { allTypes: workoutTypes, loading: typesLoading } = useWorkoutTypes();
+  const { allTypes: workoutTypes } = useWorkoutTypes();
 
   const getDayLabel = () => {
     if (isToday(date)) return "Aujourd'hui";
@@ -37,17 +36,14 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
     return format(date, 'EEE d MMM', { locale: fr });
   };
   
-  // Fonction pour trouver les détails d'un type de séance (nom, couleur) par son ID
   const findWorkoutType = (tagId: string) => {
     if (!workoutTypes || workoutTypes.length === 0) return undefined;
     return workoutTypes.find(wt => wt.id === tagId);
   };
 
   const hasWorkouts = workouts.length > 0;
-  // La première séance détermine l'action des boutons "Modifier" et "Voir"
   const mainWorkout = hasWorkouts ? workouts[0] : null;
 
-  // Nouvelle logique d'affichage du contenu principal de la carte
   const renderContent = () => {
     switch (workouts.length) {
       case 0:
@@ -109,7 +105,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
       <header className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-xl text-light-title dark:text-dark-title">{getDayLabel()}</h3>
-          <p className="text-sm text-light-label dark:text-dark-label">{format(date, 'd MMMM', { locale: fr })}</p>
+          <p className="text-sm text-light-text dark:text-dark-text">{format(date, 'd MMMM', { locale: fr })}</p>
         </div>
         {!isReadOnly && onEditClick && mainWorkout && (
           <div onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} className="p-2 rounded-full transition-all bg-black/5 dark:bg-white/10 opacity-0 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/20 z-10 cursor-pointer">
@@ -117,14 +113,16 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
           </div>
         )}
       </header>
-
       <div className="flex-grow flex items-center justify-center">
         {renderContent()}
       </div>
     </>
   );
 
-  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between bg-light-card dark:bg-dark-card shadow-glass backdrop-blur-2xl border border-light-border dark:border-dark-border transition-all duration-300 group";
+  // --- MODIFICATION PRINCIPALE ICI ---
+  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group " +
+                      "dark:bg-dark-card dark:shadow-neumorphic-dark " + // Style sombre opaque avec ombre
+                      "bg-light-glass backdrop-blur-lg border border-white/10 shadow-glass"; // Style clair (inchangé)
 
   if (mainWorkout && onCardClick) {
     return (
