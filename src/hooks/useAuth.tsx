@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
 
-const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role';
+// CORRECTIF : Ajout de 'photo_url' à la liste des colonnes
+const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url';
 
 interface AuthContextType {
   session: Session | null;
@@ -29,7 +30,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refreshProfile = useCallback(async () => {
     if (!user) return;
-    console.log(`🔄 [useAuth] Rafraîchissement du profil pour: ${user.id}`);
     try {
       const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', user.id).maybeSingle();
       if (error) throw error;
@@ -91,27 +91,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isMountedRef.current = true;
 
     const loadProfileInline = async (userId: string) => {
-      console.log(`📡 [useAuth] Chargement du profil pour: ${userId}`);
       try {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout après 5 secondes')), 5000)
-        );
-
-        const queryPromise = supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select(PROFILE_COLUMNS)
           .eq('id', userId)
           .maybeSingle();
 
-        const result = await Promise.race([queryPromise, timeoutPromise]) as any;
-        const { data, error } = result;
-
-        if (error) {
-          console.error("❌ [useAuth] Erreur Supabase:", error);
-          throw error;
-        }
-
-        console.log("✅ [useAuth] Profil chargé:", data ? 'OK' : 'NULL');
+        if (error) throw error;
         if (isMountedRef.current) setProfile(data);
       } catch (e: any) {
         console.error("❌ [useAuth] Exception:", e.message || e);
@@ -120,7 +107,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log(`🔐 [useAuth] Auth event: ${_event}`);
       if (!isMountedRef.current) return;
 
       setSession(session);
@@ -128,14 +114,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(currentUser);
 
       if (currentUser) {
-        console.log('👤 [useAuth] User exists, loading profile...');
         await loadProfileInline(currentUser.id);
       } else {
-        console.log('🚫 [useAuth] No user');
         setProfile(null);
       }
 
-      console.log('🏁 [useAuth] Setting loading to false');
       setLoading(false);
     });
 
