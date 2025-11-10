@@ -1,130 +1,92 @@
 import React from 'react';
-import { X, User, BarChart2, Lightbulb, LogOut, Users, Settings, Handshake, Mail } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import useAuth from '../../hooks/useAuth';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, User, Trophy, Lightbulb, Settings, Building, Mail } from 'lucide-react';
 import { View } from '../../types';
 
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (view: View) => void;
+  setCurrentView: (view: View) => void;
 }
 
-const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate }) => {
-  const { profile, signOut } = useAuth();
+const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, setCurrentView }) => {
+  const menuItems = [
+    { view: 'profile' as View, icon: User, label: 'Mon Profil' },
+    { view: 'records' as View, icon: Trophy, label: 'Mes Records' },
+    { view: 'advice' as View, icon: Lightbulb, label: 'Conseil' },
+    { view: 'settings' as View, icon: Settings, label: 'Paramètres' },
+    { view: 'partners' as View, icon: Building, label: 'Partenaires' },
+    { view: 'contact' as View, icon: Mail, label: 'Contact' },
+  ];
 
   const handleNavigation = (view: View) => {
-    onNavigate(view);
-    onClose();
+    // Pour les vues non implémentées, on ne fait rien pour l'instant
+    const implementedViews: View[] = ['profile', 'records'];
+    if (implementedViews.includes(view)) {
+      setCurrentView(view);
+      onClose();
+    }
+    // Idéalement, afficher un toast pour informer l'utilisateur plus tard
+  };
+
+  const backdropVariants = {
+    visible: { opacity: 1 },
+    hidden: { opacity: 0 },
+  };
+
+  const menuVariants = {
+    open: {
+      x: 0,
+      transition: { type: 'spring', stiffness: 300, damping: 30 },
+    },
+    closed: {
+      x: '100%',
+      transition: { type: 'spring', stiffness: 300, damping: 30 },
+    },
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-          onClick={onClose}
-        >
+        <>
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="absolute right-0 top-0 h-full w-full max-w-xs bg-white dark:bg-gray-800 shadow-lg z-50 flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            onClick={onClose}
+          />
+          <motion.div
+            className="fixed top-0 right-0 h-full w-[80%] max-w-sm z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl shadow-2xl flex flex-col"
+            variants={menuVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
           >
-            <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Menu</h2>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                aria-label="Fermer le menu"
-              >
-                <X className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+            <div className="flex justify-between items-center p-4 border-b border-white/10">
+              <h2 className="text-lg font-bold">Menu</h2>
+              <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10">
+                <X size={24} />
               </button>
             </div>
-            
-            <div className="flex-grow p-4 space-y-4">
-              <div 
-                className="flex items-center space-x-4 p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                onClick={() => handleNavigation('profile')}
-              >
-                {profile?.photo_url ? (
-                  <img src={profile.photo_url} alt="Profil" className="w-12 h-12 rounded-full object-cover" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                    <User className="w-6 h-6 text-gray-500" />
-                  </div>
-                )}
-                <div>
-                  <p className="font-bold text-gray-800 dark:text-gray-200">{profile?.first_name || 'Mon Profil'}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Voir le profil</p>
-                </div>
-              </div>
-
-              <nav className="space-y-2 flex-grow flex flex-col">
-                {profile?.role === 'athlete' && (
-                  <button
-                    onClick={() => handleNavigation('groups')}
-                    className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <Users className="w-5 h-5" />
-                    <span>Mon groupe</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => handleNavigation('records')}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <BarChart2 className="w-5 h-5" />
-                  <span>Mes records</span>
-                </button>
-                <button
-                  onClick={() => handleNavigation('ai')}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Lightbulb className="w-5 h-5" />
-                  <span>Conseil</span>
-                </button>
-                <button
-                  onClick={() => handleNavigation('settings')}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Settings className="w-5 h-5" />
-                  <span>Paramètres</span>
-                </button>
-                <button
-                  onClick={() => handleNavigation('partnerships')}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Handshake className="w-5 h-5" />
-                  <span>Partenaires</span>
-                </button>
-                <div className="flex-grow" />
-                <button
-                  onClick={() => handleNavigation('contact')}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Mail className="w-5 h-5" />
-                  <span>Contact</span>
-                </button>
-              </nav>
-            </div>
-
-            <div className="p-4 mt-auto border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => signOut()}
-                className="w-full flex items-center space-x-3 p-3 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>Déconnexion</span>
-              </button>
-            </div>
+            <nav className="flex-1 p-4">
+              <ul className="space-y-2">
+                {menuItems.map((item) => (
+                  <li key={item.view}>
+                    <button
+                      onClick={() => handleNavigation(item.view)}
+                      className="w-full flex items-center p-3 rounded-lg text-base font-semibold hover:bg-white/20 dark:hover:bg-gray-800/60 transition-colors duration-200"
+                    >
+                      <item.icon className="mr-4" size={22} />
+                      <span>{item.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </motion.div>
-        </motion.div>
+        </>
       )}
     </AnimatePresence>
   );
