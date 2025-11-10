@@ -8,9 +8,55 @@ interface AnimatedScoreCircleProps {
   score: number | null;
   title: string;
   icon: React.ElementType;
+  hasCheckedIn?: boolean;
+  onCheckinClick?: () => void;
 }
 
-const AnimatedScoreCircle: React.FC<AnimatedScoreCircleProps> = ({ score, title, icon: Icon }) => {
+const AnimatedScoreCircle: React.FC<AnimatedScoreCircleProps> = ({ score, title, icon: Icon, hasCheckedIn, onCheckinClick }) => {
+  if (title === "Forme" && !hasCheckedIn) {
+    return (
+      <div className="flex flex-col items-center gap-2 group opacity-60">
+        <div className="relative w-32 h-32 flex items-center justify-center grayscale">
+          <CircularProgress value={0} strokeWidth={10} className="w-full h-full" />
+          <div className="absolute inset-0 flex items-center justify-center p-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onCheckinClick) onCheckinClick();
+              }}
+              className="bg-primary-500 hover:bg-primary-600 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors duration-300 text-center"
+            >
+              Faire mon check-in
+            </button>
+          </div>
+        </div>
+        <h3 className="text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+          <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          {title}
+        </h3>
+      </div>
+    );
+  }
+
+  if (score === null) {
+    return (
+      <div className="flex flex-col items-center gap-2 group opacity-60">
+        <div className="relative w-32 h-32 flex items-center justify-center grayscale">
+          <CircularProgress value={0} strokeWidth={10} className="w-full h-full" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-4xl font-bold text-gray-500 dark:text-gray-400">
+              --
+            </span>
+          </div>
+        </div>
+        <h3 className="text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+          <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          {title}
+        </h3>
+      </div>
+    );
+  }
+
   const finalScore = score ?? 0;
   const progressValue = title === "Forme" ? finalScore * 10 : finalScore;
 
@@ -71,8 +117,12 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
   ];
 
   const handleScoreClick = (type: 'forme' | 'poidsPuissance', data: ScoreData | null) => {
-    if (type === 'forme' && data?.indice) {
-      onNavigate();
+    if (type === 'forme') {
+      if (hasCheckedInToday && data?.indice) {
+        onNavigate();
+      } else if (!hasCheckedInToday) {
+        onCheckinClick();
+      }
     } else if (data && data.indice !== null) {
       setModalContent({ type, data });
     }
@@ -97,76 +147,59 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
   }
 
   return (
-    <AnimatePresence mode="wait">
-      {!hasCheckedInToday ? (
-        <motion.div
-          key="locked"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-          className="bg-light-glass dark:bg-dark-glass shadow-glass backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 text-center"
-        >
-          <h2 className="text-xl sm:text-2xl font-bold text-light-title dark:text-dark-title mb-4">Vos Indices</h2>
-          <p className="text-light-label dark:text-dark-label mb-4">Votre indice de forme attend.</p>
-          <button onClick={onCheckinClick} className="bg-primary-500 hover:bg-primary-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300">
-            Faire mon check-in
-          </button>
-        </motion.div>
-      ) : (
-        <motion.div
-          key="unlocked"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-light-glass dark:bg-dark-glass shadow-glass backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 overflow-hidden"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-light-title dark:text-dark-title">Vos Indices</h2>
-          </div>
+    <motion.div
+      key="unlocked"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className="bg-light-glass dark:bg-dark-glass shadow-glass backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 overflow-hidden"
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-light-title dark:text-dark-title">Vos Indices</h2>
+      </div>
 
-          <div className="relative w-full h-[160px]">
-            <motion.div
-              className="flex absolute inset-0"
-              animate={{ x: `-${activeIndex * 100}%` }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              onDragEnd={handleDragEnd}
+      <div className="relative w-full h-[160px]">
+        <motion.div
+          className="flex absolute inset-0"
+          animate={{ x: `-${activeIndex * 100}%` }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          onDragEnd={handleDragEnd}
+        >
+          {scores.map((score) => (
+            <div
+              key={score.type}
+              className="w-full flex-shrink-0 flex justify-center items-center"
+              onClick={() => handleScoreClick(score.type, score.data)}
             >
-              {scores.map((score) => (
-                <div
-                  key={score.type}
-                  className="w-full flex-shrink-0 flex justify-center items-center"
-                  onClick={() => handleScoreClick(score.type, score.data)}
-                >
-                  <AnimatedScoreCircle
-                    score={score.data?.indice}
-                    title={score.title}
-                    icon={score.icon}
-                  />
-                </div>
-              ))}
-            </motion.div>
-          </div>
-
-          <div className="flex justify-center items-center gap-2 mt-2">
-            {scores.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveIndex(index)}
-                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                  activeIndex === index ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
-                }`}
-                aria-label={`Afficher l'indice ${index + 1}`}
+              <AnimatedScoreCircle
+                score={score.data?.indice}
+                title={score.title}
+                icon={score.icon}
+                hasCheckedIn={hasCheckedInToday}
+                onCheckinClick={onCheckinClick}
               />
-            ))}
-          </div>
-
-          {modalContent && <AdviceModal content={modalContent} onClose={() => setModalContent(null)} />}
+            </div>
+          ))}
         </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
+
+      <div className="flex justify-center items-center gap-2 mt-2">
+        {scores.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setActiveIndex(index)}
+            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+              activeIndex === index ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
+            }`}
+            aria-label={`Afficher l'indice ${index + 1}`}
+          />
+        ))}
+      </div>
+
+      {modalContent && <AdviceModal content={modalContent} onClose={() => setModalContent(null)} />}
+    </motion.div>
   );
 }
