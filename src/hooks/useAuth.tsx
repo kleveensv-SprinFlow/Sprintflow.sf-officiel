@@ -181,9 +181,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
   
+  // Mémoriser le contexte pour éviter les re-renders inutiles
+  // On ne met que les données dans les dépendances, pas les fonctions
   const contextValue = React.useMemo(
     () => ({ session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail }),
-    [session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail]
+    [session, user, profile, loading]
   );
 
   return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
