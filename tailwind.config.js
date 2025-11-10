@@ -27,19 +27,17 @@ export default {
           950: '#172554',
         },
         // Nouvelle palette
-        'light-background': '#f4f4f5', // zinc-100
-        'light-card': '#ffffff',
-        'light-title': '#18181b',      // zinc-900
-        'light-text': '#52525b',       // zinc-600
-        'light-border': '#d4d4d8',    // zinc-300
-        'accent': '#f59e0b',          // amber-500
+        'light-background': '#F9FAFB', // gray-50
+        'light-card': '#FFFFFF',
+        'light-title': '#111827',      // gray-900
+        'light-text': '#6B7280',       // gray-500
+        'accent': '#84CC16',          // lime-500
         
-        'dark-background': '#09090b', // zinc-950
-        'dark-card': '#18181b',       // zinc-900
-        'dark-title': '#f4f4f5',      // zinc-100
-        'dark-text': '#a1a1aa',       // zinc-400
-        'dark-border': '#27272a',     // zinc-800
-        'dark-accent': '#fbbf24',     // amber-400
+        'dark-background': '#111827', // gray-900
+        'dark-card': '#1F2937',       // gray-800
+        'dark-title': '#F3F4F6',      // gray-100
+        'dark-text': '#9CA3AF',       // gray-400
+        'dark-accent': '#A3E635',     // lime-400
       },
       boxShadow: {
         'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
