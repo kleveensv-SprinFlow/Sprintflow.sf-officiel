@@ -124,7 +124,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
     </>
   );
 
-  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between bg-light-glass dark:bg-dark-glass shadow-glass backdrop-blur-lg border border-white/10 transition-all duration-300 group";
+  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between bg-light-card dark:bg-dark-card shadow-glass backdrop-blur-2xl border border-light-border dark:border-dark-border transition-all duration-300 group";
 
   if (mainWorkout && onCardClick) {
     return (
