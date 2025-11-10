@@ -67,10 +67,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-        Bonjour !
-      </h1>
-
       <IndicesPanel
         loading={loading}
         scoreForme={scoreForme}
