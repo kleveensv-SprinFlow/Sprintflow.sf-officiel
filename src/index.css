@@ -170,3 +170,41 @@
     scrollbar-width: none;
   }
 }
+/* ... (contenu existant de index.css) ... */
+
+/* Add this at the end of the file */
+@keyframes shine-effect {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shine {
+  background: linear-gradient(
+    to right,
+    currentColor 0%,
+    #e2e8f0 50%, /* light-theme shine color */
+    currentColor 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine-effect 2.5s linear 1;
+}
+
+.dark .animate-shine {
+    background: linear-gradient(
+    to right,
+    currentColor 0%,
+    #6b7280 50%, /* dark-theme shine color */
+    currentColor 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
