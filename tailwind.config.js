@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Palette de base (primaire conservée pour compatibilité)
+        // Palette de base
         'primary': {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -23,28 +23,30 @@ export default {
           950: '#172554',
         },
         'accent': {
-          DEFAULT: '#f59e0b', // amber-500
-          light: '#f59e0b',   // amber-500
-          dark: '#fcd34d',    // amber-300
+          DEFAULT: '#059669', // emerald-600
+          light: '#059669',   // emerald-600
+          dark: '#34d399',    // emerald-400
         },
 
         // Thème clair
-        'light-background': '#eef2ff', // indigo-50
+        'light-background': '#fafafa', // neutral-50
         'light-card': '#ffffff',
-        'light-title': '#312e81',      // indigo-900
-        'light-text': '#4f46e5',       // indigo-600
-        'light-label': '#4f46e5',      // indigo-600
+        'light-title': '#171717',      // neutral-900
+        'light-text': '#525252',       // neutral-600
+        'light-label': '#525252',      // neutral-600
+        'light-border': '#e5e5e5',     // neutral-200
 
         // Thème sombre
-        'dark-background': '#1e1b4b', // indigo-950
-        'dark-card': '#312e81',       // indigo-900
-        'dark-title': '#e0e7ff',      // indigo-100
-        'dark-text': '#a5b4fc',       // indigo-300
-        'dark-label': '#a5b4fc',      // indigo-300
+        'dark-background': '#0a0a0a', // neutral-950
+        'dark-card': '#171717',       // neutral-900
+        'dark-title': '#f5f5f5',      // neutral-100
+        'dark-text': '#a3a3a3',       // neutral-400
+        'dark-label': '#a3a3a3',      // neutral-400
+        'dark-border': '#262626',     // neutral-800
 
-        // Couleurs pour l'effet Glassmorphism (ajustées à la nouvelle palette)
+        // Couleurs pour l'effet Glassmorphism
         'light-glass': 'rgba(255, 255, 255, 0.3)',
-        'dark-glass': 'rgba(49, 46, 129, 0.5)', // Basé sur indigo-900
+        'dark-glass': 'rgba(23, 23, 23, 0.5)',
       },
       boxShadow: {
         'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
