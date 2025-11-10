@@ -18,10 +18,9 @@ const parseValue = (str: string): number | null => {
   const num = parseFloat(cleaned);
   if (isNaN(num)) return null;
   
-  // Gère la saisie directe, ex: "1234" -> 12,34s
   if (!cleaned.includes('.')) {
     if (cleaned.length <= 2) {
-      return num / 100; // ex: "34" -> 0,34s
+      return num / 100;
     }
     const seconds = parseInt(cleaned.slice(0, -2), 10);
     const centiseconds = parseInt(cleaned.slice(-2), 10);
@@ -35,8 +34,6 @@ export const ChronoInput: React.FC<ChronoInputProps> = ({ value, onChange }) => 
   const [displayValue, setDisplayValue] = useState(formatValue(value));
 
   useEffect(() => {
-    // Met à jour l'affichage si la prop `value` change de l'extérieur
-    // sans perturber la saisie en cours.
     if (parseValue(displayValue) !== value) {
       setDisplayValue(formatValue(value));
     }
@@ -50,7 +47,6 @@ export const ChronoInput: React.FC<ChronoInputProps> = ({ value, onChange }) => 
   };
 
   const handleBlur = () => {
-    // Au moment de quitter le champ, on formate joliment la valeur
     setDisplayValue(formatValue(value));
   };
 
