@@ -125,6 +125,15 @@
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
+
+  .slider-vertical {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 8px; /* Largeur de la piste */
+    height: 150px; /* Hauteur du slider */
+    writing-mode: bt-lr; /* De bas en haut, pour la plupart des navigateurs */
+    cursor: pointer;
+  }
 }
 
 /* 3. Custom utility classes */
