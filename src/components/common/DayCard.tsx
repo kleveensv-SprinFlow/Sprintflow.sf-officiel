@@ -55,7 +55,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
           !isReadOnly && onPlanClick && (
             <button
               onClick={(e) => { e.stopPropagation(); onPlanClick(date); }}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg text-white bg-sprintflow-blue hover:opacity-90 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg text-white bg-accent hover:opacity-90 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105"
             >
               <Plus size={18} />
               Planifier
