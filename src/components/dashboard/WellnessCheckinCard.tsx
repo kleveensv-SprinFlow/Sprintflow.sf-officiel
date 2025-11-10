@@ -4,6 +4,7 @@ import useAuth from '../../hooks/useAuth.tsx';
 import PickerWheel from '../common/PickerWheel.tsx';
 import { SemanticSlider } from '../common/SemanticSlider.tsx';
 import SleepDurationGauge from '../sleep/SleepDurationGauge.tsx';
+import { CheckCircle2 } from 'lucide-react'; // Import de l'icône
 
 interface WellnessCheckinCardProps {
   onClose?: () => void;
@@ -41,6 +42,7 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
   if (hasSubmittedToday) return null;
 
   const handleSubmit = async () => {
+    if (loading) return;
     try {
       const bedtimeDate = new Date(`${today}T${bedtime}:00`);
       const wakeupDate = new Date(`${today}T${wakeupTime}:00`);
@@ -70,8 +72,24 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
   };
 
   return (
-    <div className="flex flex-col h-full p-4">
-      <h3 className="font-bold text-xl text-center mb-4 text-light-title dark:text-dark-title">Check-in du matin</h3>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="w-8 h-8"></div> {/* Espace vide pour centrer le titre */}
+        <h3 className="font-bold text-xl text-center text-light-title dark:text-dark-title">
+          Check-in du matin
+        </h3>
+        <button 
+          onClick={handleSubmit} 
+          disabled={loading}
+          className="text-primary disabled:opacity-50 p-1"
+        >
+          {loading ? (
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+          ) : (
+            <CheckCircle2 size={28} />
+          )}
+        </button>
+      </div>
       
       <div className="grid grid-cols-2 gap-4 mb-4">
         <PickerWheel label="Heure de coucher" value={bedtime} onChange={setBedtime} type="time" />
@@ -82,20 +100,10 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
         <SleepDurationGauge sleepDuration={sleepDuration} />
       </div>
 
-      <div className="grid grid-cols-3 gap-4 h-64 mb-4 flex-grow">
+      <div className="grid grid-cols-3 gap-4 h-64 mb-4">
         <SemanticSlider label="Ressenti sommeil" minLabel="Mauvais" maxLabel="Excellent" value={sleepQuality} onChange={setSleepQuality} inverted={false} orientation="vertical" />
         <SemanticSlider label="Niveau de stress" minLabel="Faible" maxLabel="Élevé" value={stress} onChange={setStress} inverted={true} orientation="vertical" />
         <SemanticSlider label="Fatigue musculaire" minLabel="Faible" maxLabel="Élevée" value={fatigue} onChange={setFatigue} inverted={true} orientation="vertical" />
-      </div>
-
-      <div className="mt-auto">
-        <button 
-          onClick={handleSubmit} 
-          disabled={loading}
-          className="w-full bg-primary hover:bg-primary-focus text-white font-bold py-3 rounded-lg transition-colors duration-300 disabled:opacity-50"
-        >
-          {loading ? 'Enregistrement...' : 'Valider mon état de forme'}
-        </button>
       </div>
     </div>
   );
