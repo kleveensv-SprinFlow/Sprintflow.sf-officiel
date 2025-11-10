@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, createContext, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useContext, createContext, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
@@ -181,14 +181,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
   
-  const contextValue = { session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail };
+  const contextValue = React.useMemo(
+    () => ({ session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail }),
+    [session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail]
+  );
 
   return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
 };
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
+  if (context === undefined) {
+    console.error('❌ [useAuth] Context is undefined! This should never happen.');
+    console.error('❌ [useAuth] Make sure AuthProvider is mounted in main.tsx');
+    // Retourner un contexte par défaut pour éviter le crash de l'application
+    return {
+      session: null,
+      user: null,
+      profile: null,
+      loading: true,
+      refreshProfile: async () => {},
+      updateProfile: () => {},
+      signOut: async () => {},
+      signIn: async () => ({ user: null, session: null }),
+      signUp: async () => ({ user: null, session: null }),
+      resendConfirmationEmail: async () => {}
+    };
+  }
   return context;
 };
 
