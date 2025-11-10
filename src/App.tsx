@@ -1,7 +1,7 @@
 // src/App.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth.tsx';
-import { useWorkouts } from './hooks/useWorkouts.ts'; // Importer le hook
+import { useWorkouts } from './hooks/useWorkouts.ts';
 import Auth from './components/Auth.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import LoadingScreen from './components/LoadingScreen.tsx';
@@ -20,13 +20,41 @@ import { RecordsForm } from './components/records/RecordsForm.tsx';
 import AddFoodForm from './components/nutrition/AddFoodForm.tsx';
 import { SleepForm } from './components/sleep/SleepForm.tsx';
 import SharePerformancePage from './components/sharing/SharePerformancePage.tsx';
+import { useDailyWelcome } from './hooks/useDailyWelcome.ts'; // Import the new hook
+
+// Title mapping
+const viewTitles: Record<View, string> = {
+  dashboard: 'Accueil',
+  profile: 'Mon Profil',
+  groups: 'Mon Groupe',
+  workouts: 'Calendrier',
+  planning: 'Planning',
+  nutrition: 'Nutrition',
+  records: 'Performances',
+  settings: 'Réglages',
+  'add-workout': 'Nouvelle Séance',
+  'add-record': 'Nouveau Record',
+  'add-food': 'Ajouter un Repas',
+  'add-sleep': 'Enregistrer le Sommeil',
+  'share-performance': 'Partager un Exploit',
+  ai: 'AI Coach',
+  contact: 'Contact',
+  partnerships: 'Partenaires',
+  'developer-panel': 'Dev Panel',
+  chat: 'Messagerie',
+  advice: 'Conseils',
+  partners: 'Partenaires',
+  sleep: 'Sommeil',
+};
+
 
 function App() {
   const { user, loading, profile } = useAuth();
-  const { createCompletedWorkout } = useWorkouts(); // Utiliser le hook
+  const { createCompletedWorkout } = useWorkouts();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isFabOpen, setFabOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const showWelcomeMessage = useDailyWelcome(); // Use the hook
 
   useEffect(() => {
     if (localStorage.getItem('theme') === 'dark' || 
@@ -41,6 +69,12 @@ function App() {
     setCurrentView(view);
     setFabOpen(false); 
   };
+  
+  const handleSetCurrentView = (view: View) => {
+    if (view !== currentView) {
+      setCurrentView(view);
+    }
+  };
 
   const renderView = () => {
     switch (currentView) {
@@ -54,29 +88,27 @@ function App() {
         return <AthletePlanning />;
       case 'groups':
         return <GroupManagement />;
-      // Vues des formulaires du FAB
       case 'add-workout':
         return (
           <NewWorkoutForm 
             userRole="athlete"
             onSave={async (payload) => {
-              // On s'assure que le payload est compatible
               const { tag_seance, type, notes, blocs } = payload;
               if (type !== 'modèle') {
                   await createCompletedWorkout({ tag_seance, type, notes, blocs });
               }
             }}
-            onCancel={() => setCurrentView('dashboard')}
+            onCancel={() => handleSetCurrentView('dashboard')}
           />
         );
       case 'add-record':
-        return <RecordsForm onClose={() => setCurrentView('records')} />;
+        return <RecordsForm onClose={() => handleSetCurrentView('records')} />;
       case 'add-food':
-        return <AddFoodForm onClose={() => setCurrentView('dashboard')} />;
+        return <AddFoodForm onClose={() => handleSetCurrentView('dashboard')} />;
       case 'sleep':
-        return <SleepForm onClose={() => setCurrentView('dashboard')} />;
+        return <SleepForm onClose={() => handleSetCurrentView('dashboard')} />;
       case 'share-performance':
-        return <SharePerformancePage onClose={() => setCurrentView('dashboard')} />;
+        return <SharePerformancePage onClose={() => handleSetCurrentView('dashboard')} />;
       default:
         return <Dashboard />;
     }
@@ -96,13 +128,16 @@ function App() {
         onProfileClick={() => setMenuOpen(true)}
         isDashboard={currentView === 'dashboard'}
         userRole={profile?.role}
+        title={viewTitles[currentView] || ''}
+        showWelcomeMessage={showWelcomeMessage}
+        onHomeClick={() => handleSetCurrentView('dashboard')}
       />
       <main className="pb-24 pt-16 px-4">
         {renderView()}
       </main>
       <TabBar 
         currentView={currentView}
-        setCurrentView={setCurrentView}
+        setCurrentView={handleSetCurrentView}
         onFabAction={handleFabAction} 
         isFabOpen={isFabOpen} 
         setFabOpen={setFabOpen} 
@@ -111,7 +146,7 @@ function App() {
       <SideMenu 
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
-        setCurrentView={setCurrentView}
+        setCurrentView={handleSetCurrentView}
       />
       <ToastContainer 
         position="bottom-center"
