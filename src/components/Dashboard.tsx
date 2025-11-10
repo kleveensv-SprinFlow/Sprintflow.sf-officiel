@@ -11,7 +11,7 @@ import { useWellness } from '../hooks/useWellness';
 import { supabase } from '../lib/supabase';
 
 interface DashboardProps {
-  userRole: 'athlete' | 'coach';
+  userRole?: 'athlete' | 'coach' | 'developer' | 'encadrant' | null;
   onViewChange: (view: any) => void;
 }
 
@@ -57,9 +57,13 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
     refreshWellnessData();
   };
 
+  // Affiche le dashboard du coach uniquement si le rôle est 'coach'
   if (userRole === 'coach') {
     return <CoachDashboard onViewChange={onViewChange} />;
   }
+
+  // Pour tous les autres rôles (athlète, développeur, etc.) ou si le rôle est indéfini,
+  // affiche le dashboard de l'athlète par défaut.
 
   return (
     <div className="space-y-6">
