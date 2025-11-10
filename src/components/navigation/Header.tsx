@@ -1,70 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Home, RefreshCw, User as UserIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, Home, User as UserIcon } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import LevelBadge from '../common/LevelBadge';
 
 interface HeaderProps {
   userRole?: 'athlete' | 'coach' | 'developer';
-  onRefreshData?: () => void;
   onProfileClick?: () => void;
   onHomeClick?: () => void;
-  onMenuClick?: () => void;
   isDashboard: boolean;
   canGoBack?: boolean;
   onBack?: () => void;
-  title?: string;
-  showWelcome?: boolean;
+  title: string;
+  showWelcomeMessage: boolean;
 }
 
-export default function Header({ userRole, onRefreshData, onProfileClick, onHomeClick, onMenuClick, isDashboard, canGoBack, onBack, title, showWelcome = false }: HeaderProps) {
+export default function Header({
+  onProfileClick,
+  onHomeClick,
+  isDashboard,
+  canGoBack,
+  onBack,
+  title,
+  showWelcomeMessage,
+}: HeaderProps) {
   const { profile } = useAuth();
-  const [displayWelcome, setDisplayWelcome] = useState(showWelcome);
-  const [isExiting, setIsExiting] = useState(false);
-  const [showLogo, setShowLogo] = useState(false);
-  const [isLogoEntering, setIsLogoEntering] = useState(false);
+  const [isWelcomeVisible, setWelcomeVisible] = useState(showWelcomeMessage && isDashboard);
+  const [displayText, setDisplayText] = useState(title);
 
   useEffect(() => {
-    if (showWelcome) {
-      setDisplayWelcome(true);
-      setIsExiting(false);
-      setShowLogo(false);
-      setIsLogoEntering(false);
+    if (showWelcomeMessage && isDashboard) {
+      const firstName = profile?.first_name || 'Athlète';
+      setDisplayText(`Bienvenue ${firstName}`);
+      setWelcomeVisible(true);
 
-      const exitTimer = setTimeout(() => {
-        setIsExiting(true);
-        setShowLogo(true);
-        setIsLogoEntering(true);
-      }, 4400);
-
-      const hideTimer = setTimeout(() => {
-        setDisplayWelcome(false);
+      const timer = setTimeout(() => {
+        setWelcomeVisible(false);
       }, 5000);
 
-      const logoAnimationTimer = setTimeout(() => {
-        setIsLogoEntering(false);
-      }, 5400);
-
-      return () => {
-        clearTimeout(exitTimer);
-        clearTimeout(hideTimer);
-        clearTimeout(logoAnimationTimer);
-      };
+      return () => clearTimeout(timer);
     } else {
-      setShowLogo(true);
+        setWelcomeVisible(false);
+        setDisplayText(title);
     }
-  }, [showWelcome]);
+  }, [showWelcomeMessage, isDashboard, profile?.first_name, title]);
+  
+  useEffect(() => {
+    if (!isWelcomeVisible) {
+      setDisplayText(title);
+    }
+  }, [isWelcomeVisible, title]);
 
-  const handleRefresh = () => {
-    if (onRefreshData) {
-      onRefreshData();
-    }
+  const renderText = () => {
+    const firstName = profile?.first_name || 'Athlète';
+    const textContent = isWelcomeVisible ? (
+      <>
+        Bienvenue <span className="animate-shine">{firstName}</span>
+      </>
+    ) : (
+      displayText
+    );
+
+    return (
+      <motion.h1
+        key={displayText} // The key is crucial for cross-fade animation
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="absolute text-lg font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap truncate"
+      >
+        {textContent}
+      </motion.h1>
+    );
   };
-
-  const firstName = profile?.first_name || profile?.full_name?.split(' ')[0] || 'Athlète';
 
   return (
     <header className="sticky top-0 z-30 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg">
       <div className="px-4 py-3 flex items-center justify-between min-w-0">
+        {/* Left Section */}
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
           {canGoBack ? (
             <button
@@ -89,35 +103,15 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
           )}
         </div>
         
-        <div className="flex-1 flex justify-center min-w-0 h-10">
-          {isDashboard && displayWelcome && (
-            <h1 className={`absolute text-lg font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap ${
-              isExiting ? 'animate-welcome-exit' : 'animate-welcome-enter'
-            }`}>
-              Bonjour {firstName}
-            </h1>
-          )}
-          {isDashboard && showLogo && (
-            <img 
-              src="https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/logo/Logo-sans-fond-sprintflow.png" 
-              alt="SprintFlow Logo" 
-              className={`h-10 transition-opacity duration-500 ${isLogoEntering ? 'opacity-0' : 'opacity-100'}`}
-            />
-          )}
-          {!isDashboard && (
-            <h1 className="text-lg font-bold text-gray-800 dark:text-gray-200 truncate">{title || ''}</h1>
-          )}
+        {/* Center Section with Animation */}
+        <div className="flex-1 flex justify-center min-w-0 h-6 relative">
+          <AnimatePresence mode="wait">
+            {renderText()}
+          </AnimatePresence>
         </div>
         
+        {/* Right Section */}
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">
-          <button
-            onClick={handleRefresh}
-            className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors hidden xs:block"
-            title="Actualiser les données"
-          >
-            <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-          </button>
-
           {isDashboard && (
             <button
               onClick={onProfileClick}
@@ -129,7 +123,6 @@ export default function Header({ userRole, onRefreshData, onProfileClick, onHome
                   src={profile.photo_url}
                   alt="Photo de profil"
                   className="w-full h-full object-cover"
-                  onError={(e) => { e.currentTarget.style.display = 'none' }}
                 />
               ) : (
                 <UserIcon className="w-5 h-5 text-gray-500" />
