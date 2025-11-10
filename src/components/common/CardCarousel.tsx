@@ -72,3 +72,5 @@ export const CardCarousel: React.FC<CardCarouselProps> = ({ options, selectedVal
     </div>
   );
 };
+
+export default CardCarousel;

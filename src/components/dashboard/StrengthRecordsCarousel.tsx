@@ -70,4 +70,5 @@ const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = ({ athle
   );
 };
 
+export { StrengthRecordsCarousel };
 export default StrengthRecordsCarousel;

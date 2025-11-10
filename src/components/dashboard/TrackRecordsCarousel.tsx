@@ -3,7 +3,7 @@ import React from 'react';
 import { useRecords } from '../../hooks/useRecords';
 import { Loader2, Zap, ArrowRight } from 'lucide-react';
 import CardCarousel from '../common/CardCarousel';
-import { formatChrono } from '../../utils/formatters';
+import { formatTime } from '../../utils/formatters';
 
 interface TrackRecordsCarouselProps {
   athleteId: string;
@@ -46,7 +46,7 @@ const TrackRecordsCarousel: React.FC<TrackRecordsCarouselProps> = ({ athleteId, 
                 <p className="text-sm text-light-text dark:text-dark-text">{new Date(record.date).toLocaleDateString('fr-FR')}</p>
               </div>
               <div className="text-left">
-                <span className="text-3xl font-bold text-light-title dark:text-dark-title">{formatChrono(record.value)}</span>
+                <span className="text-3xl font-bold text-light-title dark:text-dark-title">{formatTime(record.value)}</span>
               </div>
             </div>
           ))}
@@ -56,4 +56,5 @@ const TrackRecordsCarousel: React.FC<TrackRecordsCarouselProps> = ({ athleteId, 
   );
 };
 
-export default TrackRecordsCarouse
+export { TrackRecordsCarousel };
+export default TrackRecordsCarousel;

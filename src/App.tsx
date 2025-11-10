@@ -9,9 +9,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { View } from './types/index.ts';
 import ProfilePage from './components/profile/ProfilePage.tsx';
 import NewWorkoutForm from './components/workouts/NewWorkoutForm.tsx';
-import TabBar from './components/navigation/TabBar.tsx';
+import TabBar from './components/TabBar.tsx';
 import Header from './components/navigation/Header.tsx';
-import PlanningPage from './components/planning/PlanningPage.tsx';
 import GroupManagement from './components/groups/GroupManagement.tsx';
 
 function App() {
@@ -42,9 +41,7 @@ function App() {
         return <ProfilePage />;
       case 'new-workout':
         return <NewWorkoutForm onClose={() => setCurrentView('dashboard')} />;
-      case 'planning':
-        return <PlanningPage />;
-      case 'group':
+      case 'groups':
         return <GroupManagement />;
       default:
         return <Dashboard />;

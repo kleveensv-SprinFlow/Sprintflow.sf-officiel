@@ -242,3 +242,5 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
     </>
   );
 }
+
+export default NewWorkoutForm;
