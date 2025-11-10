@@ -15,7 +15,7 @@ interface AuthContextType {
   updateProfile: (updatedProfileData: Partial<Profile>) => void;
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, profileData: any) => Promise<any>;
+  signUp: (email: string, password: string, profileData: Partial<Profile>) => Promise<any>;
   resendConfirmationEmail: (email: string) => Promise<void>;
 }
 
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', user.id).maybeSingle();
       if (error) throw error;
       if (isMountedRef.current) setProfile(data);
-    } catch (e: any) {
+    } catch (e) {
       console.error("❌ [useAuth] Erreur lors du rafraîchissement:", e);
       if (isMountedRef.current) setProfile(null);
     }
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return data;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, profileData: any) => {
+  const signUp = useCallback(async (email: string, password: string, profileData: Partial<Profile>) => {
     try {
       const roleMap: Record<string, string> = { 'athlète': 'athlete', 'athlete': 'athlete', 'encadrant': 'coach', 'coach': 'coach' };
       const mappedRole = roleMap[profileData.role?.toLowerCase()] || 'athlete';
@@ -64,8 +64,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (insertError && insertError.code !== '23505') throw insertError;
       }
       return data;
-    } catch (error: any) {
-      if (error.message?.includes('User already registered')) throw new Error('Cet email est déjà utilisé.');
+    } catch (error) {
+      if (error instanceof Error && error.message?.includes('User already registered')) throw new Error('Cet email est déjà utilisé.');
       throw error;
     }
   }, []);
@@ -100,8 +100,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (error) throw error;
         if (isMountedRef.current) setProfile(data);
-      } catch (e: any) {
-        console.error("❌ [useAuth] Exception:", e.message || e);
+      } catch (e) {
+        console.error("❌ [useAuth] Exception:", e);
         if (isMountedRef.current) setProfile(null);
       }
     };
@@ -139,4 +139,4 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-export default useAuth
+export default useAuth;
