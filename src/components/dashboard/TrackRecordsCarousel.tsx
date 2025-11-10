@@ -11,7 +11,7 @@ interface TrackRecordsCarouselProps {
 }
 
 const TrackRecordsCarousel: React.FC<TrackRecordsCarouselProps> = ({ athleteId, onNavigateToRecords }) => {
-  const { records, loading } = useRecords({ type: 'athlete', id: athleteId });
+  const { records, loading } = useRecords(athleteId);
 
   const trackRecords = records.filter(r => ['piste', 'course'].includes(r.category));
 

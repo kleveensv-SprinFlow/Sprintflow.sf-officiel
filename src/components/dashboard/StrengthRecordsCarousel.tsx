@@ -12,7 +12,7 @@ interface StrengthRecordsCarouselProps {
 }
 
 const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = ({ athleteId, onNavigateToRecords }) => {
-  const { records, loading: recordsLoading } = useRecords({ type: 'athlete', id: athleteId });
+  const { records, loading: recordsLoading } = useRecords(athleteId);
   const { latestBodycomp, loading: bodycompLoading } = useBodycomp(athleteId);
 
   const strengthRecords = records.filter(r => ['force', 'muscu'].includes(r.category));
