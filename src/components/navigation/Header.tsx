@@ -26,7 +26,7 @@ export default function Header({
 }: HeaderProps) {
   const { profile } = useAuth();
   const [isWelcomeVisible, setWelcomeVisible] = useState(showWelcomeMessage && isDashboard);
-  const [displayText, setDisplayText] = useState(title);
+  const [displayText, setDisplayText] = useState(isWelcomeVisible ? `Bienvenue ${profile?.first_name || 'Athlète'}` : title);
 
   useEffect(() => {
     if (showWelcomeMessage && isDashboard) {
@@ -40,8 +40,8 @@ export default function Header({
 
       return () => clearTimeout(timer);
     } else {
-        setWelcomeVisible(false);
-        setDisplayText(title);
+      setWelcomeVisible(false);
+      setDisplayText(title);
     }
   }, [showWelcomeMessage, isDashboard, profile?.first_name, title]);
   
@@ -63,10 +63,10 @@ export default function Header({
 
     return (
       <motion.h1
-        key={displayText} // The key is crucial for cross-fade animation
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        key={displayText}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.3 }}
         className="absolute text-lg font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap truncate"
       >
@@ -78,46 +78,29 @@ export default function Header({
   return (
     <header className="sticky top-0 z-30 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg">
       <div className="px-4 py-3 flex items-center justify-between min-w-0">
-        {/* Left Section */}
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
           {canGoBack ? (
-            <button
-              onClick={onBack}
-              className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              aria-label="Retour"
-            >
+            <button onClick={onBack} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
               <ChevronLeft className="h-6 w-6 text-gray-700 dark:text-gray-300" />
             </button>
           ) : !isDashboard ? (
-            <button
-              onClick={onHomeClick}
-              className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              aria-label="Accueil"
-            >
+            <button onClick={onHomeClick} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
               <Home className="h-6 w-6 text-gray-700 dark:text-gray-300" />
             </button>
           ) : (
-            <div className="p-2">
-              <LevelBadge level={0} />
-            </div>
+            <div className="p-2"><LevelBadge level={0} /></div>
           )}
         </div>
         
-        {/* Center Section with Animation */}
         <div className="flex-1 flex justify-center min-w-0 h-6 relative">
           <AnimatePresence mode="wait">
             {renderText()}
           </AnimatePresence>
         </div>
         
-        {/* Right Section */}
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">
           {isDashboard && (
-            <button
-              onClick={onProfileClick}
-              className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
-              title="Mon Profil"
-            >
+            <button onClick={onProfileClick} className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               {profile?.photo_url ? (
                 <img
                   src={profile.photo_url}
