@@ -70,7 +70,7 @@ export const SemanticSlider: React.FC<SemanticSliderProps> = ({
         max={max}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb"
+        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
         style={sliderStyle}
       />
       <div className="text-center mt-2 text-sm font-semibold" style={{ color: getSliderColor() }}>
