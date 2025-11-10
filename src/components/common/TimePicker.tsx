@@ -5,15 +5,19 @@ import PickerWheel from './PickerWheel';
 interface TimePickerProps {
   initialTime: string; // "MM:SS"
   onChange: (time: string) => void;
+  disabled?: boolean;
 }
 
-const minutesValues = Array.from({ length: 60 }, (_, i) => i);
-const secondsValues = Array.from({ length: 60 }, (_, i) => i);
+const minutesOptions = Array.from({ length: 60 }, (_, i) => ({ value: i, label: `${i.toString().padStart(2, '0')}` }));
+const secondsOptions = Array.from({ length: 60 }, (_, i) => ({ value: i, label: `${i.toString().padStart(2, '0')}` }));
 
-const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange }) => {
+const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   
   const parseTime = (time: string) => {
+    if (typeof time !== 'string' || !time.includes(':')) {
+      return { min: 0, sec: 0 };
+    }
     const parts = time.split(':');
     if (parts.length === 2) {
         const [min, sec] = parts.map(Number);
@@ -32,6 +36,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange }) => {
   };
 
   const handleOpen = () => {
+    if (disabled) return;
     const { min, sec } = parseTime(initialTime);
     setMinutes(min);
     setSeconds(sec);
@@ -43,7 +48,8 @@ const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange }) => {
       <button
         type="button"
         onClick={handleOpen}
-        className="w-full h-11 px-4 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-base font-medium text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition-shadow"
+        disabled={disabled}
+        className="w-full h-11 px-4 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center text-base font-medium text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition-shadow disabled:opacity-50"
       >
         {initialTime}
       </button>
@@ -65,8 +71,8 @@ const TimePicker: React.FC<TimePickerProps> = ({ initialTime, onChange }) => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start gap-2">
-                <PickerWheel values={minutesValues} initialValue={minutes} onChange={setMinutes} label="Min" />
-                <PickerWheel values={secondsValues} initialValue={seconds} onChange={setSeconds} label="Sec" />
+                <PickerWheel options={minutesOptions} value={minutes} onChange={setMinutes} label="Min" />
+                <PickerWheel options={secondsOptions} value={seconds} onChange={setSeconds} label="Sec" />
               </div>
               <button
                 type="button"
