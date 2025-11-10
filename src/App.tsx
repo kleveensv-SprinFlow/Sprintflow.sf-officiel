@@ -76,7 +76,7 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard userRole={profile?.role} onViewChange={handleSetCurrentView} />;
       case 'profile':
         return <ProfilePage />;
       // ... (autres cas)
