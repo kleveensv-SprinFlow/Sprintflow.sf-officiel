@@ -1,4 +1,4 @@
-// v2.0.2 - Fixed infinite loop 400 error by removing avatar_url from profile query
+// v2.0.3 - Fixed import statements for named exports
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
