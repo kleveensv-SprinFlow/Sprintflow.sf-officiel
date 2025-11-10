@@ -19,20 +19,22 @@ export default {
         'orange-accent': '#FF9800',
         
         // Thème clair
-        'light-background': '#F3F4F6', // gray-100
-        'light-card': 'rgba(255, 255, 255, 0.7)',
+        'light-card': 'rgba(255, 255, 255, 0.65)', // Plus transparent
         'light-title': '#111827',      // gray-900
-        'light-text': '#6B7280',       // gray-500
-        'light-border': '#E5E7EB',     // gray-200
+        'light-text': '#374151',       // gray-700, plus sombre pour le contraste
+        'light-border': 'rgba(255, 255, 255, 0.3)', // Bordure en verre
         'accent': '#84CC16',          // lime-500
         
         // Thème sombre
-        'dark-background': '#0D1117',
-        'dark-card': 'rgba(22, 27, 34, 0.8)',
-        'dark-title': '#F3F4F6',      // gray-100
-        'dark-text': '#9CA3AF',       // gray-400
-        'dark-border': '#30363d',     // gray-700
+        'dark-card': 'rgba(17, 24, 39, 0.6)', // Plus sombre et plus transparent
+        'dark-title': '#F9FAFB',      // gray-50
+        'dark-text': '#D1D5DB',       // gray-300, plus clair pour le contraste
+        'dark-border': 'rgba(255, 255, 255, 0.1)', // Bordure en verre
         'dark-accent': '#A3E635',     // lime-400
+      },
+      backdropBlur: {
+        'xl': '24px',
+        '2xl': '40px',
       },
       boxShadow: {
         'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
