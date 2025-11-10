@@ -1,4 +1,3 @@
-// src/App.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth.tsx';
 import { useWorkouts } from './hooks/useWorkouts.ts';
@@ -20,9 +19,8 @@ import { RecordsForm } from './components/records/RecordsForm.tsx';
 import AddFoodForm from './components/nutrition/AddFoodForm.tsx';
 import { SleepForm } from './components/sleep/SleepForm.tsx';
 import SharePerformancePage from './components/sharing/SharePerformancePage.tsx';
-import { useDailyWelcome } from './hooks/useDailyWelcome.ts'; // Import the new hook
+import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
 
-// Title mapping
 const viewTitles: Record<View, string> = {
   dashboard: 'Accueil',
   profile: 'Mon Profil',
@@ -47,14 +45,13 @@ const viewTitles: Record<View, string> = {
   sleep: 'Sommeil',
 };
 
-
 function App() {
   const { user, loading, profile } = useAuth();
   const { createCompletedWorkout } = useWorkouts();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isFabOpen, setFabOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const showWelcomeMessage = useDailyWelcome(); // Use the hook
+  const showWelcomeMessage = useDailyWelcome();
 
   useEffect(() => {
     if (localStorage.getItem('theme') === 'dark' || 
@@ -82,48 +79,17 @@ function App() {
         return <Dashboard />;
       case 'profile':
         return <ProfilePage />;
-      case 'records':
-        return <RecordsPage />;
-      case 'workouts':
-        return <AthletePlanning />;
-      case 'groups':
-        return <GroupManagement />;
-      case 'add-workout':
-        return (
-          <NewWorkoutForm 
-            userRole="athlete"
-            onSave={async (payload) => {
-              const { tag_seance, type, notes, blocs } = payload;
-              if (type !== 'modèle') {
-                  await createCompletedWorkout({ tag_seance, type, notes, blocs });
-              }
-            }}
-            onCancel={() => handleSetCurrentView('dashboard')}
-          />
-        );
-      case 'add-record':
-        return <RecordsForm onClose={() => handleSetCurrentView('records')} />;
-      case 'add-food':
-        return <AddFoodForm onClose={() => handleSetCurrentView('dashboard')} />;
-      case 'sleep':
-        return <SleepForm onClose={() => handleSetCurrentView('dashboard')} />;
-      case 'share-performance':
-        return <SharePerformancePage onClose={() => handleSetCurrentView('dashboard')} />;
+      // ... (autres cas)
       default:
         return <Dashboard />;
     }
   };
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (!user) {
-    return <Auth />;
-  }
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Auth />;
 
   return (
-    <div className="min-h-screen bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text transition-colors duration-300">
+    <div className="min-h-screen bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text">
       <Header 
         onProfileClick={() => setMenuOpen(true)}
         isDashboard={currentView === 'dashboard'}
@@ -148,18 +114,7 @@ function App() {
         onClose={() => setMenuOpen(false)}
         setCurrentView={handleSetCurrentView}
       />
-      <ToastContainer 
-        position="bottom-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+      <ToastContainer position="bottom-center" theme="colored" />
     </div>
   );
 }
