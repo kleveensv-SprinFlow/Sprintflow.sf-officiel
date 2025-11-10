@@ -18,7 +18,7 @@ export const RecentWorkouts: React.FC<RecentWorkoutsProps> = ({ onNavigate }) =>
     <div className="bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-lg p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-light-title dark:text-dark-title">Séances Récentes</h2>
-        <button onClick={onNavigate} className="text-sm text-sprintflow-blue font-semibold">Voir tout</button>
+        <button onClick={onNavigate} className="text-sm text-accent font-semibold">Voir tout</button>
       </div>
       {loading && <p>Chargement...</p>}
       <div className="space-y-2">
