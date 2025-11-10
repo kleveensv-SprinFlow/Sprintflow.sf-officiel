@@ -1,4 +1,3 @@
-// src/components/common/PickerWheel.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { debounce } from 'lodash';
@@ -79,11 +78,12 @@ interface PickerWheelProps {
   disabled?: boolean;
 }
 
-export const PickerWheel: React.FC<PickerWheelProps> = ({ options, value, onChange, label, disabled = false }) => {
+export const PickerWheel: React.FC<PickerWheelProps> = ({ options = [], value, onChange, label, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const safeOptions = Array.isArray(options) ? options : [];
+  const selectedOption = safeOptions.find(opt => opt.value === value);
 
   const handleOpen = () => {
     if (disabled) return;
@@ -96,8 +96,7 @@ export const PickerWheel: React.FC<PickerWheelProps> = ({ options, value, onChan
     setIsOpen(false);
   };
   
-  // Affiche 0 si la valeur est null ou undefined, sinon la valeur elle-même.
-  const displayLabel = selectedOption ? selectedOption.label : (options.find(o => o.value === 0)?.label || '0');
+  const displayLabel = selectedOption ? selectedOption.label : (safeOptions.find(o => o.value === 0)?.label || '0');
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -127,7 +126,7 @@ export const PickerWheel: React.FC<PickerWheelProps> = ({ options, value, onChan
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <Wheel options={options} value={currentValue} onChange={setCurrentValue} />
+              <Wheel options={safeOptions} value={currentValue} onChange={setCurrentValue} />
               <button
                 type="button"
                 onClick={handleValidate}
