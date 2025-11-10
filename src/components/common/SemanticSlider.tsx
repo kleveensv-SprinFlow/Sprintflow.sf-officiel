@@ -9,6 +9,7 @@ interface SemanticSliderProps {
   min?: number;
   max?: number;
   inverted?: boolean;
+  orientation?: 'horizontal' | 'vertical';
 }
 
 export const SemanticSlider: React.FC<SemanticSliderProps> = ({
@@ -20,6 +21,7 @@ export const SemanticSlider: React.FC<SemanticSliderProps> = ({
   min = 0,
   max = 100,
   inverted = false,
+  orientation = 'horizontal',
 }) => {
   const getSliderColor = () => {
     const percentage = (value - min) / (max - min);
@@ -30,6 +32,30 @@ export const SemanticSlider: React.FC<SemanticSliderProps> = ({
   const sliderStyle = {
     '--slider-color': getSliderColor(),
   } as React.CSSProperties;
+
+  if (orientation === 'vertical') {
+    return (
+      <div className="flex flex-col items-center justify-start h-full">
+        <label className="block text-sm font-medium text-light-label dark:text-dark-label mb-2 text-center h-10">{label}</label>
+        <div className="text-center my-2 text-sm font-semibold" style={{ color: getSliderColor() }}>
+          {value}
+        </div>
+        <div className="flex flex-col items-center justify-center flex-grow">
+          <span className="text-xs text-gray-500">{maxLabel}</span>
+          <input
+            type="range"
+            min={min}
+            max={max}
+            value={value}
+            onChange={(e) => onChange(parseInt(e.target.value))}
+            className="bg-gray-200 dark:bg-gray-600 rounded-lg slider-thumb slider-vertical"
+            style={sliderStyle}
+          />
+          <span className="text-xs text-gray-500">{minLabel}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -44,7 +70,7 @@ export const SemanticSlider: React.FC<SemanticSliderProps> = ({
         max={max}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb"
+        className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb"
         style={sliderStyle}
       />
       <div className="text-center mt-2 text-sm font-semibold" style={{ color: getSliderColor() }}>
