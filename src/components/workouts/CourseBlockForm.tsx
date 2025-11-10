@@ -4,7 +4,7 @@ import TimePicker from '../common/TimePicker';
 import PickerWheel from '../common/PickerWheel';
 import { CourseBlock, WorkoutBlock } from '../../types/workout';
 import DistanceSelector from '../common/DistanceSelector';
-import { ChronoPicker } from '../common/ChronoPicker';
+import ChronoInput from './ChronoInput';
 
 interface CourseBlockFormProps {
   onSave: (newBlock: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => void;
@@ -60,7 +60,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
     });
   };
 
-  const handleChronoChange = (serieIndex: number, repIndex: number, value: number) => {
+  const handleChronoChange = (serieIndex: number, repIndex: number, value: number | null) => {
     setBlock(prevBlock => {
       const newChronos = JSON.parse(JSON.stringify(prevBlock.chronos));
       newChronos[serieIndex][repIndex] = value;
@@ -73,19 +73,21 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
   };
 
   const renderChronoInputs = () => (
-    <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-      <h3 className="text-lg font-semibold text-center text-gray-900 dark:text-white">Performances</h3>
+    <div className="space-y-6 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
+      <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white">Chronos</h3>
       {Array.from({ length: block.series }).map((_, serieIndex) => (
-        <div key={serieIndex} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-          <h4 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">Série {serieIndex + 1}</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div key={serieIndex} className="p-4 bg-gray-100 dark:bg-gray-900 rounded-xl">
+          <h4 className="font-bold mb-4 text-blue-500 dark:text-blue-400">Série {serieIndex + 1}</h4>
+          <div className="space-y-4">
             {Array.from({ length: block.reps }).map((_, repIndex) => (
-              <div key={repIndex} className="flex flex-col items-center">
-                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1">Rép {repIndex + 1}</label>
-                <ChronoPicker
-                  value={block.chronos?.[serieIndex]?.[repIndex] || null}
-                  onChange={(val) => handleChronoChange(serieIndex, repIndex, val)}
-                />
+              <div key={repIndex} className="flex items-center justify-between">
+                <label className="text-lg font-medium text-gray-600 dark:text-gray-300">Rép {repIndex + 1}</label>
+                <div className="w-32">
+                  <ChronoInput
+                    value={block.chronos?.[serieIndex]?.[repIndex] || null}
+                    onChange={(val) => handleChronoChange(serieIndex, repIndex, val)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -143,7 +145,7 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
                 Annuler
               </button>
               <button type="button" onClick={handleValidate} className="w-full bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-medium">
-                {initialData ? 'Modifier' : 'Ajouter'}
+                {isAthlete ? 'Valider' : (initialData ? 'Modifier' : 'Ajouter')}
               </button>
             </div>
           </motion.div>
