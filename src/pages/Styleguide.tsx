@@ -18,7 +18,7 @@ const Styleguide: React.FC = () => {
         <section className="space-y-4">
           <H2>Couleurs</H2>
           <div className="flex flex-wrap gap-4">
-            <div className="p-4 rounded-lg bg-sprintflow-blue text-white">Accent: #00B8FF</div>
+            <div className="p-4 rounded-lg bg-accent text-white">Accent: #f59e0b / #fcd34d</div>
             <div className="p-4 rounded-lg bg-light-card border">Light Card</div>
             <div className="p-4 rounded-lg bg-dark-card border text-dark-text">Dark Card</div>
             <div className="p-4 rounded-lg bg-light-background border">Light BG</div>
