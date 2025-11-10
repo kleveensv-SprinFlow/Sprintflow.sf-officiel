@@ -1,59 +1,70 @@
-import React, { useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { ChronoSelector } from './ChronoSelector';
+import React, { useState, useEffect } from 'react';
 
 interface ChronoInputProps {
-  label: string;
-  value: number | null;
-  onChange: (value: number | null) => void;
+  value: number | null; // en secondes
+  onChange: (newSeconds: number | null) => void;
 }
 
-const formatDisplayTime = (timeInSeconds: number | null): string => {
-  if (timeInSeconds === null) return 'mm:ss.cc';
-  const minutes = Math.floor(timeInSeconds / 60);
-  const seconds = Math.floor(timeInSeconds % 60);
-  const centiseconds = Math.round((timeInSeconds - (minutes * 60) - seconds) * 100);
-
-  const pad = (num: number) => num.toString().padStart(2, '0');
-
-  if (minutes > 0) {
-    return `${pad(minutes)}:${pad(seconds)}.${pad(centiseconds)}`;
-  }
-  return `${pad(seconds)}.${pad(centiseconds)}`;
+const formatValue = (val: number | null): string => {
+  if (val === null || isNaN(val)) return '';
+  const seconds = Math.floor(val);
+  const centiseconds = Math.round((val - seconds) * 100);
+  return `${String(seconds).padStart(2, '0')},${String(centiseconds).padStart(2, '0')}`;
 };
 
-export const ChronoInput: React.FC<ChronoInputProps> = ({ label, value, onChange }) => {
-  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+const parseValue = (str: string): number | null => {
+  const cleaned = str.replace(/[^0-9,.]/g, '').replace(',', '.');
+  if (cleaned === '') return null;
+  const num = parseFloat(cleaned);
+  if (isNaN(num)) return null;
+  
+  // Gère la saisie directe, ex: "1234" -> 12,34s
+  if (!cleaned.includes('.')) {
+    if (cleaned.length <= 2) {
+      return num / 100; // ex: "34" -> 0,34s
+    }
+    const seconds = parseInt(cleaned.slice(0, -2), 10);
+    const centiseconds = parseInt(cleaned.slice(-2), 10);
+    return seconds + centiseconds / 100;
+  }
 
-  const handleSelect = (newValue: number) => {
-    onChange(newValue);
-    setIsSelectorOpen(false);
+  return num;
+};
+
+export const ChronoInput: React.FC<ChronoInputProps> = ({ value, onChange }) => {
+  const [displayValue, setDisplayValue] = useState(formatValue(value));
+
+  useEffect(() => {
+    // Met à jour l'affichage si la prop `value` change de l'extérieur
+    // sans perturber la saisie en cours.
+    if (parseValue(displayValue) !== value) {
+      setDisplayValue(formatValue(value));
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    setDisplayValue(inputValue);
+    const parsed = parseValue(inputValue);
+    onChange(parsed);
+  };
+
+  const handleBlur = () => {
+    // Au moment de quitter le champ, on formate joliment la valeur
+    setDisplayValue(formatValue(value));
   };
 
   return (
-    <div>
-      <label className="block text-xs text-center text-gray-500 dark:text-gray-400">{label}</label>
-      <button
-        type="button"
-        onClick={() => setIsSelectorOpen(true)}
-        className={`w-full mt-1 p-1.5 text-center rounded-md border ${
-          value === null
-            ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-400'
-            : 'bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700 font-semibold'
-        }`}
-      >
-        {formatDisplayTime(value)}
-      </button>
-
-      <AnimatePresence>
-        {isSelectorOpen && (
-          <ChronoSelector
-            initialValue={value}
-            onChange={handleSelect}
-            onClose={() => setIsSelectorOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+    <input
+      type="text"
+      inputMode="decimal"
+      value={displayValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      placeholder="00,00"
+      className="w-full text-center px-2 py-3 text-2xl font-mono bg-gray-100 dark:bg-gray-700 rounded-lg border-2 border-transparent focus:border-blue-500 focus:ring-0 transition"
+    />
   );
 };
+
+export default ChronoInput;
