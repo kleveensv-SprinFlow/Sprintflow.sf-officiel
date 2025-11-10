@@ -89,6 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     isMountedRef.current = true;
+    let timeoutId: NodeJS.Timeout;
 
     const loadProfileInline = async (userId: string) => {
       try {
@@ -105,6 +106,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (isMountedRef.current) setProfile(null);
       }
     };
+
+    // Vérification initiale de la session
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isMountedRef.current) return;
+
+        setSession(session);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          await loadProfileInline(currentUser.id);
+        } else {
+          setProfile(null);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("❌ [useAuth] Erreur lors de l'initialisation:", error);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Timeout de sécurité: arrêter le loading après 10 secondes
+    timeoutId = setTimeout(() => {
+      if (isMountedRef.current && loading) {
+        console.warn("⚠️ [useAuth] Timeout de chargement atteint, arrêt forcé");
+        setLoading(false);
+      }
+    }, 10000);
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!isMountedRef.current) return;
@@ -124,6 +160,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       isMountedRef.current = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
