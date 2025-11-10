@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TimePicker from '../common/TimePicker';
-import PickerWheel from '../common/PickerWheel';
+import { PickerWheel } from '../common/PickerWheel';
 import { CourseBlock, WorkoutBlock } from '../../types/workout';
 import DistanceSelector from '../common/DistanceSelector';
 import { ChronoPicker } from '../common/ChronoPicker';
@@ -14,10 +14,9 @@ interface CourseBlockFormProps {
   userRole: 'coach' | 'athlete';
 }
 
-const seriesValues = Array.from({ length: 20 }, (_, i) => i + 1);
-const repsValues = Array.from({ length: 50 }, (_, i) => i + 1);
+const seriesOptions = Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }));
+const repsOptions = Array.from({ length: 50 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }));
 
-// Le chronos: [] est inclus pour avoir un état de base cohérent
 const defaultState: Omit<CourseBlock, 'id'> = {
   type: 'course',
   series: 1,
@@ -29,37 +28,26 @@ const defaultState: Omit<CourseBlock, 'id'> = {
 };
 
 export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCancel, initialData, isOpen, userRole }) => {
-  const [block, setBlock] = useState(initialData || defaultState);
+  const [block, setBlock] = useState<Omit<CourseBlock, 'id'>>({ ...defaultState });
   const isAthlete = userRole === 'athlete';
 
-  // Effet pour initialiser ou réinitialiser l'état quand la modale s'ouvre
   useEffect(() => {
     if (isOpen) {
       const baseData = initialData || defaultState;
-      // Pour l'athlète, on s'assure que la structure des chronos est toujours correcte dès le début
-      if (isAthlete) {
-        const { series, reps, chronos = [] } = baseData;
-        const newChronos = Array(series).fill(null).map((_, sIdx) =>
-          Array(reps).fill(null).map((_, rIdx) =>
-            chronos[sIdx]?.[rIdx] || null
-          )
-        );
-        setBlock({ ...baseData, chronos: newChronos });
-      } else {
-        setBlock(baseData);
-      }
+      const { series, reps, chronos = [] } = baseData;
+      const newChronos = Array(series).fill(null).map((_, sIdx) =>
+        Array(reps).fill(null).map((_, rIdx) =>
+          chronos[sIdx]?.[rIdx] || null
+        )
+      );
+      setBlock({ ...baseData, chronos: newChronos });
     }
-  }, [initialData, isOpen, isAthlete]);
+  }, [initialData, isOpen]);
 
-
-  // Fonction de mise à jour de l'état qui gère aussi le redimensionnement des chronos
-  const updateBlock = (updatedFields: Partial<Omit<CourseBlock, 'id'>>) => {
+  const updateBlockField = (field: keyof Omit<CourseBlock, 'id'>, value: any) => {
     setBlock(prevBlock => {
-      const newBlock = { ...prevBlock, ...updatedFields };
-
-      // Si les séries ou répétitions ont changé, on reconstruit la matrice des chronos
-      // pour qu'elle corresponde, tout en préservant les valeurs existantes.
-      if (isAthlete && (updatedFields.series !== undefined || updatedFields.reps !== undefined)) {
+      const newBlock = { ...prevBlock, [field]: value };
+      if ((field === 'series' || field === 'reps')) {
         const { series, reps, chronos = [] } = newBlock;
         const newChronos = Array(series).fill(null).map((_, sIdx) =>
           Array(reps).fill(null).map((_, rIdx) =>
@@ -72,33 +60,33 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
     });
   };
 
-  const handleChronoChange = (serieIndex: number, repIndex: number, value: number | null) => {
+  const handleChronoChange = (serieIndex: number, repIndex: number, value: number) => {
     setBlock(prevBlock => {
-      const newChronos = JSON.parse(JSON.stringify(prevBlock.chronos || []));
-      if (!newChronos[serieIndex]) newChronos[serieIndex] = [];
+      const newChronos = JSON.parse(JSON.stringify(prevBlock.chronos));
       newChronos[serieIndex][repIndex] = value;
       return { ...prevBlock, chronos: newChronos };
     });
   };
 
   const handleValidate = () => {
-    onSave(block);
+    onSave({ ...initialData, ...block });
   };
 
   const renderChronoInputs = () => (
     <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-      <h3 className="text-lg font-semibold text-center text-gray-900 dark:text-white">Chronos</h3>
+      <h3 className="text-lg font-semibold text-center text-gray-900 dark:text-white">Performances</h3>
       {Array.from({ length: block.series }).map((_, serieIndex) => (
-        <div key={serieIndex} className="p-3 border rounded-lg dark:border-gray-600">
-          <h4 className="font-medium mb-2 text-blue-500">Série {serieIndex + 1}</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div key={serieIndex} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <h4 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">Série {serieIndex + 1}</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({ length: block.reps }).map((_, repIndex) => (
-              <ChronoPicker
-                key={`${serieIndex}-${repIndex}`}
-                label={`Rép ${repIndex + 1}`}
-                initialValue={block.chronos?.[serieIndex]?.[repIndex] || null}
-                onChange={(val) => handleChronoChange(serieIndex, repIndex, val)}
-              />
+              <div key={repIndex} className="flex flex-col items-center">
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1">Rép {repIndex + 1}</label>
+                <ChronoPicker
+                  value={block.chronos?.[serieIndex]?.[repIndex] || null}
+                  onChange={(val) => handleChronoChange(serieIndex, repIndex, val)}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -126,29 +114,27 @@ export const CourseBlockForm: React.FC<CourseBlockFormProps> = ({ onSave, onCanc
           >
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center">
-                {initialData ? 'Modifier le bloc Course' : 'Ajouter un bloc Course'}
+                {isAthlete ? "Compléter le bloc Course" : (initialData ? 'Modifier le bloc Course' : 'Ajouter un bloc Course')}
               </h3>
             </div>
 
             <div className="p-6 space-y-6 overflow-y-auto">
-              {/* --- Structure Form --- */}
               <div className="grid grid-cols-2 gap-4">
-                <PickerWheel label="Séries" values={seriesValues} initialValue={block.series} onChange={(val) => updateBlock({ series: val as number })} />
-                <PickerWheel label="Répétitions" values={repsValues} initialValue={block.reps} onChange={(val) => updateBlock({ reps: val as number })} />
+                <PickerWheel label="Séries" options={seriesOptions} value={block.series} onChange={(val) => updateBlockField('series', val)} disabled={isAthlete} />
+                <PickerWheel label="Répétitions" options={repsOptions} value={block.reps} onChange={(val) => updateBlockField('reps', val)} disabled={isAthlete} />
               </div>
-              <DistanceSelector initialValue={block.distance} onChange={(val) => updateBlock({ distance: val })} />
+              <DistanceSelector initialValue={block.distance} onChange={(val) => updateBlockField('distance', val)} disabled={isAthlete} />
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-center text-gray-700 dark:text-gray-300 mb-2">Repos Répétitions</label>
-                  <TimePicker initialTime={block.restBetweenReps} onChange={(val) => updateBlock({ restBetweenReps: val })} />
+                  <TimePicker initialTime={block.restBetweenReps} onChange={(val) => updateBlockField('restBetweenReps', val)} disabled={isAthlete} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-center text-gray-700 dark:text-gray-300 mb-2">Repos Séries</label>
-                  <TimePicker initialTime={block.restBetweenSeries} onChange={(val) => updateBlock({ restBetweenSeries: val })} />
+                  <TimePicker initialTime={block.restBetweenSeries} onChange={(val) => updateBlockField('restBetweenSeries', val)} disabled={isAthlete} />
                 </div>
               </div>
 
-              {/* --- Chrono Inputs for Athlete --- */}
               {isAthlete && renderChronoInputs()}
             </div>
 
