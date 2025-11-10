@@ -1,6 +1,4 @@
 /** @type {import('tailwindcss').Config} */
-import plugin from 'tailwindcss/plugin';
-
 export default {
   content: [
     "./index.html",
@@ -9,93 +7,72 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
-      // --- NOUVELLE PALETTE SÉMANTIQUE (OPTION 2) ---
       colors: {
+        'sprintflow-blue': {
+          DEFAULT: '#007AFF',
+          light: '#EBF5FF',
+          dark: '#0056B3',
+        },
+        'primary': {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+          950: '#172554',
+        },
+        // Thème clair
+        'light-background': '#F9FAFB', // gray-50
+        'light-card': 'rgba(255, 255, 255, 0.8)',
+        'light-border': '#E5E7EB', // gray-200
+        'light-title': '#111827',      // gray-900
+        'light-text': '#6B7280',       // gray-500
+        'accent': '#84CC16',          // lime-500
         
-        // 1. FOND (Le "canvas" de l'application)
-        // Utilisation: <body class="bg-background ...">
-        background: {
-          DEFAULT: '#F9FAFB', // gray-50 (Blanc cassé)
-          dark: '#111827',    // gray-900 (Anthracite)
-        },
-        
-        // 2. CARTES (Utilisé par le plugin ".glass-effect")
-        // Ce ne sont que les couleurs de base pour le verre
-        card: {
-          DEFAULT: 'rgba(255, 255, 255, 0.8)', // bg-white/80
-          dark: 'rgba(31, 41, 55, 0.7)',    // bg-gray-800/70
-        },
-
-        // 3. BORDURES (Utilisé par le plugin ".glass-effect")
-        // Ce sont les bordures qui définissent le "verre"
-        'card-border': {
-          DEFAULT: '#E5E7EB', // gray-200
-          dark: '#374151',    // gray-700
-        },
-
-        // 4. ACCENT (Lime/Volt)
-        // Utilisation: Boutons, Liens, Icônes actives
-        // Classes: bg-accent, text-accent-dark
-        accent: {
-          DEFAULT: '#84CC16', // lime-500 (Pour Mode Clair)
-          dark: '#A3E635',     // lime-400 (Pour Mode Sombre)
-          // Texte sur les boutons (pour un bon contraste)
-          foreground: '#111827', // gray-900
-        },
-
-        // 5. TEXTE
-        // Utilisation: text-foreground, text-foreground-secondary
-        foreground: {
-          DEFAULT: '#111827',    // gray-900 (Titres clairs)
-          secondary: '#6B7280', // gray-500 (Texte clair)
-          
-          dark: '#F3F4F6',      // gray-100 (Titres sombres)
-          'dark-secondary': '#9CA3AF', // gray-400 (Texte sombre)
-        },
+        // Thème sombre
+        'dark-background': '#111827', // gray-900
+        'dark-card': 'rgba(31, 41, 55, 0.7)', // gray-800 with 70% opacity
+        'dark-border': '#374151',     // gray-700
+        'dark-title': '#F3F4F6',      // gray-100
+        'dark-text': '#9CA3AF',       // gray-400
+        'dark-accent': '#A3E635',     // lime-400
       },
-      
-      // Ombres naturelles pour les cartes
       boxShadow: {
-        'glass-light': '0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04)',
-        'glass-dark': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+        'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+        'card-dark': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2)',
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
+        'neumorphic-extrude': '3px 3px 6px #b8b9be, -3px -3px 6px #ffffff',
+        'neumorphic-press': 'inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff',
+        'neumorphic-extrude-dark': '3px 3px 6px #1a232f, -3px -3px 6px #242f3f',
+        'neumorphic-press-dark': 'inset 3px 3px 6px #1a232f, inset -3px -3px 6px #242f3f',
       },
-      
-      // Police "premium" unique
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        manrope: ['Manrope', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+        'noto-sans': ['"Noto Sans"', 'sans-serif'],
+        din: ['"DIN 1451"', 'sans-serif'],
       },
-
-      // Vous pouvez garder vos animations/textShadow ici si vous le souhaitez
       textShadow: {
         light: '1px 1px 3px rgba(0, 0, 0, 0.1)',
         dark: '1px 1px 3px rgba(0, 0, 0, 0.7)',
       },
     },
   },
-  
   plugins: [
-    require('@tailwindcss/forms'),
-    
-    // --- NOUVEAU PLUGIN POUR L'EFFET "GLASSMORPHISM" ---
-    // Il crée la classe ".glass-effect"
-    plugin(function({ addUtilities, theme }) {
+    function({ addUtilities }) {
       addUtilities({
-        '.glass-effect': {
-          // --- Styles Mode Clair ---
-          'backgroundColor': theme('colors.card.DEFAULT'),
-          'backdropFilter': 'blur(12px)',
-          '-webkit-backdrop-filter': 'blur(12px)',
-          'border': `1px solid ${theme('colors.card-border.DEFAULT')}`,
-          'boxShadow': theme('boxShadow.glass-light'),
-          
-          // --- Styles Mode Sombre (gérés automatiquement) ---
-          '.dark &': {
-            'backgroundColor': theme('colors.card.dark'),
-            'border': `1px solid ${theme('colors.card-border.dark')}`,
-            'boxShadow': theme('boxShadow.glass-dark'),
-          }
-        }
+        '.text-shadow-light': {
+          textShadow: '1px 1px 3px rgba(0, 0, 0, 0.1)',
+        },
+        '.text-shadow-dark': {
+          textShadow: '1px 1px 3px rgba(0, 0, 0, 0.7)',
+        },
       })
-    })
+    }
   ],
 }
