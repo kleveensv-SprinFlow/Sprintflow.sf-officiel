@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Ancienne palette de base, conservée pour le moment pour éviter les erreurs
+        // Ancienne palette de base
         'sprintflow-blue': {
           DEFAULT: '#007AFF',
           light: '#EBF5FF',
@@ -18,28 +18,30 @@ export default {
         'success': '#00C853',
         'orange-accent': '#FF9800',
         
-        // Thème clair
-        'light-card': 'rgba(255, 255, 255, 0.65)', // Plus transparent
-        'light-title': '#111827',      // gray-900
-        'light-text': '#374151',       // gray-700, plus sombre pour le contraste
-        'light-border': 'rgba(255, 255, 255, 0.3)', // Bordure en verre
-        'accent': '#84CC16',          // lime-500
+        // --- Thème clair (inchangé pour le moment) ---
+        'light-background': '#F3F4F6',
+        'light-card': 'rgba(255, 255, 255, 0.7)',
+        'light-title': '#111827',
+        'light-text': '#6B7280',
+        'light-border': '#E5E7EB',
+        'accent': '#84CC16',
         
-        // Thème sombre
-        'dark-card': 'rgba(17, 24, 39, 0.6)', // Plus sombre et plus transparent
-        'dark-title': '#F9FAFB',      // gray-50
-        'dark-text': '#D1D5DB',       // gray-300, plus clair pour le contraste
-        'dark-border': 'rgba(255, 255, 255, 0.1)', // Bordure en verre
-        'dark-accent': '#A3E635',     // lime-400
-      },
-      backdropBlur: {
-        'xl': '24px',
-        '2xl': '40px',
+        // --- NOUVEAU Thème sombre ---
+        'dark-background': '#1F2937', // Gris foncé et doux
+        'dark-card': '#374151',       // Gris un peu plus clair
+        'dark-title': '#F9FAFB',      // Titre clair pour contraste
+        'dark-text': '#D1D5DB',       // Texte clair pour contraste
+        'dark-border': '#4B5563',     // Bordure subtile
+        'dark-accent': '#A3E635',
       },
       boxShadow: {
+        // Anciennes ombres
         'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
         'card-dark': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2)',
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
+        
+        // --- NOUVELLE Ombre pour le thème sombre ---
+        'neumorphic-dark': '5px 5px 10px #1a232e, -5px -5px 10px #243548',
       },
       fontFamily: {
         manrope: ['Manrope', 'sans-serif'],
