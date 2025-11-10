@@ -8,12 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Palette de base
-        'sprintflow-blue': {
-          DEFAULT: '#007AFF',
-          light: '#EBF5FF',
-          dark: '#0056B3',
-        },
+        // Palette de base (primaire conservée pour compatibilité)
         'primary': {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -27,23 +22,29 @@ export default {
           900: '#1e3a8a',
           950: '#172554',
         },
+        'accent': {
+          DEFAULT: '#f59e0b', // amber-500
+          light: '#f59e0b',   // amber-500
+          dark: '#fcd34d',    // amber-300
+        },
+
         // Thème clair
-        'light-background': '#E5E7EB', // Fond gris pour un contraste plus élevé
-        'light-card': '#FFFFFF',
-        'light-title': '#1A202C', // Titres en noir/gris foncé
-        'light-text': '#2D3748',  // Texte principal
-        'light-label': '#718096', // Labels et textes secondaires
+        'light-background': '#eef2ff', // indigo-50
+        'light-card': '#ffffff',
+        'light-title': '#312e81',      // indigo-900
+        'light-text': '#4f46e5',       // indigo-600
+        'light-label': '#4f46e5',      // indigo-600
 
         // Thème sombre
-        'dark-background': '#1F2937', // Fond gris anthracite
-        'dark-card': '#374151',       // Cartes nettement plus claires pour un contraste élevé
-        'dark-title': '#E6EDF3',      // Titres en blanc cassé
-        'dark-text': '#C9D1D9',       // Texte principal
-        'dark-label': '#8B949E',      // Labels et textes secondaires
+        'dark-background': '#1e1b4b', // indigo-950
+        'dark-card': '#312e81',       // indigo-900
+        'dark-title': '#e0e7ff',      // indigo-100
+        'dark-text': '#a5b4fc',       // indigo-300
+        'dark-label': '#a5b4fc',      // indigo-300
 
-        // Couleurs pour l'effet Glassmorphism
+        // Couleurs pour l'effet Glassmorphism (ajustées à la nouvelle palette)
         'light-glass': 'rgba(255, 255, 255, 0.3)',
-        'dark-glass': 'rgba(55, 65, 81, 0.5)',
+        'dark-glass': 'rgba(49, 46, 129, 0.5)', // Basé sur indigo-900
       },
       boxShadow: {
         'card-light': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
