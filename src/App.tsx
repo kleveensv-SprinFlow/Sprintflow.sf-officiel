@@ -12,14 +12,21 @@ import NewWorkoutForm from './components/workouts/NewWorkoutForm.tsx';
 import TabBar from './components/TabBar.tsx';
 import Header from './components/navigation/Header.tsx';
 import GroupManagement from './components/groups/GroupManagement.tsx';
+import SideMenu from './components/navigation/SideMenu.tsx';
+import RecordsPage from './components/records/RecordsPage.tsx';
+import AthletePlanning from './components/planning/AthletePlanning.tsx';
+import RecordsForm from './components/records/RecordsForm.tsx';
+import AddFoodForm from './components/nutrition/AddFoodForm.tsx';
+import SleepForm from './components/wellness/SleepForm.tsx';
+import SharePerformancePage from './components/sharing/SharePerformancePage.tsx';
 
 function App() {
   const { user, loading, profile } = useAuth();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isFabOpen, setFabOpen] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Gère le thème au chargement
     if (localStorage.getItem('theme') === 'dark' || 
         (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
@@ -39,10 +46,23 @@ function App() {
         return <Dashboard />;
       case 'profile':
         return <ProfilePage />;
-      case 'new-workout':
-        return <NewWorkoutForm onClose={() => setCurrentView('dashboard')} />;
+      case 'records':
+        return <RecordsPage />;
+      case 'workouts':
+        return <AthletePlanning />;
       case 'groups':
         return <GroupManagement />;
+      // Vues des formulaires du FAB
+      case 'add-workout':
+        return <NewWorkoutForm onClose={() => setCurrentView('dashboard')} />;
+      case 'add-record':
+        return <RecordsForm onClose={() => setCurrentView('records')} />;
+      case 'add-food':
+        return <AddFoodForm onClose={() => setCurrentView('dashboard')} />;
+      case 'sleep':
+        return <SleepForm onClose={() => setCurrentView('dashboard')} />;
+      case 'share-performance':
+        return <SharePerformancePage onClose={() => setCurrentView('dashboard')} />;
       default:
         return <Dashboard />;
     }
@@ -57,10 +77,9 @@ function App() {
   }
 
   return (
-    // --- MODIFICATION PRINCIPALE ICI ---
     <div className="min-h-screen bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text transition-colors duration-300">
       <Header 
-        onProfileClick={() => setCurrentView('profile')}
+        onProfileClick={() => setMenuOpen(true)}
         isDashboard={currentView === 'dashboard'}
         userRole={profile?.role}
       />
@@ -74,6 +93,11 @@ function App() {
         isFabOpen={isFabOpen} 
         setFabOpen={setFabOpen} 
         userRole={profile?.role}
+      />
+      <SideMenu 
+        isOpen={isMenuOpen}
+        onClose={() => setMenuOpen(false)}
+        setCurrentView={setCurrentView}
       />
       <ToastContainer 
         position="bottom-center"
