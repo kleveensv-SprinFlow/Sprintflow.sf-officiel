@@ -1,6 +1,7 @@
 // src/App.tsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth.tsx';
+import { useWorkouts } from './hooks/useWorkouts.ts'; // Importer le hook
 import Auth from './components/Auth.tsx';
 import Dashboard from './components/Dashboard.tsx';
 import LoadingScreen from './components/LoadingScreen.tsx';
@@ -14,14 +15,15 @@ import Header from './components/navigation/Header.tsx';
 import GroupManagement from './components/groups/GroupManagement.tsx';
 import SideMenu from './components/navigation/SideMenu.tsx';
 import RecordsPage from './components/records/RecordsPage.tsx';
-import { AthletePlanning } from './components/planning/AthletePlanning.tsx';
-import { RecordsForm } from './components/records/RecordsForm.tsx';
+import AthletePlanning from './components/planning/AthletePlanning.tsx';
+import RecordsForm from './components/records/RecordsForm.tsx';
 import AddFoodForm from './components/nutrition/AddFoodForm.tsx';
-import { SleepForm } from './components/sleep/SleepForm.tsx';
+import SleepForm from './components/wellness/SleepForm.tsx';
 import SharePerformancePage from './components/sharing/SharePerformancePage.tsx';
 
 function App() {
   const { user, loading, profile } = useAuth();
+  const { createCompletedWorkout } = useWorkouts(); // Utiliser le hook
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isFabOpen, setFabOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -54,7 +56,19 @@ function App() {
         return <GroupManagement />;
       // Vues des formulaires du FAB
       case 'add-workout':
-        return <NewWorkoutForm onClose={() => setCurrentView('dashboard')} />;
+        return (
+          <NewWorkoutForm 
+            userRole="athlete"
+            onSave={async (payload) => {
+              // On s'assure que le payload est compatible
+              const { tag_seance, type, notes, blocs } = payload;
+              if (type !== 'modèle') {
+                  await createCompletedWorkout({ tag_seance, type, notes, blocs });
+              }
+            }}
+            onCancel={() => setCurrentView('dashboard')}
+          />
+        );
       case 'add-record':
         return <RecordsForm onClose={() => setCurrentView('records')} />;
       case 'add-food':
