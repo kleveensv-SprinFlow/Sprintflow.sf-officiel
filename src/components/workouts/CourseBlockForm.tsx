@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TimePicker from '../common/TimePicker';
-import { PickerWheel } from '../common/PickerWheel';
+import PickerWheel from '../common/PickerWheel';
 import { CourseBlock, WorkoutBlock } from '../../types/workout';
 import DistanceSelector from '../common/DistanceSelector';
 import { ChronoPicker } from '../common/ChronoPicker';

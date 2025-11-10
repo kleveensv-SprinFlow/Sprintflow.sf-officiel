@@ -1,7 +1,7 @@
 // src/components/common/ChronoPicker.tsx
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PickerWheel } from './PickerWheel'; // En supposant que PickerWheel est dans le même dossier
+import PickerWheel from './PickerWheel';
 
 interface ChronoPickerProps {
   value: number | null; // en secondes

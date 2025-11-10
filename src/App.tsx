@@ -15,10 +15,10 @@ import Header from './components/navigation/Header.tsx';
 import GroupManagement from './components/groups/GroupManagement.tsx';
 import SideMenu from './components/navigation/SideMenu.tsx';
 import RecordsPage from './components/records/RecordsPage.tsx';
-import AthletePlanning from './components/planning/AthletePlanning.tsx';
-import RecordsForm from './components/records/RecordsForm.tsx';
+import { AthletePlanning } from './components/planning/AthletePlanning.tsx';
+import { RecordsForm } from './components/records/RecordsForm.tsx';
 import AddFoodForm from './components/nutrition/AddFoodForm.tsx';
-import SleepForm from './components/wellness/SleepForm.tsx';
+import { SleepForm } from './components/sleep/SleepForm.tsx';
 import SharePerformancePage from './components/sharing/SharePerformancePage.tsx';
 
 function App() {
