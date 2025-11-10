@@ -28,24 +28,66 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
 
   useEffect(() => {
     const loadScores = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.log('📊 [Dashboard] Pas d\'utilisateur, skip chargement scores');
+        setLoading(false);
+        return;
+      }
 
       try {
+        console.log('📊 [Dashboard] Début chargement scores pour:', user.id);
         setLoading(true);
-        if (hasCheckedInToday) {
-          const { data: formeData, error: formeError } = await supabase.rpc('get_current_indice_forme', { user_id_param: user.id });
-          if (formeError) throw formeError;
 
-          const { data: perfData, error: perfError } = await supabase.rpc('get_indice_poids_puissance', { user_id_param: user.id });
-          if (perfError) throw perfError;
+        if (hasCheckedInToday) {
+          console.log('✅ [Dashboard] Check-in effectué, chargement des indices');
+
+          // Charger l'indice de forme avec timeout
+          const formePromise = supabase.rpc('get_current_indice_forme', { user_id_param: user.id });
+          const { data: formeData, error: formeError } = await Promise.race([
+            formePromise,
+            new Promise<any>((_, reject) =>
+              setTimeout(() => reject(new Error('Timeout indice forme')), 8000)
+            )
+          ]).catch(err => {
+            console.warn('⚠️ [Dashboard] Timeout ou erreur indice forme:', err);
+            return { data: null, error: null };
+          });
+
+          if (formeError) {
+            console.error('❌ [Dashboard] Erreur indice forme:', formeError);
+          } else {
+            console.log('📈 [Dashboard] Indice forme:', formeData);
+          }
+
+          // Charger l'indice poids/puissance avec timeout
+          const perfPromise = supabase.rpc('get_indice_poids_puissance', { user_id_param: user.id });
+          const { data: perfData, error: perfError } = await Promise.race([
+            perfPromise,
+            new Promise<any>((_, reject) =>
+              setTimeout(() => reject(new Error('Timeout indice performance')), 8000)
+            )
+          ]).catch(err => {
+            console.warn('⚠️ [Dashboard] Timeout ou erreur indice performance:', err);
+            return { data: null, error: null };
+          });
+
+          if (perfError) {
+            console.error('❌ [Dashboard] Erreur indice performance:', perfError);
+          } else {
+            console.log('💪 [Dashboard] Indice performance:', perfData);
+          }
 
           setScoreForme(formeData !== null ? { indice: formeData } : null);
           setScorePerformance(perfData ? { indice: perfData } : null);
+          console.log('✅ [Dashboard] Scores chargés avec succès');
+        } else {
+          console.log('ℹ️ [Dashboard] Pas de check-in aujourd\'hui, skip indices');
         }
       } catch (error) {
-        console.error('Erreur chargement scores:', error);
+        console.error('❌ [Dashboard] Erreur critique chargement scores:', error);
       } finally {
         setLoading(false);
+        console.log('✅ [Dashboard] Chargement terminé');
       }
     };
 

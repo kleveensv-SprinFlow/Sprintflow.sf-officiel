@@ -6,6 +6,8 @@ import { Profile } from '../types';
 // CORRECTIF : Ajout de 'photo_url' à la liste des colonnes
 const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url';
 
+const MINIMAL_PROFILE_COLUMNS = 'id, first_name, last_name, role';
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -93,16 +95,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const loadProfileInline = async (userId: string) => {
       try {
+        console.log('🔄 [useAuth] Chargement du profil pour:', userId);
+
         const { data, error } = await supabase
           .from('profiles')
           .select(PROFILE_COLUMNS)
           .eq('id', userId)
           .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ [useAuth] Erreur chargement profil:', error);
+          throw error;
+        }
+
+        console.log('✅ [useAuth] Profil chargé:', data);
         if (isMountedRef.current) setProfile(data);
       } catch (e) {
-        console.error("❌ [useAuth] Exception:", e);
+        console.error("❌ [useAuth] Exception lors du chargement du profil:", e);
         if (isMountedRef.current) setProfile(null);
       }
     };
@@ -110,19 +119,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Vérification initiale de la session
     const initAuth = async () => {
       try {
+        console.log('🚀 [useAuth] Initialisation de l\'authentification');
         const { data: { session } } = await supabase.auth.getSession();
         if (!isMountedRef.current) return;
 
+        console.log('📋 [useAuth] Session récupérée:', session ? 'Oui' : 'Non');
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
         if (currentUser) {
+          console.log('👤 [useAuth] Utilisateur connecté, chargement du profil...');
           await loadProfileInline(currentUser.id);
         } else {
+          console.log('👤 [useAuth] Aucun utilisateur connecté');
           setProfile(null);
         }
 
+        console.log('✅ [useAuth] Initialisation terminée');
         setLoading(false);
       } catch (error) {
         console.error("❌ [useAuth] Erreur lors de l'initialisation:", error);
@@ -132,13 +146,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Timeout de sécurité: arrêter le loading après 10 secondes
+    // Timeout de sécurité: arrêter le loading après 15 secondes
+    // IMPORTANT: Ne pas bloquer l'application, juste arrêter le spinner
     timeoutId = setTimeout(() => {
       if (isMountedRef.current && loading) {
-        console.warn("⚠️ [useAuth] Timeout de chargement atteint, arrêt forcé");
+        console.warn("⚠️ [useAuth] Timeout de chargement atteint après 15s");
+        console.warn("⚠️ [useAuth] L'application continue sans profil complet");
         setLoading(false);
       }
-    }, 10000);
+    }, 15000);
 
     initAuth();
 
