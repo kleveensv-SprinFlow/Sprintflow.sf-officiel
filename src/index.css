@@ -13,7 +13,20 @@
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Base background colors will be applied via Tailwind classes on a root element */
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    transition: background-image 0.3s ease-in-out;
+  }
+
+  /* Light theme default */
+  :root {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/jungle-claire.jpg');
+  }
+  
+  /* Dark theme override */
+  .dark {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://kqlzvxfdzandgdkqzggj.supabase.co/storage/v1/object/public/theme/jungle-sombre.jpg');
   }
 
   /* Define custom animations based on the brief */
