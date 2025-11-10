@@ -45,7 +45,6 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   const mainWorkout = hasWorkouts ? workouts[0] : null;
 
   const renderContent = () => {
-    // ... (le contenu de cette fonction reste inchangé)
     switch (workouts.length) {
       case 0:
         return (
@@ -122,7 +121,8 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
 
   // --- MODIFICATION PRINCIPALE ICI ---
   const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group " +
-                      "bg-light-card dark:bg-dark-card shadow-card-default";
+                      "dark:bg-dark-card dark:shadow-neumorphic-dark " + // Style sombre opaque avec ombre
+                      "bg-light-glass backdrop-blur-lg border border-white/10 shadow-glass"; // Style clair (inchangé)
 
   if (mainWorkout && onCardClick) {
     return (
