@@ -172,7 +172,7 @@
 }
 /* ... (contenu existant de index.css) ... */
 
-/* Add this at the end of the file */
+/* === AJOUTER LE CODE CI-DESSOUS À LA FIN DU FICHIER === */
 @keyframes shine-effect {
   0% {
     background-position: -200% center;
@@ -186,7 +186,7 @@
   background: linear-gradient(
     to right,
     currentColor 0%,
-    #e2e8f0 50%, /* light-theme shine color */
+    #e2e8f0 50%, /* couleur du reflet en thème clair */
     currentColor 100%
   );
   background-size: 200% auto;
@@ -200,7 +200,7 @@
     background: linear-gradient(
     to right,
     currentColor 0%,
-    #6b7280 50%, /* dark-theme shine color */
+    #6b7280 50%, /* couleur du reflet en thème sombre */
     currentColor 100%
   );
   background-size: 200% auto;
