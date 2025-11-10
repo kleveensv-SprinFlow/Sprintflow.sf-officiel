@@ -37,6 +37,8 @@ export type View =
   | 'partnerships'
   | 'developer-panel'
   | 'chat'
+  | 'advice'
+  | 'partners'
   | 'new-workout'
   | 'add-record'
   | 'add-sleep'
