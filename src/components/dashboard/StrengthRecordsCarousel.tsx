@@ -1,7 +1,7 @@
 // src/components/dashboard/StrengthRecordsCarousel.tsx
 import React from 'react';
 import { useRecords } from '../../hooks/useRecords';
-import { useBodycomp } from '../../hooks/useBodycomp';
+import { useBodyComposition } from '../../hooks/useBodyComposition';
 import { Loader2, Dumbbell, Barbell, ArrowRight } from 'lucide-react';
 import CardCarousel from '../common/CardCarousel';
 import { Record } from '../../types';
@@ -13,13 +13,14 @@ interface StrengthRecordsCarouselProps {
 
 const StrengthRecordsCarousel: React.FC<StrengthRecordsCarouselProps> = ({ athleteId, onNavigateToRecords }) => {
   const { records, loading: recordsLoading } = useRecords(athleteId);
-  const { latestBodycomp, loading: bodycompLoading } = useBodycomp(athleteId);
+  const { bodyComps, loading: bodycompLoading } = useBodyComposition();
 
   const strengthRecords = records.filter(r => ['force', 'muscu'].includes(r.category));
 
   const getPowerToWeightRatio = (record: Record) => {
-    if (!latestBodycomp || !latestBodycomp.poids || record.value === 0) return null;
-    const ratio = record.value / latestBodycomp.poids;
+    const latestBodycomp = bodyComps[0];
+    if (!latestBodycomp || !latestBodycomp.weight || record.value === 0) return null;
+    const ratio = record.value / latestBodycomp.weight;
     return ratio.toFixed(2);
   };
 
