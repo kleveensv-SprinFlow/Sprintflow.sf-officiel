@@ -93,7 +93,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log('🔄 [useAuth] Chargement du profil pour:', userId);
         const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
-        if (error) throw error;
+        if (error) {
+          console.error("❌ [useAuth] Erreur Supabase:", error);
+          throw error;
+        }
+        if (!data) {
+          console.warn("⚠️ [useAuth] Aucun profil trouvé pour l'utilisateur:", userId);
+          if (isMountedRef.current) setProfile(null);
+          return;
+        }
+        console.log('✅ [useAuth] Profil chargé:', data);
         if (isMountedRef.current) setProfile(data);
       } catch (e) {
         console.error("❌ [useAuth] Exception lors du chargement du profil:", e);
@@ -150,8 +159,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMountedRef.current) return;
+
+      console.log('🔔 [useAuth] Auth state change:', event);
 
       setSession(session);
       const currentUser = session?.user ?? null;
@@ -163,7 +174,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfile(null);
       }
 
-      setLoading(false);
+      // Ne pas mettre loading à false ici car c'est déjà fait dans initAuth
+      // setLoading(false);
     });
 
     return () => {

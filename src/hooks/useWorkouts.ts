@@ -43,14 +43,14 @@ export function useWorkouts(selection?: Selection) {
         console.log('🏋️ [useWorkouts] Chargement pour utilisateur:', user.id);
 
         try {
-          // Timeout de 3 secondes pour éviter le blocage infini
+          // Timeout de 8 secondes pour éviter le blocage infini
           const groupMembershipsPromise = supabase
             .from('group_members')
             .select('group_id')
             .eq('athlete_id', user.id);
 
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout group_members')), 3000)
+            setTimeout(() => reject(new Error('Timeout group_members')), 8000)
           );
 
           const { data: groupMemberships } = await Promise.race([
