@@ -9,13 +9,19 @@ interface WorkoutSummaryProps {
 
 export const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({ courseBlocks, muscuBlocks }) => {
   const totalVolume = courseBlocks.reduce((acc, block) => {
-    return acc + (block.series * block.reps * block.distance);
+    const series = Number(block.series) || 0;
+    const reps = Number(block.reps) || 0;
+    const distance = Number(block.distance) || 0;
+    return acc + (series * reps * distance);
   }, 0);
 
   const totalTonnage = muscuBlocks.reduce((acc, exo) => {
+    const series = Number(exo.series) || 0;
+    const reps = Number(exo.reps) || 0;
+    const poids = Number(exo.poids) || 0;
     // Only include exercises with weight
-    if (exo.poids && exo.poids > 0) {
-      return acc + (exo.series * exo.reps * exo.poids);
+    if (poids > 0) {
+      return acc + (series * reps * poids);
     }
     return acc;
   }, 0);
