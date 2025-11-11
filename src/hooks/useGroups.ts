@@ -53,12 +53,19 @@ export const useGroups = () => {
         if (coachError) throw coachError;
         rawData = coachGroups;
       } else {
-        // For an athlete: fetch the groups they are a member of (simplified query)
+        // For an athlete: fetch the groups they are a member of
         const { data: athleteGroups, error: athleteError } = await supabase
           .from('group_members')
           .select(`
             groups (
-              id, name, coach_id, created_at, invitation_code
+              id, name, coach_id, created_at, invitation_code,
+              group_members (
+                athlete_id,
+                profiles (
+                  id, first_name, last_name, photo_url, role,
+                  date_de_naissance, sexe, height, discipline, license_number
+                )
+              )
             )
           `)
           .eq('athlete_id', user.id);
