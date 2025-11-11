@@ -41,44 +41,25 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
         if (hasCheckedInToday) {
           console.log('✅ [Dashboard] Check-in effectué, chargement des indices');
 
-          // Charger l'indice de forme avec timeout
-          const formePromise = supabase.rpc('get_current_indice_forme', { user_id_param: user.id });
-          const { data: formeData, error: formeError } = await Promise.race([
-            formePromise,
-            new Promise<any>((_, reject) =>
-              setTimeout(() => reject(new Error('Timeout indice forme')), 8000)
-            )
-          ]).catch(err => {
-            console.warn('⚠️ [Dashboard] Timeout ou erreur indice forme:', err);
-            return { data: null, error: null };
-          });
-
-          if (formeError) {
-            console.error('❌ [Dashboard] Erreur indice forme:', formeError);
-          } else {
+          try {
+            const { data: formeData, error: formeError } = await supabase.rpc('get_current_indice_forme', { user_id_param: user.id });
+            if (formeError) throw formeError;
             console.log('📈 [Dashboard] Indice forme:', formeData);
+            setScoreForme({ indice: formeData });
+          } catch (error) {
+            console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de forme:', error);
+            setScoreForme({ indice: null });
           }
 
-          // Charger l'indice poids/puissance avec timeout
-          const perfPromise = supabase.rpc('get_indice_poids_puissance', { user_id_param: user.id });
-          const { data: perfData, error: perfError } = await Promise.race([
-            perfPromise,
-            new Promise<any>((_, reject) =>
-              setTimeout(() => reject(new Error('Timeout indice performance')), 8000)
-            )
-          ]).catch(err => {
-            console.warn('⚠️ [Dashboard] Timeout ou erreur indice performance:', err);
-            return { data: null, error: null };
-          });
-
-          if (perfError) {
-            console.error('❌ [Dashboard] Erreur indice performance:', perfError);
-          } else {
+          try {
+            const { data: perfData, error: perfError } = await supabase.rpc('get_indice_poids_puissance', { user_id_param: user.id });
+            if (perfError) throw perfError;
             console.log('💪 [Dashboard] Indice performance:', perfData);
+            setScorePerformance({ indice: perfData });
+          } catch (error) {
+            console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de performance:', error);
+            setScorePerformance({ indice: null });
           }
-
-          setScoreForme(formeData !== null ? { indice: formeData } : null);
-          setScorePerformance(perfData ? { indice: perfData } : null);
           console.log('✅ [Dashboard] Scores chargés avec succès');
         } else {
           console.log('ℹ️ [Dashboard] Pas de check-in aujourd\'hui, skip indices');
