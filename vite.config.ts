@@ -36,6 +36,7 @@ export default defineConfig({
   ],
   optimizeDeps: {
     exclude: ['lucide-react'],
+    include: ['react-toastify'],
   },
   build: {
     outDir: 'dist',
