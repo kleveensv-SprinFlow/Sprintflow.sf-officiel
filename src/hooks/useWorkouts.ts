@@ -43,22 +43,33 @@ export function useWorkouts(selection?: Selection) {
         console.log('🏋️ [useWorkouts] Chargement pour utilisateur:', user.id);
 
         try {
-          const { data: groupMemberships } = await supabase
+          // Timeout de 3 secondes pour éviter le blocage infini
+          const groupMembershipsPromise = supabase
             .from('group_members')
             .select('group_id')
             .eq('athlete_id', user.id);
 
-          const groupIds = groupMemberships?.map(m => m.group_id) || [];
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout group_members')), 3000)
+          );
+
+          const { data: groupMemberships } = await Promise.race([
+            groupMembershipsPromise,
+            timeoutPromise
+          ]) as any;
+
+          const groupIds = groupMemberships?.map((m: any) => m.group_id) || [];
           console.log('👥 [useWorkouts] Groupes trouvés:', groupIds.length);
 
-          let filter = `user_id.eq.${user.id}`;
+          let filter = `user_id.eq.${user.id},assigned_to_user_id.eq.${user.id}`;
           if (groupIds.length > 0) {
             filter += `,assigned_to_group_id.in.(${groupIds.join(',')})`;
           }
           query = query.or(filter);
         } catch (groupError) {
-          console.warn('⚠️ [useWorkouts] Erreur groupes, charge uniquement user:', groupError);
-          query = query.eq('user_id', user.id);
+          console.warn('⚠️ [useWorkouts] Erreur/timeout groupes, charge uniquement user:', groupError);
+          // En cas d'erreur, charger les workouts de l'utilisateur ET ceux qui lui sont assignés
+          query = query.or(`user_id.eq.${user.id},assigned_to_user_id.eq.${user.id}`);
         }
       } else {
         console.log('⚠️ [useWorkouts] Pas d\'utilisateur');

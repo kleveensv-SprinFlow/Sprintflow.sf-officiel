@@ -32,12 +32,21 @@ export const useGroups = () => {
     if (!user || !profile) return;
     setLoading(true);
     setError(null);
+
+    console.log('👥 [useGroups] Début chargement groupes, role:', profile.role);
+
     try {
       let rawData;
 
+      // Timeout de 5 secondes pour éviter le blocage
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout chargement groupes')), 5000)
+      );
+
       if (profile.role === 'coach') {
+        console.log('👨‍🏫 [useGroups] Chargement groupes coach');
         // For a coach: fetch the groups they created
-        const { data: coachGroups, error: coachError } = await supabase
+        const groupsPromise = supabase
           .from('groups')
           .select(`
             id, name, coach_id, created_at, invitation_code,
@@ -50,11 +59,18 @@ export const useGroups = () => {
             )
           `)
           .eq('coach_id', user.id);
+
+        const { data: coachGroups, error: coachError } = await Promise.race([
+          groupsPromise,
+          timeoutPromise
+        ]) as any;
+
         if (coachError) throw coachError;
         rawData = coachGroups;
       } else {
+        console.log('🏃 [useGroups] Chargement groupes athlète');
         // For an athlete: fetch the groups they are a member of
-        const { data: athleteGroups, error: athleteError } = await supabase
+        const groupsPromise = supabase
           .from('group_members')
           .select(`
             groups (
@@ -69,22 +85,32 @@ export const useGroups = () => {
             )
           `)
           .eq('athlete_id', user.id);
+
+        const { data: athleteGroups, error: athleteError } = await Promise.race([
+          groupsPromise,
+          timeoutPromise
+        ]) as any;
+
         if (athleteError) throw athleteError;
         rawData = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
       }
 
       // Set the data
       if (rawData && rawData.length > 0) {
+        console.log('✅ [useGroups] Groupes chargés:', rawData.length);
         setGroups(rawData);
       } else {
+        console.log('ℹ️ [useGroups] Aucun groupe trouvé');
         setGroups([]);
       }
 
     } catch (e: any) {
-      console.error("Erreur lors de la récupération des groupes:", e);
+      console.error("❌ [useGroups] Erreur lors de la récupération des groupes:", e);
       setError(e);
+      setGroups([]);
     } finally {
       setLoading(false);
+      console.log('✅ [useGroups] Chargement terminé');
     }
   }, [user, profile]);
 
