@@ -105,7 +105,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log('🚀 [useAuth] Initialisation de l\'authentification');
         
-        const { data: { session } } = await supabase.auth.getSession();
+        // Utilise un timeout pour éviter un blocage en cas de problème réseau
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout: La connexion au serveur a échoué.")), 5000)
+        );
+
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise as any]);
 
         if (!isMountedRef.current) return;
 
