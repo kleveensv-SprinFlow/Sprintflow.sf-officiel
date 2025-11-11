@@ -3,10 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
 
-// CORRECTIF : Ajout de 'photo_url' à la liste des colonnes
 const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url';
-
-const MINIMAL_PROFILE_COLUMNS = 'id, first_name, last_name, role';
 
 interface AuthContextType {
   session: Session | null;
@@ -91,24 +88,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     isMountedRef.current = true;
-    let timeoutId: NodeJS.Timeout;
 
     const loadProfileInline = async (userId: string) => {
       try {
         console.log('🔄 [useAuth] Chargement du profil pour:', userId);
-
-        const { data, error } = await supabase
-          .from('profiles')
-          .select(PROFILE_COLUMNS)
-          .eq('id', userId)
-          .maybeSingle();
-
-        if (error) {
-          console.error('❌ [useAuth] Erreur chargement profil:', error);
-          throw error;
-        }
-
-        console.log('✅ [useAuth] Profil chargé:', data);
+        const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
+        if (error) throw error;
         if (isMountedRef.current) setProfile(data);
       } catch (e) {
         console.error("❌ [useAuth] Exception lors du chargement du profil:", e);
@@ -116,14 +101,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Vérification initiale de la session
     const initAuth = async () => {
       try {
         console.log('🚀 [useAuth] Initialisation de l\'authentification');
-        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Utilise un timeout pour éviter un blocage en cas de problème réseau
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout: La connexion au serveur a échoué.")), 5000)
+        );
+
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise as any]);
+
         if (!isMountedRef.current) return;
 
-        console.log('📋 [useAuth] Session récupérée:', session ? 'Oui' : 'Non');
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
@@ -135,26 +126,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log('👤 [useAuth] Aucun utilisateur connecté');
           setProfile(null);
         }
-
-        console.log('✅ [useAuth] Initialisation terminée');
-        setLoading(false);
       } catch (error) {
         console.error("❌ [useAuth] Erreur lors de l'initialisation:", error);
+        // En cas d'erreur (ex: timeout), on s'assure que l'utilisateur n'est pas bloqué
         if (isMountedRef.current) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+        }
+      } finally {
+        if (isMountedRef.current) {
+          console.log('✅ [useAuth] Initialisation terminée, fin du chargement.');
           setLoading(false);
         }
       }
     };
-
-    // Timeout de sécurité: arrêter le loading après 15 secondes
-    // IMPORTANT: Ne pas bloquer l'application, juste arrêter le spinner
-    timeoutId = setTimeout(() => {
-      if (isMountedRef.current && loading) {
-        console.warn("⚠️ [useAuth] Timeout de chargement atteint après 15s");
-        console.warn("⚠️ [useAuth] L'application continue sans profil complet");
-        setLoading(false);
-      }
-    }, 15000);
 
     initAuth();
 
@@ -176,16 +162,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       isMountedRef.current = false;
-      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
   
-  // Mémoriser le contexte pour éviter les re-renders inutiles
-  // On ne met que les données dans les dépendances, pas les fonctions
   const contextValue = React.useMemo(
     () => ({ session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail }),
-    [session, user, profile, loading]
+    [session, user, profile, loading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail]
   );
 
   return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
@@ -196,7 +179,6 @@ export const useAuth = (): AuthContextType => {
   if (context === undefined) {
     console.error('❌ [useAuth] Context is undefined! This should never happen.');
     console.error('❌ [useAuth] Make sure AuthProvider is mounted in main.tsx');
-    // Retourner un contexte par défaut pour éviter le crash de l'application
     return {
       session: null,
       user: null,
