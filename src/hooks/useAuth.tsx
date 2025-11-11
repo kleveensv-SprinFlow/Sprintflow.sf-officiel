@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Utilise un timeout pour éviter un blocage en cas de problème réseau
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout: La connexion au serveur a échoué.")), 5000)
+          setTimeout(() => reject(new Error("Timeout: La connexion au serveur a échoué.")), 15000)
         );
 
         const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise as any]);
@@ -156,6 +156,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setProfile(null);
       }
+
+      setLoading(false);
     });
 
     return () => {
