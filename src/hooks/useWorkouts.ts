@@ -30,8 +30,7 @@ export function useWorkouts(selection?: Selection) {
     setError(null);
 
     try {
-      // CORRECTION : Rend la sélection explicite pour inclure les colonnes JSON
-      let query = supabase.from('workouts').select('*, planned_data, workout_data');
+      let query = supabase.from('workouts').select('*');
 
       if (profile?.role === 'coach' && selection) {
         console.log('👨‍🏫 [useWorkouts] Chargement pour coach, sélection:', selection.type, selection.id);
@@ -43,30 +42,24 @@ export function useWorkouts(selection?: Selection) {
       } else if (user) {
         console.log('🏋️ [useWorkouts] Chargement pour utilisateur:', user.id);
 
-        // Récupérer les groupes de l'utilisateur avec timeout
-        const groupPromise = supabase
-          .from('group_members')
-          .select('group_id')
-          .eq('athlete_id', user.id);
+        try {
+          const { data: groupMemberships } = await supabase
+            .from('group_members')
+            .select('group_id')
+            .eq('athlete_id', user.id);
 
-        const { data: groupMemberships } = await Promise.race([
-          groupPromise,
-          new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout group memberships')), 5000)
-          )
-        ]).catch(err => {
-          console.warn('⚠️ [useWorkouts] Timeout groupes, continue sans:', err);
-          return { data: [], error: null };
-        });
+          const groupIds = groupMemberships?.map(m => m.group_id) || [];
+          console.log('👥 [useWorkouts] Groupes trouvés:', groupIds.length);
 
-        const groupIds = groupMemberships?.map(m => m.group_id) || [];
-        console.log('👥 [useWorkouts] Groupes trouvés:', groupIds.length);
-
-        let filter = `user_id.eq.${user.id}`;
-        if (groupIds.length > 0) {
-          filter += `,assigned_to_group_id.in.(${groupIds.join(',')})`;
+          let filter = `user_id.eq.${user.id}`;
+          if (groupIds.length > 0) {
+            filter += `,assigned_to_group_id.in.(${groupIds.join(',')})`;
+          }
+          query = query.or(filter);
+        } catch (groupError) {
+          console.warn('⚠️ [useWorkouts] Erreur groupes, charge uniquement user:', groupError);
+          query = query.eq('user_id', user.id);
         }
-        query = query.or(filter);
       } else {
         console.log('⚠️ [useWorkouts] Pas d\'utilisateur');
         setLoading(false);
@@ -75,20 +68,20 @@ export function useWorkouts(selection?: Selection) {
       }
 
       console.log('🚀 [useWorkouts] Exécution de la requête...');
-      const { data, error } = await Promise.race([
-        query.order('date', { ascending: false }),
-        new Promise<any>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout workouts query')), 10000)
-        )
-      ]);
+      const { data, error } = await query.order('date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [useWorkouts] Erreur Supabase:', error);
+        throw error;
+      }
+
       console.log('✅ [useWorkouts] Workouts chargés:', data?.length || 0);
       setWorkouts(data || []);
 
     } catch (err: any) {
       setError(err.message);
       console.error("❌ [useWorkouts] Erreur lors du chargement des séances:", err);
+      setWorkouts([]);
     } finally {
       setLoading(false);
       console.log('✅ [useWorkouts] Chargement terminé');
@@ -131,7 +124,7 @@ export function useWorkouts(selection?: Selection) {
     const { data, error } = await supabase
       .from('workouts')
       .insert(insertData)
-      .select('*, planned_data, workout_data')
+      .select()
       .single();
 
     if (error) throw error;
@@ -161,7 +154,7 @@ export function useWorkouts(selection?: Selection) {
         date: new Date().toISOString().split('T')[0],
       })
       .eq('id', plannedWorkoutId)
-      .select('*, planned_data, workout_data')
+      .select()
       .single();
 
     if (error) throw error;
@@ -176,7 +169,7 @@ export function useWorkouts(selection?: Selection) {
       .from('workouts')
       .update(updates)
       .eq('id', workoutId)
-      .select('*, planned_data, workout_data')
+      .select()
       .single();
 
     if (error) throw error;
@@ -216,7 +209,7 @@ export function useWorkouts(selection?: Selection) {
         workout_data: { blocs: workoutData.blocs },
         planned_data: workoutData.type === 'guidé' ? { blocs: workoutData.blocs } : undefined,
       })
-      .select('*, planned_data, workout_data')
+      .select()
       .single();
 
     if (error) throw error;

@@ -142,35 +142,13 @@ export function useRecords(targetUserId?: string) {
         exercice_reference_id: data.exercice_id
       }
       
-      // Mettre à jour l'état local
       setRecords(prev => [completeRecord, ...prev])
-
-      // Synchroniser avec localStorage
-      const updatedRecords = [completeRecord, ...records]
-      localStorage.setItem(`records_${user.id}`, JSON.stringify(updatedRecords))
-
-      // Notifier tous les composants qu'un record a été sauvegardé
       window.dispatchEvent(new Event('record-saved'))
 
       return completeRecord
       
     } catch (error) {
       console.error('Erreur saveRecord:', error)
-      const localRecord: Record = { 
-        ...record, 
-        id: `record_${Date.now()}`
-      }
-      
-      setRecords(prev => [localRecord, ...prev])
-
-      // Sauvegarder en localStorage
-      const updatedRecords = [localRecord, ...records]
-      localStorage.setItem(`records_${user.id}`, JSON.stringify(updatedRecords))
-
-      // Notifier quand même les autres composants
-      window.dispatchEvent(new Event('record-saved'))
-
-      // Re-lancer l'erreur pour informer l'utilisateur
       throw new Error(`Erreur sauvegarde: ${error.message || error}`)
     }
   }
@@ -191,12 +169,6 @@ export function useRecords(targetUserId?: string) {
       }
       
       setRecords(prev => prev.filter(r => r.id !== id))
-
-      // Mettre à jour localStorage après suppression
-      const updatedRecords = records.filter(r => r.id !== id)
-      localStorage.setItem(`records_${user.id}`, JSON.stringify(updatedRecords))
-
-      // Notifier tous les composants qu'un record a été supprimé
       window.dispatchEvent(new Event('record-saved'))
     } catch (error) {
       console.error('Erreur deleteRecord:', error)

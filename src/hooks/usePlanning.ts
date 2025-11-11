@@ -82,27 +82,34 @@ export function usePlanning() {
   }, [user, profile, currentGroupId])
 
   const loadSessionTemplatesForGroup = async (groupId: string) => {
-    if (!user || !profile || profile.role !== 'coach') return
-    
+    if (!user || !profile || profile.role !== 'coach') {
+      setSessionTemplates([])
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
-    
+
     try {
+      console.log('📚 [usePlanning] Chargement templates pour groupe:', groupId)
+
       const { data, error } = await supabase
         .from('session_templates')
         .select('*')
         .eq('coach_id', user.id)
         .eq('group_id', groupId)
         .order('created_at', { ascending: false })
-      
+
       if (error) {
-        console.error('Erreur chargement session templates:', error.message)
+        console.error('❌ [usePlanning] Erreur chargement templates:', error.message)
         setSessionTemplates([])
       } else {
+        console.log('✅ [usePlanning] Templates chargés:', data?.length || 0)
         setSessionTemplates(data || [])
       }
-      
+
     } catch (error) {
-      console.error('Erreur loadSessionTemplatesForGroup:', error)
+      console.error('❌ [usePlanning] Erreur réseau:', error)
       setSessionTemplates([])
     } finally {
       setLoading(false)
@@ -232,27 +239,32 @@ export function usePlanning() {
   }
 
   const loadAthleteGroupPlanning = async (groupId: string) => {
-    if (!user || !profile || profile.role !== 'athlete') return
-    
+    if (!user || !profile || profile.role !== 'athlete') {
+      setSessionTemplates([])
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
+
     try {
-      console.log('📚 Chargement planning athlète pour groupe:', groupId)
-      
+      console.log('📚 [usePlanning] Chargement planning athlète pour groupe:', groupId)
+
       const { data: templates, error } = await supabase
         .from('session_templates')
         .select('*')
         .eq('group_id', groupId)
         .order('created_at', { ascending: false })
-      
+
       if (error) {
-        console.error('Erreur chargement planning athlète:', error.message)
+        console.error('❌ [usePlanning] Erreur chargement planning athlète:', error.message)
         setSessionTemplates([])
       } else {
-        console.log('✅ Templates chargés:', templates?.length || 0)
+        console.log('✅ [usePlanning] Templates athlète chargés:', templates?.length || 0)
         setSessionTemplates(templates || [])
       }
     } catch (error) {
-      console.error('Erreur réseau planning athlète:', error)
+      console.error('❌ [usePlanning] Erreur réseau planning athlète:', error)
       setSessionTemplates([])
     } finally {
       setLoading(false)
