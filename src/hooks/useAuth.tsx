@@ -105,8 +105,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log('🚀 [useAuth] Initialisation de l\'authentification');
         
-        const { data: { session } } = await supabase.auth.getSession();
+        // Start a race between getSession and a 5-second timeout.
+        // This prevents the app from getting stuck on the loading screen
+        // in environments where getSession() hangs indefinitely.
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<{ data: { session: null }, error: null }>((resolve) =>
+          setTimeout(() => resolve({ data: { session: null }, error: null }), 5000)
+        );
 
+        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
+
+        if (error) {
+          console.warn("Erreur (ignorée) pendant getSession:", error);
+        }
+        
         if (!isMountedRef.current) return;
 
         setSession(session);
