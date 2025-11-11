@@ -3,9 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-console.log('🔍 [Supabase Init] VITE_SUPABASE_URL:', supabaseUrl);
-console.log('🔍 [Supabase Init] VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? `${supabaseAnonKey.substring(0, 5)}...` : 'Not found');
-
 const originalFetch = fetch;
 const patchedFetch = (url: RequestInfo | URL, options?: RequestInit): Promise<Response> => {
   const urlString = url.toString();
