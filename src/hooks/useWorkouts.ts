@@ -10,22 +10,36 @@ type Selection = {
 } | null;
 
 export function useWorkouts(selection?: Selection) {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchWorkouts = useCallback(async () => {
     logger.info('[useWorkouts] Début chargement workouts');
-    logger.debug('[useWorkouts] Profile role:', profile?.role, 'Selection:', selection);
+    logger.debug('[useWorkouts] Profile role:', profile?.role, 'Selection:', selection, 'AuthLoading:', authLoading);
 
-    if (!profile && user) {
-      logger.info('[useWorkouts] Attente du profil...');
+    if (authLoading) {
+      logger.info('[useWorkouts] ⏳ En attente de l\'initialisation auth complète...');
       setLoading(true);
       return;
     }
 
-    if (profile?.role === 'coach' && !selection) {
+    if (!user) {
+      logger.warn('[useWorkouts] 🚫 Pas d\'utilisateur connecté');
+      setWorkouts([]);
+      setLoading(false);
+      return;
+    }
+
+    if (!profile) {
+      logger.warn('[useWorkouts] ⚠️ Profil non disponible après initialisation auth');
+      setWorkouts([]);
+      setLoading(false);
+      return;
+    }
+
+    if (profile.role === 'coach' && !selection) {
       logger.info('[useWorkouts] Coach sans sélection, skip');
       setWorkouts([]);
       setLoading(false);
@@ -49,7 +63,7 @@ export function useWorkouts(selection?: Selection) {
         } else if (selection.type === 'group') {
           query = query.eq('assigned_to_group_id', selection.id);
         }
-      } else if (user) {
+      } else {
         logger.info('[useWorkouts] Chargement pour utilisateur:', user.id);
 
         try {
@@ -89,12 +103,6 @@ export function useWorkouts(selection?: Selection) {
           logger.warn('[useWorkouts] Erreur/timeout groupes, charge uniquement user:', groupError);
           query = query.or(`user_id.eq.${user.id},assigned_to_user_id.eq.${user.id}`);
         }
-      } else {
-        logger.warn('[useWorkouts] Pas d\'utilisateur');
-        setLoading(false);
-        setWorkouts([]);
-        if (mainTimerId) logger.timeEnd(mainTimerId);
-        return;
       }
 
       logger.info('[useWorkouts] Exécution de la requête workouts...');
@@ -121,7 +129,7 @@ export function useWorkouts(selection?: Selection) {
       setLoading(false);
       logger.info('[useWorkouts] Chargement terminé');
     }
-  }, [selection, user, profile]);
+  }, [selection, user, profile, authLoading]);
 
   useEffect(() => {
     fetchWorkouts();
