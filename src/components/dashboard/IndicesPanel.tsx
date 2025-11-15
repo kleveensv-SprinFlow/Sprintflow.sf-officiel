@@ -23,6 +23,7 @@ const AnimatedScoreCircle: React.FC<AnimatedScoreCircleProps> = ({
   score,
   title,
   icon: Icon,
+  subtitle,
   isClickable = true,
   hasButton = false,
   onButtonClick,
