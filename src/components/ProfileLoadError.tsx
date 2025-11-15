@@ -31,10 +31,23 @@ export function ProfileLoadError({ userId }: ProfileLoadErrorProps) {
             Profil introuvable
           </h1>
 
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
             Votre profil n'a pas pu être chargé depuis la base de données.
-            Veuillez vous déconnecter et contacter le support.
           </p>
+
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200 font-semibold mb-2">
+              Causes possibles:
+            </p>
+            <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1 list-disc list-inside">
+              <li>Cookies tiers bloqués par votre navigateur</li>
+              <li>Problème de connexion réseau</li>
+              <li>Configuration de sécurité Supabase</li>
+            </ul>
+            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-3">
+              💡 Si vous êtes sur StackBlitz, essayez d'ouvrir l'application dans un nouvel onglet via le bouton "Open in New Tab".
+            </p>
+          </div>
 
           <div className="w-full bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">

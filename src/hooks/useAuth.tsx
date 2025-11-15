@@ -55,11 +55,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logger.info('[useAuth] Colonnes demandées:', PROFILE_COLUMNS);
 
     try {
-      const { data: profile, error } = await supabase
+      // Créer un timeout de 15 secondes pour détecter les requêtes bloquées
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Timeout: La requête Supabase n\'a pas répondu dans les 15 secondes'));
+        }, 15000);
+      });
+
+      const queryPromise = supabase
         .from('profiles')
         .select(PROFILE_COLUMNS)
         .eq('id', userId)
         .maybeSingle();
+
+      const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]);
 
       logger.info('[useAuth] Réponse Supabase reçue. Error:', error, 'Data:', profile);
 
@@ -83,7 +92,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       logger.info('[useAuth] Profil chargé avec succès:', { id: profile.id, role: profile.role, name: profile.full_name });
       return profile;
     } catch (error) {
-      logger.error('[useAuth] Exception lors du chargement du profil:', error);
+      if (error instanceof Error && error.message.includes('Timeout')) {
+        logger.error('[useAuth] TIMEOUT: La requête Supabase est bloquée. Cela peut être dû à:');
+        logger.error('[useAuth] - Cookies tiers bloqués (Third-party cookies)');
+        logger.error('[useAuth] - Problème de réseau ou de connectivité');
+        logger.error('[useAuth] - Configuration CORS incorrecte');
+      } else {
+        logger.error('[useAuth] Exception lors du chargement du profil:', error);
+      }
       return null;
     }
   }, []);
