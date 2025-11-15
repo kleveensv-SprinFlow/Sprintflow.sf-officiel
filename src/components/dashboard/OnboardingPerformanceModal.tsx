@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, ArrowRight, ArrowLeft, Plus, Trash2 } from 'lucide-react';
@@ -26,14 +27,14 @@ type RecordEntry = {
   value: string;
 };
 
-// Map exercise qualities to the categories for filtering
+// Map exercise descriptions to the categories for filtering
 const categoryMapping: { [key: string]: string[] } = {
-  'muscu_haut': ['force maximale'],
-  'muscu_bas': ['force maximale'],
+  'muscu_haut': ['force'],
+  'muscu_bas': ['force'],
   'halterophilie': ['explosivité'],
-  'pliometrie': ['explosivité'],
-  'unilateral': ['force maximale'],
-  'lancers': ['explosivité'],
+  'pliometrie': ['pliométrie'],
+  'unilateral': ['force'],
+  'lancers': ['explosive', 'lancer'],
 };
 
 const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({ isOpen, onClose, onComplete }) => {
@@ -132,7 +133,7 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
               {records.map((record, index) => {
                 const qualities = categoryMapping[record.category] || [];
                 const filteredExercises = exercices.filter(ex => 
-                  qualities.some(q => ex.qualite_cible?.toLowerCase().includes(q))
+                  qualities.some(q => ex.description?.toLowerCase().includes(q))
                 );
 
                 return (
