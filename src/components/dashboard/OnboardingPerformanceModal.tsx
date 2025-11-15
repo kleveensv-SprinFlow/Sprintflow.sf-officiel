@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, ArrowRight, ArrowLeft, Plus, Trash2 } from 'lucide-react';
@@ -6,6 +5,7 @@ import { useExercices } from '../../hooks/useExercices.ts';
 import { useRecords } from '../../hooks/useRecords.ts';
 import { useBodycomp } from '../../hooks/useBodycomp.ts';
 import { EXERCISE_CATEGORIES } from '../../data/categories.ts';
+import CustomNumpad from '../common/CustomNumpad.tsx';
 
 interface OnboardingPerformanceModalProps {
   isOpen: boolean;
@@ -27,20 +27,14 @@ type RecordEntry = {
   value: string;
 };
 
-// Map exercise descriptions to the categories for filtering
-const categoryMapping: { [key: string]: string[] } = {
-  'muscu_haut': ['force'],
-  'muscu_bas': ['force'],
-  'halterophilie': ['explosivité'],
-  'pliometrie': ['pliométrie'],
-  'unilateral': ['force'],
-  'lancers': ['explosive', 'lancer'],
-};
-
 const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({ isOpen, onClose, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Numpad state
+  const [isNumpadOpen, setIsNumpadOpen] = useState(false);
+  const [activeRecordId, setActiveRecordId] = useState<number | null>(null);
 
   // Data state
   const [weight, setWeight] = useState<string>('');
@@ -99,8 +93,38 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
   };
   
   const updateRecord = (id: number, field: keyof Omit<RecordEntry, 'id'>, value: string) => {
-    setRecords(records.map(r => r.id === id ? { ...r, [field]: value } : r));
+    setRecords(records.map(r => r.id === id ? { ...r, [field]: value, ...(field === 'category' && { exerciseId: '' }) } : r));
   };
+  
+  // Numpad handlers
+  const openNumpad = (recordId: number) => {
+    setActiveRecordId(recordId);
+    setIsNumpadOpen(true);
+  };
+  
+  const handleNumpadInput = (input: string) => {
+    if (activeRecordId === null) return;
+    const record = records.find(r => r.id === activeRecordId);
+    if (!record) return;
+
+    let currentValue = record.value;
+    if (input === '.' && currentValue.includes('.')) return;
+    
+    updateRecord(activeRecordId, 'value', currentValue + input);
+  };
+
+  const handleNumpadDelete = () => {
+     if (activeRecordId === null) return;
+     const record = records.find(r => r.id === activeRecordId);
+     if (!record) return;
+     updateRecord(activeRecordId, 'value', record.value.slice(0, -1));
+  };
+  
+  const handleNumpadConfirm = () => {
+    setIsNumpadOpen(false);
+    setActiveRecordId(null);
+  };
+
 
   const renderStepContent = () => {
     switch (steps[currentStep].id) {
@@ -130,24 +154,20 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
         return (
           <div className="w-full max-h-64 overflow-y-auto pr-2">
             <div className="space-y-4">
-              {records.map((record, index) => {
-                const qualities = categoryMapping[record.category] || [];
-                const filteredExercises = exercices.filter(ex => 
-                  qualities.some(q => ex.description?.toLowerCase().includes(q))
-                );
+              {records.map((record) => {
+                // CORRECTED LOGIC HERE: Direct filtering on `ex.categorie`
+                const filteredExercises = exercices.filter(ex => ex.categorie === record.category);
 
                 return (
                   <div key={record.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2 relative">
-                     <button onClick={() => removeRecordRow(record.id)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1">
-                        <Trash2 size={12} />
-                      </button>
+                     <button onClick={() => removeRecordRow(record.id)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><Trash2 size={12} /></button>
                     <select 
                       value={record.category}
                       onChange={e => updateRecord(record.id, 'category', e.target.value)}
                       className="w-full bg-white dark:bg-gray-800 rounded-lg p-2 text-sm"
                     >
                       <option value="">Sélectionnez une catégorie...</option>
-                      {EXERCISE_CATEGORIES.filter(c => c.key in categoryMapping).map(cat => (
+                      {EXERCISE_CATEGORIES.map(cat => (
                         <option key={cat.key} value={cat.key}>{cat.label}</option>
                       ))}
                     </select>
@@ -161,13 +181,12 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
                         {filteredExercises.map(ex => <option key={ex.id} value={ex.id}>{ex.nom}</option>)}
                       </select>
                     )}
-                    <input
-                      type="number"
-                      value={record.value}
-                      onChange={e => updateRecord(record.id, 'value', e.target.value)}
-                      placeholder="Record (ex: 120)"
-                      className="w-full bg-white dark:bg-gray-800 rounded-lg p-2 text-sm"
-                    />
+                     <button
+                      onClick={() => openNumpad(record.id)}
+                      className="w-full bg-white dark:bg-gray-800 rounded-lg p-2 text-sm text-left"
+                    >
+                      {record.value || <span className="text-gray-400">Record (ex: 120)</span>}
+                    </button>
                   </div>
                 );
               })}
@@ -207,63 +226,74 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={onClose}
-        >
+        <>
           <motion.div
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full max-w-md p-6 relative text-gray-900 dark:text-white"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40"
+            onClick={onClose}
           >
-            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 z-10">
-              <X size={24} />
-            </button>
-            <div className="flex justify-between items-center mb-4">
-               <h2 className="text-lg font-bold">{steps[currentStep].title}</h2>
-               <div className="flex items-center space-x-2">
-                 {steps.map((step, index) => (
-                   <div key={step.id} className={`w-2 h-2 rounded-full ${currentStep >= index ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                 ))}
-               </div>
-            </div>
-
-            <div className="h-72 flex items-center justify-center">
-              <AnimatePresence initial={false} custom={direction}>
-                <motion.div
-                  key={currentStep}
-                  custom={direction}
-                  variants={variants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className="w-full"
-                >
-                  {renderStepContent()}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <div className="flex justify-between mt-6">
-              <button onClick={prevStep} disabled={currentStep === 0} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50">
-                <ArrowLeft size={20}/>
+            <motion.div
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full max-w-md p-6 relative text-gray-900 dark:text-white"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+            >
+              <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 z-10">
+                <X size={24} />
               </button>
-              {currentStep < steps.length - 1 ? (
-                <button onClick={nextStep} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg flex items-center">
-                  Suivant <ArrowRight size={20} className="ml-2"/>
+              <div className="flex justify-between items-center mb-4">
+                 <h2 className="text-lg font-bold">{steps[currentStep].title}</h2>
+                 <div className="flex items-center space-x-2">
+                   {steps.map((step, index) => (
+                     <div key={step.id} className={`w-2 h-2 rounded-full ${currentStep >= index ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                   ))}
+                 </div>
+              </div>
+
+              <div className="h-72 flex items-center justify-center">
+                <AnimatePresence initial={false} custom={direction}>
+                  <motion.div
+                    key={currentStep}
+                    custom={direction}
+                    variants={variants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="w-full"
+                  >
+                    {renderStepContent()}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              <div className="flex justify-between mt-6">
+                <button onClick={prevStep} disabled={currentStep === 0} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50">
+                  <ArrowLeft size={20}/>
                 </button>
-              ) : (
-                <button onClick={handleComplete} disabled={isLoading} className="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">
-                  {isLoading ? 'Calcul en cours...' : 'Terminer'}
-                </button>
-              )}
-            </div>
+                {currentStep < steps.length - 1 ? (
+                  <button onClick={nextStep} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg flex items-center">
+                    Suivant <ArrowRight size={20} className="ml-2"/>
+                  </button>
+                ) : (
+                  <button onClick={handleComplete} disabled={isLoading} className="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">
+                    {isLoading ? 'Calcul en cours...' : 'Terminer'}
+                  </button>
+                )}
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
+
+          <CustomNumpad
+            isOpen={isNumpadOpen}
+            onClose={handleNumpadConfirm}
+            onInput={handleNumpadInput}
+            onDelete={handleNumpadDelete}
+            onConfirm={handleNumpadConfirm}
+            currentValue={records.find(r => r.id === activeRecordId)?.value || ''}
+          />
+        </>
       )}
     </AnimatePresence>
   );
