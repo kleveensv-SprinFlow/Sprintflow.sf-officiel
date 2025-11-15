@@ -1,11 +1,56 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ArrowRight, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Plus, Trash2, Check } from 'lucide-react';
 import { useExercices } from '../../hooks/useExercices.ts';
 import { useRecords } from '../../hooks/useRecords.ts';
 import { useBodycomp } from '../../hooks/useBodycomp.ts';
 import { EXERCISE_CATEGORIES } from '../../data/categories.ts';
-import CustomNumpad from '../common/CustomNumpad.tsx';
+import CustomNumpad from '../common/CustomNumpad.tsx'; // Ensure this path is correct
+
+const InternalNumpad: React.FC<{ onInput: (v: string) => void; onDelete: () => void; onConfirm: () => void; currentValue: string; }> = 
+({ onInput, onDelete, onConfirm, currentValue }) => {
+  const buttons = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0'];
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="w-full"
+    >
+      <div className="pt-4">
+        <div className="text-center text-3xl font-bold p-2 mb-4 border-b-2 border-indigo-500 text-gray-900 dark:text-white">
+          {currentValue || '0'}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {buttons.map(btn => (
+            <NumpadButton key={btn} onClick={() => onInput(btn)}>{btn}</NumpadButton>
+          ))}
+          <NumpadButton onClick={onDelete} className="bg-red-500/20 text-red-500 dark:bg-red-500/30 dark:text-red-400">
+            <ArrowLeft size={24} />
+          </NumpadButton>
+        </div>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="w-full mt-4 h-14 flex items-center justify-center gap-2 bg-green-600 text-white rounded-lg text-lg font-bold hover:bg-green-700 transition-colors"
+        >
+          <Check size={24} /> Valider
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+const NumpadButton: React.FC<{ onClick: () => void; children: React.ReactNode; className?: string }> = ({ onClick, children, className = '' }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex items-center justify-center h-12 rounded-lg bg-gray-200/50 dark:bg-gray-700/50 text-xl font-semibold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${className}`}
+  >
+    {children}
+  </button>
+);
+
 
 interface OnboardingPerformanceModalProps {
   isOpen: boolean;
@@ -32,11 +77,9 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
   const [direction, setDirection] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Numpad state
   const [isNumpadOpen, setIsNumpadOpen] = useState(false);
   const [activeRecordId, setActiveRecordId] = useState<number | null>(null);
 
-  // Data state
   const [weight, setWeight] = useState<string>('');
   const [records, setRecords] = useState<RecordEntry[]>([]);
 
@@ -96,7 +139,6 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
     setRecords(records.map(r => r.id === id ? { ...r, [field]: value, ...(field === 'category' && { exerciseId: '' }) } : r));
   };
   
-  // Numpad handlers
   const openNumpad = (recordId: number) => {
     setActiveRecordId(recordId);
     setIsNumpadOpen(true);
@@ -125,7 +167,6 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
     setActiveRecordId(null);
   };
 
-
   const renderStepContent = () => {
     switch (steps[currentStep].id) {
       case 'welcome':
@@ -151,11 +192,19 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
           </div>
         );
       case 'records':
+        if (isNumpadOpen) {
+          const activeRecord = records.find(r => r.id === activeRecordId);
+          return <InternalNumpad 
+                    currentValue={activeRecord?.value || ''}
+                    onInput={handleNumpadInput}
+                    onDelete={handleNumpadDelete}
+                    onConfirm={handleNumpadConfirm}
+                  />
+        }
         return (
           <div className="w-full max-h-64 overflow-y-auto pr-2">
             <div className="space-y-4">
               {records.map((record) => {
-                // CORRECTED LOGIC HERE: Direct filtering on `ex.categorie`
                 const filteredExercises = exercices.filter(ex => ex.categorie === record.category);
 
                 return (
@@ -226,24 +275,27 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={onClose}
           >
             <motion.div
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full max-w-md p-6 relative text-gray-900 dark:text-white"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full max-w-md p-6 relative text-gray-900 dark:text-white pb-20"
               onClick={(e) => e.stopPropagation()}
-              initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+              initial={{ scale: 0.9 }} 
+              animate={{ scale: 1 }} 
+              exit={{ scale: 0.9 }}
             >
               <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 z-10">
                 <X size={24} />
               </button>
               <div className="flex justify-between items-center mb-4">
-                 <h2 className="text-lg font-bold">{steps[currentStep].title}</h2>
+                 <h2 className="text-lg font-bold">
+                    {isNumpadOpen ? `Saisir: ${getExerciseNameById(records.find(r => r.id === activeRecordId)?.exerciseId || '')}` : steps[currentStep].title}
+                 </h2>
                  <div className="flex items-center space-x-2">
                    {steps.map((step, index) => (
                      <div key={step.id} className={`w-2 h-2 rounded-full ${currentStep >= index ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
@@ -251,10 +303,10 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
                  </div>
               </div>
 
-              <div className="h-72 flex items-center justify-center">
-                <AnimatePresence initial={false} custom={direction}>
+              <div className="min-h-[24rem] flex items-center justify-center">
+                <AnimatePresence mode="wait">
                   <motion.div
-                    key={currentStep}
+                    key={currentStep + (isNumpadOpen ? 10 : 0)}
                     custom={direction}
                     variants={variants}
                     initial="enter"
@@ -268,7 +320,7 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
                 </AnimatePresence>
               </div>
 
-              <div className="flex justify-between mt-6">
+              <div className={`flex justify-between mt-6 ${isNumpadOpen ? 'hidden' : ''}`}>
                 <button onClick={prevStep} disabled={currentStep === 0} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50">
                   <ArrowLeft size={20}/>
                 </button>
@@ -284,16 +336,6 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
               </div>
             </motion.div>
           </motion.div>
-
-          <CustomNumpad
-            isOpen={isNumpadOpen}
-            onClose={handleNumpadConfirm}
-            onInput={handleNumpadInput}
-            onDelete={handleNumpadDelete}
-            onConfirm={handleNumpadConfirm}
-            currentValue={records.find(r => r.id === activeRecordId)?.value || ''}
-          />
-        </>
       )}
     </AnimatePresence>
   );
