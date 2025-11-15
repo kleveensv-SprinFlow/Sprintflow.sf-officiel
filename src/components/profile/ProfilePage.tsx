@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Edit, Settings, LogOut, Camera, Shield, Lock, Trash2, MessageSquare, Loader2, Target, Handshake } from 'lucide-react';
+import { Edit, Settings, LogOut, Camera, Shield, Lock, Trash2, MessageSquare, Loader2, Target, Handshake, Zap } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { EditProfileModal } from './EditProfileModal';
@@ -7,6 +7,7 @@ import { ChangePasswordModal } from './ChangePasswordModal';
 import { DeleteAccountModal } from './DeleteAccountModal';
 import { SetObjectifModal } from './SetObjectifModal';
 import { toast } from 'react-toastify';
+import OnboardingPerformanceModal from '../dashboard/OnboardingPerformanceModal';
 
 type View = 'dashboard' | 'workouts' | 'planning' | 'profile' | 'sleep' | 'records' | 'groups' | 'chat' | 'video-analysis' | 'advice' | 'nutrition' | 'settings' | 'contact' | 'partnerships';
 
@@ -51,6 +52,7 @@ const ProfilePage: React.FC = () => {
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [showObjectifModal, setShowObjectifModal] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -350,34 +352,51 @@ const ProfilePage: React.FC = () => {
       <ProfileCard profile={profile} onEdit={() => setShowEditModal(true)} />
 
       {profile?.role === 'athlete' && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
-            <Target className="w-6 h-6" />
-            Mon Objectif
-          </h2>
-          {objectif ? (
+        <>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+              <Target className="w-6 h-6" />
+              Mon Objectif
+            </h2>
+            {objectif ? (
+              <div className="text-center">
+                <p className="text-gray-600 dark:text-gray-300">{objectif.epreuve?.nom || objectif.exercice?.nom}</p>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{objectif.valeur} {objectif.epreuve?.unite || objectif.exercice?.unite}</p>
+                {objectif.date_echeance && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Échéance : {new Date(objectif.date_echeance).toLocaleDateString('fr-FR')}
+                  </p>
+                )}
+                <button onClick={() => setShowObjectifModal(true)} className="mt-2 text-sm text-blue-500 hover:underline">Modifier</button>
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-gray-500 dark:text-gray-400 mb-4">Vous n'avez pas encore défini d'objectif.</p>
+                <button
+                  onClick={() => setShowObjectifModal(true)}
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Définir un objectif
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+              <Zap className="w-6 h-6" />
+              Mes Données de Performance
+            </h2>
             <div className="text-center">
-              <p className="text-gray-600 dark:text-gray-300">{objectif.epreuve?.nom || objectif.exercice?.nom}</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{objectif.valeur} {objectif.epreuve?.unite || objectif.exercice?.unite}</p>
-              {objectif.date_echeance && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Échéance : {new Date(objectif.date_echeance).toLocaleDateString('fr-FR')}
-                </p>
-              )}
-              <button onClick={() => setShowObjectifModal(true)} className="mt-2 text-sm text-blue-500 hover:underline">Modifier</button>
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-gray-500 dark:text-gray-400 mb-4">Vous n'avez pas encore défini d'objectif.</p>
-              <button
-                onClick={() => setShowObjectifModal(true)}
+               <p className="text-gray-500 dark:text-gray-400 mb-4">Mettez à jour vos records et votre poids pour affiner votre indice Poids/Puissance.</p>
+               <button
+                onClick={() => setShowOnboardingModal(true)}
                 className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
               >
-                Définir un objectif
+                Mettre à jour mes données
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        </>
       )}
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -422,6 +441,14 @@ const ProfilePage: React.FC = () => {
       {showChangePasswordModal && <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />}
       {showDeleteAccountModal && <DeleteAccountModal onClose={() => setShowDeleteAccountModal(false)} />}
       {showObjectifModal && <SetObjectifModal onClose={() => setShowObjectifModal(false)} onSaved={() => { setShowObjectifModal(false); if(user) fetchObjectif(user.id); }} />}
+      <OnboardingPerformanceModal 
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        onComplete={() => {
+          setShowOnboardingModal(false);
+          toast.success("Données de performance mises à jour !");
+        }}
+      />
     </div>
   );
 }
