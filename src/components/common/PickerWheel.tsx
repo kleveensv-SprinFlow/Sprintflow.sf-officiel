@@ -95,7 +95,7 @@ export const PickerWheel: React.FC<PickerWheelProps> = ({ options = [], value, o
     onChange(currentValue);
     setIsOpen(false);
   };
-  
+
   const displayLabel = selectedOption ? selectedOption.label : (safeOptions.find(o => o.value === 0)?.label || '0');
 
   return (
