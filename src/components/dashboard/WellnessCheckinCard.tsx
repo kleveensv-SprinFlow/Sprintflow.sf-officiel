@@ -72,7 +72,7 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 pb-20">
       <div className="flex justify-between items-center mb-4">
         <div className="w-8 h-8"></div> {/* Espace vide pour centrer le titre */}
         <h3 className="font-bold text-xl text-center text-light-title dark:text-dark-title">
