@@ -40,7 +40,7 @@ export const SemanticSlider: React.FC<SemanticSliderProps> = ({
         <div className="text-center my-2 text-sm font-semibold" style={{ color: getSliderColor() }}>
           {value}
         </div>
-        <div className="flex flex-col items-center justify-center flex-grow">
+        <div className="flex flex-col items-center justify-center flex-grow" onPointerDown={(e) => e.stopPropagation()}>
           <span className="text-xs text-gray-500">{maxLabel}</span>
           <input
             type="range"
@@ -48,7 +48,6 @@ export const SemanticSlider: React.FC<SemanticSliderProps> = ({
             max={max}
             value={value}
             onChange={(e) => onChange(parseInt(e.target.value))}
-            onPointerDown={(e) => e.stopPropagation()}
             className="bg-gray-200 dark:bg-gray-600 rounded-lg slider-thumb slider-vertical"
             style={sliderStyle}
           />
