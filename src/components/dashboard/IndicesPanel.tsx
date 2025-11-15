@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useMotionValue, animate, useTransform } from 'framer-motion';
-import { Loader2, Zap, HeartPulse } from 'lucide-react';
+import { Loader2, Zap, HeartPulse, Lock, HelpCircle } from 'lucide-react';
 import AdviceModal from './AdviceModal.tsx';
 import CircularProgress from '../common/CircularProgress.tsx';
+import OnboardingPerformanceModal from './OnboardingPerformanceModal.tsx';
+import UpdateBodyFatModal from './UpdateBodyFatModal.tsx';
+import { useBodycomp } from '../../hooks/useBodycomp.ts';
 
 interface AnimatedScoreCircleProps {
   score: number | null;
-  title: string;
+  title: React.ReactNode;
   icon: React.ElementType;
+  subtitle?: string;
   isClickable?: boolean;
   hasButton?: boolean;
   onButtonClick?: () => void;
@@ -93,6 +97,7 @@ const AnimatedScoreCircle: React.FC<AnimatedScoreCircleProps> = ({
         <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
         {title}
       </h3>
+      {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>}
     </div>
   );
 };
@@ -102,28 +107,92 @@ interface ScoreData {
   indice: number | null;
 }
 
+interface PerformanceScoreData {
+  score: number | null;
+  details: {
+    composition: {
+      mode: 'expert' | 'standard' | 'default';
+    };
+    force: {
+      score_explosivite: number;
+      score_force_maximale: number;
+    };
+  };
+}
+
 interface IndicesPanelProps {
   loading: boolean;
   scoreForme: ScoreData | null;
-  scorePerformance: ScoreData | null;
+  scorePerformance: PerformanceScoreData | null;
   onNavigate: () => void;
   hasCheckedInToday: boolean;
   onCheckinClick: () => void;
+  onOnboardingComplete: () => void;
 }
 
-export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate, hasCheckedInToday, onCheckinClick }: IndicesPanelProps) {
-  const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance'; data: ScoreData } | null>(null);
+export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate, hasCheckedInToday, onCheckinClick, onOnboardingComplete }: IndicesPanelProps) {
+  const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance'; data: any } | null>(null);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [isBodyFatModalOpen, setIsBodyFatModalOpen] = useState(false);
+  const { addBodyCompData } = useBodycomp();
 
-  const handleScoreClick = (type: 'forme' | 'poidsPuissance', data: ScoreData | null) => {
+
+  const handleScoreClick = (type: 'forme' | 'poidsPuissance', data: any) => {
     if (type === 'forme') {
       if (hasCheckedInToday && data?.indice) {
         onNavigate();
       } else if (!hasCheckedInToday) {
         onCheckinClick();
       }
-    } else if (data && data.indice !== null) {
+    } else if (data && data.score !== null) {
       setModalContent({ type, data });
+    } else if (!data && !loading) {
+      setIsOnboardingModalOpen(true);
     }
+  };
+
+  const handleSaveBodyFat = async (bodyFat: number) => {
+    // We assume the user has a weight record if they have a score.
+    // A more robust implementation might need to fetch weight if it's not available.
+    await addBodyCompData({ masse_grasse_pct: bodyFat });
+    setIsBodyFatModalOpen(false);
+    onOnboardingComplete(); // Re-use the refresh logic
+  };
+
+  const getPerformanceScoreTitle = () => {
+    if (!scorePerformance || scorePerformance.score === null) {
+      return "Poids/Puissance";
+    }
+    const criticalDataCount = 
+      (scorePerformance.details.composition.mode === 'expert' ? 1 : 0) +
+      (scorePerformance.details.force.score_explosivite > 0 ? 1 : 0) +
+      (scorePerformance.details.force.score_force_maximale > 0 ? 1 : 0);
+      
+    const isPreliminary = criticalDataCount < 3;
+
+    return (
+      <div className="flex items-center gap-1">
+        <span>Poids/Puissance</span>
+        {isPreliminary && <span className="text-xs text-yellow-500 font-normal">(Préliminaire)</span>}
+      </div>
+    );
+  };
+
+  const getPerformanceScoreSubtitle = () => {
+    if (!scorePerformance || scorePerformance.score === null) {
+      return undefined;
+    }
+    const criticalDataCount =
+      (scorePerformance.details.composition.mode === 'expert' ? 1 : 0) +
+      (scorePerformance.details.force.score_explosivite > 0 ? 1 : 0) +
+      (scorePerformance.details.force.score_force_maximale > 0 ? 1 : 0);
+    
+    return `${criticalDataCount}/3 données critiques`;
+  }
+
+  const handleOnboardingComplete = () => {
+    setIsOnboardingModalOpen(false);
+    onOnboardingComplete();
   };
 
   if (loading) {
@@ -165,20 +234,55 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
           />
         </div>
         <div
-          className="w-1/2 flex justify-center items-center cursor-pointer"
+          className="w-1/2 flex justify-center items-center"
           onClick={() => handleScoreClick('poidsPuissance', scorePerformance)}
         >
-          <AnimatedScoreCircle
-            score={scorePerformance?.indice ?? null}
-            title="Poids/Puissance"
-            icon={Zap}
-            isClickable={scorePerformance?.indice !== null}
-            size="w-28 h-28"
-          />
+          {!scorePerformance && !loading ? (
+            <div className="flex flex-col items-center text-center p-4 rounded-2xl cursor-pointer hover:bg-white/10 dark:hover:bg-white/5 transition-colors">
+              <div className="p-3 bg-primary-500/20 rounded-full mb-2">
+                <Lock className="w-6 h-6 text-primary-500" />
+              </div>
+              <h3 className="font-bold text-light-title dark:text-dark-title">Débloquer l'Indice</h3>
+              <p className="text-xs text-light-label dark:text-dark-label">Entrez vos 1ères données</p>
+            </div>
+          ) : (
+            <div className="cursor-pointer">
+              <AnimatedScoreCircle
+                score={scorePerformance?.score ?? null}
+                title={getPerformanceScoreTitle()}
+                subtitle={getPerformanceScoreSubtitle()}
+                icon={Zap}
+                isClickable={scorePerformance?.score !== null}
+                size="w-28 h-28"
+              />
+              {scorePerformance?.details?.composition.mode === 'standard' && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsBodyFatModalOpen(true);
+                  }}
+                  className="mt-2 flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <HelpCircle size={14} />
+                  Améliorer la précision
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {modalContent && <AdviceModal content={modalContent} onClose={() => setModalContent(null)} />}
+      <OnboardingPerformanceModal 
+        isOpen={isOnboardingModalOpen}
+        onClose={() => setIsOnboardingModalOpen(false)}
+        onComplete={handleOnboardingComplete}
+      />
+      <UpdateBodyFatModal 
+        isOpen={isBodyFatModalOpen}
+        onClose={() => setIsBodyFatModalOpen(false)}
+        onSave={handleSaveBodyFat}
+      />
     </motion.div>
   );
 }
