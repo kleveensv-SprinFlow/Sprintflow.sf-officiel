@@ -1,4 +1,3 @@
-// src/components/common/ChronoPicker.tsx
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import PickerWheel from './PickerWheel';
@@ -23,39 +22,20 @@ const formatChrono = (totalSeconds: number | null): string => {
   return `${String(seconds).padStart(1, '0')}.${String(centiseconds).padStart(2, '0')}`;
 };
 
-export const ChronoPicker: React.FC<ChronoPickerProps> = ({ value, onChange }) => {
+const ChronoPicker: React.FC<ChronoPickerProps> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const initialValues = useMemo(() => {
-    const totalSeconds = value || 0;
-    return {
-      minutes: Math.floor(totalSeconds / 60),
-      seconds: Math.floor(totalSeconds % 60),
-      centiseconds: Math.round((totalSeconds - Math.floor(totalSeconds)) * 100),
-    };
-  }, [value]);
-  
-  const [minutes, setMinutes] = useState(initialValues.minutes);
-  const [seconds, setSeconds] = useState(initialValues.seconds);
-  const [centiseconds, setCentiseconds] = useState(initialValues.centiseconds);
+  const handleOpen = () => setIsOpen(true);
+  const handleClose = () => setIsOpen(false);
 
-  const handleOpen = () => {
-    const current = initialValues;
-    setMinutes(current.minutes);
-    setSeconds(current.seconds);
-    setCentiseconds(current.centiseconds);
-    setIsOpen(true);
-  };
+  const minutesOptions = useMemo(() => Array.from({ length: 60 }, (_, i) => ({ value: i, label: `${i}m` })), []);
+  const secondsOptions = useMemo(() => Array.from({ length: 60 }, (_, i) => ({ value: i, label: `${i}s` })), []);
+  const centisecondsOptions = useMemo(() => Array.from({ length: 100 }, (_, i) => ({ value: i, label: `.${String(i).padStart(2, '0')}` })), []);
 
-  const handleSave = () => {
-    const newTotalSeconds = minutes * 60 + seconds + centiseconds / 100;
-    onChange(newTotalSeconds);
+  const handleValidate = (minutes: number, seconds: number, centiseconds: number) => {
+    onChange(minutes * 60 + seconds + centiseconds / 100);
     setIsOpen(false);
   };
-  
-  const minutesOptions = Array.from({ length: 60 }, (_, i) => ({ value: i, label: `${i}m` }));
-  const secondsOptions = Array.from({ length: 60 }, (_, i) => ({ value: i, label: `${i}s` }));
-  const centisecondsOptions = Array.from({ length: 100 }, (_, i) => ({ value: i, label: `.${String(i).padStart(2, '0')}` }));
 
   return (
     <>
@@ -74,22 +54,36 @@ export const ChronoPicker: React.FC<ChronoPickerProps> = ({ value, onChange }) =
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={handleClose}
           >
             <motion.div
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-[90%] max-w-sm p-6"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-xl font-bold text-center mb-6">Saisir le temps</h3>
               <div className="flex justify-center items-center gap-2">
-                <PickerWheel options={minutesOptions} value={minutes} onChange={setMinutes} />
-                <PickerWheel options={secondsOptions} value={seconds} onChange={setSeconds} />
-                <PickerWheel options={centisecondsOptions} value={centiseconds} onChange={setCentiseconds} />
+                <PickerWheel options={minutesOptions} value={Math.floor(value! / 60)} onChange={(val) => handleValidate(val, Math.floor(value! % 60), Math.round((value! - Math.floor(value!)) * 100))} />
+                <PickerWheel options={secondsOptions} value={Math.floor(value! % 60)} onChange={(val) => handleValidate(Math.floor(value! / 60), val, Math.round((value! - Math.floor(value!)) * 100))} />
+                <PickerWheel options={centisecondsOptions} value={Math.round((value! - Math.floor(value!)) * 100)} onChange={(val) => handleValidate(Math.floor(value! / 60), Math.floor(value! % 60), val)} />
               </div>
-              <div className="mt-8 flex gap-4">
-                <button type="button" onClick={() => setIsOpen(false)} className="w-full py-3 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold">Annuler</button>
-                <button type="button" onClick={handleSave} className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold">Valider</button>
+              <div className="mt-8 flex gap-4 justify-center">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="w-full py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleValidate(Math.floor(value! / 60), Math.floor(value! % 60), Math.round((value! - Math.floor(value!)) * 100))}
+                  className="w-full py-2 px-4 bg-blue-500 text-white font-semibold rounded-lg"
+                >
+                  Valider
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -98,3 +92,5 @@ export const ChronoPicker: React.FC<ChronoPickerProps> = ({ value, onChange }) =
     </>
   );
 };
+
+export default ChronoPicker;
