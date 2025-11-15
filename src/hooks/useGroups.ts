@@ -34,13 +34,14 @@ export const useGroups = () => {
     setError(null);
 
     console.log('👥 [useGroups] Début chargement groupes, role:', profile.role);
+    console.time('⏱️ [useGroups] Temps total de chargement');
 
     try {
       let rawData;
 
-      // Timeout de 5 secondes pour éviter le blocage
+      // Timeout augmenté à 10 secondes (devrait être < 500ms avec les optimisations)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout chargement groupes')), 5000)
+        setTimeout(() => reject(new Error('Timeout chargement groupes après 10s')), 10000)
       );
 
       if (profile.role === 'coach') {
@@ -96,6 +97,8 @@ export const useGroups = () => {
       }
 
       // Set the data
+      console.timeEnd('⏱️ [useGroups] Temps total de chargement');
+
       if (rawData && rawData.length > 0) {
         console.log('✅ [useGroups] Groupes chargés:', rawData.length);
         setGroups(rawData);
@@ -106,6 +109,7 @@ export const useGroups = () => {
 
     } catch (e: any) {
       console.error("❌ [useGroups] Erreur lors de la récupération des groupes:", e);
+      console.error("❌ [useGroups] Détails:", e.message, e.code);
       setError(e);
       setGroups([]);
     } finally {

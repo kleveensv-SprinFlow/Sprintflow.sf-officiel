@@ -19,6 +19,13 @@ export function useWorkouts(selection?: Selection) {
     console.log('🏋️ [useWorkouts] Début chargement workouts');
     console.log('🏋️ [useWorkouts] Profile role:', profile?.role, 'Selection:', selection);
 
+    // Attendre que le profil soit chargé avant de continuer
+    if (!profile && user) {
+      console.log('⏳ [useWorkouts] Attente du profil...');
+      setLoading(true);
+      return;
+    }
+
     if (profile?.role === 'coach' && !selection) {
       console.log('ℹ️ [useWorkouts] Coach sans sélection, skip');
       setWorkouts([]);
@@ -30,6 +37,7 @@ export function useWorkouts(selection?: Selection) {
     setError(null);
 
     try {
+      console.time('⏱️ [useWorkouts] Temps total de chargement');
       let query = supabase.from('workouts').select('*');
 
       if (profile?.role === 'coach' && selection) {
@@ -43,20 +51,29 @@ export function useWorkouts(selection?: Selection) {
         console.log('🏋️ [useWorkouts] Chargement pour utilisateur:', user.id);
 
         try {
-          // Timeout de 8 secondes pour éviter le blocage infini
+          console.time('⏱️ [useWorkouts] Temps requête group_members');
+
+          // Timeout augmenté à 12 secondes (devrait être < 200ms avec les optimisations)
           const groupMembershipsPromise = supabase
             .from('group_members')
             .select('group_id')
             .eq('athlete_id', user.id);
 
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout group_members')), 8000)
+            setTimeout(() => reject(new Error('Timeout group_members après 12s')), 12000)
           );
 
-          const { data: groupMemberships } = await Promise.race([
+          const { data: groupMemberships, error: groupError } = await Promise.race([
             groupMembershipsPromise,
             timeoutPromise
           ]) as any;
+
+          console.timeEnd('⏱️ [useWorkouts] Temps requête group_members');
+
+          if (groupError) {
+            console.warn('⚠️ [useWorkouts] Erreur group_members:', groupError);
+            throw groupError;
+          }
 
           const groupIds = groupMemberships?.map((m: any) => m.group_id) || [];
           console.log('👥 [useWorkouts] Groupes trouvés:', groupIds.length);
@@ -78,11 +95,14 @@ export function useWorkouts(selection?: Selection) {
         return;
       }
 
-      console.log('🚀 [useWorkouts] Exécution de la requête...');
+      console.log('🚀 [useWorkouts] Exécution de la requête workouts...');
       const { data, error } = await query.order('date', { ascending: false });
+
+      console.timeEnd('⏱️ [useWorkouts] Temps total de chargement');
 
       if (error) {
         console.error('❌ [useWorkouts] Erreur Supabase:', error);
+        console.error('❌ [useWorkouts] Code erreur:', error.code, 'Message:', error.message);
         throw error;
       }
 

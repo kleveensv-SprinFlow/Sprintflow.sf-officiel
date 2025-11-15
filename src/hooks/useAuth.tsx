@@ -92,9 +92,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const loadProfileInline = async (userId: string) => {
       try {
         console.log('🔄 [useAuth] Chargement du profil pour:', userId);
+        console.time('⏱️ [useAuth] Temps de chargement profil');
+
         const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
+
+        console.timeEnd('⏱️ [useAuth] Temps de chargement profil');
+
         if (error) {
           console.error("❌ [useAuth] Erreur Supabase:", error);
+          console.error("❌ [useAuth] Code erreur:", error.code, "Message:", error.message);
           throw error;
         }
         if (!data) {
@@ -102,7 +108,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (isMountedRef.current) setProfile(null);
           return;
         }
-        console.log('✅ [useAuth] Profil chargé:', data);
+        console.log('✅ [useAuth] Profil chargé avec succès:', { id: data.id, role: data.role });
         if (isMountedRef.current) setProfile(data);
       } catch (e) {
         console.error("❌ [useAuth] Exception lors du chargement du profil:", e);
