@@ -59,7 +59,7 @@ const Wheel: React.FC<WheelProps> = ({ options, value, onChange }) => {
           <div
             key={option.value}
             onClick={() => scrollToIndex(options.findIndex(o => o.value === option.value))}
-            className="h-9 flex items-center justify-center text-xl font-semibold select-none cursor-pointer snap-center"
+            className="h-9 flex items-center justify-center text-xl font-semibold select-none cursor-pointer snap-center text-gray-800 dark:text-gray-200"
           >
             {option.label}
           </div>
