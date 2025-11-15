@@ -6,6 +6,7 @@ import { StrengthRecordsCarousel } from './dashboard/StrengthRecordsCarousel';
 import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';
 import { IndicesPanel } from './dashboard/IndicesPanel';
 import { CheckinModal } from './dashboard/CheckinModal';
+import OnboardingPerformanceModal from './dashboard/OnboardingPerformanceModal';
 import useAuth from '../hooks/useAuth';
 import { useWellness } from '../hooks/useWellness';
 import { supabase } from '../lib/supabase';
@@ -19,6 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
   const { user } = useAuth();
   const { wellnessData, refresh: refreshWellnessData } = useWellness(user?.id);
   const [isCheckinOpen, setCheckinOpen] = useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [scoreForme, setScoreForme] = useState<{ indice: number | null } | null>(null);
   const [scorePerformance, setScorePerformance] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,8 +38,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
     try {
       console.log('📊 [Dashboard] Début chargement scores pour:', user.id);
       setLoading(true);
-
-      // On charge l'indice de performance même sans check-in
+      
+      // We load performance score regardless of check-in
       try {
         const { data: perfData, error: perfError } = await supabase.rpc('get_indice_poids_puissance');
         if (perfError) throw perfError;
@@ -47,7 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
         console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de performance:', error);
         setScorePerformance(null);
       }
-      
+
       if (hasCheckedInToday) {
         console.log('✅ [Dashboard] Check-in effectué, chargement indice forme');
         try {
@@ -73,7 +75,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
     }
   };
 
-
   useEffect(() => {
     loadScores();
   }, [user?.id, hasCheckedInToday]);
@@ -82,14 +83,15 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
     setCheckinOpen(false);
     refreshWellnessData();
   };
+  
+  const handleOnboardingComplete = () => {
+    setIsOnboardingModalOpen(false);
+    loadScores();
+  };
 
-  // Affiche le dashboard du coach uniquement si le rôle est 'coach'
   if (userRole === 'coach') {
     return <CoachDashboard />;
   }
-
-  // Pour tous les autres rôles (athlète, développeur, etc.) ou si le rôle est indéfini,
-  // affiche le dashboard de l'athlète par défaut.
 
   return (
     <div className="space-y-6">
@@ -100,6 +102,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
         hasCheckedInToday={hasCheckedInToday}
         onCheckinClick={() => setCheckinOpen(true)}
         onOnboardingComplete={loadScores}
+        onUnlockPerformanceClick={() => setIsOnboardingModalOpen(true)}
         onNavigate={() => {}} // Placeholder for now
       />
 
@@ -113,10 +116,14 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
         )}
       </AnimatePresence>
 
+      <OnboardingPerformanceModal
+        isOpen={isOnboardingModalOpen}
+        onClose={() => setIsOnboardingModalOpen(false)}
+        onComplete={handleOnboardingComplete}
+      />
+
       <AthleteDailyPlanCarousel userId={user?.id} />
-
       <TrackRecordsCarousel userId={user?.id} />
-
       <StrengthRecordsCarousel userId={user?.id} />
     </div>
   );
