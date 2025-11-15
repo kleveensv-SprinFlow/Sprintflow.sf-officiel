@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import useAuth from './hooks/useAuth.tsx';
 import Auth from './components/Auth.tsx';
 import LoadingScreen from './components/LoadingScreen.tsx';
+import ProfileLoadError from './components/ProfileLoadError.tsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import TabBar from './components/TabBar.tsx';
@@ -49,6 +50,7 @@ function App() {
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Auth />;
+  if (user && !profile) return <ProfileLoadError userId={user.id} />;
 
   const currentPath = location.pathname;
   const title = viewTitles[currentPath] || 'Accueil';

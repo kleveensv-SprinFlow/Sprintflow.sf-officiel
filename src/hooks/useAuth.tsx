@@ -38,12 +38,12 @@ const createEmptyAuthState = (): AuthState => ({
   isProfileLoaded: false,
 });
 
-const createAuthState = (session: Session | null, user: User | null, profile: Profile | null, isInitialized: boolean): AuthState => ({
+const createAuthState = (session: Session | null, user: User | null, profile: Profile | null, isInitialized: boolean, isProfileLoaded: boolean = true): AuthState => ({
   session,
   user,
   profile,
   isInitialized,
-  isProfileLoaded: user ? !!profile : true,
+  isProfileLoaded,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -51,34 +51,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isMountedRef = useRef(true);
 
   const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
-    logger.info('[useAuth] Chargement du profil pour:', userId);
+    logger.info('[useAuth] Début du chargement du profil pour:', userId);
+    logger.info('[useAuth] Colonnes demandées:', PROFILE_COLUMNS);
 
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select(PROFILE_COLUMNS)
-      .eq('id', userId)
-      .maybeSingle();
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(PROFILE_COLUMNS)
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (error) {
-      logger.error('[useAuth] Erreur lors du chargement du profil:', error);
-      throw error;
+      logger.info('[useAuth] Réponse Supabase reçue. Error:', error, 'Data:', profile);
+
+      if (error) {
+        logger.error('[useAuth] Erreur Supabase lors du chargement du profil:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          userId
+        });
+        return null;
+      }
+
+      if (!profile) {
+        logger.error('[useAuth] Profil null retourné par Supabase pour l\'utilisateur:', userId);
+        logger.error('[useAuth] Cela peut indiquer un problème de permissions RLS ou un profil manquant.');
+        return null;
+      }
+
+      logger.info('[useAuth] Profil chargé avec succès:', { id: profile.id, role: profile.role, name: profile.full_name });
+      return profile;
+    } catch (error) {
+      logger.error('[useAuth] Exception lors du chargement du profil:', error);
+      return null;
     }
-
-    if (!profile) {
-      logger.error('[useAuth] Profil introuvable pour l\'utilisateur:', userId);
-      throw new Error('Profil introuvable. Veuillez contacter le support.');
-    }
-
-    logger.info('[useAuth] Profil chargé avec succès:', { id: profile.id, role: profile.role });
-    return profile;
   }, []);
 
   const refreshProfile = useCallback(async () => {
     if (!authState.user) return;
     try {
       const profile = await loadProfile(authState.user.id);
-      if (isMountedRef.current && profile) {
-        setAuthState(prev => createAuthState(prev.session, prev.user, profile, prev.isInitialized));
+      if (isMountedRef.current) {
+        setAuthState(prev => createAuthState(prev.session, prev.user, profile, prev.isInitialized, true));
       }
     } catch (e) {
       logger.error('[useAuth] Erreur lors du rafraîchissement:', e);
@@ -167,23 +182,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         let currentProfile: Profile | null = null;
 
         if (currentUser) {
-          try {
-            currentProfile = await loadProfile(currentUser.id);
-          } catch (error) {
-            logger.error('[useAuth] Erreur lors du chargement du profil:', error);
-            // Si le profil n'existe pas, on garde currentProfile à null
-            // L'utilisateur verra un message d'erreur approprié
+          logger.info('[useAuth] Utilisateur authentifié détecté:', { id: currentUser.id, email: currentUser.email });
+          currentProfile = await loadProfile(currentUser.id);
+
+          if (!currentProfile) {
+            logger.warn('[useAuth] Le profil n\'a pas pu être chargé. L\'utilisateur verra ProfileLoadError.');
           }
+        } else {
+          logger.info('[useAuth] Aucun utilisateur authentifié trouvé.');
         }
 
         if (!isMountedRef.current) return;
 
-        setAuthState(createAuthState(session, currentUser, currentProfile, true));
-        logger.info('[useAuth] Initialisation terminée');
+        setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
+        logger.info('[useAuth] Initialisation terminée. User:', !!currentUser, 'Profile:', !!currentProfile);
       } catch (error) {
         logger.error('[useAuth] Erreur critique lors de l\'initialisation:', error);
         if (isMountedRef.current) {
-          setAuthState(createAuthState(null, null, null, true));
+          setAuthState(createAuthState(null, null, null, true, true));
         }
       }
     };
@@ -199,16 +215,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       let currentProfile: Profile | null = null;
 
       if (currentUser) {
-        try {
-          currentProfile = await loadProfile(currentUser.id);
-        } catch (error) {
-          logger.error('[useAuth] Erreur lors du chargement du profil après événement:', error);
+        logger.info('[useAuth] Chargement du profil suite à l\'événement auth:', event);
+        currentProfile = await loadProfile(currentUser.id);
+
+        if (!currentProfile) {
+          logger.warn('[useAuth] Le profil n\'a pas pu être chargé après l\'événement:', event);
         }
       }
 
       if (!isMountedRef.current) return;
 
-      setAuthState(createAuthState(session, currentUser, currentProfile, true));
+      setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
+      logger.info('[useAuth] État mis à jour après événement. User:', !!currentUser, 'Profile:', !!currentProfile);
     });
 
     return () => {
