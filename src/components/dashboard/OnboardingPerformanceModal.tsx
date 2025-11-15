@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, ArrowRight, ArrowLeft } from 'lucide-react';
-import { useExercices } from '../../hooks/useExercices'; // Assuming this hook exists
-import { useRecords } from '../../hooks/useRecords'; // Assuming this hook exists
-import { useBodycomp } from '../../hooks/useBodycomp'; // Assuming this hook exists
+import { useExercices } from '../../hooks/useExercices.ts';
+import { useRecords } from '../../hooks/useRecords.ts';
+import { useBodycomp } from '../../hooks/useBodycomp.ts';
 
 interface OnboardingPerformanceModalProps {
   isOpen: boolean;
@@ -29,7 +29,6 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
   const [strengthRecord, setStrengthRecord] = useState<{ exerciseId: string; value: string }>({ exerciseId: '', value: '' });
   const [explosiveRecord, setExplosiveRecord] = useState<{ exerciseId: string; value: string }>({ exerciseId: '', value: '' });
   
-  // Hooks for data manipulation - these are placeholders for now
   const { exercices, isLoading: isLoadingExercices } = useExercices();
   const { createRecord } = useRecords();
   const { addBodyCompData } = useBodycomp();
@@ -54,7 +53,6 @@ const OnboardingPerformanceModal: React.FC<OnboardingPerformanceModalProps> = ({
   const handleComplete = async () => {
     setIsLoading(true);
     try {
-      // This logic will need to be adapted based on actual hook implementations
       if (weight) {
         await addBodyCompData({ poids_kg: parseFloat(weight) });
       }
