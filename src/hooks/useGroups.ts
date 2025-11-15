@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 import { Profile } from '../types';
+import { logger } from '../utils/logger';
 
 
 export interface Group {
@@ -33,20 +34,18 @@ export const useGroups = () => {
     setLoading(true);
     setError(null);
 
-    console.log('👥 [useGroups] Début chargement groupes, role:', profile.role);
-    console.time('⏱️ [useGroups] Temps total de chargement');
+    logger.info('[useGroups] Début chargement groupes, role:', profile.role);
+    const timerId = logger.time('[useGroups] Temps total de chargement');
 
     try {
       let rawData;
 
-      // Timeout augmenté à 10 secondes (devrait être < 500ms avec les optimisations)
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout chargement groupes après 10s')), 10000)
       );
 
       if (profile.role === 'coach') {
-        console.log('👨‍🏫 [useGroups] Chargement groupes coach');
-        // For a coach: fetch the groups they created
+        logger.info('[useGroups] Chargement groupes coach');
         const groupsPromise = supabase
           .from('groups')
           .select(`
@@ -69,8 +68,7 @@ export const useGroups = () => {
         if (coachError) throw coachError;
         rawData = coachGroups;
       } else {
-        console.log('🏃 [useGroups] Chargement groupes athlète');
-        // For an athlete: fetch the groups they are a member of
+        logger.info('[useGroups] Chargement groupes athlète');
         const groupsPromise = supabase
           .from('group_members')
           .select(`
@@ -96,25 +94,25 @@ export const useGroups = () => {
         rawData = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
       }
 
-      // Set the data
-      console.timeEnd('⏱️ [useGroups] Temps total de chargement');
+      logger.timeEnd(timerId);
 
       if (rawData && rawData.length > 0) {
-        console.log('✅ [useGroups] Groupes chargés:', rawData.length);
+        logger.info('[useGroups] Groupes chargés:', rawData.length);
         setGroups(rawData);
       } else {
-        console.log('ℹ️ [useGroups] Aucun groupe trouvé');
+        logger.info('[useGroups] Aucun groupe trouvé');
         setGroups([]);
       }
 
     } catch (e: any) {
-      console.error("❌ [useGroups] Erreur lors de la récupération des groupes:", e);
-      console.error("❌ [useGroups] Détails:", e.message, e.code);
+      logger.timeEnd(timerId);
+      logger.error('[useGroups] Erreur lors de la récupération des groupes:', e);
+      logger.error('[useGroups] Détails:', e.message, e.code);
       setError(e);
       setGroups([]);
     } finally {
       setLoading(false);
-      console.log('✅ [useGroups] Chargement terminé');
+      logger.info('[useGroups] Chargement terminé');
     }
   }, [user, profile]);
 

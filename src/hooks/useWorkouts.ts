@@ -1,8 +1,8 @@
-// src/hooks/useWorkouts.ts
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 import { Workout } from '../types';
+import { logger } from '../utils/logger';
 
 type Selection = {
   type: 'athlete' | 'group';
@@ -16,18 +16,17 @@ export function useWorkouts(selection?: Selection) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchWorkouts = useCallback(async () => {
-    console.log('🏋️ [useWorkouts] Début chargement workouts');
-    console.log('🏋️ [useWorkouts] Profile role:', profile?.role, 'Selection:', selection);
+    logger.info('[useWorkouts] Début chargement workouts');
+    logger.debug('[useWorkouts] Profile role:', profile?.role, 'Selection:', selection);
 
-    // Attendre que le profil soit chargé avant de continuer
     if (!profile && user) {
-      console.log('⏳ [useWorkouts] Attente du profil...');
+      logger.info('[useWorkouts] Attente du profil...');
       setLoading(true);
       return;
     }
 
     if (profile?.role === 'coach' && !selection) {
-      console.log('ℹ️ [useWorkouts] Coach sans sélection, skip');
+      logger.info('[useWorkouts] Coach sans sélection, skip');
       setWorkouts([]);
       setLoading(false);
       return;
@@ -36,24 +35,26 @@ export function useWorkouts(selection?: Selection) {
     setLoading(true);
     setError(null);
 
+    let mainTimerId: string = '';
+    let groupTimerId: string = '';
+
     try {
-      console.time('⏱️ [useWorkouts] Temps total de chargement');
+      mainTimerId = logger.time('[useWorkouts] Temps total de chargement');
       let query = supabase.from('workouts').select('*');
 
       if (profile?.role === 'coach' && selection) {
-        console.log('👨‍🏫 [useWorkouts] Chargement pour coach, sélection:', selection.type, selection.id);
+        logger.info('[useWorkouts] Chargement pour coach, sélection:', selection.type, selection.id);
         if (selection.type === 'athlete') {
           query = query.eq('user_id', selection.id);
         } else if (selection.type === 'group') {
           query = query.eq('assigned_to_group_id', selection.id);
         }
       } else if (user) {
-        console.log('🏋️ [useWorkouts] Chargement pour utilisateur:', user.id);
+        logger.info('[useWorkouts] Chargement pour utilisateur:', user.id);
 
         try {
-          console.time('⏱️ [useWorkouts] Temps requête group_members');
+          groupTimerId = logger.time('[useWorkouts] Temps requête group_members');
 
-          // Timeout augmenté à 12 secondes (devrait être < 200ms avec les optimisations)
           const groupMembershipsPromise = supabase
             .from('group_members')
             .select('group_id')
@@ -68,15 +69,15 @@ export function useWorkouts(selection?: Selection) {
             timeoutPromise
           ]) as any;
 
-          console.timeEnd('⏱️ [useWorkouts] Temps requête group_members');
+          logger.timeEnd(groupTimerId);
 
           if (groupError) {
-            console.warn('⚠️ [useWorkouts] Erreur group_members:', groupError);
+            logger.warn('[useWorkouts] Erreur group_members:', groupError);
             throw groupError;
           }
 
           const groupIds = groupMemberships?.map((m: any) => m.group_id) || [];
-          console.log('👥 [useWorkouts] Groupes trouvés:', groupIds.length);
+          logger.info('[useWorkouts] Groupes trouvés:', groupIds.length);
 
           let filter = `user_id.eq.${user.id},assigned_to_user_id.eq.${user.id}`;
           if (groupIds.length > 0) {
@@ -84,38 +85,41 @@ export function useWorkouts(selection?: Selection) {
           }
           query = query.or(filter);
         } catch (groupError) {
-          console.warn('⚠️ [useWorkouts] Erreur/timeout groupes, charge uniquement user:', groupError);
-          // En cas d'erreur, charger les workouts de l'utilisateur ET ceux qui lui sont assignés
+          if (groupTimerId) logger.timeEnd(groupTimerId);
+          logger.warn('[useWorkouts] Erreur/timeout groupes, charge uniquement user:', groupError);
           query = query.or(`user_id.eq.${user.id},assigned_to_user_id.eq.${user.id}`);
         }
       } else {
-        console.log('⚠️ [useWorkouts] Pas d\'utilisateur');
+        logger.warn('[useWorkouts] Pas d\'utilisateur');
         setLoading(false);
         setWorkouts([]);
+        if (mainTimerId) logger.timeEnd(mainTimerId);
         return;
       }
 
-      console.log('🚀 [useWorkouts] Exécution de la requête workouts...');
+      logger.info('[useWorkouts] Exécution de la requête workouts...');
       const { data, error } = await query.order('date', { ascending: false });
 
-      console.timeEnd('⏱️ [useWorkouts] Temps total de chargement');
+      logger.timeEnd(mainTimerId);
 
       if (error) {
-        console.error('❌ [useWorkouts] Erreur Supabase:', error);
-        console.error('❌ [useWorkouts] Code erreur:', error.code, 'Message:', error.message);
+        logger.error('[useWorkouts] Erreur Supabase:', error);
+        logger.error('[useWorkouts] Code erreur:', error.code, 'Message:', error.message);
         throw error;
       }
 
-      console.log('✅ [useWorkouts] Workouts chargés:', data?.length || 0);
+      logger.info('[useWorkouts] Workouts chargés:', data?.length || 0);
       setWorkouts(data || []);
 
     } catch (err: any) {
+      if (mainTimerId) logger.timeEnd(mainTimerId);
+      if (groupTimerId) logger.timeEnd(groupTimerId);
       setError(err.message);
-      console.error("❌ [useWorkouts] Erreur lors du chargement des séances:", err);
+      logger.error('[useWorkouts] Erreur lors du chargement des séances:', err);
       setWorkouts([]);
     } finally {
       setLoading(false);
-      console.log('✅ [useWorkouts] Chargement terminé');
+      logger.info('[useWorkouts] Chargement terminé');
     }
   }, [selection, user, profile]);
 

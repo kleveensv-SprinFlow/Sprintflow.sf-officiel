@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, createContext, useCallback, use
 import { supabase } from '../lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
+import { logger } from '../utils/logger';
 
 const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url';
 
@@ -90,39 +91,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isMountedRef.current = true;
 
     const loadProfileInline = async (userId: string) => {
+      let timerId: string = '';
       try {
-        console.log('🔄 [useAuth] Chargement du profil pour:', userId);
-        console.time('⏱️ [useAuth] Temps de chargement profil');
+        logger.info('[useAuth] Chargement du profil pour:', userId);
+        timerId = logger.time('[useAuth] Temps de chargement profil');
 
         const { data, error } = await supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).maybeSingle();
 
-        console.timeEnd('⏱️ [useAuth] Temps de chargement profil');
+        logger.timeEnd(timerId);
 
         if (error) {
-          console.error("❌ [useAuth] Erreur Supabase:", error);
-          console.error("❌ [useAuth] Code erreur:", error.code, "Message:", error.message);
+          logger.error('[useAuth] Erreur Supabase:', error);
+          logger.error('[useAuth] Code erreur:', error.code, 'Message:', error.message);
           throw error;
         }
         if (!data) {
-          console.warn("⚠️ [useAuth] Aucun profil trouvé pour l'utilisateur:", userId);
+          logger.warn('[useAuth] Aucun profil trouvé pour l\'utilisateur:', userId);
           if (isMountedRef.current) setProfile(null);
           return;
         }
-        console.log('✅ [useAuth] Profil chargé avec succès:', { id: data.id, role: data.role });
+        logger.info('[useAuth] Profil chargé avec succès:', { id: data.id, role: data.role });
         if (isMountedRef.current) setProfile(data);
       } catch (e) {
-        console.error("❌ [useAuth] Exception lors du chargement du profil:", e);
+        if (timerId) logger.timeEnd(timerId);
+        logger.error('[useAuth] Exception lors du chargement du profil:', e);
         if (isMountedRef.current) setProfile(null);
       }
     };
 
     const initAuth = async () => {
       try {
-        console.log('🚀 [useAuth] Initialisation de l\'authentification');
-        
-        // Start a race between getSession and a 5-second timeout.
-        // This prevents the app from getting stuck on the loading screen
-        // in environments where getSession() hangs indefinitely.
+        logger.info('[useAuth] Initialisation de l\'authentification');
+
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise<{ data: { session: null }, error: null }>((resolve) =>
           setTimeout(() => resolve({ data: { session: null }, error: null }), 5000)
@@ -131,9 +131,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
 
         if (error) {
-          console.warn("Erreur (ignorée) pendant getSession:", error);
+          logger.warn('Erreur (ignorée) pendant getSession:', error);
         }
-        
+
         if (!isMountedRef.current) return;
 
         setSession(session);
@@ -141,15 +141,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(currentUser);
 
         if (currentUser) {
-          console.log('👤 [useAuth] Utilisateur connecté, chargement du profil...');
+          logger.info('[useAuth] Utilisateur connecté, chargement du profil...');
           await loadProfileInline(currentUser.id);
         } else {
-          console.log('👤 [useAuth] Aucun utilisateur connecté');
+          logger.info('[useAuth] Aucun utilisateur connecté');
           setProfile(null);
         }
       } catch (error) {
-        console.error("❌ [useAuth] Erreur lors de l'initialisation:", error);
-        // En cas d'erreur (ex: timeout), on s'assure que l'utilisateur n'est pas bloqué
+        logger.error('[useAuth] Erreur lors de l\'initialisation:', error);
         if (isMountedRef.current) {
           setSession(null);
           setUser(null);
@@ -157,7 +156,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } finally {
         if (isMountedRef.current) {
-          console.log('✅ [useAuth] Initialisation terminée, fin du chargement.');
+          logger.info('[useAuth] Initialisation terminée, fin du chargement.');
           setLoading(false);
         }
       }
@@ -168,7 +167,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMountedRef.current) return;
 
-      console.log('🔔 [useAuth] Auth state change:', event);
+      logger.info('[useAuth] Auth state change:', event);
 
       setSession(session);
       const currentUser = session?.user ?? null;
@@ -179,9 +178,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setProfile(null);
       }
-
-      // Ne pas mettre loading à false ici car c'est déjà fait dans initAuth
-      // setLoading(false);
     });
 
     return () => {
