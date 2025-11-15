@@ -23,7 +23,6 @@ const AnimatedScoreCircle: React.FC<AnimatedScoreCircleProps> = ({
   score,
   title,
   icon: Icon,
-  subtitle,
   isClickable = true,
   hasButton = false,
   onButtonClick,
@@ -129,11 +128,11 @@ interface IndicesPanelProps {
   hasCheckedInToday: boolean;
   onCheckinClick: () => void;
   onOnboardingComplete: () => void;
+  onUnlockPerformanceClick: () => void;
 }
 
-export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate, hasCheckedInToday, onCheckinClick, onOnboardingComplete }: IndicesPanelProps) {
+export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate, hasCheckedInToday, onCheckinClick, onOnboardingComplete, onUnlockPerformanceClick }: IndicesPanelProps) {
   const [modalContent, setModalContent] = useState<{ type: 'forme' | 'poidsPuissance'; data: any } | null>(null);
-  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [isBodyFatModalOpen, setIsBodyFatModalOpen] = useState(false);
   const { addBodyCompData } = useBodycomp();
 
@@ -148,7 +147,7 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
     } else if (data && data.score !== null) {
       setModalContent({ type, data });
     } else if (!data && !loading) {
-      setIsOnboardingModalOpen(true);
+      onUnlockPerformanceClick();
     }
   };
 
@@ -191,10 +190,6 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
     return `${criticalDataCount}/3 données critiques`;
   }
 
-  const handleOnboardingComplete = () => {
-    setIsOnboardingModalOpen(false);
-    onOnboardingComplete();
-  };
 
   if (loading) {
     return (
@@ -274,11 +269,6 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
       </div>
 
       {modalContent && <AdviceModal content={modalContent} onClose={() => setModalContent(null)} />}
-      <OnboardingPerformanceModal 
-        isOpen={isOnboardingModalOpen}
-        onClose={() => setIsOnboardingModalOpen(false)}
-        onComplete={handleOnboardingComplete}
-      />
       <UpdateBodyFatModal 
         isOpen={isBodyFatModalOpen}
         onClose={() => setIsBodyFatModalOpen(false)}
