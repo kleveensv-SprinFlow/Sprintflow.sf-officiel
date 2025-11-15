@@ -48,6 +48,7 @@ export const SemanticSlider: React.FC<SemanticSliderProps> = ({
             max={max}
             value={value}
             onChange={(e) => onChange(parseInt(e.target.value))}
+            onPointerDown={(e) => e.stopPropagation()}
             className="bg-gray-200 dark:bg-gray-600 rounded-lg slider-thumb slider-vertical"
             style={sliderStyle}
           />
