@@ -5,7 +5,8 @@ import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
 const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url';
-const PROFILE_LOAD_TIMEOUT = 7000;
+const PROFILE_LOAD_TIMEOUT = 20000;
+const SESSION_TIMEOUT = 10000;
 
 interface AuthState {
   session: Session | null;
@@ -190,30 +191,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const timerId = logger.time(`[useAuth:${cycleId}] Temps chargement profil`);
 
       try {
-        const profilePromise = ensureProfileExists(userId, userEmail, userMetadata);
-        const timeoutPromise = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout profil après 7s')), PROFILE_LOAD_TIMEOUT)
-        );
-
-        const profile = await Promise.race([profilePromise, timeoutPromise]);
-
+        const profile = await ensureProfileExists(userId, userEmail, userMetadata);
         logger.timeEnd(timerId);
 
         if (profile) {
           logger.info(`[useAuth:${cycleId}] ✅ PROFILE_LOADED:`, { id: profile.id, role: profile.role });
         } else {
-          logger.warn(`[useAuth:${cycleId}] ⚠️ PROFILE_FAILED: Profil null`);
+          logger.warn(`[useAuth:${cycleId}] ⚠️ PROFILE_FAILED: Profil null, création profil par défaut`);
+          const defaultProfile: Profile = {
+            id: userId,
+            email: userEmail,
+            role: userMetadata?.role || 'athlete',
+            full_name: userEmail.split('@')[0],
+            first_name: '',
+            last_name: '',
+          };
+          return defaultProfile;
         }
 
         return profile;
       } catch (e: any) {
         logger.timeEnd(timerId);
-        if (e.message?.includes('Timeout')) {
-          logger.error(`[useAuth:${cycleId}] ⏱️ PROFILE_TIMEOUT: Délai dépassé, création profil par défaut`);
-          return await ensureProfileExists(userId, userEmail, userMetadata);
-        }
         logger.error(`[useAuth:${cycleId}] ❌ PROFILE_ERROR:`, e);
-        return null;
+
+        const defaultProfile: Profile = {
+          id: userId,
+          email: userEmail,
+          role: userMetadata?.role || 'athlete',
+          full_name: userEmail.split('@')[0],
+          first_name: '',
+          last_name: '',
+        };
+        logger.warn(`[useAuth:${cycleId}] 🔄 Utilisation profil par défaut suite à l'erreur`);
+        return defaultProfile;
       }
     };
 
@@ -223,7 +233,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise<{ data: { session: null }, error: null }>((resolve) =>
-          setTimeout(() => resolve({ data: { session: null }, error: null }), 5000)
+          setTimeout(() => {
+            logger.warn(`[useAuth:${cycleId}] ⏱️ Session timeout après ${SESSION_TIMEOUT}ms`);
+            resolve({ data: { session: null }, error: null });
+          }, SESSION_TIMEOUT)
         );
 
         const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);

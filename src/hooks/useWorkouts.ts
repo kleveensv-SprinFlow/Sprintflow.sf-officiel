@@ -69,19 +69,10 @@ export function useWorkouts(selection?: Selection) {
         try {
           groupTimerId = logger.time('[useWorkouts] Temps requête group_members');
 
-          const groupMembershipsPromise = supabase
+          const { data: groupMemberships, error: groupError } = await supabase
             .from('group_members')
             .select('group_id')
             .eq('athlete_id', user.id);
-
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout group_members après 12s')), 12000)
-          );
-
-          const { data: groupMemberships, error: groupError } = await Promise.race([
-            groupMembershipsPromise,
-            timeoutPromise
-          ]) as any;
 
           logger.timeEnd(groupTimerId);
 
@@ -100,7 +91,7 @@ export function useWorkouts(selection?: Selection) {
           query = query.or(filter);
         } catch (groupError) {
           if (groupTimerId) logger.timeEnd(groupTimerId);
-          logger.warn('[useWorkouts] Erreur/timeout groupes, charge uniquement user:', groupError);
+          logger.warn('[useWorkouts] Erreur groupes, charge uniquement user:', groupError);
           query = query.or(`user_id.eq.${user.id},assigned_to_user_id.eq.${user.id}`);
         }
       }
