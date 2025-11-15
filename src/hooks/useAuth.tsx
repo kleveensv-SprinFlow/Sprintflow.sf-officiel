@@ -5,7 +5,7 @@ import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
 const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url';
-const PROFILE_LOAD_TIMEOUT = 3000;
+const PROFILE_LOAD_TIMEOUT = 7000;
 
 interface AuthState {
   session: Session | null;
@@ -192,7 +192,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const profilePromise = ensureProfileExists(userId, userEmail, userMetadata);
         const timeoutPromise = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout profil après 3s')), PROFILE_LOAD_TIMEOUT)
+          setTimeout(() => reject(new Error('Timeout profil après 7s')), PROFILE_LOAD_TIMEOUT)
         );
 
         const profile = await Promise.race([profilePromise, timeoutPromise]);
