@@ -20,58 +20,61 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
   const { wellnessData, refresh: refreshWellnessData } = useWellness(user?.id);
   const [isCheckinOpen, setCheckinOpen] = useState(false);
   const [scoreForme, setScoreForme] = useState<{ indice: number | null } | null>(null);
-  const [scorePerformance, setScorePerformance] = useState<{ indice: number | null } | null>(null);
+  const [scorePerformance, setScorePerformance] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   const today = new Date().toISOString().split('T')[0];
   const hasCheckedInToday = wellnessData?.some(log => log.date === today && log.ressenti_sommeil !== null) || false;
 
-  useEffect(() => {
-    const loadScores = async () => {
-      if (!user?.id) {
-        console.log('📊 [Dashboard] Pas d\'utilisateur, skip chargement scores');
-        setLoading(false);
-        return;
-      }
+  const loadScores = async () => {
+    if (!user?.id) {
+      console.log('📊 [Dashboard] Pas d\'utilisateur, skip chargement scores');
+      setLoading(false);
+      return;
+    }
 
+    try {
+      console.log('📊 [Dashboard] Début chargement scores pour:', user.id);
+      setLoading(true);
+
+      // On charge l'indice de performance même sans check-in
       try {
-        console.log('📊 [Dashboard] Début chargement scores pour:', user.id);
-        setLoading(true);
-
-        if (hasCheckedInToday) {
-          console.log('✅ [Dashboard] Check-in effectué, chargement des indices');
-
-          try {
-            const { data: formeData, error: formeError } = await supabase.rpc('get_current_indice_forme', { user_id_param: user.id });
-            if (formeError) throw formeError;
-            console.log('📈 [Dashboard] Indice forme:', formeData);
-            setScoreForme({ indice: formeData });
-          } catch (error) {
-            console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de forme:', error);
-            setScoreForme({ indice: null });
-          }
-
-          try {
-            const { data: perfData, error: perfError } = await supabase.rpc('get_indice_poids_puissance', { user_id_param: user.id });
-            if (perfError) throw perfError;
-            console.log('💪 [Dashboard] Indice performance:', perfData);
-            setScorePerformance({ indice: perfData });
-          } catch (error) {
-            console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de performance:', error);
-            setScorePerformance({ indice: null });
-          }
-          console.log('✅ [Dashboard] Scores chargés avec succès');
-        } else {
-          console.log('ℹ️ [Dashboard] Pas de check-in aujourd\'hui, skip indices');
-        }
+        const { data: perfData, error: perfError } = await supabase.rpc('get_indice_poids_puissance');
+        if (perfError) throw perfError;
+        console.log('💪 [Dashboard] Indice performance:', perfData);
+        setScorePerformance(perfData);
       } catch (error) {
-        console.error('❌ [Dashboard] Erreur critique chargement scores:', error);
-      } finally {
-        setLoading(false);
-        console.log('✅ [Dashboard] Chargement terminé');
+        console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de performance:', error);
+        setScorePerformance(null);
       }
-    };
+      
+      if (hasCheckedInToday) {
+        console.log('✅ [Dashboard] Check-in effectué, chargement indice forme');
+        try {
+          const { data: formeData, error: formeError } = await supabase.rpc('get_current_indice_forme');
+          if (formeError) throw formeError;
+          console.log('📈 [Dashboard] Indice forme:', formeData);
+          setScoreForme({ indice: formeData });
+        } catch (error) {
+          console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de forme:', error);
+          setScoreForme({ indice: null });
+        }
+      } else {
+        setScoreForme({ indice: null });
+        console.log('ℹ️ [Dashboard] Pas de check-in aujourd\'hui, skip indice forme');
+      }
+      
+      console.log('✅ [Dashboard] Scores chargés');
+    } catch (error) {
+      console.error('❌ [Dashboard] Erreur critique chargement scores:', error);
+    } finally {
+      setLoading(false);
+      console.log('✅ [Dashboard] Chargement terminé');
+    }
+  };
 
+
+  useEffect(() => {
     loadScores();
   }, [user?.id, hasCheckedInToday]);
 
@@ -96,6 +99,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
         scorePerformance={scorePerformance}
         hasCheckedInToday={hasCheckedInToday}
         onCheckinClick={() => setCheckinOpen(true)}
+        onOnboardingComplete={loadScores}
+        onNavigate={() => {}} // Placeholder for now
       />
 
       <AnimatePresence>
