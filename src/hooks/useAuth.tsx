@@ -5,8 +5,6 @@ import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
 const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url';
-const PROFILE_LOAD_TIMEOUT = 20000;
-const SESSION_TIMEOUT = 10000;
 
 interface AuthState {
   session: Session | null;
@@ -60,13 +58,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       logger.info(`[useAuth:${cycleId}] 🔍 Vérification existence du profil pour:`, userId);
 
-      const { data: existingProfile, error: fetchError } = await supabase
+      const fetchPromise = supabase
         .from('profiles')
         .select(PROFILE_COLUMNS)
         .eq('id', userId)
         .maybeSingle();
 
-      if (fetchError) {
+      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+        setTimeout(() => {
+          logger.warn(`[useAuth:${cycleId}] ⏱️ Timeout fetch profil après 5s, utilisation profil minimal`);
+          resolve({ data: null, error: { message: 'Timeout' } });
+        }, 5000)
+      );
+
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      const { data: existingProfile, error: fetchError } = result as any;
+
+      if (fetchError && fetchError.message !== 'Timeout') {
         logger.error(`[useAuth:${cycleId}] Erreur lors de la vérification du profil:`, fetchError);
         throw fetchError;
       }
@@ -76,7 +84,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return existingProfile;
       }
 
-      logger.warn(`[useAuth:${cycleId}] 🆕 Aucun profil trouvé, création automatique d'un profil par défaut`);
+      if (fetchError?.message === 'Timeout') {
+        logger.warn(`[useAuth:${cycleId}] ⏱️ Création profil minimal suite au timeout`);
+        const minimalProfile: Profile = {
+          id: userId,
+          email: userEmail,
+          role: userMetadata?.role || 'athlete',
+          full_name: userEmail.split('@')[0],
+          first_name: '',
+          last_name: '',
+        };
+        return minimalProfile;
+      }
+
+      logger.warn(`[useAuth:${cycleId}] 🆕 Aucun profil trouvé, création automatique`);
 
       const defaultRole = userMetadata?.role || 'athlete';
       const defaultProfile = {
@@ -88,31 +109,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         last_name: '',
       };
 
-      const { data: newProfile, error: insertError } = await supabase
-        .from('profiles')
-        .insert(defaultProfile)
-        .select(PROFILE_COLUMNS)
-        .single();
+      try {
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert(defaultProfile)
+          .select(PROFILE_COLUMNS)
+          .single();
 
-      if (insertError) {
-        if (insertError.code === '23505') {
-          logger.warn(`[useAuth:${cycleId}] Profil existe déjà (conflit), re-tentative de lecture`);
-          const { data: retryProfile } = await supabase
-            .from('profiles')
-            .select(PROFILE_COLUMNS)
-            .eq('id', userId)
-            .maybeSingle();
-          return retryProfile;
+        if (insertError) {
+          if (insertError.code === '23505') {
+            logger.warn(`[useAuth:${cycleId}] Profil existe déjà (conflit), re-tentative`);
+            const { data: retryProfile } = await supabase
+              .from('profiles')
+              .select(PROFILE_COLUMNS)
+              .eq('id', userId)
+              .maybeSingle();
+            return retryProfile || defaultProfile;
+          }
+          throw insertError;
         }
-        logger.error(`[useAuth:${cycleId}] ❌ Erreur lors de la création du profil:`, insertError);
-        throw insertError;
-      }
 
-      logger.info(`[useAuth:${cycleId}] ✅ Profil par défaut créé avec succès:`, { id: newProfile.id, role: newProfile.role });
-      return newProfile;
+        logger.info(`[useAuth:${cycleId}] ✅ Profil créé:`, { id: newProfile.id, role: newProfile.role });
+        return newProfile;
+      } catch (insertError) {
+        logger.error(`[useAuth:${cycleId}] ❌ Erreur création, utilisation profil minimal:`, insertError);
+        return defaultProfile;
+      }
     } catch (e) {
-      logger.error(`[useAuth:${cycleId}] ❌ Exception dans ensureProfileExists:`, e);
-      return null;
+      logger.error(`[useAuth:${cycleId}] ❌ Exception:`, e);
+      const minimalProfile: Profile = {
+        id: userId,
+        email: userEmail,
+        role: userMetadata?.role || 'athlete',
+        full_name: userEmail.split('@')[0],
+        first_name: '',
+        last_name: '',
+      };
+      return minimalProfile;
     }
   }, []);
 
@@ -231,15 +264,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         logger.info(`[useAuth:${cycleId}] 🚀 START_INIT`);
 
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<{ data: { session: null }, error: null }>((resolve) =>
-          setTimeout(() => {
-            logger.warn(`[useAuth:${cycleId}] ⏱️ Session timeout après ${SESSION_TIMEOUT}ms`);
-            resolve({ data: { session: null }, error: null });
-          }, SESSION_TIMEOUT)
-        );
-
-        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
+        const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
           logger.warn(`[useAuth:${cycleId}] Erreur (ignorée) pendant getSession:`, error);
