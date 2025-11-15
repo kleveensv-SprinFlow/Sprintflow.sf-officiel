@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home,
@@ -7,49 +8,49 @@ import {
   Users,
   Plus,
 } from 'lucide-react';
-import { View } from '../types';
 
 interface TabBarProps {
-  currentView: View;
-  setCurrentView: (view: View) => void;
-  onFabAction: (view: View) => void;
-  isFabOpen: boolean;
-  setFabOpen: (open: boolean) => void;
   userRole?: 'athlete' | 'coach';
 }
 
-const TabBar: React.FC<TabBarProps> = ({
-  currentView,
-  setCurrentView,
-  onFabAction,
-  isFabOpen,
-  setFabOpen,
-  userRole = 'athlete',
-}) => {
+const TabBar: React.FC<TabBarProps> = ({ userRole = 'athlete' }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isFabOpen, setFabOpen] = useState(false);
+
   const athleteNavItems = [
-    { view: 'dashboard', icon: Home, label: 'Accueil' },
-    { view: 'workouts', icon: Calendar, label: 'Planning' },
+    { path: '/', icon: Home, label: 'Accueil' },
+    { path: '/workouts', icon: Calendar, label: 'Planning' },
     null, // Placeholder for the FAB
-    { view: 'nutrition', icon: Apple, label: 'Nutrition' },
-    { view: 'groups', icon: Users, label: 'Groupes' },
+    { path: '/nutrition', icon: Apple, label: 'Nutrition' },
+    { path: '/groups', icon: Users, label: 'Groupes' },
   ];
 
   const fabActions = [
-    { view: 'add-workout', icon: Plus, label: 'Nouvelle Séance' },
-    // Ajoutez d'autres actions si nécessaire
+    { path: '/planning/new', icon: Plus, label: 'Nouvelle Séance' },
   ];
 
   const navItems = athleteNavItems;
 
-  const handleFabActionClick = (view: View) => {
-    onFabAction(view);
+  const handleFabActionClick = (path: string) => {
+    navigate(path);
     setFabOpen(false);
+  };
+
+  const handleNavClick = (path: string) => {
+    navigate(path);
+  };
+
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
   };
 
   return (
     <>
       <AnimatePresence>
-        {/* Bouton principal FAB */}
         {isFabOpen && (
           <motion.div
             key="fab-menu"
@@ -60,34 +61,46 @@ const TabBar: React.FC<TabBarProps> = ({
           >
             {fabActions.map((action) => (
               <button
-                key={action.view}
-                onClick={() => handleFabActionClick(action.view)}
-                className="rounded-full p-3 bg-primary-600 text-white"
+                key={action.path}
+                onClick={() => handleFabActionClick(action.path)}
+                className="rounded-full p-3 bg-primary-600 text-white shadow-lg hover:bg-primary-700 transition-colors"
               >
-                <action.icon />
-                {action.label}
+                <action.icon size={24} />
+                <span className="sr-only">{action.label}</span>
               </button>
             ))}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Barre de navigation en bas */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white flex justify-around items-center shadow-lg z-50 border-t">
+      {isFabOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-40"
+          onClick={() => setFabOpen(false)}
+        />
+      )}
+
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-dark-surface flex justify-around items-center shadow-lg z-50 border-t border-gray-200 dark:border-gray-700">
         {navItems.map((item, index) =>
           item ? (
             <button
               key={index}
-              onClick={() => setCurrentView(item.view)}
+              onClick={() => handleNavClick(item.path)}
               className={`flex flex-col items-center ${
-                currentView === item.view ? 'text-primary-500' : 'text-gray-500'
+                isActive(item.path) ? 'text-primary-500' : 'text-gray-500 dark:text-gray-400'
               }`}
             >
               <item.icon size={24} />
-              <span className="text-xs">{item.label}</span>
+              <span className="text-xs mt-1">{item.label}</span>
             </button>
           ) : (
-            <div key={`fab-placeholder-${index}`} className="w-16"></div>
+            <button
+              key={`fab-${index}`}
+              onClick={() => setFabOpen(!isFabOpen)}
+              className="w-14 h-14 rounded-full bg-primary-600 text-white flex items-center justify-center -mt-8 shadow-lg hover:bg-primary-700 transition-colors"
+            >
+              <Plus size={28} className={`transition-transform ${isFabOpen ? 'rotate-45' : ''}`} />
+            </button>
           )
         )}
       </div>

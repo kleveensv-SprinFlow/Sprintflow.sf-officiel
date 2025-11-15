@@ -12,10 +12,10 @@ import { supabase } from '../lib/supabase';
 
 interface DashboardProps {
   userRole?: 'athlete' | 'coach' | 'developer' | 'encadrant' | null;
-  onViewChange: (view: any) => void;
+  onViewChange?: (view: any) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
+const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
   const { user } = useAuth();
   const { wellnessData, refresh: refreshWellnessData } = useWellness(user?.id);
   const [isCheckinOpen, setCheckinOpen] = useState(false);
@@ -82,7 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
 
   // Affiche le dashboard du coach uniquement si le rôle est 'coach'
   if (userRole === 'coach') {
-    return <CoachDashboard onViewChange={onViewChange} />;
+    return <CoachDashboard />;
   }
 
   // Pour tous les autres rôles (athlète, développeur, etc.) ou si le rôle est indéfini,
@@ -94,7 +94,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
         loading={loading}
         scoreForme={scoreForme}
         scorePerformance={scorePerformance}
-        onNavigate={() => onViewChange('performance')}
         hasCheckedInToday={hasCheckedInToday}
         onCheckinClick={() => setCheckinOpen(true)}
       />
@@ -109,11 +108,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole, onViewChange }) => {
         )}
       </AnimatePresence>
 
-      <AthleteDailyPlanCarousel userId={user?.id} onNavigate={onViewChange} />
+      <AthleteDailyPlanCarousel userId={user?.id} />
 
-      <TrackRecordsCarousel userId={user?.id} onNavigate={onViewChange} />
+      <TrackRecordsCarousel userId={user?.id} />
 
-      <StrengthRecordsCarousel userId={user?.id} onNavigate={onViewChange} />
+      <StrengthRecordsCarousel userId={user?.id} />
     </div>
   );
 };

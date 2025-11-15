@@ -1,32 +1,33 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Trophy, Lightbulb, Settings, Building, Mail } from 'lucide-react';
-import { View } from '../../types';
 
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  setCurrentView: (view: View) => void;
 }
 
-const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, setCurrentView }) => {
+const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const menuItems = [
-    { view: 'profile' as View, icon: User, label: 'Mon Profil' },
-    { view: 'records' as View, icon: Trophy, label: 'Mes Records' },
-    { view: 'advice' as View, icon: Lightbulb, label: 'Conseil' },
-    { view: 'settings' as View, icon: Settings, label: 'Paramètres' },
-    { view: 'partners' as View, icon: Building, label: 'Partenaires' },
-    { view: 'contact' as View, icon: Mail, label: 'Contact' },
+    { path: '/profile', icon: User, label: 'Mon Profil' },
+    { path: '/records', icon: Trophy, label: 'Mes Records' },
+    { path: '/advice', icon: Lightbulb, label: 'Conseil' },
+    { path: '/settings', icon: Settings, label: 'Paramètres' },
+    { path: '/partnerships', icon: Building, label: 'Partenaires' },
+    { path: '/contact', icon: Mail, label: 'Contact' },
   ];
 
-  const handleNavigation = (view: View) => {
-    // Pour les vues non implémentées, on ne fait rien pour l'instant
-    const implementedViews: View[] = ['profile', 'records'];
-    if (implementedViews.includes(view)) {
-      setCurrentView(view);
-      onClose();
-    }
-    // Idéalement, afficher un toast pour informer l'utilisateur plus tard
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    onClose();
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
 
   const backdropVariants = {
@@ -73,10 +74,14 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, setCurrentView }) 
             <nav className="flex-1 p-4">
               <ul className="space-y-2">
                 {menuItems.map((item) => (
-                  <li key={item.view}>
+                  <li key={item.path}>
                     <button
-                      onClick={() => handleNavigation(item.view)}
-                      className="w-full flex items-center p-3 rounded-lg text-base font-semibold hover:bg-white/20 dark:hover:bg-gray-800/60 transition-colors duration-200"
+                      onClick={() => handleNavigation(item.path)}
+                      className={`w-full flex items-center p-3 rounded-lg text-base font-semibold transition-colors duration-200 ${
+                        isActive(item.path)
+                          ? 'bg-primary-500/20 text-primary-600 dark:text-primary-400'
+                          : 'hover:bg-white/20 dark:hover:bg-gray-800/60'
+                      }`}
                     >
                       <item.icon className="mr-4" size={22} />
                       <span>{item.label}</span>
