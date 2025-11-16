@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Calendar, Apple, MessageSquare, Plus } from 'lucide-react';
+import { Home, Calendar, Apple, Plus } from 'lucide-react';
+import SprintyIcon from './ui/SprintyIcon.tsx';
 
-type Tab = 'accueil' | 'planning' | 'nutrition' | 'coach-ia';
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'sprinty';
 
 interface TabBarProps {
   activeTab: Tab;
@@ -16,7 +17,7 @@ const tabs = [
   { id: 'accueil', label: 'Accueil', Icon: Home },
   { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
   { id: 'nutrition', label: 'Nutrition', Icon: Apple },
-  { id: 'coach-ia', label: 'Coach IA', Icon: MessageSquare, notification: 'showCoachNotification' },
+  { id: 'sprinty', label: 'Sprinty', Icon: SprintyIcon, notification: 'showCoachNotification' },
 ];
 
 const TabBar: React.FC<TabBarProps> = ({
