@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Edit, Settings, LogOut, Camera, Shield, Lock, Trash2, MessageSquare, Loader2, Target, Handshake, Zap } from 'lucide-react';
+import { Edit, Settings, LogOut, Camera, Shield, Lock, Trash2, MessageSquare, Loader2, Target, Handshake, Zap, Sun, Moon, Monitor } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 import { EditProfileModal } from './EditProfileModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { DeleteAccountModal } from './DeleteAccountModal';
@@ -45,6 +46,7 @@ interface Objectif {
 
 const ProfilePage: React.FC = () => {
   const { user, signOut, profile: authProfile, updateProfile } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [objectif, setObjectif] = useState<Objectif | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -284,19 +286,19 @@ const ProfilePage: React.FC = () => {
   }
 
     const ProfileCard = ({ profile, onEdit }: { profile: ProfileData, onEdit: () => void }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 relative overflow-hidden">
+    <div className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-2xl shadow-premium border border-gray-200 dark:border-gray-700 p-6 relative overflow-hidden">
       <div className="absolute top-4 right-4">
         <button onClick={onEdit} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600">
-          <Edit className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          <Edit className="w-5 h-5 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
         </button>
       </div>
 
       <div className="flex items-center space-x-6">
         <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-4 border-white dark:border-gray-800">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sprint-accent to-blue-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-4 border-white dark:border-sprint-dark-surface">
             {profile.photo_url ? <img src={profile.photo_url} alt="Avatar" className="w-full h-full object-cover" /> : getInitials(profile)}
           </div>
-          <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} className="absolute -bottom-1 -right-1 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md">
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} className="absolute -bottom-1 -right-1 p-2 bg-sprint-accent hover:bg-blue-700 text-white rounded-full shadow-md">
             {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
           </button>
           <input
@@ -308,36 +310,36 @@ const ProfilePage: React.FC = () => {
           />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{getFullName(profile)}</h1>
-          <p className="text-gray-500 dark:text-gray-400">{profile.email}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{profile.role}</p>
+          <h1 className="text-2xl font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{getFullName(profile)}</h1>
+          <p className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary">{profile.email}</p>
+          <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary capitalize">{profile.role}</p>
         </div>
       </div>
 
       <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6 grid grid-cols-2 gap-x-6 gap-y-4">
         <div>
-          <label className="text-sm text-gray-500 dark:text-gray-400 block">Date de Naissance</label>
-          <p className="font-medium text-gray-800 dark:text-gray-200">{formatDate(profile.date_de_naissance)}</p>
+          <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">Date de Naissance</label>
+          <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{formatDate(profile.date_de_naissance)}</p>
         </div>
         <div>
-          <label className="text-sm text-gray-500 dark:text-gray-400 block">Sexe</label>
-          <p className="font-medium text-gray-800 dark:text-gray-200 capitalize">{profile.sexe || 'N/A'}</p>
+          <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">Sexe</label>
+          <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary capitalize">{profile.sexe || 'N/A'}</p>
         </div>
         {profile.role === 'athlete' && (
           <>
             <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400 block">Taille</label>
-              <p className="font-medium text-gray-800 dark:text-gray-200">{profile.height ? `${profile.height} cm` : 'N/A'}</p>
+              <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">Taille</label>
+              <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{profile.height ? `${profile.height} cm` : 'N/A'}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-500 dark:text-gray-400 block">Discipline</label>
-              <p className="font-medium text-gray-800 dark:text-gray-200 capitalize">{profile.discipline || 'N/A'}</p>
+              <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">Discipline</label>
+              <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary capitalize">{profile.discipline || 'N/A'}</p>
             </div>
           </>
         )}
         <div>
-          <label className="text-sm text-gray-500 dark:text-gray-400 block">N° de License</label>
-          <p className="font-medium text-gray-800 dark:text-gray-200">{profile.license_number || 'Non renseigné'}</p>
+          <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">N° de License</label>
+          <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{profile.license_number || 'Non renseigné'}</p>
         </div>
       </div>
     </div>
@@ -351,46 +353,76 @@ const ProfilePage: React.FC = () => {
     <div className="max-w-xl mx-auto p-4 md:p-6 space-y-6">
       <ProfileCard profile={profile} onEdit={() => setShowEditModal(true)} />
 
+      <div className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow-premium border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
+          Apparence
+        </h2>
+        <div className="flex justify-around rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
+          <button
+            onClick={() => setTheme('light')}
+            className={`flex-1 p-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${theme === 'light' ? 'bg-white shadow text-blue-600' : 'text-gray-600 dark:text-gray-300'}`}
+          >
+            <Sun className="w-4 h-4" />
+            Clair
+          </button>
+          <button
+            onClick={() => setTheme('dark')}
+            className={`flex-1 p-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${theme === 'dark' ? 'bg-gray-800 shadow text-white' : 'text-gray-600 dark:text-gray-300'}`}
+          >
+            <Moon className="w-4 h-4" />
+            Sombre
+          </button>
+          <button
+            onClick={() => setTheme('system')}
+            className={`flex-1 p-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${theme === 'system' ? 'bg-white dark:bg-gray-800 shadow text-blue-600 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}
+          >
+            <Monitor className="w-4 h-4" />
+            Système
+          </button>
+        </div>
+      </div>
+
+
       {profile?.role === 'athlete' && (
         <>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+          <div className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow-premium border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
               <Target className="w-6 h-6" />
               Mon Objectif
             </h2>
             {objectif ? (
               <div className="text-center">
-                <p className="text-gray-600 dark:text-gray-300">{objectif.epreuve?.nom || objectif.exercice?.nom}</p>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{objectif.valeur} {objectif.epreuve?.unite || objectif.exercice?.unite}</p>
+                <p className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary">{objectif.epreuve?.nom || objectif.exercice?.nom}</p>
+                <p className="text-3xl font-bold text-sprint-accent dark:text-blue-400 my-2">{objectif.valeur} {objectif.epreuve?.unite || objectif.exercice?.unite}</p>
                 {objectif.date_echeance && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary mt-1">
                     Échéance : {new Date(objectif.date_echeance).toLocaleDateString('fr-FR')}
                   </p>
                 )}
-                <button onClick={() => setShowObjectifModal(true)} className="mt-2 text-sm text-blue-500 hover:underline">Modifier</button>
+                <button onClick={() => setShowObjectifModal(true)} className="mt-2 text-sm text-sprint-accent hover:underline">Modifier</button>
               </div>
             ) : (
               <div className="text-center">
-                <p className="text-gray-500 dark:text-gray-400 mb-4">Vous n'avez pas encore défini d'objectif.</p>
+                <p className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary mb-4">Vous n'avez pas encore défini d'objectif.</p>
                 <button
                   onClick={() => setShowObjectifModal(true)}
-                  className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                  className="px-4 py-2 rounded-md bg-sprint-accent text-white hover:bg-blue-700"
                 >
                   Définir un objectif
                 </button>
               </div>
             )}
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+          <div className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow-premium border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
               <Zap className="w-6 h-6" />
               Mes Données de Performance
             </h2>
             <div className="text-center">
-               <p className="text-gray-500 dark:text-gray-400 mb-4">Mettez à jour vos records et votre poids pour affiner votre indice Poids/Puissance.</p>
+               <p className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary mb-4">Mettez à jour vos records et votre poids pour affiner votre indice Poids/Puissance.</p>
                <button
                 onClick={() => setShowOnboardingModal(true)}
-                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                className="px-4 py-2 rounded-md bg-sprint-accent text-white hover:bg-blue-700"
               >
                 Mettre à jour mes données
               </button>
@@ -399,36 +431,36 @@ const ProfilePage: React.FC = () => {
         </>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow-premium border border-gray-200 dark:border-gray-700 p-6">
         <div className="space-y-3">
           <button onClick={() => navigate('settings')} className="w-full flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <span className="font-medium text-gray-900 dark:text-white">Paramètres</span>
-            <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <span className="font-medium text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Paramètres</span>
+            <Settings className="w-4 h-4 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
           </button>
           <button onClick={() => navigate('contact')} className="w-full flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <span className="font-medium text-gray-900 dark:text-white">Contact</span>
-            <MessageSquare className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <span className="font-medium text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Contact</span>
+            <MessageSquare className="w-4 h-4 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
           </button>
           <button onClick={() => navigate('partnerships')} className="w-full flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <span className="font-medium text-gray-900 dark:text-white">Partenaires</span>
-            <Handshake className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <span className="font-medium text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Partenaires</span>
+            <Handshake className="w-4 h-4 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
           </button>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
+      <div className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow-premium border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
           <Shield className="w-6 h-6" />
           Sécurité
         </h2>
         <div className="space-y-3">
           <button onClick={() => setShowChangePasswordModal(true)} className="w-full flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <span className="font-medium text-gray-900 dark:text-white">Changer le mot de passe</span>
-            <Lock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <span className="font-medium text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Changer le mot de passe</span>
+            <Lock className="w-4 h-4 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
           </button>
           <button onClick={signOut} className="w-full flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-            <span className="font-medium text-gray-900 dark:text-white">Se déconnecter</span>
-            <LogOut className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <span className="font-medium text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Se déconnecter</span>
+            <LogOut className="w-4 h-4 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
           </button>
           <button onClick={() => setShowDeleteAccountModal(true)} className="w-full flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-transparent hover:border-red-500 dark:hover:border-red-500 transition-colors">
             <span className="font-medium text-red-600 dark:text-red-400">Supprimer mon compte</span>
