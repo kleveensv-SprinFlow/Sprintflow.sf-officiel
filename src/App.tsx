@@ -36,15 +36,13 @@ const viewTitles: Record<string, string> = {
   '/share-performance': 'Partager un Exploit',
 };
 
-// Fonction pour mapper le chemin actuel à un onglet actif
 const pathToTab = (path: string): Tab => {
   if (path.startsWith('/planning')) return 'planning';
   if (path.startsWith('/nutrition')) return 'nutrition';
   if (path.startsWith('/sprinty')) return 'sprinty';
   if (path === '/') return 'accueil';
-  return 'accueil'; // Onglet par défaut
+  return 'accueil';
 };
-
 
 function App() {
   const { user, loading, profile } = useAuth();
@@ -87,11 +85,9 @@ function App() {
   };
 
   const handleFabClick = () => {
-    // Action "Enregistrer une Performance"
     navigate('/records/new');
   };
   
-  // La TabBar ne devrait s'afficher que pour les vues principales
   const showTabBar = ['/', '/planning', '/nutrition', '/sprinty', '/records'].includes(currentPath);
 
   return (
@@ -112,8 +108,8 @@ function App() {
           activeTab={pathToTab(currentPath)}
           onTabChange={handleTabChange}
           onFabClick={handleFabClick}
-          showPlanningNotification={false} // Logique à implémenter
-          showCoachNotification={true} // Exemple de notification active
+          showPlanningNotification={false}
+          showCoachNotification={true}
         />
       )}
       <SideMenu
