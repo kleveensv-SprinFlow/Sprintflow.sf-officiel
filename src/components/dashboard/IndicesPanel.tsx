@@ -7,7 +7,7 @@ import UpdateBodyFatModal from './UpdateBodyFatModal.tsx';
 import { useBodycomp } from '../../hooks/useBodycomp.ts';
 import { MicroChart } from '../common/MicroChart.tsx';
 
-const ACCENT_COLOR_CLASS = 'text-violet-500';
+const ACCENT_COLOR_CLASS = 'text-sprint-accent';
 
 interface AnimatedScoreCircleProps {
   score: number | null;
@@ -48,14 +48,14 @@ const AnimatedScoreCircle: React.FC<AnimatedScoreCircleProps> = ({
           <div className="absolute inset-0 flex items-center justify-center p-2">
             <button
               onClick={(e) => { e.stopPropagation(); if (onButtonClick) onButtonClick(); }}
-              className={`bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs py-2 px-3 rounded-lg transition-colors duration-300 text-center shadow-md shadow-violet-500/30`}
+              className={`bg-sprint-accent hover:bg-violet-700 text-white font-bold text-xs py-2 px-3 rounded-lg transition-colors duration-300 text-center shadow-md shadow-violet-500/30`}
             >
               {buttonText}
             </button>
           </div>
         </div>
-        <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-          <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+        <h3 className="text-sm font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex items-center gap-1.5">
+          <Icon className="w-4 h-4 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
           {title}
         </h3>
       </div>
@@ -68,11 +68,11 @@ const AnimatedScoreCircle: React.FC<AnimatedScoreCircleProps> = ({
         <div className={`relative ${size} flex items-center justify-center grayscale`}>
           <CircularProgress value={0} strokeWidth={8} className="w-full h-full" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-3xl font-bold text-gray-500 dark:text-gray-400">--</span>
+            <span className="text-3xl font-bold text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary">--</span>
           </div>
         </div>
-        <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-          <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+        <h3 className="text-sm font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex items-center gap-1.5">
+          <Icon className="w-4 h-4 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
           {title}
         </h3>
       </div>
@@ -119,8 +119,8 @@ const AnimatedScoreCircle: React.FC<AnimatedScoreCircleProps> = ({
           </div>
         </div>
       </div>
-      <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-        <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+      <h3 className="text-sm font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex items-center gap-1.5">
+        <Icon className="w-4 h-4 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
         {title}
       </h3>
       <div className="h-4 w-16 mt-1">
@@ -183,9 +183,9 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
 
   if (loading) {
      return (
-      <div className="flex justify-center items-center p-8 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl h-[240px] shadow-lg">
-        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-        <p className="ml-4 text-lg text-white/80">Calcul des indices...</p>
+      <div className="flex justify-center items-center p-8 bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-2xl h-[240px] shadow-premium">
+        <Loader2 className="w-8 h-8 animate-spin text-sprint-accent" />
+        <p className="ml-4 text-lg text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary">Calcul des indices...</p>
       </div>
     );
   }
@@ -196,10 +196,10 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-6 shadow-lg"
+      className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-2xl p-4 sm:p-6 shadow-premium"
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-white">Vos Indices</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Vos Indices</h2>
       </div>
 
       <div className="flex justify-around items-start w-full h-[160px]">
@@ -234,14 +234,14 @@ export function IndicesPanel({ loading, scoreForme, scorePerformance, onNavigate
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="flex flex-col items-center text-center p-4 rounded-2xl cursor-pointer hover:bg-white/5 transition-colors"
+                className="flex flex-col items-center text-center p-4 rounded-2xl cursor-pointer hover:bg-white/5 dark:hover:bg-white/5 transition-colors"
                 onClick={onUnlockPerformanceClick}
               >
-                <div className="p-3 bg-violet-500/20 rounded-full mb-2">
-                  <Lock className="w-6 h-6 text-violet-500" />
+                <div className="p-3 bg-sprint-accent/20 rounded-full mb-2">
+                  <Lock className="w-6 h-6 text-sprint-accent" />
                 </div>
-                <h3 className="font-bold text-white">Débloquer l'Indice</h3>
-                <p className="text-xs text-white/60">Entrez vos 1ères données</p>
+                <h3 className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Débloquer l'Indice</h3>
+                <p className="text-xs text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary">Entrez vos 1ères données</p>
               </motion.div>
             ) : (
               <motion.div
