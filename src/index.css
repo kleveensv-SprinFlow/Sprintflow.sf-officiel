@@ -7,6 +7,14 @@
 
 /* 2. Base layer and animations */
 @layer base {
+  :root {
+    --shadow-premium: theme('boxShadow.premium-light');
+  }
+
+  .dark {
+    --shadow-premium: theme('boxShadow.premium-dark');
+  }
+
   body {
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -140,6 +148,10 @@
 
 /* 3. Custom utility classes */
 @layer utilities {
+  .shadow-premium {
+    box-shadow: var(--shadow-premium);
+  }
+
   .bg-shimmer-dark {
     background: #121212 linear-gradient(
       to right,
