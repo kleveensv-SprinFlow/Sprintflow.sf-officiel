@@ -1,5 +1,5 @@
 import React from 'react';
-import { Record } from '../../../../types'; // Correction du chemin
+import { Record } from '../../../../types';
 import { Award } from 'lucide-react';
 
 interface RecordCardProps {
