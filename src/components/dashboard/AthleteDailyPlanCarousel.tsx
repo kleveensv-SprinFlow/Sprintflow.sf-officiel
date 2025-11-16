@@ -82,8 +82,8 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
                     />
                   ) : (
                     <div className="w-full h-full rounded-2xl p-4 flex flex-col justify-between bg-sprint-light-surface dark:bg-sprint-dark-surface/50 animate-pulse">
-                       <div className="h-6 w-3/4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                       <div className="h-4 w-1/2 bg-gray-300 dark:bg-gray-600 rounded mt-1"></div>
+                       <div className="h-6 w-3/4 bg-sprint-light-text-secondary/30 dark:bg-sprint-dark-text-secondary/30 rounded"></div>
+                       <div className="h-4 w-1/2 bg-sprint-light-text-secondary/30 dark:bg-sprint-dark-text-secondary/30 rounded mt-1"></div>
                     </div>
                   )}
                 </div>
