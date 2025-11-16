@@ -1,0 +1,5 @@
+# supabase/config.toml
+
+[functions]
+  [functions.daily-summary]
+    schedule = "0 11 * * *" # Exécute tous les jours à 11h00 UTC
