@@ -1,151 +1,82 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Home,
-  Calendar,
-  Apple,
-  Users,
-  Plus,
-  Dumbbell,
-  Award,
-  RadioTower
-} from 'lucide-react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Home, Calendar, Apple, MessageSquare, Plus } from 'lucide-react';
+
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'coach-ia';
 
 interface TabBarProps {
-  userRole?: 'athlete' | 'coach';
+  activeTab: Tab;
+  onTabChange: (tab: Tab) => void;
+  onFabClick: () => void;
+  showPlanningNotification?: boolean;
+  showCoachNotification?: boolean;
 }
 
-const TabBar: React.FC<TabBarProps> = ({ userRole = 'athlete' }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isFabOpen, setFabOpen] = useState(false);
+const tabs = [
+  { id: 'accueil', label: 'Accueil', Icon: Home },
+  { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
+  { id: 'nutrition', label: 'Nutrition', Icon: Apple },
+  { id: 'coach-ia', label: 'Coach IA', Icon: MessageSquare, notification: 'showCoachNotification' },
+];
 
-  const athleteNavItems = [
-    { path: '/', icon: Home, label: 'Tableau de Bord' },
-    { path: '/workouts', icon: Calendar, label: 'Entraînement' },
-    null, // Placeholder for the FAB
-    { path: '/nutrition', icon: Apple, label: 'Carburant' },
-    { path: '/groups', icon: Users, label: 'Communauté' },
-  ];
+const TabBar: React.FC<TabBarProps> = ({
+  activeTab,
+  onTabChange,
+  onFabClick,
+  showPlanningNotification = false,
+  showCoachNotification = false,
+}) => {
+  const notificationStatus = { showPlanningNotification, showCoachNotification };
 
-  const fabActions = [
-    { path: '/planning/new', icon: Dumbbell, label: 'Ajouter une séance' },
-    { path: '/records/new', icon: Award, label: 'Ajouter un record' },
-    { path: '/live', icon: RadioTower, label: 'Live' },
-  ];
+  const renderTab = (tab: typeof tabs[0]) => {
+    const isActive = activeTab === tab.id;
+    const hasNotification = tab.notification ? notificationStatus[tab.notification as keyof typeof notificationStatus] : false;
 
-  const navItems = athleteNavItems;
-
-  const handleFabActionClick = (path: string) => {
-    navigate(path);
-    setFabOpen(false);
-  };
-
-  const handleNavClick = (path: string) => {
-    navigate(path);
-  };
-
-  const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  const fabContainerVariants = {
-    open: {
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-    closed: {
-      transition: {
-        staggerChildren: 0.05,
-        staggerDirection: -1,
-      },
-    },
-  };
-
-  const fabItemVariants = {
-    open: {
-      y: 0,
-      opacity: 1,
-      scale: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 300,
-        damping: 24,
-      },
-    },
-    closed: {
-      y: 20,
-      opacity: 0,
-      scale: 0.8,
-    },
+    return (
+      <button
+        key={tab.id}
+        onClick={() => onTabChange(tab.id as Tab)}
+        className="relative flex h-full flex-1 flex-col items-center justify-center gap-1 focus:outline-none"
+      >
+        {hasNotification && (
+          <span className="absolute right-1/2 top-3 h-2.5 w-2.5 translate-x-[20px] rounded-full bg-orange-accent" />
+        )}
+        <motion.div
+          animate={{ scale: isActive ? 1.15 : 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+        >
+          <tab.Icon
+            className={`h-6 w-6 ${isActive ? 'text-accent dark:text-dark-accent' : 'text-light-text/60 dark:text-dark-text/60'}`}
+            fill={isActive ? 'currentColor' : 'none'}
+            strokeWidth={isActive ? 2.5 : 2}
+          />
+        </motion.div>
+        <span className={`text-xs font-medium ${isActive ? 'text-light-title dark:text-dark-title' : 'text-transparent'}`}>
+          {tab.label}
+        </span>
+      </button>
+    );
   };
 
   return (
-    <>
-      <AnimatePresence>
-        {isFabOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-            onClick={() => setFabOpen(false)}
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-[84px] p-2">
+      <div className="relative flex h-full w-full items-center justify-around rounded-2xl border border-white/10 bg-light-card/70 dark:bg-dark-card/70 backdrop-blur-2xl">
+        {tabs.slice(0, 2).map(renderTab)}
+        <div className="w-16"></div> {/* Espace pour le FAB */}
+        {tabs.slice(2, 4).map(renderTab)}
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 transform">
+          <motion.button
+            onClick={onFabClick}
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-white shadow-lg dark:bg-dark-accent"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
           >
-            <motion.div
-              variants={fabContainerVariants}
-              initial="closed"
-              animate="open"
-              exit="closed"
-              className="absolute bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
-            >
-              {fabActions.map((action) => (
-                <motion.div key={action.path} variants={fabItemVariants} className="flex flex-col items-center">
-                  <button
-                    onClick={() => handleFabActionClick(action.path)}
-                    className="w-14 h-14 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 flex items-center justify-center transition-colors"
-                  >
-                    <action.icon size={24} />
-                  </button>
-                   <span className="mt-2 text-white text-sm font-bold text-shadow">{action.label}</span>
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-dark-surface flex justify-around items-center shadow-lg z-50 border-t border-gray-200 dark:border-gray-700">
-        {navItems.map((item, index) =>
-          item ? (
-            <button
-              key={index}
-              onClick={() => handleNavClick(item.path)}
-              className={`flex flex-col items-center transition-colors ${
-                isActive(item.path) ? 'text-primary-500' : 'text-gray-500 dark:text-gray-400'
-              }`}
-            >
-              <motion.div animate={{ scale: isActive(item.path) ? [1, 1.2, 1] : 1 }} transition={{ duration: 0.3 }}>
-                <item.icon size={24} />
-              </motion.div>
-              <span className="text-xs mt-1">{item.label}</span>
-            </button>
-          ) : (
-            <button
-              key={`fab-${index}`}
-              onClick={() => setFabOpen(!isFabOpen)}
-              className="w-14 h-14 rounded-full bg-primary-600 text-white flex items-center justify-center -mt-8 shadow-lg hover:bg-primary-700 transition-colors"
-            >
-              <Plus size={28} className={`transition-transform ${isFabOpen ? 'rotate-45' : ''}`} />
-            </button>
-          )
-        )}
+            <Plus className="h-8 w-8" strokeWidth={2.5} />
+          </motion.button>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
