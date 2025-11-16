@@ -73,3 +73,11 @@ export interface Record {
   date: string;
   exercice_reference_id?: string | null;
 }
+
+export interface Workout {
+  id: string;
+  date: string;
+  tag_seance?: string;
+  status: 'planned' | 'completed';
+  // Ajoutez d'autres champs si nécessaire
+}
