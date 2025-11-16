@@ -83,13 +83,13 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
   return (
     <div className="p-4 space-y-4">
       <div className="flex justify-center mb-4">
-        <div className="flex w-full max-w-xs p-1 space-x-1 bg-slate-200 dark:bg-slate-700 rounded-full">
+        <div className="flex w-full max-w-xs p-1 space-x-1 bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-full">
           <button
             onClick={() => setCurrentView('planning')}
             className={`w-1/2 py-2 text-sm font-semibold rounded-full transition-colors ${
               currentView === 'planning'
-                ? 'bg-white text-slate-900 dark:bg-slate-100 dark:text-slate-900 shadow'
-                : 'text-slate-600 dark:text-slate-200'
+                ? 'bg-white text-sprint-light-text-primary dark:bg-gray-200 dark:text-sprint-dark-text-primary shadow'
+                : 'text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary'
             }`}
           >
             Planning
@@ -98,8 +98,8 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
             onClick={() => setCurrentView('entrainement')}
             className={`w-1/2 py-2 text-sm font-semibold rounded-full transition-colors ${
               currentView === 'entrainement'
-                ? 'bg-white text-slate-900 dark:bg-slate-100 dark:text-slate-900 shadow'
-                : 'text-slate-600 dark:text-slate-200'
+                ? 'bg-white text-sprint-light-text-primary dark:bg-gray-200 dark:text-sprint-dark-text-primary shadow'
+                : 'text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary'
             }`}
           >
             Entraînement
@@ -107,7 +107,7 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="flex items-center justify-between gap-4 p-4 bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow">
         <button onClick={handlePrevWeek}><ChevronLeft /></button>
         <h2 className="text-lg font-semibold w-48 text-center">
             {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'd MMM', { locale: fr })} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'd MMM yyyy', { locale: fr })}
@@ -165,7 +165,7 @@ export const AthletePlanning: React.FC<AthletePlanningProps> = ({ onOpenWorkout 
                           <div
                             key={w.id}
                             onClick={() => handleWorkoutClick(w)}
-                            className="p-2 rounded-lg shadow-sm truncate bg-gray-50 dark:bg-gray-700/50 cursor-pointer"
+                            className="p-2 rounded-lg shadow-sm truncate bg-sprint-light-background dark:bg-sprint-dark-surface cursor-pointer"
                             style={{ borderLeft: `4px solid ${workoutColor}` }}
                             title={workoutName}
                           >
