@@ -7,6 +7,7 @@ import PlanningPage from '../pages/PlanningPage';
 import NutritionPage from '../pages/NutritionPage';
 import RecordsPage from '../components/records/RecordsPage';
 import ChatPage from '../pages/ChatPage';
+import SprintyChatView from '../components/chat/sprinty/SprintyChatView';
 import AdvicePage from '../components/advice/AdvicePage';
 import SleepPage from '../pages/SleepPage';
 import SettingsPage from '../components/static/SettingsPage';
@@ -63,6 +64,10 @@ export const routes: RouteObject[] = [
   {
     path: '/chat',
     element: <ChatPage />,
+  },
+  {
+    path: '/sprinty',
+    element: <SprintyChatView />,
   },
   {
     path: '/advice',
