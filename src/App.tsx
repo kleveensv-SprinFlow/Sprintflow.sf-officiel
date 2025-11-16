@@ -11,7 +11,7 @@ import Header from './components/navigation/Header.tsx';
 import SideMenu from './components/navigation/SideMenu.tsx';
 import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
 
-type Tab = 'accueil' | 'planning' | 'nutrition' | 'coach-ia';
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'sprinty';
 
 const viewTitles: Record<string, string> = {
   '/': 'Accueil',
@@ -29,6 +29,7 @@ const viewTitles: Record<string, string> = {
   '/partnerships': 'Partenaires',
   '/developer-panel': 'Dev Panel',
   '/chat': 'Messagerie',
+  '/sprinty': 'Sprinty, votre Assistant',
   '/advice': 'Conseils',
   '/sleep': 'Sommeil',
   '/sleep/add': 'Enregistrer le Sommeil',
@@ -39,7 +40,7 @@ const viewTitles: Record<string, string> = {
 const pathToTab = (path: string): Tab => {
   if (path.startsWith('/planning')) return 'planning';
   if (path.startsWith('/nutrition')) return 'nutrition';
-  if (path.startsWith('/chat')) return 'coach-ia'; // 'coach-ia' correspond à la messagerie
+  if (path.startsWith('/sprinty')) return 'sprinty';
   if (path === '/') return 'accueil';
   return 'accueil'; // Onglet par défaut
 };
@@ -79,8 +80,8 @@ function App() {
       case 'nutrition':
         navigate('/nutrition');
         break;
-      case 'coach-ia':
-        navigate('/chat');
+      case 'sprinty':
+        navigate('/sprinty');
         break;
     }
   };
@@ -91,7 +92,7 @@ function App() {
   };
   
   // La TabBar ne devrait s'afficher que pour les vues principales
-  const showTabBar = ['/', '/planning', '/nutrition', '/chat', '/records'].includes(currentPath);
+  const showTabBar = ['/', '/planning', '/nutrition', '/sprinty', '/records'].includes(currentPath);
 
   return (
     <div className="min-h-screen bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text">
