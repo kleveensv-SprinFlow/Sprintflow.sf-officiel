@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConversations } from '../../hooks/useConversations';
-import ConversationListItem from './ConversationListItem';
+import { ConversationListItem } from './ConversationListItem';
 import { PlusCircle, Loader } from 'lucide-react';
 
 const ConversationHistoryView = () => {
@@ -47,10 +47,7 @@ const ConversationHistoryView = () => {
           <ConversationListItem
             key={conv.id}
             conversation={conv}
-            onSelect={handleSelect}
-            onDelete={deleteConversation}
-            onRename={renameConversation}
-            onPin={pinConversation}
+            onClick={() => handleSelect(conv.id)}
           />
         ))}
       </div>
