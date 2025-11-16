@@ -11,8 +11,9 @@ import TabBar from './components/TabBar.tsx';
 import Header from './components/navigation/Header.tsx';
 import SideMenu from './components/navigation/SideMenu.tsx';
 import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
+import { usePushNotifications } from './hooks/usePushNotifications.tsx';
 
-type Tab = 'accueil' | 'planning' | 'nutrition' | 'coach-ia';
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'sprinty';
 
 const viewTitles: Record<string, string> = {
   '/': 'Accueil',
@@ -40,7 +41,7 @@ const viewTitles: Record<string, string> = {
 const pathToTab = (path: string): Tab => {
   if (path.startsWith('/planning')) return 'planning';
   if (path.startsWith('/nutrition')) return 'nutrition';
-  if (path.startsWith('/chat')) return 'coach-ia'; // 'coach-ia' correspond à la messagerie
+  if (path.startsWith('/sprinty')) return 'sprinty';
   if (path === '/') return 'accueil';
   return 'accueil'; // Onglet par défaut
 };
@@ -48,6 +49,7 @@ const pathToTab = (path: string): Tab => {
 function App() {
   const { user, loading, profile } = useAuth();
   useTheme(); // Initialise et applique le thème
+  usePushNotifications(); // Initialise la logique des notifications push
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -65,7 +67,7 @@ function App() {
       case 'accueil': navigate('/'); break;
       case 'planning': navigate('/planning'); break;
       case 'nutrition': navigate('/nutrition'); break;
-      case 'coach-ia': navigate('/chat'); break;
+      case 'sprinty': navigate('/sprinty'); break;
     }
   };
 
@@ -73,7 +75,7 @@ function App() {
     navigate('/records/new');
   };
   
-  const showTabBar = ['/', '/planning', '/nutrition', '/chat', '/records'].includes(currentPath);
+  const showTabBar = ['/', '/planning', '/nutrition', '/sprinty', '/records'].includes(currentPath);
 
   return (
     <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
