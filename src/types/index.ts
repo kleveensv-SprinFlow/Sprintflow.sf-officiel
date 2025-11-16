@@ -81,3 +81,12 @@ export interface Workout {
   status: 'planned' | 'completed';
   // Ajoutez d'autres champs si nécessaire
 }
+
+export interface Conversation {
+  id: string;
+  user_id: string;
+  name?: string | null;
+  pinned: boolean;
+  created_at: string;
+  last_activity: string;
+}
