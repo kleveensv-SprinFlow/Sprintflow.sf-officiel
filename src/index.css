@@ -76,7 +76,9 @@
     @apply bg-white/30 backdrop-blur-lg border border-white/20 rounded-xl;
   }
   .dark .card-glass {
-    @apply bg-sprint-dark-surface/30 border-white/10;
+    --tw-bg-opacity: 0.3;
+    background-color: color-mix(in srgb, theme(colors.sprint-dark-surface) var(--tw-bg-opacity), transparent);
+    @apply border-white/10;
   }
 }
 
