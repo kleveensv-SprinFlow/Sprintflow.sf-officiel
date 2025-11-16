@@ -6,9 +6,12 @@ import './index.css';
 import { AuthProvider } from './hooks/useAuth.tsx';
 import { routes } from './routes/index.tsx';
 
+// Thème initial pour éviter le flash
+const theme = localStorage.getItem('theme');
 if (
-  localStorage.theme === 'dark' ||
-  (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  theme === 'dark' ||
+  (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ||
+  (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)
 ) {
   document.documentElement.classList.add('dark');
 } else {
