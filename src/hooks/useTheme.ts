@@ -4,11 +4,12 @@ type Theme = 'light' | 'dark' | 'system';
 
 /**
  * Hook pour gérer le changement de thème de l'application.
- * Le thème initial est déjà défini via un script dans index.html pour éviter un flash.
+ * Le thème initial est déjà défini via un script dans main.tsx pour éviter un flash.
  * Ce hook gère uniquement les mises à jour post-chargement.
  */
 export const useTheme = () => {
   const [theme, setThemeState] = useState<Theme>(() => {
+    // On lit la valeur initiale depuis localStorage pour synchroniser l'état de React
     return (localStorage.getItem('theme') as Theme) || 'system';
   });
 
@@ -39,15 +40,15 @@ export const useTheme = () => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
     const handleChange = () => {
-      // Si l'utilisateur a choisi 'system', on ré-applique le thème
-      if (localStorage.getItem('theme') === 'system') {
+      // Si l'utilisateur a choisi 'system' (basé sur l'état React), on ré-applique le thème.
+      if (theme === 'system') {
         applyTheme('system');
       }
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [applyTheme]);
+  }, [applyTheme, theme]); // Dépend de l'état 'theme'
 
   // La fonction de mise à jour que le composant UI utilisera
   const setTheme = (newTheme: Theme) => {
