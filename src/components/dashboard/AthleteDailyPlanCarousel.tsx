@@ -54,7 +54,7 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
   return (
     <>
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-light-title dark:text-dark-title px-4">Mon Planning</h2>
+        <h2 className="text-xl font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary px-4">Mon Planning</h2>
         {error ? (
           <p className="text-center text-red-500 px-4">{error}</p>
         ) : (
@@ -81,7 +81,7 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
                       onCardClick={onCardClick} // <-- Ajout de la prop
                     />
                   ) : (
-                    <div className="w-full h-full rounded-2xl p-4 flex flex-col justify-between bg-light-card dark:bg-dark-card/50 animate-pulse">
+                    <div className="w-full h-full rounded-2xl p-4 flex flex-col justify-between bg-sprint-light-surface dark:bg-sprint-dark-surface/50 animate-pulse">
                        <div className="h-6 w-3/4 bg-gray-300 dark:bg-gray-600 rounded"></div>
                        <div className="h-4 w-1/2 bg-gray-300 dark:bg-gray-600 rounded mt-1"></div>
                     </div>
