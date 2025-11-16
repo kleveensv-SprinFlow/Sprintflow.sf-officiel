@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import QuickReplies from './QuickReplies';
+import { useParams } from 'react-router-dom';
+import { supabase } from '../../../lib/supabase';
 import TypingIndicator from './TypingIndicator';
+import SprintyChatHeader from './SprintyChatHeader';
 import useAuth from '../../../hooks/useAuth';
 import { useRecords } from '../../../hooks/useRecords';
 import { useWorkouts } from '../../../hooks/useWorkouts';
@@ -17,11 +20,36 @@ interface Message {
 
 const SprintyChatView = () => {
   const { user } = useAuth();
+  const { id: conversationId } = useParams();
   const { records, loading: recordsLoading } = useRecords();
   const { workouts, loading: workoutsLoading } = useWorkouts();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(conversationIdFromUrl || null);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (conversationIdFromUrl) {
+        setActiveConversationId(conversationIdFromUrl);
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', conversationIdFromUrl)
+          .order('timestamp', { ascending: true });
+        
+        if (error) {
+          console.error("Error loading messages:", error);
+          setMessages([ { id: 'error', text: 'Impossible de charger cette conversation.', sender: 'sprinty' } ]);
+        } else {
+          setMessages(data || []);
+        }
+      } else {
+        setMessages([{ id: Date.now().toString(), text: getWelcomeMessage(), sender: 'sprinty' }]);
+      }
+    };
+    loadMessages();
+  }, [conversationId, user]);
 
   const getWelcomeMessage = () => {
     const userName = user?.user_metadata?.first_name || 'Athlète';
@@ -58,58 +86,71 @@ const SprintyChatView = () => {
     setMessages(prev => [...prev, { ...message, id: Date.now().toString() }]);
   };
 
-  const handleSendMessage = (text: string) => {
-    addMessage({ text, sender: 'user' });
+  const { profile } = useAuth();
+
+  const handleSendMessage = async (text: string) => {
+    const userMessage = { text, sender: 'user' as const, conversation_id: activeConversationId };
+    addMessage(userMessage);
     setIsTyping(true);
 
-    setTimeout(() => {
-      let sprintyResponse: Omit<Message, 'id'>;
+    try {
+      let currentConversationId = activeConversationId;
 
-      switch (text) {
-        case 'Mes Records Récents':
-          if (recordsLoading) {
-            sprintyResponse = { text: "Un instant, je consulte vos performances...", sender: 'sprinty' };
-          } else if (records && records.length > 0) {
-            const latestRecord = records[0];
-            sprintyResponse = {
-              text: `Absolument ! Voici votre record le plus récent pour **${latestRecord.name}**. Continuez comme ça !`,
-              sender: 'sprinty',
-              component: <RecordCard record={latestRecord} />
-            };
-          } else {
-            sprintyResponse = { text: "Il semble que vous n'ayez pas encore enregistré de records.", sender: 'sprinty' };
-          }
-          break;
-        case 'Mon Planning':
-           if (workoutsLoading) {
-            sprintyResponse = { text: "Je regarde votre agenda...", sender: 'sprinty' };
-          } else if (workouts && workouts.length > 0) {
-            const upcomingWorkouts = workouts
-              .filter(w => new Date(w.date) >= new Date() && w.status === 'planned')
-              .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            
-            if (upcomingWorkouts.length > 0) {
-              const nextWorkout = upcomingWorkouts[0];
-              const workoutDate = new Date(nextWorkout.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-              sprintyResponse = { text: `Votre prochaine séance est programmée pour **${workoutDate}**. Au programme : **${nextWorkout.tag_seance || 'une séance non spécifiée'}**.`, sender: 'sprinty' };
-            } else {
-              sprintyResponse = { text: "Bonne nouvelle, vous n'avez aucune séance planifiée à venir. C'est le moment de planifier ou de vous reposer !", sender: 'sprinty' };
-            }
-          } else {
-            sprintyResponse = { text: "Votre planning est vide pour le moment.", sender: 'sprinty' };
-          }
-          break;
-        default:
-          sprintyResponse = { text: `Je ne suis pas encore entraîné pour répondre à cela. Vous pouvez essayer une des options ci-dessous pour commencer.`, sender: 'sprinty' };
-          break;
+      // Create conversation if it doesn't exist yet
+      if (!currentConversationId && user) {
+        const { data: newConversation } = await supabase
+          .from('conversations')
+          .insert({ user_id: user.id })
+          .select('id')
+          .single();
+        if (newConversation) {
+          currentConversationId = newConversation.id;
+          setActiveConversationId(currentConversationId);
+        }
       }
-      addMessage(sprintyResponse);
+
+      if (!currentConversationId) throw new Error("Could not create or find conversation.");
+
+      // Save user message to DB
+      await supabase.from('messages').insert({
+        conversation_id: currentConversationId,
+        sender_type: 'user',
+        content: text,
+      });
+
+      const expertiseMode = profile?.sprinty_mode || 'simple';
+      const conversationHistory = [...messages, userMessage].slice(-200);
+      
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('sprinty-chat', {
+        body: { messages: conversationHistory, expertiseMode },
+      });
+
+      if (functionError) throw functionError;
+
+      const sprintyReply = { text: functionData.reply, sender: 'sprinty' as const };
+      addMessage(sprintyReply);
+      
+      // Save AI message to DB
+      await supabase.from('messages').insert({
+        conversation_id: currentConversationId,
+        sender_type: 'ai',
+        content: sprintyReply.text,
+      });
+
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du message:", error);
+      addMessage({
+        text: "Désolé, une erreur est survenue. Veuillez réessayer.",
+        sender: 'sprinty',
+      });
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
     <div className="flex flex-col h-full bg-light-background dark:bg-dark-background">
+      <SprintyChatHeader />
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
         {messages.map(message => (
           <div key={message.id}>
