@@ -51,7 +51,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
           !isReadOnly && onPlanClick && (
             <button
               onClick={(e) => { e.stopPropagation(); onPlanClick(date); }}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg text-white bg-accent hover:opacity-90 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg text-white bg-sprint-accent hover:opacity-90 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105"
             >
               <Plus size={18} />
               Planifier
@@ -63,7 +63,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         const workoutType = workout.tag_seance ? findWorkoutType(workout.tag_seance) : undefined;
         return (
           <div className="text-center space-y-3">
-            <h4 className="font-bold text-lg text-light-title dark:text-dark-title truncate px-2">
+            <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary truncate px-2">
               {workoutType?.name || 'Entraînement'}
             </h4>
             {workoutType && (
@@ -79,7 +79,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         const workoutType2 = workouts[1].tag_seance ? findWorkoutType(workouts[1].tag_seance) : undefined;
         return (
           <div className="text-center space-y-3">
-            <h4 className="font-bold text-lg text-light-title dark:text-dark-title">
+            <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
               Entraînement Bi-Quotidien
             </h4>
             <div className="flex justify-center items-center gap-2 flex-wrap">
@@ -92,7 +92,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
       default:
         return (
           <div className="text-center">
-            <h4 className="font-bold text-lg text-light-title dark:text-dark-title">
+            <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
               {workouts.length} Séances Planifiées
             </h4>
           </div>
@@ -104,12 +104,12 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
     <>
       <header className="flex justify-between items-start">
         <div>
-          <h3 className="font-bold text-xl text-light-title dark:text-dark-title">{getDayLabel()}</h3>
-          <p className="text-sm text-light-text dark:text-dark-text">{format(date, 'd MMMM', { locale: fr })}</p>
+          <h3 className="font-bold text-xl text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{getDayLabel()}</h3>
+          <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary">{format(date, 'd MMMM', { locale: fr })}</p>
         </div>
         {!isReadOnly && onEditClick && mainWorkout && (
           <div onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} className="p-2 rounded-full transition-all bg-black/5 dark:bg-white/10 opacity-0 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/20 z-10 cursor-pointer">
-            <Edit3 size={16} className="text-gray-700 dark:text-gray-300" />
+            <Edit3 size={16} className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
           </div>
         )}
       </header>
@@ -120,9 +120,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   );
 
   // --- MODIFICATION PRINCIPALE ICI ---
-  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group " +
-                      "dark:bg-dark-card dark:shadow-neumorphic-dark " + // Style sombre opaque avec ombre
-                      "bg-light-glass backdrop-blur-lg border border-white/10 shadow-glass"; // Style clair (inchangé)
+  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group bg-sprint-light-surface dark:bg-sprint-dark-surface shadow-premium";
 
   if (mainWorkout && onCardClick) {
     return (
