@@ -241,8 +241,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!isMountedRef.current) return;
 
-      setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
-      logger.info('[useAuth] État mis à jour après événement. User:', !!currentUser, 'Profile:', !!currentProfile);
+      setAuthState(prevState => {
+        // Si l'utilisateur est déconnecté, tout effacer
+        if (!currentUser) {
+          return createAuthState(session, null, null, true, true);
+        }
+        // Si le chargement du profil a réussi, on met à jour le profil
+        if (currentProfile) {
+          return createAuthState(session, currentUser, currentProfile, true, true);
+        }
+        // Si le chargement a échoué, on garde l'ancien profil pour éviter l'erreur
+        logger.warn(`[useAuth] Échec du chargement du profil pour l'événement ${event}. Utilisation du profil existant.`);
+        return createAuthState(session, currentUser, prevState.profile, true, true);
+      });
+
+      logger.info('[useAuth] État mis à jour après événement. User:', !!currentUser, 'Nouveau Profil:', !!currentProfile);
     });
 
     return () => {
