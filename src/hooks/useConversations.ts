@@ -1,90 +1,81 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { Conversation } from '../types';
 import useAuth from './useAuth';
 
-export interface Conversation {
-  conversation_id: string;
-  conversation_type: 'group' | 'individual';
-  conversation_name: string;
-  last_message_content?: string;
-  last_message_at?: string;
-  last_message_sender_name?: string;
-  unread_count: number;
-  conversation_photo_url?: string;
-  partner_id?: string;
-}
-
-export const useConversations = () => {
+export function useConversations() {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
-  const { user } = useAuth();
-
-  const fetchConversations = async () => {
-    if (!user) {
-      console.log('[useConversations] Pas d\'utilisateur connecté');
-      return;
-    }
-
-    console.log('[useConversations] Chargement des conversations pour user:', user.id);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error: rpcError } = await supabase.rpc('get_user_conversations');
-
-      console.log('[useConversations] Résultat RPC:', { data, error: rpcError });
-
-      if (rpcError) {
-        throw rpcError;
-      }
-
-      console.log('[useConversations] Conversations récupérées:', data?.length || 0);
-      setConversations(data || []);
-    } catch (e) {
-      console.error("[useConversations] Erreur lors de la récupération des conversations:", e);
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchConversations();
-  }, [user]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    const groupChannel = supabase
-      .channel('public:group_chat_messages')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'group_chat_messages' },
-        () => {
-          console.log('Changement détecté dans les messages de groupe, rafraîchissement des conversations...');
-          fetchConversations();
-        }
-      )
-      .subscribe();
+    const fetchConversations = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('pinned', { ascending: false })
+        .order('last_activity', { ascending: false });
 
-    const individualChannel = supabase
-      .channel('public:individual_chat_messages')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'individual_chat_messages' },
-        () => {
-          console.log('Changement détecté dans les messages individuels, rafraîchissement des conversations...');
-          fetchConversations();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(groupChannel);
-      supabase.removeChannel(individualChannel);
+      if (error) {
+        setError(error.message);
+      } else {
+        setConversations(data || []);
+      }
+      setLoading(false);
     };
+
+    fetchConversations();
   }, [user]);
 
-  return { conversations, loading, error, refreshConversations: fetchConversations };
-};
+  const createConversation = async (name?: string) => {
+    if (!user) return null;
+    
+    const unpinnedConversations = conversations.filter(c => !c.pinned);
+    if (unpinnedConversations.length >= 10) {
+      const error = new Error("Limite de 10 conversations non épinglées atteinte.");
+      setError(error.message);
+      return { data: null, error };
+    }
+
+    const { data, error } = await supabase
+      .from('conversations')
+      .insert({ user_id: user.id, name })
+      .select()
+      .single();
+    
+    if (data) setConversations(prev => [data, ...prev]);
+    return { data, error };
+  };
+
+  const renameConversation = async (id: string, newName: string) => {
+    const { error } = await supabase.from('conversations').update({ name: newName }).eq('id', id);
+    if (!error) {
+      setConversations(prev => prev.map(c => (c.id === id ? { ...c, name: newName } : c)));
+    }
+  };
+
+  const pinConversation = async (id: string, isPinned: boolean) => {
+    const { error } = await supabase.from('conversations').update({ pinned: isPinned }).eq('id', id);
+    if (!error) {
+      setConversations(prev => 
+        prev
+          .map(c => (c.id === id ? { ...c, pinned: isPinned } : c))
+          .sort((a, b) => Number(b.pinned) - Number(a.pinned))
+      );
+    }
+  };
+
+  const deleteConversation = async (id: string) => {
+    const { error } = await supabase.from('conversations').delete().eq('id', id);
+    if (!error) {
+      setConversations(prev => prev.filter(c => c.id !== id));
+    }
+  };
+
+  return { conversations, loading, error, createConversation, renameConversation, pinConversation, deleteConversation };
+}
