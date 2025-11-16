@@ -7,6 +7,7 @@
 
 /* 2. Base layer and animations */
 @layer base {
+  /* Définition des variables CSS pour les ombres dynamiques */
   :root {
     --shadow-premium: theme('boxShadow.premium-light');
   }
@@ -21,30 +22,16 @@
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Les couleurs de fond seront appliquées via Tailwind sur un élément racine */
   }
   
-  /* ... (le reste du fichier CSS reste identique à l'original) ... */
-
-  /* Define custom animations based on the brief */
   @keyframes fadeIn-slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .animate-fade-in {
@@ -52,97 +39,14 @@
   }
 
   @keyframes shimmer {
-    0% {
-      background-position: -1000px 0;
-    }
-    100% {
-      background-position: 1000px 0;
-    }
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
   }
   
   @keyframes pop-in {
-    0% {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    80% {
-      opacity: 1;
-      transform: scale(1.02);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes welcome-enter {
-    0% {
-      opacity: 0;
-      transform: translateY(-20px) scale(0.9);
-      filter: blur(10px);
-    }
-    60% {
-      opacity: 1;
-      transform: translateY(0) scale(1.05);
-      filter: blur(0);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      filter: blur(0);
-    }
-  }
-
-  @keyframes welcome-exit {
-    0% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      filter: blur(0);
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(-30px) scale(0.85);
-      filter: blur(8px);
-    }
-  }
-
-  .animate-welcome-enter {
-    animation: welcome-enter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
-
-  .animate-welcome-exit {
-    animation: welcome-exit 0.6s cubic-bezier(0.4, 0, 1, 1) forwards;
-  }
-
-  .slider-thumb::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background-color: var(--slider-color);
-    border-radius: 50%;
-    border: 2px solid white;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .slider-thumb::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background-color: var(--slider-color);
-    border-radius: 50%;
-    border: 2px solid white;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .slider-vertical {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 8px; /* Largeur de la piste */
-    height: 150px; /* Hauteur du slider */
-    writing-mode: bt-lr; /* De bas en haut, pour la plupart des navigateurs */
-    cursor: pointer;
+    0% { opacity: 0; transform: scale(0.9); }
+    80% { opacity: 1; transform: scale(1.02); }
+    100% { opacity: 1; transform: scale(1); }
   }
 }
 
@@ -150,28 +54,6 @@
 @layer utilities {
   .shadow-premium {
     box-shadow: var(--shadow-premium);
-  }
-
-  .bg-shimmer-dark {
-    background: #121212 linear-gradient(
-      to right,
-      #121212 0%,
-      rgba(255, 255, 255, 0.02) 50%,
-      #121212 100%
-    );
-    background-size: 2000px 100%;
-    animation: shimmer 15s linear infinite;
-  }
-
-  .bg-shimmer-light {
-    background: #F9F9F9 linear-gradient(
-      to right,
-      #F9F9F9 0%,
-      rgba(0, 0, 0, 0.03) 50%,
-      #F9F9F9 100%
-    );
-    background-size: 2000px 100%;
-    animation: shimmer 15s linear infinite;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -189,25 +71,14 @@
     text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
   }
 }
-/* ... (contenu existant de index.css) ... */
 
-/* === AJOUTER LE CODE CI-DESSOUS À LA FIN DU FICHIER === */
 @keyframes shine-effect {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
 .animate-shine {
-  background: linear-gradient(
-    to right,
-    currentColor 0%,
-    #e2e8f0 50%, /* couleur du reflet en thème clair */
-    currentColor 100%
-  );
+  background: linear-gradient(to right, currentColor 0%, #e2e8f0 50%, currentColor 100%);
   background-size: 200% auto;
   background-clip: text;
   -webkit-background-clip: text;
@@ -216,12 +87,7 @@
 }
 
 .dark .animate-shine {
-    background: linear-gradient(
-    to right,
-    currentColor 0%,
-    #6b7280 50%, /* couleur du reflet en thème sombre */
-    currentColor 100%
-  );
+  background: linear-gradient(to right, currentColor 0%, #6b7280 50%, currentColor 100%);
   background-size: 200% auto;
   background-clip: text;
   -webkit-background-clip: text;
