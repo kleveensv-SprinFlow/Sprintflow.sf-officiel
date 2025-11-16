@@ -30,7 +30,6 @@ const SprintyChatView = () => {
 
   useEffect(() => {
     const savedMessagesJSON = localStorage.getItem('sprintyChatHistory');
-    // Ensure we don't try to parse 'undefined' or empty string
     if (savedMessagesJSON && savedMessagesJSON !== 'undefined') {
         try {
             const savedMessages = JSON.parse(savedMessagesJSON);
@@ -42,7 +41,6 @@ const SprintyChatView = () => {
             console.error("Failed to parse chat history:", e);
         }
     }
-    // Fallback to welcome message
     setMessages([{ id: Date.now().toString(), text: getWelcomeMessage(), sender: 'sprinty' }]);
   }, [user]);
 
