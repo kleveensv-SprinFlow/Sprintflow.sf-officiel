@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Calendar, Apple, Sparkles, Plus } from 'lucide-react';
+import { Home, Calendar, Apple, MessageSquare, Plus } from 'lucide-react';
 
-type Tab = 'accueil' | 'planning' | 'nutrition' | 'sprinty';
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'coach-ia';
 
 interface TabBarProps {
   activeTab: Tab;
@@ -16,7 +16,7 @@ const tabs = [
   { id: 'accueil', label: 'Accueil', Icon: Home },
   { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
   { id: 'nutrition', label: 'Nutrition', Icon: Apple },
-  { id: 'sprinty', label: 'Sprinty', Icon: Sparkles, notification: 'showCoachNotification' },
+  { id: 'coach-ia', label: 'Coach IA', Icon: MessageSquare, notification: 'showCoachNotification' },
 ];
 
 const TabBar: React.FC<TabBarProps> = ({
@@ -46,12 +46,12 @@ const TabBar: React.FC<TabBarProps> = ({
           transition={{ type: 'spring', stiffness: 400, damping: 10 }}
         >
           <tab.Icon
-            className={`h-6 w-6 ${isActive ? 'text-accent dark:text-dark-accent' : 'text-gray-500 dark:text-gray-400'}`}
+            className={`h-6 w-6 ${isActive ? 'text-sprint-accent' : 'text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary'}`}
             fill={isActive ? 'currentColor' : 'none'}
             strokeWidth={isActive ? 2.5 : 2}
           />
         </motion.div>
-        <span className={`text-xs font-medium ${isActive ? 'text-light-title dark:text-dark-title' : 'text-transparent'}`}>
+        <span className={`text-xs font-medium ${isActive ? 'text-sprint-light-text-primary dark:text-sprint-dark-text-primary' : 'text-transparent'}`}>
           {tab.label}
         </span>
       </button>
@@ -60,14 +60,14 @@ const TabBar: React.FC<TabBarProps> = ({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 h-[84px] p-2">
-      <div className="relative flex h-full w-full items-center justify-around rounded-2xl border border-white/10 bg-light-card/70 dark:bg-dark-card/70 backdrop-blur-2xl">
+      <div className="relative flex h-full w-full items-center justify-around rounded-2xl border border-white/10 bg-sprint-light-surface/70 dark:bg-sprint-dark-surface/70 backdrop-blur-2xl">
         {tabs.slice(0, 2).map(renderTab)}
         <div className="w-16"></div> {/* Espace pour le FAB */}
         {tabs.slice(2, 4).map(renderTab)}
         <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[30%] transform">
           <motion.button
             onClick={onFabClick}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-white shadow-lg dark:bg-dark-accent"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-sprint-accent text-white shadow-lg"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
