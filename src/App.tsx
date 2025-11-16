@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from './hooks/useAuth.tsx';
 import Auth from './components/Auth.tsx';
 import LoadingScreen from './components/LoadingScreen.tsx';
@@ -10,6 +10,8 @@ import TabBar from './components/TabBar.tsx';
 import Header from './components/navigation/Header.tsx';
 import SideMenu from './components/navigation/SideMenu.tsx';
 import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
+
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'coach-ia';
 
 const viewTitles: Record<string, string> = {
   '/': 'Accueil',
@@ -33,9 +35,20 @@ const viewTitles: Record<string, string> = {
   '/share-performance': 'Partager un Exploit',
 };
 
+// Fonction pour mapper le chemin actuel à un onglet actif
+const pathToTab = (path: string): Tab => {
+  if (path.startsWith('/planning')) return 'planning';
+  if (path.startsWith('/nutrition')) return 'nutrition';
+  if (path.startsWith('/chat')) return 'coach-ia'; // 'coach-ia' correspond à la messagerie
+  if (path === '/') return 'accueil';
+  return 'accueil'; // Onglet par défaut
+};
+
+
 function App() {
   const { user, loading, profile } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const showWelcomeMessage = useDailyWelcome();
 
@@ -55,6 +68,31 @@ function App() {
   const currentPath = location.pathname;
   const title = viewTitles[currentPath] || 'Accueil';
 
+  const handleTabChange = (tab: Tab) => {
+    switch (tab) {
+      case 'accueil':
+        navigate('/');
+        break;
+      case 'planning':
+        navigate('/planning');
+        break;
+      case 'nutrition':
+        navigate('/nutrition');
+        break;
+      case 'coach-ia':
+        navigate('/chat');
+        break;
+    }
+  };
+
+  const handleFabClick = () => {
+    // Action "Enregistrer une Performance"
+    navigate('/records/new');
+  };
+  
+  // La TabBar ne devrait s'afficher que pour les vues principales
+  const showTabBar = ['/', '/planning', '/nutrition', '/chat', '/records'].includes(currentPath);
+
   return (
     <div className="min-h-screen bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text">
       <Header
@@ -63,12 +101,20 @@ function App() {
         userRole={profile?.role}
         title={title}
         showWelcomeMessage={showWelcomeMessage}
-        onHomeClick={() => {}}
+        onHomeClick={() => navigate('/')}
       />
       <main className="pb-24 pt-16 px-4">
         <Outlet />
       </main>
-      <TabBar userRole={profile?.role} />
+      {showTabBar && (
+        <TabBar
+          activeTab={pathToTab(currentPath)}
+          onTabChange={handleTabChange}
+          onFabClick={handleFabClick}
+          showPlanningNotification={false} // Logique à implémenter
+          showCoachNotification={true} // Exemple de notification active
+        />
+      )}
       <SideMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
