@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from './hooks/useAuth.tsx';
+import { useTheme } from './hooks/useTheme.ts';
 import Auth from './components/Auth.tsx';
 import LoadingScreen from './components/LoadingScreen.tsx';
 import ProfileLoadError from './components/ProfileLoadError.tsx';
@@ -11,7 +12,7 @@ import Header from './components/navigation/Header.tsx';
 import SideMenu from './components/navigation/SideMenu.tsx';
 import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
 
-type Tab = 'accueil' | 'planning' | 'nutrition' | 'sprinty';
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'coach-ia';
 
 const viewTitles: Record<string, string> = {
   '/': 'Accueil',
@@ -29,36 +30,29 @@ const viewTitles: Record<string, string> = {
   '/partnerships': 'Partenaires',
   '/developer-panel': 'Dev Panel',
   '/chat': 'Messagerie',
-  '/sprinty': 'Sprinty, votre Assistant',
   '/advice': 'Conseils',
   '/sleep': 'Sommeil',
   '/sleep/add': 'Enregistrer le Sommeil',
   '/share-performance': 'Partager un Exploit',
 };
 
+// Fonction pour mapper le chemin actuel à un onglet actif
 const pathToTab = (path: string): Tab => {
   if (path.startsWith('/planning')) return 'planning';
   if (path.startsWith('/nutrition')) return 'nutrition';
-  if (path.startsWith('/sprinty')) return 'sprinty';
+  if (path.startsWith('/chat')) return 'coach-ia'; // 'coach-ia' correspond à la messagerie
   if (path === '/') return 'accueil';
-  return 'accueil';
+  return 'accueil'; // Onglet par défaut
 };
+
 
 function App() {
   const { user, loading, profile } = useAuth();
+  useTheme(); // Initialise et applique le thème
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const showWelcomeMessage = useDailyWelcome();
-
-  useEffect(() => {
-    if (localStorage.getItem('theme') === 'dark' ||
-        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Auth />;
@@ -78,20 +72,22 @@ function App() {
       case 'nutrition':
         navigate('/nutrition');
         break;
-      case 'sprinty':
-        navigate('/sprinty');
+      case 'coach-ia':
+        navigate('/chat');
         break;
     }
   };
 
   const handleFabClick = () => {
+    // Action "Enregistrer une Performance"
     navigate('/records/new');
   };
   
-  const showTabBar = ['/', '/planning', '/nutrition', '/sprinty', '/records'].includes(currentPath);
+  // La TabBar ne devrait s'afficher que pour les vues principales
+  const showTabBar = ['/', '/planning', '/nutrition', '/chat', '/records'].includes(currentPath);
 
   return (
-    <div className="min-h-screen bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text">
+    <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
       <Header
         onProfileClick={() => setMenuOpen(true)}
         isDashboard={currentPath === '/'}
@@ -108,8 +104,8 @@ function App() {
           activeTab={pathToTab(currentPath)}
           onTabChange={handleTabChange}
           onFabClick={handleFabClick}
-          showPlanningNotification={false}
-          showCoachNotification={true}
+          showPlanningNotification={false} // Logique à implémenter
+          showCoachNotification={true} // Exemple de notification active
         />
       )}
       <SideMenu
