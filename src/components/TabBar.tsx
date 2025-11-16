@@ -46,7 +46,7 @@ const TabBar: React.FC<TabBarProps> = ({
           transition={{ type: 'spring', stiffness: 400, damping: 10 }}
         >
           <tab.Icon
-            className={`h-6 w-6 ${isActive ? 'text-accent dark:text-dark-accent' : 'text-light-text/60 dark:text-dark-text/60'}`}
+            className={`h-6 w-6 ${isActive ? 'text-accent dark:text-dark-accent' : 'text-gray-500 dark:text-gray-400'}`}
             fill={isActive ? 'currentColor' : 'none'}
             strokeWidth={isActive ? 2.5 : 2}
           />
@@ -64,7 +64,7 @@ const TabBar: React.FC<TabBarProps> = ({
         {tabs.slice(0, 2).map(renderTab)}
         <div className="w-16"></div> {/* Espace pour le FAB */}
         {tabs.slice(2, 4).map(renderTab)}
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 transform">
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[30%] transform">
           <motion.button
             onClick={onFabClick}
             className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-white shadow-lg dark:bg-dark-accent"
