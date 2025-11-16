@@ -40,48 +40,18 @@ export function useRecords(targetUserId?: string) {
       
       if (error) {
         console.error('Erreur chargement records:', error.message)
-        // En cas d'erreur Supabase, essayer localStorage comme fallback
-        const localRecords = localStorage.getItem(`records_${userId}`)
-        if (localRecords) {
-          try {
-            const parsedRecords = JSON.parse(localRecords)
-            setRecords(parsedRecords)
-          } catch (parseError) {
-            console.error('Erreur parsing records locaux:', parseError)
-            setRecords([])
-          }
-        } else {
-          setRecords([])
-        }
+        setRecords([])
       } else {
-        const mappedRecords = data?.map(item => ({
+        const mappedRecords: Record[] = data?.map(item => ({
           id: item.id,
-          type: (item.exercise_name.includes('m') &&
-                 !item.exercise_name.toLowerCase().includes('saut') &&
-                 !item.exercise_name.toLowerCase().includes('lancer') &&
-                 !item.exercise_name.toLowerCase().includes('poids') &&
-                 !item.exercise_name.toLowerCase().includes('disque') &&
-                 !item.exercise_name.toLowerCase().includes('javelot') &&
-                 !item.exercise_name.toLowerCase().includes('marteau')) ? 'run' as const :
-                item.exercise_name.toLowerCase().includes('saut') ? 'jump' as const :
-                item.exercise_name.toLowerCase().includes('lancer') ? 'throw' as const : 'exercise' as const,
+          type: item.type,
           name: item.exercise_name,
-          value: item.weight_kg,
-          unit: (item.exercise_name.includes('m') &&
-                 !item.exercise_name.toLowerCase().includes('saut') &&
-                 !item.exercise_name.toLowerCase().includes('lancer') &&
-                 !item.exercise_name.toLowerCase().includes('poids') &&
-                 !item.exercise_name.toLowerCase().includes('disque') &&
-                 !item.exercise_name.toLowerCase().includes('javelot') &&
-                 !item.exercise_name.toLowerCase().includes('marteau')) ? 's' :
-                (item.exercise_name.toLowerCase().includes('saut') ||
-                 item.exercise_name.toLowerCase().includes('lancer')) ? 'm' : 'kg',
+          value: item.performance,
+          unit: item.unit,
           date: item.date,
-          exercice_reference_id: item.exercice_id
+          exercice_reference_id: item.exercice_reference_id
         })) || []
         setRecords(mappedRecords)
-
-        // Synchroniser avec localStorage après chargement Supabase
         localStorage.setItem(`records_${userId}`, JSON.stringify(mappedRecords))
       }
     } catch (error) {
