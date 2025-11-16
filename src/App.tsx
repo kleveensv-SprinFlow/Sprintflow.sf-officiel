@@ -45,7 +45,6 @@ const pathToTab = (path: string): Tab => {
   return 'accueil'; // Onglet par défaut
 };
 
-
 function App() {
   const { user, loading, profile } = useAuth();
   useTheme(); // Initialise et applique le thème
@@ -63,27 +62,17 @@ function App() {
 
   const handleTabChange = (tab: Tab) => {
     switch (tab) {
-      case 'accueil':
-        navigate('/');
-        break;
-      case 'planning':
-        navigate('/planning');
-        break;
-      case 'nutrition':
-        navigate('/nutrition');
-        break;
-      case 'coach-ia':
-        navigate('/chat');
-        break;
+      case 'accueil': navigate('/'); break;
+      case 'planning': navigate('/planning'); break;
+      case 'nutrition': navigate('/nutrition'); break;
+      case 'coach-ia': navigate('/chat'); break;
     }
   };
 
   const handleFabClick = () => {
-    // Action "Enregistrer une Performance"
     navigate('/records/new');
   };
   
-  // La TabBar ne devrait s'afficher que pour les vues principales
   const showTabBar = ['/', '/planning', '/nutrition', '/chat', '/records'].includes(currentPath);
 
   return (
@@ -104,8 +93,8 @@ function App() {
           activeTab={pathToTab(currentPath)}
           onTabChange={handleTabChange}
           onFabClick={handleFabClick}
-          showPlanningNotification={false} // Logique à implémenter
-          showCoachNotification={true} // Exemple de notification active
+          showPlanningNotification={false}
+          showCoachNotification={true}
         />
       )}
       <SideMenu
