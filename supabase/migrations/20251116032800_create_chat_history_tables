@@ -1,0 +1,68 @@
+-- 1. Create the conversations table
+CREATE TABLE IF NOT EXISTS public.conversations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT,
+    pinned BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_activity TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 2. Create the messages table
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+    sender_type TEXT NOT NULL CHECK (sender_type IN ('user', 'ai')),
+    content TEXT NOT NULL,
+    "timestamp" TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 3. Enable RLS for both tables
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+-- 4. Create RLS policies
+-- Users can see their own conversations
+CREATE POLICY "Allow user to see their own conversations"
+ON public.conversations
+FOR SELECT
+USING (auth.uid() = user_id);
+
+-- Users can create their own conversations
+CREATE POLICY "Allow user to create their own conversations"
+ON public.conversations
+FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+-- Users can update their own conversations (rename, pin)
+CREATE POLICY "Allow user to update their own conversations"
+ON public.conversations
+FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- Users can delete their own conversations
+CREATE POLICY "Allow user to delete their own conversations"
+ON public.conversations
+FOR DELETE
+USING (auth.uid() = user_id);
+
+-- Users can see messages in conversations they are part of
+CREATE POLICY "Allow user to see messages in their conversations"
+ON public.messages
+FOR SELECT
+USING (
+  conversation_id IN (
+    SELECT id FROM public.conversations WHERE user_id = auth.uid()
+  )
+);
+
+-- Users can insert messages into their own conversations
+CREATE POLICY "Allow user to insert messages in their conversations"
+ON public.messages
+FOR INSERT
+WITH CHECK (
+  conversation_id IN (
+    SELECT id FROM public.conversations WHERE user_id = auth.uid()
+  )
+);
