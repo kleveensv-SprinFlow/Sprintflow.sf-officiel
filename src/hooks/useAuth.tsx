@@ -4,7 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
-const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url';
+const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url, sprinty_mode';
 
 interface AuthState {
   session: Session | null;
@@ -22,6 +22,7 @@ interface AuthContextType {
   isAuthReady: boolean;
   refreshProfile: () => Promise<void>;
   updateProfile: (updatedProfileData: Partial<Profile>) => void;
+  updateSprintyMode: (newMode: 'simple' | 'expert') => Promise<void>;
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<any>;
   signUp: (email: string, password: string, profileData: Partial<Profile>) => Promise<any>;
@@ -115,6 +116,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       logger.error('[useAuth] Erreur lors du rafraîchissement:', e);
     }
   }, [authState.user, loadProfile]);
+
+  const updateSprintyMode = useCallback(async (newMode: 'simple' | 'expert') => {
+    if (!authState.user) return;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ sprinty_mode: newMode })
+        .eq('id', authState.user.id);
+
+      if (error) throw error;
+
+      setAuthState(prev => {
+        if (!prev.profile) return prev;
+        return {
+          ...prev,
+          profile: { ...prev.profile, sprinty_mode: newMode },
+        };
+      });
+    } catch (error) {
+      logger.error('[useAuth] Erreur lors de la mise à jour du mode Sprinty:', error);
+    }
+  }, [authState.user]);
 
   const updateProfile = useCallback((updatedProfileData: Partial<Profile>) => {
     setAuthState(prev => {
@@ -241,21 +264,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!isMountedRef.current) return;
 
-      setAuthState(prevState => {
-        // Si l'utilisateur est déconnecté, tout effacer
-        if (!currentUser) {
-          return createAuthState(session, null, null, true, true);
-        }
-        // Si le chargement du profil a réussi, on met à jour le profil
-        if (currentProfile) {
-          return createAuthState(session, currentUser, currentProfile, true, true);
-        }
-        // Si le chargement a échoué, on garde l'ancien profil pour éviter l'erreur
-        logger.warn(`[useAuth] Échec du chargement du profil pour l'événement ${event}. Utilisation du profil existant.`);
-        return createAuthState(session, currentUser, prevState.profile, true, true);
-      });
-
-      logger.info('[useAuth] État mis à jour après événement. User:', !!currentUser, 'Nouveau Profil:', !!currentProfile);
+      setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
+      logger.info('[useAuth] État mis à jour après événement. User:', !!currentUser, 'Profile:', !!currentProfile);
     });
 
     return () => {
@@ -276,6 +286,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isAuthReady,
       refreshProfile,
       updateProfile,
+      updateSprintyMode,
       signOut,
       signIn,
       signUp,
@@ -300,6 +311,7 @@ export const useAuth = (): AuthContextType => {
       isAuthReady: false,
       refreshProfile: async () => {},
       updateProfile: () => {},
+      updateSprintyMode: async () => {},
       signOut: async () => {},
       signIn: async () => ({ user: null, session: null }),
       signUp: async () => ({ user: null, session: null }),
