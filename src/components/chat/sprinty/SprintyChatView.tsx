@@ -239,7 +239,9 @@ const SprintyChatView = () => {
 
   return (
     <div className="relative flex flex-col h-full bg-light-background dark:bg-dark-background">
-      <SprintyChatHeader onMenuClick={() => setMenuOpen(true)} />
+      <div className="sticky top-0 z-20 bg-light-background/80 dark:bg-dark-background/80 backdrop-blur-sm">
+        <SprintyChatHeader onMenuClick={() => setMenuOpen(true)} />
+      </div>
       <ConversationMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -250,8 +252,8 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
       
-      <div className="flex-1 pt-20 overflow-y-auto flex flex-col">
-        <div className="flex-grow p-4">
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4">
           {messages.map((message, index) => (
             <div key={message.id} className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
               {message.sender === 'sprinty' && (index === 0 || messages[index - 1].sender !== 'sprinty') && (
@@ -269,7 +271,7 @@ const SprintyChatView = () => {
         </div>
       </div>
 
-      <div className="border-t border-gray-200 dark:border-gray-700 px-2 pb-20">
+      <div className="sticky bottom-0 z-10 bg-light-background/80 dark:bg-dark-background/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 px-2 pb-20">
         <QuickReplies onSelectReply={handleSendMessage} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>
