@@ -1,0 +1,112 @@
+-- =================================================================================================
+--                              SPRINTY IA MEMORY ARCHITECTURE (IDEMPOTENT)
+-- =================================================================================================
+-- Ce script crée l'infrastructure de base pour la mémoire à long terme de l'IA.
+-- Il est idempotent, ce qui signifie qu'il peut être exécuté plusieurs fois sans causer d'erreurs.
+-- Il vérifie l'existence de chaque objet (table, index, politique) avant de le créer.
+-- =================================================================================================
+
+-- =================================================================================================
+-- TABLE: conversations
+-- Rôle: Stocke les métadonnées de chaque fil de discussion avec l'IA.
+-- =================================================================================================
+CREATE TABLE IF NOT EXISTS public.conversations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL DEFAULT 'Nouvelle discussion',
+    is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Index pour optimiser la recherche des conversations par utilisateur
+CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON public.conversations(user_id);
+
+-- Activer la Row Level Security sur la table 'conversations'
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+
+-- =================================================================================================
+-- TABLE: messages
+-- Rôle: Stocke chaque message (de l'utilisateur ou de l'assistant) au sein d'une conversation.
+-- =================================================================================================
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+    role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Index pour optimiser la recherche des messages par conversation
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON public.messages(conversation_id);
+
+-- Activer la Row Level Security sur la table 'messages'
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+
+-- =================================================================================================
+--                              POLITIQUES DE SÉCURITÉ (RLS)
+-- =================================================================================================
+
+-- -------------------------------------------------------------------------------------------------
+-- Politiques pour la table 'conversations'
+-- -------------------------------------------------------------------------------------------------
+
+-- Les utilisateurs peuvent voir leurs propres conversations.
+DROP POLICY IF EXISTS "Allow SELECT on own conversations" ON public.conversations;
+CREATE POLICY "Allow SELECT on own conversations"
+ON public.conversations FOR SELECT
+USING (auth.uid() = user_id);
+
+-- Les utilisateurs peuvent créer de nouvelles conversations pour eux-mêmes.
+DROP POLICY IF EXISTS "Allow INSERT on own conversations" ON public.conversations;
+CREATE POLICY "Allow INSERT on own conversations"
+ON public.conversations FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+-- Les utilisateurs peuvent mettre à jour le titre et le statut 'épinglé' de leurs propres conversations.
+DROP POLICY IF EXISTS "Allow UPDATE on own conversations" ON public.conversations;
+CREATE POLICY "Allow UPDATE on own conversations"
+ON public.conversations FOR UPDATE
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- Les utilisateurs peuvent supprimer leurs propres conversations.
+DROP POLICY IF EXISTS "Allow DELETE on own conversations" ON public.conversations;
+CREATE POLICY "Allow DELETE on own conversations"
+ON public.conversations FOR DELETE
+USING (auth.uid() = user_id);
+
+
+-- -------------------------------------------------------------------------------------------------
+-- Politiques pour la table 'messages'
+-- -------------------------------------------------------------------------------------------------
+
+-- Les utilisateurs peuvent voir les messages appartenant à leurs propres conversations.
+DROP POLICY IF EXISTS "Allow SELECT on messages in own conversations" ON public.messages;
+CREATE POLICY "Allow SELECT on messages in own conversations"
+ON public.messages FOR SELECT
+USING (
+    EXISTS (
+        SELECT 1
+        FROM public.conversations
+        WHERE conversations.id = messages.conversation_id
+          AND conversations.user_id = auth.uid()
+    )
+);
+
+-- Les utilisateurs peuvent insérer des messages dans leurs propres conversations.
+DROP POLICY IF EXISTS "Allow INSERT on messages in own conversations" ON public.messages;
+CREATE POLICY "Allow INSERT on messages in own conversations"
+ON public.messages FOR INSERT
+WITH CHECK (
+    EXISTS (
+        SELECT 1
+        FROM public.conversations
+        WHERE conversations.id = messages.conversation_id
+          AND conversations.user_id = auth.uid()
+    )
+);
+
+-- =================================================================================================
+-- FIN DU SCRIPT DE MIGRATION
+-- =================================================================================================
