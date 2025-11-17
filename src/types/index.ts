@@ -86,12 +86,16 @@ export interface Workout {
 
 export interface Conversation {
   id: string;
-  conversation_id: string;
   user_id: string;
-  conversation_type: 'group' | 'individual';
-  name?: string | null;
-  pinned?: boolean;
+  title: string;
+  is_pinned: boolean;
   created_at: string;
-  last_activity: string;
-  unread_count?: number;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
 }
