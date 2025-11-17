@@ -18,7 +18,7 @@ const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({ onMenuClick }) =>
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10"
+      className="flex items-center justify-between p-4"
     >
       <button onClick={onMenuClick} className="p-2">
         <Menu size={24} />
