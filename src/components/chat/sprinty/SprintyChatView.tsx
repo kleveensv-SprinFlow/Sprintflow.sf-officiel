@@ -7,10 +7,11 @@ import { supabase } from '../../../lib/supabase';
 import TypingIndicator from './TypingIndicator';
 import SprintyChatHeader from './SprintyChatHeader';
 import useAuth from '../../../hooks/useAuth';
-import SprintyAvatar from '../../common/SprintyAvatar';
 import { useRecords } from '../../../hooks/useRecords';
 import { useWorkouts } from '../../../hooks/useWorkouts';
 import RecordCard from './cards/RecordCard';
+import { BrainCircuit } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Message {
   id: string;
@@ -156,9 +157,15 @@ const SprintyChatView = () => {
         {messages.map((message, index) => (
           <div key={message.id} className="flex items-start space-x-4">
             {message.sender === 'sprinty' && (
-              <div className="w-16 h-16 flex-shrink-0">
-                {/* On n'affiche l'avatar que pour le premier message de Sprinty ou si le message précédent n'est pas de Sprinty */}
-                {(index === 0 || messages[index - 1].sender !== 'sprinty') && <SprintyAvatar />}
+              <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center">
+                {(index === 0 || messages[index - 1].sender !== 'sprinty') && (
+                    <motion.div
+                        animate={{ scale: isTyping ? [1, 1.1, 1] : 1 }}
+                        transition={{ duration: 1, repeat: isTyping ? Infinity : 0, ease: 'easeInOut' }}
+                    >
+                        <BrainCircuit className="h-10 w-10 text-sprint-accent" />
+                    </motion.div>
+                )}
               </div>
             )}
             <div className={`flex-1 ${message.sender === 'user' ? 'flex justify-end' : ''}`}>
