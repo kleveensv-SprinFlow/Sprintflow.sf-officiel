@@ -9,8 +9,8 @@ interface SprintyChatHeaderProps {
 }
 
 const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({ onMenuClick }) => {
-  const { user } = useAuth();
-  const photoUrl = user?.user_metadata?.photo_url;
+  const { profile } = useAuth();
+  const photoUrl = profile?.photo_url;
 
   return (
     <motion.div
