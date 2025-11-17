@@ -155,22 +155,14 @@ const SprintyChatView = () => {
       <SprintyChatHeader />
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
         {messages.map((message, index) => (
-          <div key={message.id} className="flex items-start space-x-4">
-            {message.sender === 'sprinty' && (
-              <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center">
-                {(index === 0 || messages[index - 1].sender !== 'sprinty') && (
-                    <motion.div
-                        animate={{ scale: isTyping ? [1, 1.1, 1] : 1 }}
-                        transition={{ duration: 1, repeat: isTyping ? Infinity : 0, ease: 'easeInOut' }}
-                    >
-                        <BrainCircuit className="h-10 w-10 text-sprint-accent" />
-                    </motion.div>
-                )}
+          <div key={message.id} className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {message.sender === 'sprinty' && (index === 0 || messages[index - 1].sender !== 'sprinty') && (
+              <div className="w-8 h-8 flex-shrink-0">
+                  <BrainCircuit className="h-8 w-8 text-sprint-accent" />
               </div>
             )}
-            <div className={`flex-1 ${message.sender === 'user' ? 'flex justify-end' : ''}`}>
+            <div className={`${message.sender === 'sprinty' && (index > 0 && messages[index - 1].sender === 'sprinty') ? 'ml-10' : ''}`}>
               <MessageBubble message={message} />
-              {message.component && <div className={message.sender === 'sprinty' ? 'ml-11' : ''}>{message.component}</div>}
             </div>
           </div>
         ))}
@@ -178,7 +170,7 @@ const SprintyChatView = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-gray-200 dark:border-gray-700">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
         <QuickReplies onSelectReply={handleSendMessage} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>
