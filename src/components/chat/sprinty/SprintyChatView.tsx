@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import QuickReplies from './QuickReplies';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import TypingIndicator from './TypingIndicator';
 import SprintyChatHeader from './SprintyChatHeader';
@@ -11,6 +11,8 @@ import { useRecords } from '../../../hooks/useRecords';
 import { useWorkouts } from '../../../hooks/useWorkouts';
 import RecordCard from './cards/RecordCard';
 import { BrainCircuit } from 'lucide-react';
+import ConversationMenu from './ConversationMenu';
+import ConversationActions from './ConversationActions';
 import { motion } from 'framer-motion';
 
 interface Message {
@@ -23,12 +25,36 @@ interface Message {
 const SprintyChatView = () => {
   const { user } = useAuth();
   const { id: conversationId } = useParams();
+  const navigate = useNavigate();
   const { records, loading: recordsLoading } = useRecords();
   const { workouts, loading: workoutsLoading } = useWorkouts();
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(conversationId || null);
   const [isTyping, setIsTyping] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
+  const [isActionsOpen, setActionsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('timestamp', { ascending: false });
+        
+        if (error) {
+          console.error("Error fetching conversations:", error);
+        } else {
+          setConversations(data);
+        }
+      }
+    };
+    fetchConversations();
+  }, [user]);
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -100,14 +126,16 @@ const SprintyChatView = () => {
 
       // Create conversation if it doesn't exist yet
       if (!currentConversationId && user) {
+        const newTitle = text.split(' ').slice(0, 10).join(' ') + (text.split(' ').length > 10 ? '...' : '');
         const { data: newConversation } = await supabase
           .from('conversations')
-          .insert({ user_id: user.id })
-          .select('id')
+          .insert({ user_id: user.id, title: newTitle })
+          .select()
           .single();
         if (newConversation) {
           currentConversationId = newConversation.id;
           setActiveConversationId(currentConversationId);
+          setConversations(prev => [newConversation, ...prev]);
         }
       }
 
@@ -150,10 +178,79 @@ const SprintyChatView = () => {
     }
   };
 
+  const handleSelectConversation = (id: string) => {
+    navigate(`/sprinty/${id}`);
+    setMenuOpen(false);
+  };
+
+  const handleNewConversation = () => {
+    navigate('/sprinty');
+    setMessages([{ id: Date.now().toString(), text: getWelcomeMessage(), sender: 'sprinty' }]);
+    setActiveConversationId(null);
+    setMenuOpen(false);
+  };
+
+  const handleOpenActions = (conversation: any) => {
+    setSelectedConversation(conversation);
+    setActionsOpen(true);
+  };
+
+  const handleTogglePin = async () => {
+    if (!selectedConversation) return;
+
+    const { data, error } = await supabase
+      .from('conversations')
+      .update({ is_pinned: !selectedConversation.is_pinned })
+      .eq('id', selectedConversation.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error pinning conversation:", error);
+    } else {
+      setConversations(prev =>
+        prev.map(c => (c.id === data.id ? data : c))
+      );
+      setActionsOpen(false);
+    }
+  };
+
+  const handleRename = async () => {
+    if (!selectedConversation) return;
+    const newTitle = prompt("Entrez le nouveau nom de la conversation:", selectedConversation.title);
+    if (newTitle && newTitle.trim() !== "") {
+      const { data, error } = await supabase
+        .from('conversations')
+        .update({ title: newTitle.trim() })
+        .eq('id', selectedConversation.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error renaming conversation:", error);
+      } else {
+        setConversations(prev =>
+          prev.map(c => (c.id === data.id ? data : c))
+        );
+        setActionsOpen(false);
+      }
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-light-background dark:bg-dark-background">
-      <SprintyChatHeader />
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+    <div className="relative flex flex-col h-full bg-light-background dark:bg-dark-background">
+      <SprintyChatHeader onMenuClick={() => setMenuOpen(true)} />
+      <ConversationMenu
+        isOpen={isMenuOpen}
+        onClose={() => setMenuOpen(false)}
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        onSelectConversation={handleSelectConversation}
+        onNewConversation={handleNewConversation}
+        onOpenActions={handleOpenActions}
+      />
+      
+      <div className="flex-1 p-4 pt-20 overflow-y-auto space-y-4">
         {messages.map((message, index) => (
           <div key={message.id} className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             {message.sender === 'sprinty' && (index === 0 || messages[index - 1].sender !== 'sprinty') && (
@@ -174,6 +271,14 @@ const SprintyChatView = () => {
         <QuickReplies onSelectReply={handleSendMessage} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>
+
+      <ConversationActions
+        isOpen={isActionsOpen}
+        onClose={() => setActionsOpen(false)}
+        onRename={handleRename}
+        onPin={handleTogglePin}
+        isPinned={selectedConversation?.is_pinned || false}
+      />
     </div>
   );
 };
