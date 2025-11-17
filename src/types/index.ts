@@ -44,7 +44,8 @@ export type View =
   | 'add-sleep'
   | 'add-food'
   | 'sleep'
-  | 'share-performance';
+  | 'share-performance'
+  | 'sprinty-chat';
 
 export interface EpreuveAthletisme {
   id: string;

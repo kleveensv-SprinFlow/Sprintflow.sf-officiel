@@ -7,6 +7,7 @@ import { supabase } from '../../../lib/supabase';
 import TypingIndicator from './TypingIndicator';
 import SprintyChatHeader from './SprintyChatHeader';
 import useAuth from '../../../hooks/useAuth';
+import SprintyAvatar from '../../common/SprintyAvatar';
 import { useRecords } from '../../../hooks/useRecords';
 import { useWorkouts } from '../../../hooks/useWorkouts';
 import RecordCard from './cards/RecordCard';
@@ -24,18 +25,18 @@ const SprintyChatView = () => {
   const { records, loading: recordsLoading } = useRecords();
   const { workouts, loading: workoutsLoading } = useWorkouts();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(conversationIdFromUrl || null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(conversationId || null);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadMessages = async () => {
-      if (conversationIdFromUrl) {
-        setActiveConversationId(conversationIdFromUrl);
+      if (conversationId) {
+        setActiveConversationId(conversationId);
         const { data, error } = await supabase
           .from('messages')
           .select('*')
-          .eq('conversation_id', conversationIdFromUrl)
+          .eq('conversation_id', conversationId)
           .order('timestamp', { ascending: true });
         
         if (error) {
@@ -152,10 +153,18 @@ const SprintyChatView = () => {
     <div className="flex flex-col h-full bg-light-background dark:bg-dark-background">
       <SprintyChatHeader />
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
-        {messages.map(message => (
-          <div key={message.id}>
-            <MessageBubble message={message} />
-            {message.component && <div className="ml-11">{message.component}</div>}
+        {messages.map((message, index) => (
+          <div key={message.id} className="flex items-start space-x-4">
+            {message.sender === 'sprinty' && (
+              <div className="w-16 h-16 flex-shrink-0">
+                {/* On n'affiche l'avatar que pour le premier message de Sprinty ou si le message précédent n'est pas de Sprinty */}
+                {(index === 0 || messages[index - 1].sender !== 'sprinty') && <SprintyAvatar />}
+              </div>
+            )}
+            <div className={`flex-1 ${message.sender === 'user' ? 'flex justify-end' : ''}`}>
+              <MessageBubble message={message} />
+              {message.component && <div className={message.sender === 'sprinty' ? 'ml-11' : ''}>{message.component}</div>}
+            </div>
           </div>
         ))}
         {isTyping && <TypingIndicator />}
