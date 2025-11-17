@@ -60,6 +60,7 @@ function App() {
   if (user && !profile) return <ProfileLoadError userId={user.id} />;
 
   const currentPath = location.pathname;
+  const isSprintyPage = currentPath.startsWith('/sprinty');
   const title = viewTitles[currentPath] || 'Accueil';
 
   const handleTabChange = (tab: Tab) => {
@@ -78,16 +79,18 @@ function App() {
   const showTabBar = ['/', '/planning', '/nutrition', '/sprinty', '/records'].includes(currentPath);
 
   return (
-    <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
-      <Header
-        onProfileClick={() => setMenuOpen(true)}
-        isDashboard={currentPath === '/'}
-        userRole={profile?.role}
-        title={title}
-        showWelcomeMessage={showWelcomeMessage}
-        onHomeClick={() => navigate('/')}
-      />
-      <main className="pb-24 pt-16 px-4">
+    <div className={`min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary ${isSprintyPage ? 'flex flex-col' : ''}`}>
+      {!isSprintyPage && (
+        <Header
+          onProfileClick={() => setMenuOpen(true)}
+          isDashboard={currentPath === '/'}
+          userRole={profile?.role}
+          title={title}
+          showWelcomeMessage={showWelcomeMessage}
+          onHomeClick={() => navigate('/')}
+        />
+      )}
+      <main className={`pb-24 ${isSprintyPage ? 'flex-1' : 'pt-16 px-4'}`}>
         <Outlet />
       </main>
       {showTabBar && (
