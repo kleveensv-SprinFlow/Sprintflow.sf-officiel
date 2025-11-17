@@ -1,83 +1,68 @@
-import React, { useState } from 'react';
-import { ConversationList } from './ConversationList';
-import { GroupChatView } from './GroupChatView';
-import { IndividualChatView } from './IndividualChatView';
-import { useConversations, Conversation } from '../../hooks/useConversations';
+import React, { useState, useEffect } from 'react';
+import ConversationSidebar from './ConversationSidebar';
+import MessageView from './MessageView'; // Je vais créer ce composant juste après
+import { useConversations } from '../../hooks/useConversations';
+import { Menu } from 'lucide-react';
+import { Conversation } from '../../types';
 
-type ChatView = 'groups' | 'individuals';
+const ChatManager: React.FC = () => {
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const { createConversation, conversations } = useConversations();
 
-export const ChatManager: React.FC = () => {
-  const [currentView, setCurrentView] = useState<ChatView>('groups');
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const { conversations, loading, error } = useConversations();
-
-  React.useEffect(() => {
-    console.log('[ChatManager] Conversations:', conversations);
-    console.log('[ChatManager] Loading:', loading);
-    console.log('[ChatManager] Error:', error);
-  }, [conversations, loading, error]);
-
-  const handleConversationSelect = (id: string) => {
-    const conversation = conversations.find(c => c.conversation_id === id);
-    if (conversation) {
-      setSelectedConversation(conversation);
+  // Sélectionner la première conversation au chargement ou si aucune n'est active
+  useEffect(() => {
+    if (!activeConversationId && conversations.length > 0) {
+      setActiveConversationId(conversations[0].id);
     }
+  }, [conversations, activeConversationId]);
+
+  const handleCreateConversation = async (): Promise<Conversation | null> => {
+    const { data } = await createConversation();
+    if (data) {
+      setActiveConversationId(data.id);
+      setSidebarOpen(false); // Fermer la sidebar après la création
+      return data;
+    }
+    return null;
   };
 
-  if (selectedConversation) {
-    if (selectedConversation.conversation_type === 'group') {
-      return <GroupChatView conversation={selectedConversation} onBack={() => setSelectedConversation(null)} />;
-    }
-    if (selectedConversation.conversation_type === 'individual') {
-      return <IndividualChatView conversation={selectedConversation} onBack={() => setSelectedConversation(null)} />;
-    }
-  }
+  const handleSelectConversation = (id: string) => {
+    setActiveConversationId(id);
+    setSidebarOpen(false);
+  };
+  
+  const activeConversation = conversations.find(c => c.id === activeConversationId);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Messagerie</h1>
-        <p className="text-gray-600 dark:text-gray-400">Vos conversations avec vos athlètes et groupes.</p>
-      </div>
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <ConversationSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onSelectConversation={handleSelectConversation}
+        onCreateConversation={handleCreateConversation}
+        activeConversationId={activeConversationId}
+      />
 
-      <div className="flex px-4 border-b border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => setCurrentView('groups')}
-          className={`px-4 py-3 font-medium transition-colors duration-200 ${
-            currentView === 'groups'
-              ? 'border-b-2 border-primary-500 text-primary-500'
-              : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-          }`}
-        >
-          Groupes
-        </button>
-        <button
-          onClick={() => setCurrentView('individuals')}
-          className={`px-4 py-3 font-medium transition-colors duration-200 ${
-            currentView === 'individuals'
-              ? 'border-b-2 border-primary-500 text-primary-500'
-              : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-          }`}
-        >
-          Individuel
-        </button>
-      </div>
+      <main className="flex-1 flex flex-col transition-all duration-300">
+        <header className="flex items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <h1 className="text-xl font-semibold ml-4 truncate">
+            {activeConversation ? activeConversation.title : 'Sprinty Chat'}
+          </h1>
+        </header>
 
-      <div className="flex-1 overflow-y-auto p-2">
-        {currentView === 'groups' && (
-          <ConversationList
-            type="group"
-            onConversationSelect={handleConversationSelect}
-          />
-        )}
-        {currentView === 'individuals' && (
-          <ConversationList
-            type="individual"
-            onConversationSelect={handleConversationSelect}
-          />
-        )}
-      </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <MessageView conversationId={activeConversationId} />
+        </div>
+      </main>
     </div>
   );
 };
+
 export default ChatManager;
