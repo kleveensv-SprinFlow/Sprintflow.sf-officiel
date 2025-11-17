@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 // @ts-ignore
-import SprintyAvatarSVG from '/assets/sprinty-avatar-animated.svg?react';
+import SprintyAvatarSVG from '../../../public/assets/sprinty-avatar-animated.svg?react';
 
 const SprintyAvatar: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
