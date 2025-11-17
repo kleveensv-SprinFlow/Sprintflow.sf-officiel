@@ -49,7 +49,8 @@ export function useRecords(targetUserId?: string) {
           value: item.performance,
           unit: item.unit,
           date: item.date,
-          exercice_reference_id: item.exercice_reference_id
+          exercice_reference_id: item.exercice_reference_id,
+          category: item.category
         })) || []
         setRecords(mappedRecords)
         localStorage.setItem(`records_${userId}`, JSON.stringify(mappedRecords))
