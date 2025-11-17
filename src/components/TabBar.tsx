@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Calendar, Apple, Plus } from 'lucide-react';
-import SprintyIcon from './ui/SprintyIcon.tsx';
+import { Home, Calendar, Apple, Plus, BrainCircuit } from 'lucide-react';
 
 type Tab = 'accueil' | 'planning' | 'nutrition' | 'sprinty';
 
@@ -17,7 +16,7 @@ const tabs = [
   { id: 'accueil', label: 'Accueil', Icon: Home },
   { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
   { id: 'nutrition', label: 'Nutrition', Icon: Apple },
-  { id: 'sprinty', label: 'Sprinty', Icon: SprintyIcon, notification: 'showCoachNotification' },
+  { id: 'sprinty', label: 'Sprinty', Icon: BrainCircuit, notification: 'showCoachNotification' },
 ];
 
 const TabBar: React.FC<TabBarProps> = ({
@@ -33,6 +32,18 @@ const TabBar: React.FC<TabBarProps> = ({
     const isActive = activeTab === tab.id;
     const hasNotification = tab.notification ? notificationStatus[tab.notification as keyof typeof notificationStatus] : false;
 
+    const iconAnimation = isActive
+      ? { scale: 1.15 }
+      : tab.id === 'sprinty'
+      ? { scale: [1, 1.05, 1] }
+      : { scale: 1 };
+
+    const iconTransition = isActive
+      ? { type: 'spring', stiffness: 400, damping: 10 }
+      : tab.id === 'sprinty'
+      ? { duration: 2, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }
+      : {};
+
     return (
       <button
         key={tab.id}
@@ -43,14 +54,14 @@ const TabBar: React.FC<TabBarProps> = ({
           <span className="absolute right-1/2 top-3 h-2.5 w-2.5 translate-x-[20px] rounded-full bg-orange-accent" />
         )}
         <motion.div
-          animate={{ scale: isActive ? 1.15 : 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          animate={iconAnimation}
+          transition={iconTransition}
         >
-          <tab.Icon
-            className={`h-6 w-6 ${isActive ? 'text-sprint-accent' : 'text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary'}`}
-            fill={isActive ? 'currentColor' : 'none'}
-            strokeWidth={isActive ? 2.5 : 2}
-          />
+            <tab.Icon
+                className={`h-6 w-6 ${isActive ? 'text-sprint-accent' : 'text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary'}`}
+                fill={isActive ? 'currentColor' : 'none'}
+                strokeWidth={isActive ? 2.5 : 2}
+            />
         </motion.div>
         <span className={`text-xs font-medium ${isActive ? 'text-sprint-light-text-primary dark:text-sprint-dark-text-primary' : 'text-transparent'}`}>
           {tab.label}
