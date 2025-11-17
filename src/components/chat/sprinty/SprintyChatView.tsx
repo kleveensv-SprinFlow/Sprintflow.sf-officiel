@@ -15,6 +15,8 @@ import ConversationMenu from './ConversationMenu';
 import ConversationActions from './ConversationActions';
 import { motion } from 'framer-motion';
 
+type SprintyMode = 'simplified' | 'expert';
+
 interface Message {
   id: string;
   text: string;
@@ -29,6 +31,7 @@ const SprintyChatView = () => {
   const { records, loading: recordsLoading } = useRecords();
   const { workouts, loading: workoutsLoading } = useWorkouts();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [sprintyMode, setSprintyMode] = useState<SprintyMode>('simplified');
   const [activeConversationId, setActiveConversationId] = useState<string | null>(conversationId || null);
   const [isTyping, setIsTyping] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -116,66 +119,67 @@ const SprintyChatView = () => {
 
   const { profile } = useAuth();
 
+  // --- Fonctions de simulation pour la Tâche 2.2 ---
+
+  const recognizeIntent = (text: string): 'INTENT_RECORDS' | 'UNKNOWN' => {
+    const lowerCaseText = text.toLowerCase();
+    const keywords = ['record', 'records', 'récent', 'récents', 'performance', 'performances', 'meilleur temps'];
+    
+    if (keywords.some(keyword => lowerCaseText.includes(keyword))) {
+      return 'INTENT_RECORDS';
+    }
+    
+    return 'UNKNOWN';
+  }
+
+  const generateMockResponse = (intent: 'INTENT_RECORDS' | 'UNKNOWN', mode: SprintyMode) => {
+    if (intent === 'INTENT_RECORDS') {
+      const mockRecordData = {
+        id: 'rec_mock_123',
+        user_id: 'user_mock_123',
+        name: '100m',
+        value: '10.55',
+        unit: 's',
+        date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      const simplifiedText = "Voici votre dernier record sur 100m. Continuez comme ça !";
+      const expertText = "Analyse du record : Basé sur votre performance de 10.55s sur 100m, les données suggèrent une excellente phase de mise en action. La vélocité maximale semble atteinte autour de 60m.";
+
+      return {
+        text: mode === 'simplified' ? simplifiedText : expertText,
+        component: <RecordCard record={mockRecordData as any} />
+      };
+    }
+    
+    return {
+      text: "Je ne suis pas sûr de comprendre. Pourriez-vous reformuler ?",
+      component: null
+    };
+  }
+
+  // --- Fin des fonctions de simulation ---
+
   const handleSendMessage = async (text: string) => {
-    const userMessage = { text, sender: 'user' as const, conversation_id: activeConversationId };
+    const userMessage = { text, sender: 'user' as const };
     addMessage(userMessage);
     setIsTyping(true);
 
-    try {
-      let currentConversationId = activeConversationId;
-
-      // Create conversation if it doesn't exist yet
-      if (!currentConversationId && user) {
-        const newTitle = text.split(' ').slice(0, 10).join(' ') + (text.split(' ').length > 10 ? '...' : '');
-        const { data: newConversation } = await supabase
-          .from('conversations')
-          .insert({ user_id: user.id, title: newTitle })
-          .select()
-          .single();
-        if (newConversation) {
-          currentConversationId = newConversation.id;
-          setActiveConversationId(currentConversationId);
-          setConversations(prev => [newConversation, ...prev]);
-        }
-      }
-
-      if (!currentConversationId) throw new Error("Could not create or find conversation.");
-
-      // Save user message to DB
-      await supabase.from('messages').insert({
-        conversation_id: currentConversationId,
-        sender_type: 'user',
-        content: text,
-      });
-
-      const expertiseMode = profile?.sprinty_mode || 'simple';
-      const conversationHistory = [...messages, userMessage].slice(-200);
+    // Logique de simulation avec un délai pour l'indicateur de frappe
+    setTimeout(() => {
+      const intent = recognizeIntent(text);
+      const response = generateMockResponse(intent, sprintyMode);
       
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('sprinty-chat', {
-        body: { messages: conversationHistory, expertiseMode },
-      });
-
-      if (functionError) throw functionError;
-
-      const sprintyReply = { text: functionData.reply, sender: 'sprinty' as const };
+      const sprintyReply = { 
+        text: response.text, 
+        sender: 'sprinty' as const, 
+        component: response.component 
+      };
       addMessage(sprintyReply);
       
-      // Save AI message to DB
-      await supabase.from('messages').insert({
-        conversation_id: currentConversationId,
-        sender_type: 'ai',
-        content: sprintyReply.text,
-      });
-
-    } catch (error) {
-      console.error("Erreur lors de l'envoi du message:", error);
-      addMessage({
-        text: "Désolé, une erreur est survenue. Veuillez réessayer.",
-        sender: 'sprinty',
-      });
-    } finally {
       setIsTyping(false);
-    }
+    }, 1500);
   };
 
   const handleSelectConversation = (id: string) => {
@@ -238,9 +242,13 @@ const SprintyChatView = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-light-background dark:bg-dark-background overflow-hidden">
-      <div className="z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
-        <SprintyChatHeader onMenuClick={() => setMenuOpen(true)} />
+    <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
+        <SprintyChatHeader 
+          onMenuClick={() => setMenuOpen(true)} 
+          mode={sprintyMode}
+          onModeChange={setSprintyMode}
+        />
       </div>
       <ConversationMenu
         isOpen={isMenuOpen}
@@ -252,8 +260,8 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
       
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4">
+      <div className="h-full overflow-y-auto">
+        <div className="p-4 pt-24 pb-32">
           {messages.map((message, index) => (
             <div key={message.id} className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
               {message.sender === 'sprinty' && (index === 0 || messages[index - 1].sender !== 'sprinty') && (
@@ -271,7 +279,7 @@ const SprintyChatView = () => {
         </div>
       </div>
 
-      <div className="z-10 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-t border-white/10 p-4">
+      <div className="absolute bottom-0 left-0 right-0 z-10 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-t border-white/10 p-4">
         <QuickReplies onSelectReply={handleSendMessage} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>
