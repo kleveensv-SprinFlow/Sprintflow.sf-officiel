@@ -250,24 +250,26 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
       
-      <div className="flex-1 p-4 pt-20 overflow-y-auto space-y-4">
-        {messages.map((message, index) => (
-          <div key={message.id} className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {message.sender === 'sprinty' && (index === 0 || messages[index - 1].sender !== 'sprinty') && (
-              <div className="w-8 h-8 flex-shrink-0">
-                  <BrainCircuit className="h-8 w-8 text-sprint-accent" />
+      <div className="flex-1 p-4 pt-20 overflow-y-auto space-y-4 flex flex-col">
+        <div className="flex-grow">
+          {messages.map((message, index) => (
+            <div key={message.id} className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+              {message.sender === 'sprinty' && (index === 0 || messages[index - 1].sender !== 'sprinty') && (
+                <div className="w-8 h-8 flex-shrink-0">
+                    <BrainCircuit className="h-8 w-8 text-sprint-accent" />
+                </div>
+              )}
+              <div className={`${message.sender === 'sprinty' && (index > 0 && messages[index - 1].sender === 'sprinty') ? 'ml-10' : ''}`}>
+                <MessageBubble message={message} />
               </div>
-            )}
-            <div className={`${message.sender === 'sprinty' && (index > 0 && messages[index - 1].sender === 'sprinty') ? 'ml-10' : ''}`}>
-              <MessageBubble message={message} />
             </div>
-          </div>
-        ))}
-        {isTyping && <TypingIndicator />}
-        <div ref={messagesEndRef} />
+          ))}
+          {isTyping && <TypingIndicator />}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-2 px-2">
         <QuickReplies onSelectReply={handleSendMessage} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>
