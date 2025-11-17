@@ -73,6 +73,7 @@ export interface Record {
   unit: 'kg' | 's' | 'm';
   date: string;
   exercice_reference_id?: string | null;
+  category?: string;
 }
 
 export interface Workout {
