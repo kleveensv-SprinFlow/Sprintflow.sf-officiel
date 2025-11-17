@@ -1,36 +1,37 @@
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Archive } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Menu } from 'lucide-react';
 import useAuth from '../../../hooks/useAuth';
-import ToggleSwitch from '../../ui/ToggleSwitch.tsx';
 
-const SprintyChatHeader: React.FC = () => {
-  const { profile, updateSprintyMode } = useAuth();
-  const navigate = useNavigate();
-  
-  const sprintyMode = profile?.sprinty_mode || 'simple';
-  const isExpertMode = sprintyMode === 'expert';
+interface SprintyChatHeaderProps {
+  onMenuClick: () => void;
+}
 
-  const handleToggle = () => {
-    const newMode = isExpertMode ? 'simple' : 'expert';
-    updateSprintyMode(newMode);
-  };
+const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({ onMenuClick }) => {
+  const { user } = useAuth();
+  const photoUrl = user?.user_metadata?.photo_url;
 
   return (
-    <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
-      <h2 className="text-lg font-bold">Sprinty</h2>
-      <div className="flex items-center gap-4">
-        <ToggleSwitch
-          isOn={isExpertMode}
-          onToggle={handleToggle}
-          leftText="Simple"
-          rightText="Expert"
-        />
-        <button onClick={() => navigate('/sprinty/history')} className="focus:outline-none">
-          <Archive className="h-6 w-6 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
-        </button>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10"
+    >
+      <button onClick={onMenuClick} className="p-2">
+        <Menu size={24} />
+      </button>
+      
+      <div className="w-10 h-10 rounded-full bg-light-card dark:bg-dark-card overflow-hidden">
+        {photoUrl ? (
+          <img src={photoUrl} alt="Profil" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gray-300 dark:bg-gray-600" />
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
