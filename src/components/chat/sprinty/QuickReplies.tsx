@@ -14,8 +14,8 @@ const QUICK_REPLIES = [
 
 const QuickReplies: React.FC<QuickRepliesProps> = ({ onSelectReply }) => {
   return (
-    <div className="px-2 pt-2 bg-light-background dark:bg-dark-background">
-      <div className="flex gap-2 pb-2 overflow-x-auto">
+    <div className="relative px-2 pt-2 bg-light-background dark:bg-dark-background">
+      <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar">
         {QUICK_REPLIES.map((reply, index) => (
           <motion.button
             key={reply}
@@ -29,6 +29,7 @@ const QuickReplies: React.FC<QuickRepliesProps> = ({ onSelectReply }) => {
           </motion.button>
         ))}
       </div>
+      <div className="absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-light-background dark:from-dark-background to-transparent pointer-events-none" />
     </div>
   );
 };
