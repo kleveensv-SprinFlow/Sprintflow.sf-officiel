@@ -250,8 +250,8 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
       
-      <div className="flex-1 p-4 pt-20 overflow-y-auto space-y-4 flex flex-col">
-        <div className="flex-grow">
+      <div className="flex-1 pt-20 overflow-y-auto flex flex-col">
+        <div className="flex-grow p-4">
           {messages.map((message, index) => (
             <div key={message.id} className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
               {message.sender === 'sprinty' && (index === 0 || messages[index - 1].sender !== 'sprinty') && (
@@ -269,7 +269,7 @@ const SprintyChatView = () => {
         </div>
       </div>
 
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-2 px-2">
+      <div className="border-t border-gray-200 dark:border-gray-700 px-2 pb-20">
         <QuickReplies onSelectReply={handleSendMessage} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>
