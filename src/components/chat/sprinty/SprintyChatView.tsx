@@ -238,8 +238,8 @@ const SprintyChatView = () => {
   };
 
   return (
-    <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
+    <div className="flex flex-col h-screen bg-light-background dark:bg-dark-background overflow-hidden">
+      <div className="z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
         <SprintyChatHeader onMenuClick={() => setMenuOpen(true)} />
       </div>
       <ConversationMenu
@@ -252,8 +252,8 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
       
-      <div className="h-full overflow-y-auto">
-        <div className="p-4 pt-24 pb-32">
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4">
           {messages.map((message, index) => (
             <div key={message.id} className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
               {message.sender === 'sprinty' && (index === 0 || messages[index - 1].sender !== 'sprinty') && (
@@ -271,7 +271,7 @@ const SprintyChatView = () => {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-10 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-t border-white/10 p-4">
+      <div className="z-10 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-t border-white/10 p-4">
         <QuickReplies onSelectReply={handleSendMessage} />
         <ChatInput onSendMessage={handleSendMessage} />
       </div>
