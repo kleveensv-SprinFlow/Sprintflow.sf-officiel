@@ -90,7 +90,7 @@ function App() {
           onHomeClick={() => navigate('/')}
         />
       )}
-      <main className={`pb-24 ${isSprintyPage ? 'flex-1' : 'pt-16 px-4'}`}>
+      <main className={`${isSprintyPage ? 'flex-1 overflow-hidden' : 'pt-16 px-4 pb-24'}`}>
         <Outlet />
       </main>
       {showTabBar && (
