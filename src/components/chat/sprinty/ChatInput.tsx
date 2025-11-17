@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ChatInputProps {
@@ -20,6 +20,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
   return (
     <div className="p-2 bg-light-background dark:bg-dark-background">
       <form onSubmit={handleSendMessage} className="flex items-center gap-2 p-1 rounded-full bg-light-card dark:bg-dark-card border border-white/10 shadow-md">
+        <motion.button
+          type="button"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-light-background dark:bg-dark-background text-gray-500"
+          whileTap={{ scale: 0.9 }}
+        >
+          <Plus className="w-5 h-5" />
+        </motion.button>
         <input
           type="text"
           value={message}
