@@ -1,70 +1,29 @@
-/* eslint-env node */
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
+import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-const EMBEDDING_MODEL = 'models/text-embedding-004';
+// Config Supabase depuis .env
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Supabase URL and SUPABASE_SERVICE_ROLE_KEY environment variables are required.');
-  process.exit(1);
+  throw new Error('SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquants dans .env');
 }
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// Clé API Google / Gemini (pour embeddings)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
 if (!GEMINI_API_KEY) {
-  console.error('A Gemini API key (GEMINI_API_KEY) is required to generate embeddings.');
-  process.exit(1);
+  throw new Error('GEMINI_API_KEY (ou GOOGLE_API_KEY) manquant dans .env');
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+const EMBEDDING_MODEL = 'models/text-embedding-004';
 
-function chunkText(text: string, chunkSize = 1400, overlap = 200): string[] {
-  const cleaned = text.replace(/\r\n/g, '\n').trim();
-  if (!cleaned) {
-    return [];
-  }
-
-  const paragraphs = cleaned.split(/\n{2,}/);
-  const chunks: string[] = [];
-  let buffer = '';
-
-  for (const paragraph of paragraphs) {
-    const candidate = buffer ? `${buffer}\n\n${paragraph.trim()}` : paragraph.trim();
-    if (candidate.length > chunkSize && buffer) {
-      chunks.push(buffer.trim());
-      const tail = paragraph.trim();
-      buffer = tail.length > chunkSize ? tail.slice(0, chunkSize) : tail;
-    } else if (candidate.length > chunkSize) {
-      chunks.push(candidate.slice(0, chunkSize).trim());
-      buffer = candidate.slice(Math.max(0, candidate.length - overlap)).trim();
-    } else {
-      buffer = candidate;
-    }
-  }
-
-  if (buffer) {
-    chunks.push(buffer.trim());
-  }
-
-  // Add overlaps to preserve context
-  const overlapped: string[] = [];
-  for (let i = 0; i < chunks.length; i++) {
-    const previous = chunks[i - 1] || '';
-    const prefix = previous ? previous.slice(-overlap) : '';
-    overlapped.push(prefix ? `${prefix}\n${chunks[i]}`.trim() : chunks[i]);
-  }
-
-  return overlapped.filter(Boolean);
-}
-
-async function generateEmbedding(text: string): Promise<number[]> {
+async function embedText(text: string): Promise<number[]> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
     {
@@ -84,8 +43,8 @@ async function generateEmbedding(text: string): Promise<number[]> {
     throw new Error(`Embedding API error: ${response.status} - ${errorText}`);
   }
 
-  const json = (await response.json()) as { embedding?: { values?: number[] } };
-  const values = json.embedding?.values;
+  const payload = await response.json();
+  const values = payload?.embedding?.values;
 
   if (!values || !Array.isArray(values)) {
     throw new Error('Embedding API returned an unexpected payload.');
@@ -94,48 +53,38 @@ async function generateEmbedding(text: string): Promise<number[]> {
   return values;
 }
 
-async function ingestCorpus(): Promise<void> {
-  const corpusPath = path.resolve('src/data/corpus.md');
-  const corpusText = await fs.readFile(corpusPath, 'utf-8');
-  const chunks = chunkText(corpusText);
+async function main() {
+  const corpusPath = path.resolve(__dirname, '../src/data/corpus.md');
 
-  if (chunks.length === 0) {
-    throw new Error('No chunks were generated from the corpus file.');
+  if (!fs.existsSync(corpusPath)) {
+    throw new Error(`Fichier corpus introuvable: ${corpusPath}`);
   }
 
-  console.log(`Preparing to ingest ${chunks.length} knowledge chunks...`);
+  console.log(`📚 Lecture du corpus depuis: ${corpusPath}`);
+  const corpus = fs.readFileSync(corpusPath, 'utf-8').trim();
 
-  const { error: deleteError } = await supabase
-    .from('corpus_embeddings')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000');
-
-  if (deleteError) {
-    throw deleteError;
+  if (!corpus) {
+    throw new Error('Le corpus est vide. Remplis src/data/corpus.md avant de lancer ce script.');
   }
 
-  const batchSize = 10;
-  const buffer: { content: string; embedding: number[] }[] = [];
+  console.log('🧠 Génération des embeddings...');
+  const embedding = await embedText(corpus);
 
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    console.log(`Embedding chunk ${i + 1}/${chunks.length}...`);
-    const embedding = await generateEmbedding(chunk);
-    buffer.push({ content: chunk, embedding });
+  console.log('💾 Insertion dans la table corpus_embeddings...');
+  const { data, error } = await supabase.from('corpus_embeddings').insert({
+    content: corpus,
+    embedding,
+  });
 
-    if (buffer.length === batchSize || i === chunks.length - 1) {
-      const { error } = await supabase.from('corpus_embeddings').insert(buffer);
-      if (error) {
-        throw error;
-      }
-      buffer.length = 0;
-    }
+  if (error) {
+    console.error('Erreur lors de linsertion dans corpus_embeddings:', error);
+    process.exit(1);
   }
 
-  console.log('Corpus ingestion completed successfully.');
+  console.log('✅ Corpus inséré avec succès dans corpus_embeddings:', data);
 }
 
-void ingestCorpus().catch((error) => {
-  console.error('Failed to ingest the corpus:', error);
+main().catch((err) => {
+  console.error('Erreur dans scripts/ingest-corpus.ts:', err);
   process.exit(1);
 });
