@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
-import QuickReplies from './QuickReplies';
+// QuickReplies retiré
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import TypingIndicator from './TypingIndicator';
@@ -87,7 +87,7 @@ const SprintyChatView = () => {
     const userName =
       // @ts-expect-error: user_metadata peut être any selon la config Supabase
       (user && (user as any).user_metadata?.first_name) || 'Athlète';
-    return `Bonjour ${userName}. Je suis Sprinty, votre assistant personnel. Je fonctionne ici en mode local, sans IA externe. Pose-moi des questions sur ta VO2 max, ta nutrition ou ton entraînement.`;
+    return `Bonjour ${userName}. Je suis Sprinty, ton assistant personnel. Pose-moi des questions sur ton entraînement, ta VO2 max ou ta nutrition.`;
   }, [user]);
 
   useEffect(() => {
@@ -165,39 +165,6 @@ const SprintyChatView = () => {
 
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
-
-  useEffect(() => {
-    if (messages.length > 0) return;
-
-    const savedMessagesJSON = localStorage.getItem('sprintyChatHistory');
-    if (savedMessagesJSON && savedMessagesJSON !== 'undefined') {
-      try {
-        const savedMessages = JSON.parse(savedMessagesJSON);
-        if (Array.isArray(savedMessages) && savedMessages.length > 0) {
-          const cleaned: Message[] = savedMessages.filter(
-            (m: any) =>
-              m &&
-              typeof m.text === 'string' &&
-              (m.sender === 'user' || m.sender === 'sprinty')
-          );
-          if (cleaned.length > 0) {
-            setMessages(cleaned);
-            return;
-          }
-        }
-      } catch (e) {
-        console.error('Failed to parse chat history:', e);
-      }
-    }
-
-    setMessages([
-      {
-        id: Date.now().toString(),
-        text: getWelcomeMessage(),
-        sender: 'sprinty',
-      },
-    ]);
-  }, [getWelcomeMessage, messages.length]);
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -324,7 +291,7 @@ const SprintyChatView = () => {
 
   return (
     <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden flex flex-col">
-      {/* Header fixe */}
+      {/* Header fixe en haut */}
       <div className="flex-shrink-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
         <SprintyChatHeader
           onMenuClick={() => setMenuOpen(true)}
@@ -333,7 +300,6 @@ const SprintyChatView = () => {
         />
       </div>
 
-      {/* Menu conversations */}
       <ConversationMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -344,7 +310,7 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
 
-      {/* Zone de messages : occupe toujours tout l'espace entre header et footer */}
+      {/* Zone de messages scrollable entre header et footer */}
       <div className="flex-1 overflow-y-auto">
         <div className="min-h-full px-4 pt-4 pb-4 space-y-4 flex flex-col">
           {messages
@@ -379,11 +345,9 @@ const SprintyChatView = () => {
       )}
 
       {/* Footer fixe juste au-dessus de la tabbar */}
-      <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 pt-1 pb-2 border-t border-white/10">
-        <QuickReplies onSelect={handleSendMessage} />
-        <div className="mt-1">
-          <ChatInput onSend={handleSendMessage} disabled={isTyping} />
-        </div>
+      <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 py-2 border-t border-white/10">
+        {/* QuickReplies supprimé */}
+        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
     </div>
   );
