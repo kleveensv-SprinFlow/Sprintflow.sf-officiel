@@ -88,7 +88,6 @@ const SprintyChatView = () => {
     return `Bonjour ${userName}. Je suis Sprinty, ton assistant personnel. Pose-moi des questions sur ton entraînement, ta VO2 max ou ta nutrition.`;
   }, [user]);
 
-  // Conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!user) return;
@@ -109,7 +108,6 @@ const SprintyChatView = () => {
     void fetchConversations();
   }, [user, normalizeConversation]);
 
-  // Messages
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -166,9 +164,9 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
-  // Sauvegarde local
   useEffect(() => {
     if (messages.length === 0) return;
+
     const history = messages.map((message) => {
       const { component, ...rest } = message;
       void component;
@@ -182,7 +180,6 @@ const SprintyChatView = () => {
     }
   }, [messages]);
 
-  // Scroll auto
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -290,21 +287,24 @@ const SprintyChatView = () => {
     }
   };
 
-  // ⚠️ IMPORTANT : on réserve 72px en bas pour la tabbar (à ajuster si ta tabbar est plus haute ou plus basse)
+  // Hauteur = écran - tabbar (à ajuster si besoin)
   return (
-    <div className="relative bg-light-background dark:bg-dark-background"
-         style={{ height: 'calc(100vh - 72px)' }}>
+    <div
+      className="relative bg-light-background dark:bg-dark-background"
+      style={{ height: 'calc(100vh - 72px)' }}
+    >
       <div className="h-full flex flex-col overflow-hidden">
-        {/* HEADER FIXE */}
-        <div className="flex-shrink-0 z-20 bg-light-background dark:bg-dark-background border-b border-white/10">
-          <SprintyChatHeader
-            onMenuClick={() => setMenuOpen(true)}
-            mode={sprintyMode}
-            onModeChange={setSprintyMode}
-          />
+        {/* HEADER FIXE AVEC MASQUE (fond opaque) */}
+        <div className="flex-shrink-0 z-20 border-b border-white/10">
+          <div className="bg-light-background dark:bg-dark-background">
+            <SprintyChatHeader
+              onMenuClick={() => setMenuOpen(true)}
+              mode={sprintyMode}
+              onModeChange={setSprintyMode}
+            />
+          </div>
         </div>
 
-        {/* MENU CONVERSATIONS */}
         <ConversationMenu
           isOpen={isMenuOpen}
           onClose={() => setMenuOpen(false)}
@@ -315,9 +315,9 @@ const SprintyChatView = () => {
           onOpenActions={handleOpenActions}
         />
 
-        {/* ZONE DE MESSAGES SCROLLABLE */}
+        {/* ZONE DE MESSAGES : SCROLLABLE, AVEC MARGE SOUS LE HEADER */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 pt-4 pb-4 space-y-4">
+          <div className="px-4 pt-3 pb-4 space-y-4">
             {messages
               .filter((msg) => {
                 const isValid =
@@ -339,7 +339,6 @@ const SprintyChatView = () => {
           </div>
         </div>
 
-        {/* ACTIONS CONVERSATION */}
         {selectedConversation && (
           <ConversationActions
             isOpen={isActionsOpen}
@@ -350,7 +349,7 @@ const SprintyChatView = () => {
           />
         )}
 
-        {/* FOOTER FIXE = ZONE DE SAISIE, COLLÉE AU-DESSUS DE LA TABBAR */}
+        {/* FOOTER FIXE : ZONE DE SAISIE */}
         <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 py-2 border-t border-white/10">
           <ChatInput onSend={handleSendMessage} disabled={isTyping} />
         </div>
