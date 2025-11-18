@@ -5,7 +5,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
 import { corsHeaders } from '../_shared/cors.ts';
 
 const EMBEDDING_MODEL = 'models/text-embedding-004';
-const GENERATION_MODEL = 'models/gemini-1.5-flash';
+const GENERATION_MODEL = 'models/gemini-1.5-flash-latest';
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   simplified:
@@ -57,7 +57,7 @@ async function generateAnswer(
   context: string
 ): Promise<string> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1/models/${GENERATION_MODEL}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -75,7 +75,7 @@ async function generateAnswer(
                   context,
                   '"""',
                   '',
-                  'Question de lacthète :',
+                  "Question de l'athlète :",
                   question,
                   '',
                   "Réponds de manière précise, en français, sans inventer d'informations qui ne seraient pas supportées par le corpus ou par des connaissances de base en physiologie/nutrition d'athlète.",
@@ -112,7 +112,9 @@ serve(async (req: Request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!apiKey || !supabaseUrl || !serviceRoleKey) {
-      throw new Error('Variables denvironnement manquantes (GEMINI_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
+      throw new Error(
+        'Variables denvironnement manquantes (GEMINI_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).'
+      );
     }
 
     const supabaseClient = createClient(supabaseUrl, serviceRoleKey);
@@ -134,10 +136,8 @@ serve(async (req: Request) => {
 
     const systemPrompt = SYSTEM_PROMPTS[expertiseMode] ?? SYSTEM_PROMPTS.simplified;
 
-    // 1) Embedding de la question
     const queryEmbedding = await embedText(question, apiKey);
 
-    // 2) Recherche vectorielle via la fonction match_corpus_embeddings
     const { data: matches, error: matchError } = await supabaseClient.rpc(
       'match_corpus_embeddings',
       {
@@ -161,7 +161,6 @@ serve(async (req: Request) => {
             .join('\n\n---\n\n')
         : '';
 
-    // 3) Génération de la réponse
     const answer = await generateAnswer(apiKey, systemPrompt, question, context);
 
     return new Response(JSON.stringify({ reply: answer }), {
