@@ -88,7 +88,7 @@ const SprintyChatView = () => {
     return `Bonjour ${userName}. Je suis Sprinty, ton assistant personnel. Pose-moi des questions sur ton entraînement, ta VO2 max ou ta nutrition.`;
   }, [user]);
 
-  // Charger les conversations
+  // 1) Charger les conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!user) return;
@@ -109,7 +109,7 @@ const SprintyChatView = () => {
     void fetchConversations();
   }, [user, normalizeConversation]);
 
-  // Charger les messages
+  // 2) Charger les messages
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -166,7 +166,7 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
-  // Sauvegarde locale
+  // 3) Sauvegarde locale
   useEffect(() => {
     if (messages.length === 0) return;
     const history = messages.map((message) => {
@@ -182,7 +182,7 @@ const SprintyChatView = () => {
     }
   }, [messages]);
 
-  // Scroll auto vers le bas
+  // 4) Scroll auto vers le bas
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -290,22 +290,20 @@ const SprintyChatView = () => {
     }
   };
 
-  // Hauteur = écran - tabbar (ajuste 72px selon ta tabbar)
+  // ⚠️ Hauteur = écran - tabbar (72px à ajuster selon la hauteur réelle de ta tabbar)
   return (
     <div
       className="relative bg-light-background dark:bg-dark-background"
       style={{ height: 'calc(100vh - 72px)' }}
     >
       <div className="h-full flex flex-col overflow-hidden">
-        {/* HEADER FIXE, FOND OPAQUE */}
-        <div className="flex-shrink-0 z-20 border-b border-white/10">
-          <div className="bg-light-background dark:bg-dark-background">
-            <SprintyChatHeader
-              onMenuClick={() => setMenuOpen(true)}
-              mode={sprintyMode}
-              onModeChange={setSprintyMode}
-            />
-          </div>
+        {/* HEADER FIXE, proprement séparé */}
+        <div className="flex-shrink-0 border-b border-white/10 bg-light-background dark:bg-dark-background">
+          <SprintyChatHeader
+            onMenuClick={() => setMenuOpen(true)}
+            mode={sprintyMode}
+            onModeChange={setSprintyMode}
+          />
         </div>
 
         {/* MENU CONVERSATIONS (overlay) */}
