@@ -45,7 +45,7 @@ interface MessageRow {
 }
 
 const SprintyChatView = () => {
-  const { user } = useAuth();
+  const { user } = useAuth() || {}; // fallback au cas où useAuth ne renvoie rien
   const { id: conversationId } = useParams();
   const navigate = useNavigate();
 
@@ -62,45 +62,55 @@ const SprintyChatView = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const normalizeConversation = useCallback((conversation: ConversationRow): ConversationRecord => ({
-    id: conversation.id,
-    title: conversation.title ?? 'Nouvelle conversation',
-    is_pinned: Boolean(conversation.is_pinned),
-    user_id: conversation.user_id,
-    timestamp: conversation.timestamp ?? null,
-  }), []);
+  const normalizeConversation = useCallback(
+    (conversation: ConversationRow): ConversationRecord => ({
+      id: conversation.id,
+      title: conversation.title ?? 'Nouvelle conversation',
+      is_pinned: Boolean(conversation.is_pinned),
+      user_id: conversation.user_id,
+      timestamp: conversation.timestamp ?? null,
+    }),
+    []
+  );
 
-  const normalizeMessage = useCallback((message: MessageRow): Message => ({
-    id: message.id,
-    text: message.text,
-    sender: message.sender,
-  }), []);
+  const normalizeMessage = useCallback(
+    (message: MessageRow): Message => ({
+      id: message.id,
+      text: message.text,
+      sender: message.sender,
+    }),
+    []
+  );
 
   const getWelcomeMessage = useCallback(() => {
-    const userName = user?.user_metadata?.first_name || 'Athlète';
+    const userName =
+      // @ts-expect-error: user_metadata peut être any selon la config Supabase
+      (user && (user as any).user_metadata?.first_name) || 'Athlète';
     return `Bonjour ${userName}. Je suis Sprinty, votre assistant personnel. Je suis prêt à analyser vos données pour la journée. Que souhaitez-vous vérifier en premier ?`;
   }, [user]);
 
+  // 1) Charger la liste des conversations
   useEffect(() => {
     const fetchConversations = async () => {
-      if (user) {
-        const { data, error } = await supabase
-          .from<ConversationRow>('conversations')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('timestamp', { ascending: false });
+      if (!user) return;
 
-        if (error) {
-          console.error("Error fetching conversations:", error);
-        } else {
-          setConversations((data ?? []).map(normalizeConversation));
-        }
+      const { data, error } = await supabase
+        .from<ConversationRow>('conversations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('timestamp', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching conversations:', error);
+      } else {
+        setConversations((data ?? []).map(normalizeConversation));
       }
     };
 
-    fetchConversations();
+    void fetchConversations();
   }, [user, normalizeConversation]);
 
+  // 2) Charger les messages de la conversation OU message de bienvenue
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -113,20 +123,36 @@ const SprintyChatView = () => {
           .order('timestamp', { ascending: true });
 
         if (error) {
-          console.error("Error loading messages:", error);
-          setMessages([{ id: 'error', text: 'Impossible de charger cette conversation.', sender: 'sprinty' }]);
+          console.error('Error loading messages:', error);
+          setMessages([
+            {
+              id: 'error',
+              text: 'Impossible de charger cette conversation.',
+              sender: 'sprinty',
+            },
+          ]);
         } else {
           setMessages((data ?? []).map(normalizeMessage));
         }
       } else {
-        setMessages([{ id: Date.now().toString(), text: getWelcomeMessage(), sender: 'sprinty' }]);
+        setMessages([
+          {
+            id: Date.now().toString(),
+            text: getWelcomeMessage(),
+            sender: 'sprinty',
+          },
+        ]);
       }
     };
 
-    loadMessages();
-  }, [conversationId, user, normalizeMessage, getWelcomeMessage]);
+    void loadMessages();
+  }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
+  // 3) Restaurer l’historique local SI aucune conversation n’est chargée explicitement
   useEffect(() => {
+    // Ne pas écraser des messages déjà chargés (ex : depuis Supabase)
+    if (messages.length > 0) return;
+
     const savedMessagesJSON = localStorage.getItem('sprintyChatHistory');
     if (savedMessagesJSON && savedMessagesJSON !== 'undefined') {
       try {
@@ -136,30 +162,43 @@ const SprintyChatView = () => {
           return;
         }
       } catch (e) {
-        console.error("Failed to parse chat history:", e);
+        console.error('Failed to parse chat history:', e);
       }
     }
 
-    setMessages([{ id: Date.now().toString(), text: getWelcomeMessage(), sender: 'sprinty' }]);
-  }, [user, getWelcomeMessage]);
+    setMessages([
+      {
+        id: Date.now().toString(),
+        text: getWelcomeMessage(),
+        sender: 'sprinty',
+      },
+    ]);
+  }, [getWelcomeMessage, messages.length]);
 
+  // 4) Sauvegarde dans le localStorage
   useEffect(() => {
-    if (messages.length > 0) {
-      const history = messages.map(message => {
-        const { component, ...rest } = message;
-        void component;
-        return rest;
-      });
+    if (messages.length === 0) return;
+
+    const history = messages.map((message) => {
+      const { component, ...rest } = message;
+      void component;
+      return rest;
+    });
+
+    try {
       localStorage.setItem('sprintyChatHistory', JSON.stringify(history));
+    } catch (e) {
+      console.error('Failed to save chat history:', e);
     }
   }, [messages]);
 
+  // 5) Scroll automatique
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
   const addMessage = (message: Omit<Message, 'id'>) => {
-    setMessages(prev => [...prev, { ...message, id: Date.now().toString() }]);
+    setMessages((prev) => [...prev, { ...message, id: Date.now().toString() }]);
   };
 
   const handleSendMessage = async (text: string) => {
@@ -209,7 +248,13 @@ const SprintyChatView = () => {
 
   const handleNewConversation = () => {
     navigate('/sprinty');
-    setMessages([{ id: Date.now().toString(), text: getWelcomeMessage(), sender: 'sprinty' }]);
+    setMessages([
+      {
+        id: Date.now().toString(),
+        text: getWelcomeMessage(),
+        sender: 'sprinty',
+      },
+    ]);
     setActiveConversationId(null);
     setMenuOpen(false);
   };
@@ -230,10 +275,10 @@ const SprintyChatView = () => {
       .single();
 
     if (error) {
-      console.error("Error pinning conversation:", error);
-    } else {
+      console.error('Error pinning conversation:', error);
+    } else if (data) {
       const normalized = normalizeConversation(data);
-      setConversations(prev => prev.map(c => (c.id === normalized.id ? normalized : c)));
+      setConversations((prev) => prev.map((c) => (c.id === normalized.id ? normalized : c)));
       setSelectedConversation(normalized);
       setActionsOpen(false);
     }
@@ -242,8 +287,11 @@ const SprintyChatView = () => {
   const handleRename = async () => {
     if (!selectedConversation) return;
 
-    const newTitle = prompt("Entrez le nouveau nom de la conversation:", selectedConversation.title);
-    if (newTitle && newTitle.trim() !== "") {
+    const newTitle = prompt(
+      'Entrez le nouveau nom de la conversation:',
+      selectedConversation.title
+    );
+    if (newTitle && newTitle.trim() !== '') {
       const { data, error } = await supabase
         .from<ConversationRow>('conversations')
         .update({ title: newTitle.trim() })
@@ -252,10 +300,10 @@ const SprintyChatView = () => {
         .single();
 
       if (error) {
-        console.error("Error renaming conversation:", error);
-      } else {
+        console.error('Error renaming conversation:', error);
+      } else if (data) {
         const normalized = normalizeConversation(data);
-        setConversations(prev => prev.map(c => (c.id === normalized.id ? normalized : c)));
+        setConversations((prev) => prev.map((c) => (c.id === normalized.id ? normalized : c)));
         setSelectedConversation(normalized);
         setActionsOpen(false);
       }
@@ -299,21 +347,20 @@ const SprintyChatView = () => {
         </div>
       </div>
 
-      <ConversationActions
-        isOpen={isActionsOpen}
-        onClose={() => setActionsOpen(false)}
-        conversation={selectedConversation}
-        onTogglePin={handleTogglePin}
-        onRename={handleRename}
-      />
+      {selectedConversation && (
+        <ConversationActions
+          isOpen={isActionsOpen}
+          onClose={() => setActionsOpen(false)}
+          conversation={selectedConversation}
+          onTogglePin={handleTogglePin}
+          onRename={handleRename}
+        />
+      )}
 
       <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background p-4 border-t border-white/10">
         <QuickReplies onSelect={handleSendMessage} />
 
-        <ChatInput
-          onSend={handleSendMessage}
-          disabled={isTyping}
-        />
+        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
     </div>
   );
