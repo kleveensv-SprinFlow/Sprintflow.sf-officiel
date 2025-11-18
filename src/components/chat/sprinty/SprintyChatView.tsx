@@ -320,7 +320,7 @@ const SprintyChatView = () => {
           </div>
 
           {/* Messages, avec marge sous le header */}
-          <div className="px-4 pt-4 pb-4 space-y-4">
+          <div className="px-4 pt-16 pb-4 space-y-4">
             {messages
               .filter((msg) => {
                 const isValid =
