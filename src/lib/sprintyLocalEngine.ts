@@ -1,5 +1,4 @@
 // Moteur "local" pour Sprinty : aucune API externe, uniquement des règles + ton savoir métier.
-// À terme, tu pourras brancher ici les appels Supabase pour les records, planning, etc.
 
 export type SprintyMode = 'simplified' | 'expert';
 
@@ -8,54 +7,60 @@ export interface SprintyResponse {
 }
 
 /**
- * Détection simple d'intentions à partir de mots-clés.
+ * Détection d'intentions à partir de mots-clés.
+ * On logge l'intention pour debug.
  */
-function detectIntent(question: string): string {
-  const q = question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // enlève les accents
+function detectIntent(rawQuestion: string): string {
+  // On normalise : minuscules + suppression des accents
+  const q = rawQuestion
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, ''); // enlève les accents
 
-  if (q.includes('vo2')) return 'INTENT_VO2_EXPLAIN';
+  let intent = 'INTENT_GENERIC';
 
-  if (
+  if (q.includes('vo2')) {
+    intent = 'INTENT_VO2_EXPLAIN';
+  } else if (
     q.includes('record') ||
-    q.includes('perso') ||
-    q.includes('meilleurs temps') ||
+    q.includes('records') ||
     q.includes('meilleur temps') ||
+    q.includes('meilleurs temps') ||
     q.includes('chrono')
   ) {
-    return 'INTENT_RECORDS';
-  }
-
-  if (
+    intent = 'INTENT_RECORDS';
+  } else if (
     q.includes('planning') ||
     q.includes('entrainement') ||
-    q.includes("entraînement") ||
+    q.includes("entrainement") ||
     q.includes('seance') ||
-    q.includes('séance') ||
+    q.includes('seances') ||
+    q.includes('seance') ||
     q.includes('programme')
   ) {
-    return 'INTENT_PLANNING';
-  }
-
-  if (q.includes('poids') || q.includes('puissance') || q.includes('indice')) {
-    return 'INTENT_POIDS_PUISSANCE';
-  }
-
-  if (
+    intent = 'INTENT_PLANNING';
+  } else if (
     q.includes('nutrition') ||
     q.includes('manger') ||
     q.includes('repas') ||
     q.includes('aliment') ||
-    q.includes('calories')
+    q.includes('calories') ||
+    q.includes('calorique')
   ) {
-    return 'INTENT_NUTRITION';
+    intent = 'INTENT_NUTRITION';
+  } else if (q.includes('poids') || q.includes('puissance') || q.includes('indice')) {
+    intent = 'INTENT_POIDS_PUISSANCE';
   }
 
-  return 'INTENT_GENERIC';
+  // Log debug (visible dans la console du navigateur)
+  // eslint-disable-next-line no-console
+  console.log('[SprintyLocalEngine] Question normalisée =', q, '| intent =', intent);
+
+  return intent;
 }
 
 /**
  * Réponses "corpus" codées en dur.
- * On pourra plus tard les faire venir automatiquement de src/data/corpus.md.
  */
 function getCorpusAnswer(intent: string, mode: SprintyMode): string | null {
   switch (intent) {
@@ -91,11 +96,7 @@ Avant une séance importante (2–3 h avant) :
 Juste après la séance (dans les 1–2 h) :
 - une source de glucides (fruits, jus, féculents),
 - une source de protéines (lait, yaourt, œufs, poulet, tofu),
-pour favoriser la récupération musculaire.
-
-Au quotidien :
-- viser environ 1,6 à 2,2 g de protéines par kg de poids de corps par jour,
-- ajuster les calories en fonction de la charge d’entraînement pour éviter de trop descendre en énergie.`;
+pour favoriser la récupération musculaire.`;
 
     default:
       return null;
@@ -116,13 +117,12 @@ export async function sprintyLocalAnswer(
     return { text: corpusAnswer };
   }
 
-  // Fallback : informer clairement ce qui est possible
   return {
     text:
       "Je fonctionne ici en mode local sans IA externe.\n\n" +
       "Pour l’instant, je sais surtout répondre sur :\n" +
-      "- la VO2 max (par ex. “Explique-moi la VO2 max”),\n" +
+      "- la VO2 max (par ex. “Explique-moi la VO2 max” ou “C’est quoi la VO2 max ?”),\n" +
       "- la nutrition (par ex. “Que manger avant un entraînement intense ?”).\n\n" +
-      "Je vais être enrichi progressivement pour te parler aussi de tes records et de ton planning avec tes vraies données.",
+      "Si tu viens de me poser une question sur ces sujets et que je n’ai pas répondu correctement, regarde dans la console du navigateur (F12 > Console) la ligne [SprintyLocalEngine] pour voir l’intention détectée.",
   };
 }
