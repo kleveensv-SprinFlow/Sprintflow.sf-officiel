@@ -1,48 +1,53 @@
-import React, { useState } from 'react';
-import { Send, Plus } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState, KeyboardEvent, FormEvent } from 'react';
+import { Send } from 'lucide-react';
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSend: (text: string) => void;
+  disabled?: boolean;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
-  const [message, setMessage] = useState('');
+const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
+  const [value, setValue] = useState('');
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim()) {
-      onSendMessage(message);
-      setMessage('');
+  const handleSubmit = (e?: FormEvent) => {
+    if (e) e.preventDefault();
+    const text = value.trim();
+    if (!text || disabled) return;
+
+    onSend(text);   // déclenche l’envoi
+    setValue('');   // vide le champ
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
   return (
-    <div className="p-2 bg-light-background dark:bg-dark-background">
-      <form onSubmit={handleSendMessage} className="flex items-center gap-2 p-1 rounded-full bg-light-card dark:bg-dark-card border border-white/10 shadow-md">
-        <motion.button
-          type="button"
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-light-background dark:bg-dark-background text-gray-500"
-          whileTap={{ scale: 0.9 }}
-        >
-          <Plus className="w-5 h-5" />
-        </motion.button>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Que puis-je analyser pour vous ?"
-          className="flex-1 w-full px-4 py-2 bg-transparent focus:outline-none text-light-text dark:text-dark-text placeholder-gray-500"
-        />
-        <motion.button
-          type="submit"
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-accent text-white"
-          whileTap={{ scale: 0.9 }}
-        >
-          <Send className="w-5 h-5" />
-        </motion.button>
-      </form>
-    </div>
+    <form
+      onSubmit={handleSubmit}
+      className="flex items-center gap-2 rounded-full bg-transparent border border-gray-600 px-3 py-2"
+    >
+      <input
+        type="text"
+        className="flex-1 bg-transparent outline-none text-light-text dark:text-dark-text placeholder-gray-500 text-sm"
+        placeholder="Que puis-je analyser pour vous aujourd'hui ?"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+      />
+
+      <button
+        type="submit"
+        disabled={disabled || !value.trim()}
+        className="flex items-center justify-center rounded-full w-8 h-8 bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition"
+      >
+        <Send size={16} className="text-white" />
+      </button>
+    </form>
   );
 };
 
