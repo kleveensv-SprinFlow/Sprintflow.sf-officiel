@@ -12,8 +12,8 @@ const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({
   onModeChange,
 }) => {
   return (
-    // Masque OPAQUE : même couleur que le fond, aucune transparence
-    <header className="w-full bg-light-background dark:bg-dark-background">
+    // Effet verre dépoli : fond semi-transparent + blur
+    <header className="w-full bg-light-background/60 dark:bg-dark-background/60 backdrop-blur-md border-b border-white/10">
       <div className="flex items-center justify-between px-4 py-3">
         {/* Bouton menu (burger) */}
         <button
