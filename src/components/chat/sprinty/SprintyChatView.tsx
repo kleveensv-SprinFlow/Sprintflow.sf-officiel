@@ -340,6 +340,7 @@ const SprintyChatView = () => {
 
   return (
     <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden">
+      {/* Header fixé en haut */}
       <div className="absolute top-0 left-0 right-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
         <SprintyChatHeader
           onMenuClick={() => setMenuOpen(true)}
@@ -348,6 +349,7 @@ const SprintyChatView = () => {
         />
       </div>
 
+      {/* Menu des conversations */}
       <ConversationMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -358,8 +360,9 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
 
+      {/* Zone des messages – padding bas réduit pour se rapprocher de la zone de saisie */}
       <div className="h-full overflow-y-auto">
-        <div className="pt-20 pb-32 px-4 space-y-4">
+        <div className="pt-20 pb-20 px-4 space-y-4">
           {messages
             .filter((msg) => {
               const isValid =
@@ -374,7 +377,7 @@ const SprintyChatView = () => {
             .map((msg) => (
               <MessageBubble
                 key={msg.id}
-                message={msg}   // ✅ correction ici
+                message={msg} // IMPORTANT : on passe bien un objet message complet
               />
             ))}
 
@@ -384,6 +387,7 @@ const SprintyChatView = () => {
         </div>
       </div>
 
+      {/* Actions sur la conversation */}
       {selectedConversation && (
         <ConversationActions
           isOpen={isActionsOpen}
@@ -394,10 +398,13 @@ const SprintyChatView = () => {
         />
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background p-4 border-t border-white/10">
+      {/* Footer + champ de saisie – rapproché visuellement de la tabbar */}
+      <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background px-4 pt-2 pb-3 border-t border-white/10">
         <QuickReplies onSelect={handleSendMessage} />
 
-        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+        <div className="mt-2">
+          <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+        </div>
       </div>
     </div>
   );
