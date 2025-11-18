@@ -88,7 +88,7 @@ const SprintyChatView = () => {
     return `Bonjour ${userName}. Je suis Sprinty, ton assistant personnel. Pose-moi des questions sur ton entraînement, ta VO2 max ou ta nutrition.`;
   }, [user]);
 
-  // 1) Charger les conversations
+  // Charger les conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!user) return;
@@ -109,7 +109,7 @@ const SprintyChatView = () => {
     void fetchConversations();
   }, [user, normalizeConversation]);
 
-  // 2) Charger les messages
+  // Charger les messages
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -166,7 +166,7 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
-  // 3) Sauvegarde locale
+  // Sauvegarde locale
   useEffect(() => {
     if (messages.length === 0) return;
     const history = messages.map((message) => {
@@ -182,7 +182,7 @@ const SprintyChatView = () => {
     }
   }, [messages]);
 
-  // 4) Scroll auto vers le bas
+  // Scroll auto vers le bas
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -290,22 +290,13 @@ const SprintyChatView = () => {
     }
   };
 
-  // ⚠️ Hauteur = écran - tabbar (72px à ajuster selon la hauteur réelle de ta tabbar)
+  // Hauteur = écran - tabbar (72px à ajuster selon la hauteur réelle de ta tabbar)
   return (
     <div
       className="relative bg-light-background dark:bg-dark-background"
       style={{ height: 'calc(100vh - 72px)' }}
     >
       <div className="h-full flex flex-col overflow-hidden">
-        {/* HEADER FIXE, proprement séparé */}
-        <div className="flex-shrink-0 border-b border-white/10 bg-light-background dark:bg-dark-background">
-          <SprintyChatHeader
-            onMenuClick={() => setMenuOpen(true)}
-            mode={sprintyMode}
-            onModeChange={setSprintyMode}
-          />
-        </div>
-
         {/* MENU CONVERSATIONS (overlay) */}
         <ConversationMenu
           isOpen={isMenuOpen}
@@ -317,9 +308,19 @@ const SprintyChatView = () => {
           onOpenActions={handleOpenActions}
         />
 
-        {/* ZONE DE MESSAGES : COMMENCE CLAIREMENT SOUS LE HEADER (pt-4) */}
+        {/* ZONE SCROLLABLE : header sticky + messages dessous */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 pt-16 pb-4 space-y-4">
+          {/* Header sticky à l'intérieur de la zone scroll */}
+          <div className="sticky top-0 z-20 border-b border-white/10 bg-light-background dark:bg-dark-background">
+            <SprintyChatHeader
+              onMenuClick={() => setMenuOpen(true)}
+              mode={sprintyMode}
+              onModeChange={setSprintyMode}
+            />
+          </div>
+
+          {/* Messages, avec marge sous le header */}
+          <div className="px-4 pt-4 pb-4 space-y-4">
             {messages
               .filter((msg) => {
                 const isValid =
