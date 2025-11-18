@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
-// QuickReplies retiré
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import TypingIndicator from './TypingIndicator';
@@ -9,7 +8,6 @@ import SprintyChatHeader from './SprintyChatHeader';
 import useAuth from '../../../hooks/useAuth';
 import ConversationMenu from './ConversationMenu';
 import ConversationActions from './ConversationActions';
-
 import { sprintyLocalAnswer, SprintyMode as LocalSprintyMode } from '../../../lib/sprintyLocalEngine';
 
 type SprintyMode = LocalSprintyMode;
@@ -139,6 +137,7 @@ const SprintyChatView = () => {
                 typeof m.text === 'string' &&
                 (m.sender === 'user' || m.sender === 'sprinty')
             );
+
           setMessages(
             normalized.length > 0
               ? normalized
@@ -291,8 +290,8 @@ const SprintyChatView = () => {
 
   return (
     <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden flex flex-col">
-      {/* Header fixe en haut */}
-      <div className="flex-shrink-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
+      {/* HEADER FIXE, séparé visuellement des messages */}
+      <div className="flex-shrink-0 z-20 bg-light-background dark:bg-dark-background border-b border-white/10">
         <SprintyChatHeader
           onMenuClick={() => setMenuOpen(true)}
           mode={sprintyMode}
@@ -300,6 +299,7 @@ const SprintyChatView = () => {
         />
       </div>
 
+      {/* MENU CONVERSATIONS (overlay latéral) */}
       <ConversationMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -310,7 +310,7 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
 
-      {/* Zone de messages scrollable entre header et footer */}
+      {/* ZONE DE MESSAGES : scrolle entre header et footer, avec marges haut/bas */}
       <div className="flex-1 overflow-y-auto">
         <div className="min-h-full px-4 pt-4 pb-4 space-y-4 flex flex-col">
           {messages
@@ -334,6 +334,7 @@ const SprintyChatView = () => {
         </div>
       </div>
 
+      {/* ACTIONS CONVERSATION (overlay modal) */}
       {selectedConversation && (
         <ConversationActions
           isOpen={isActionsOpen}
@@ -344,9 +345,8 @@ const SprintyChatView = () => {
         />
       )}
 
-      {/* Footer fixe juste au-dessus de la tabbar */}
+      {/* FOOTER FIXE : zone de saisie collée au-dessus de la tabbar */}
       <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 py-2 border-t border-white/10">
-        {/* QuickReplies supprimé */}
         <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
     </div>
