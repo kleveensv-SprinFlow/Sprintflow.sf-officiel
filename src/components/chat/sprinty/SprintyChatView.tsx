@@ -1,4 +1,3 @@
-import { sprintyLocalAnswer } from '../../../lib/sprintyLocalEngine';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
@@ -11,7 +10,9 @@ import useAuth from '../../../hooks/useAuth';
 import ConversationMenu from './ConversationMenu';
 import ConversationActions from './ConversationActions';
 
-type SprintyMode = 'simplified' | 'expert';
+import { sprintyLocalAnswer, SprintyMode as LocalSprintyMode } from '../../../lib/sprintyLocalEngine';
+
+type SprintyMode = LocalSprintyMode;
 
 interface Message {
   id: string;
@@ -86,10 +87,10 @@ const SprintyChatView = () => {
     const userName =
       // @ts-expect-error: user_metadata peut être any selon la config Supabase
       (user && (user as any).user_metadata?.first_name) || 'Athlète';
-    return `Bonjour ${userName}. Je suis Sprinty, votre assistant personnel. Je suis prêt à analyser vos données pour la journée. Que souhaitez-vous vérifier en premier ?`;
+    return `Bonjour ${userName}. Je suis Sprinty, votre assistant personnel. Je fonctionne ici en mode local, sans IA externe. Je suis prêt à analyser tes questions sur tes entraînements, ta VO2 max et ta nutrition. Par quoi veux-tu commencer ?`;
   }, [user]);
 
-  // 1) Conversations
+  // 1) Charger la liste des conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!user) return;
@@ -110,7 +111,7 @@ const SprintyChatView = () => {
     void fetchConversations();
   }, [user, normalizeConversation]);
 
-  // 2) Messages
+  // 2) Charger les messages de la conversation (si id dans l’URL), sinon message de bienvenue
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -167,7 +168,7 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
-  // 3) Historique local
+  // 3) Historique local si pas de conversation en DB
   useEffect(() => {
     if (messages.length > 0) return;
 
@@ -227,6 +228,7 @@ const SprintyChatView = () => {
     setMessages((prev) => [...prev, { ...message, id: Date.now().toString() }]);
   };
 
+  // 🔹 Ici : utilisation du moteur local, sans aucune API externe
   const handleSendMessage = async (text: string) => {
     console.log('[SprintyChatView] handleSendMessage:', text);
     const sanitizedText = text.trim();
@@ -237,30 +239,19 @@ const SprintyChatView = () => {
     setIsTyping(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke<{ reply?: string }>(
-        'sprinty-rag-pipeline',
-        {
-          body: {
-            question: sanitizedText,
-            expertiseMode: sprintyMode,
-          },
-        }
-      );
-
-      if (error) throw error;
+      const result = await sprintyLocalAnswer(sanitizedText, sprintyMode);
 
       const sprintyReply = {
-        text:
-          data?.reply ||
-          "Je n'arrive pas à récupérer les informations nécessaires. Peux-tu reformuler dans un instant ?",
+        text: result.text,
         sender: 'sprinty' as const,
       };
 
       addMessage(sprintyReply);
     } catch (err) {
-      console.error('Erreur lors de la récupération de la réponse Sprinty:', err);
+      console.error('Erreur dans le moteur local Sprinty:', err);
       addMessage({
-        text: "Je rencontre une difficulté technique pour répondre pour le moment. Réessaie dans quelques secondes.",
+        text:
+          "Je rencontre une difficulté pour analyser ta question en mode local. Reformule ou réessaie dans quelques instants.",
         sender: 'sprinty',
       });
     } finally {
