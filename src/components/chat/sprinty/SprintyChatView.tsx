@@ -24,8 +24,7 @@ interface ConversationRow {
   title: string | null;
   is_pinned: boolean | null;
   user_id?: string;
-  // IMPORTANT : adapte ce champ au vrai nom dans ta DB (created_at, updated_at, etc.)
-  created_at?: string | null;
+  created_at?: string | null; // adapte si ta colonne a un autre nom
 }
 
 interface ConversationRecord {
@@ -45,7 +44,7 @@ interface MessageRow {
 }
 
 const SprintyChatView = () => {
-  const { user } = useAuth() || {}; // fallback au cas où useAuth renverrait undefined
+  const { user } = useAuth() || {};
   const { id: conversationId } = useParams();
   const navigate = useNavigate();
 
@@ -89,7 +88,7 @@ const SprintyChatView = () => {
     return `Bonjour ${userName}. Je suis Sprinty, votre assistant personnel. Je suis prêt à analyser vos données pour la journée. Que souhaitez-vous vérifier en premier ?`;
   }, [user]);
 
-  // 1) Charger la liste des conversations
+  // 1) Conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!user) return;
@@ -98,7 +97,6 @@ const SprintyChatView = () => {
         .from<ConversationRow>('conversations')
         .select('*')
         .eq('user_id', (user as any).id)
-        // IMPORTANT : adapte 'created_at' au vrai nom de ta colonne temporelle
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -111,7 +109,7 @@ const SprintyChatView = () => {
     void fetchConversations();
   }, [user, normalizeConversation]);
 
-  // 2) Charger les messages de la conversation OU message de bienvenue
+  // 2) Messages
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -168,9 +166,8 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
-  // 3) Restaurer l’historique local SI aucune conversation spécifique n’est chargée
+  // 3) Historique local si pas de conversation chargée
   useEffect(() => {
-    // Si on a déjà des messages (ex : conversation chargée depuis Supabase), ne pas écraser
     if (messages.length > 0) return;
 
     const savedMessagesJSON = localStorage.getItem('sprintyChatHistory');
@@ -203,7 +200,7 @@ const SprintyChatView = () => {
     ]);
   }, [getWelcomeMessage, messages.length]);
 
-  // 4) Sauvegarder dans le localStorage (format propre)
+  // 4) Sauvegarde localStorage
   useEffect(() => {
     if (messages.length === 0) return;
 
@@ -220,7 +217,7 @@ const SprintyChatView = () => {
     }
   }, [messages]);
 
-  // 5) Scroll automatique
+  // 5) Scroll auto
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -340,7 +337,7 @@ const SprintyChatView = () => {
 
   return (
     <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden">
-      {/* Header fixé en haut */}
+      {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
         <SprintyChatHeader
           onMenuClick={() => setMenuOpen(true)}
@@ -349,7 +346,7 @@ const SprintyChatView = () => {
         />
       </div>
 
-      {/* Menu des conversations */}
+      {/* Menu conversations */}
       <ConversationMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -360,9 +357,9 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
 
-      {/* Zone des messages – padding bas réduit pour se rapprocher de la zone de saisie */}
+      {/* Messages – padding bas faible pour coller au footer */}
       <div className="h-full overflow-y-auto">
-        <div className="pt-20 pb-20 px-4 space-y-4">
+        <div className="pt-20 pb-14 px-4 space-y-4">
           {messages
             .filter((msg) => {
               const isValid =
@@ -377,7 +374,7 @@ const SprintyChatView = () => {
             .map((msg) => (
               <MessageBubble
                 key={msg.id}
-                message={msg} // IMPORTANT : on passe bien un objet message complet
+                message={msg}
               />
             ))}
 
@@ -387,7 +384,7 @@ const SprintyChatView = () => {
         </div>
       </div>
 
-      {/* Actions sur la conversation */}
+      {/* Actions conversation */}
       {selectedConversation && (
         <ConversationActions
           isOpen={isActionsOpen}
@@ -398,11 +395,11 @@ const SprintyChatView = () => {
         />
       )}
 
-      {/* Footer + champ de saisie – rapproché visuellement de la tabbar */}
-      <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background px-4 pt-2 pb-3 border-t border-white/10">
+      {/* Footer très compact, collé à la tabbar */}
+      <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background px-3 pt-1 pb-2 border-t border-white/10">
         <QuickReplies onSelect={handleSendMessage} />
 
-        <div className="mt-2">
+        <div className="mt-1">
           <ChatInput onSend={handleSendMessage} disabled={isTyping} />
         </div>
       </div>
