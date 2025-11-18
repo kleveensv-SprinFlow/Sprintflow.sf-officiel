@@ -319,7 +319,7 @@ const SprintyChatView = () => {
 
         {/* ZONE DE MESSAGES : COMMENCE CLAIREMENT SOUS LE HEADER (pt-4) */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 pt-4 pb-4 space-y-4">
+          <div className="px-4 pt-8 pb-4 space-y-4">
             {messages
               .filter((msg) => {
                 const isValid =
