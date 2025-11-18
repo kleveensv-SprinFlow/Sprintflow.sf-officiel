@@ -309,7 +309,7 @@ const SprintyChatView = () => {
         />
 
         {/* ZONE SCROLLABLE : header sticky + messages dessous */}
-        <div className="flex-16 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           {/* Header sticky à l'intérieur de la zone scroll */}
           <div className="sticky top-0 z-20 border-b border-white/10 bg-light-background dark:bg-dark-background">
             <SprintyChatHeader
