@@ -374,9 +374,7 @@ const SprintyChatView = () => {
             .map((msg) => (
               <MessageBubble
                 key={msg.id}
-                sender={msg.sender}
-                text={msg.text}
-                component={msg.component}
+                message={msg}   // ✅ correction ici
               />
             ))}
 
