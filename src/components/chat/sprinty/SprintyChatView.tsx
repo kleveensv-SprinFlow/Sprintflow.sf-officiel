@@ -87,10 +87,9 @@ const SprintyChatView = () => {
     const userName =
       // @ts-expect-error: user_metadata peut être any selon la config Supabase
       (user && (user as any).user_metadata?.first_name) || 'Athlète';
-    return `Bonjour ${userName}. Je suis Sprinty, votre assistant personnel. Je fonctionne ici en mode local, sans IA externe. Je suis prêt à analyser tes questions sur tes entraînements, ta VO2 max et ta nutrition. Par quoi veux-tu commencer ?`;
+    return `Bonjour ${userName}. Je suis Sprinty, votre assistant personnel. Je fonctionne ici en mode local, sans IA externe. Pose-moi des questions sur ta VO2 max, ta nutrition ou ton entraînement.`;
   }, [user]);
 
-  // 1) Charger la liste des conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!user) return;
@@ -111,7 +110,6 @@ const SprintyChatView = () => {
     void fetchConversations();
   }, [user, normalizeConversation]);
 
-  // 2) Charger les messages de la conversation (si id dans l’URL), sinon message de bienvenue
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -168,7 +166,6 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
-  // 3) Historique local si pas de conversation en DB
   useEffect(() => {
     if (messages.length > 0) return;
 
@@ -202,7 +199,6 @@ const SprintyChatView = () => {
     ]);
   }, [getWelcomeMessage, messages.length]);
 
-  // 4) Sauvegarde localStorage
   useEffect(() => {
     if (messages.length === 0) return;
 
@@ -219,7 +215,6 @@ const SprintyChatView = () => {
     }
   }, [messages]);
 
-  // 5) Scroll auto
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -228,7 +223,6 @@ const SprintyChatView = () => {
     setMessages((prev) => [...prev, { ...message, id: Date.now().toString() }]);
   };
 
-  // 🔹 Ici : utilisation du moteur local, sans aucune API externe
   const handleSendMessage = async (text: string) => {
     console.log('[SprintyChatView] handleSendMessage:', text);
     const sanitizedText = text.trim();
@@ -330,7 +324,6 @@ const SprintyChatView = () => {
 
   return (
     <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden">
-      {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
         <SprintyChatHeader
           onMenuClick={() => setMenuOpen(true)}
@@ -339,7 +332,6 @@ const SprintyChatView = () => {
         />
       </div>
 
-      {/* Menu conversations */}
       <ConversationMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -350,7 +342,6 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
 
-      {/* Messages */}
       <div className="h-full overflow-y-auto">
         <div className="pt-20 pb-14 px-4 space-y-4">
           {messages
@@ -374,7 +365,6 @@ const SprintyChatView = () => {
         </div>
       </div>
 
-      {/* Actions conversation */}
       {selectedConversation && (
         <ConversationActions
           isOpen={isActionsOpen}
@@ -385,10 +375,8 @@ const SprintyChatView = () => {
         />
       )}
 
-      {/* Footer / saisie */}
       <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background px-3 pt-1 pb-2 border-t border-white/10">
         <QuickReplies onSelect={handleSendMessage} />
-
         <div className="mt-1">
           <ChatInput onSend={handleSendMessage} disabled={isTyping} />
         </div>
