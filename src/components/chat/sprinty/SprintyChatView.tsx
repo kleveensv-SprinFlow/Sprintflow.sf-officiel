@@ -24,7 +24,7 @@ interface ConversationRow {
   title: string | null;
   is_pinned: boolean | null;
   user_id?: string;
-  created_at?: string | null; // adapte si ta colonne a un autre nom
+  created_at?: string | null;
 }
 
 interface ConversationRecord {
@@ -166,7 +166,7 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
-  // 3) Historique local si pas de conversation chargée
+  // 3) Historique local
   useEffect(() => {
     if (messages.length > 0) return;
 
@@ -227,6 +227,7 @@ const SprintyChatView = () => {
   };
 
   const handleSendMessage = async (text: string) => {
+    console.log('[SprintyChatView] handleSendMessage:', text);
     const sanitizedText = text.trim();
     if (!sanitizedText) return;
 
@@ -357,7 +358,7 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
 
-      {/* Messages – padding bas faible pour coller au footer */}
+      {/* Messages */}
       <div className="h-full overflow-y-auto">
         <div className="pt-20 pb-14 px-4 space-y-4">
           {messages
@@ -372,10 +373,7 @@ const SprintyChatView = () => {
               return isValid;
             })
             .map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-              />
+              <MessageBubble key={msg.id} message={msg} />
             ))}
 
           {isTyping && <TypingIndicator />}
@@ -395,7 +393,7 @@ const SprintyChatView = () => {
         />
       )}
 
-      {/* Footer très compact, collé à la tabbar */}
+      {/* Footer / saisie */}
       <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background px-3 pt-1 pb-2 border-t border-white/10">
         <QuickReplies onSelect={handleSendMessage} />
 
