@@ -333,7 +333,7 @@ const SprintyChatView = () => {
         />
       </div>
 
-      {/* Menu latéral de conversations */}
+      {/* Menu conversations */}
       <ConversationMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -344,9 +344,9 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
 
-      {/* Zone de messages scrollable entre header et footer */}
+      {/* Zone de messages : occupe toujours tout l'espace entre header et footer */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 pt-4 pb-4 space-y-4">
+        <div className="min-h-full px-4 pt-4 pb-4 space-y-4 flex flex-col">
           {messages
             .filter((msg) => {
               const isValid =
@@ -378,7 +378,7 @@ const SprintyChatView = () => {
         />
       )}
 
-      {/* Footer fixe avec quick replies + champ de saisie */}
+      {/* Footer fixe juste au-dessus de la tabbar */}
       <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 pt-1 pb-2 border-t border-white/10">
         <QuickReplies onSelect={handleSendMessage} />
         <div className="mt-1">
