@@ -1,3 +1,4 @@
+import { sprintyLocalAnswer } from '../../../lib/sprintyLocalEngine';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
