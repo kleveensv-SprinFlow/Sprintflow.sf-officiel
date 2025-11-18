@@ -83,11 +83,12 @@ const SprintyChatView = () => {
 
   const getWelcomeMessage = useCallback(() => {
     const userName =
-      // @ts-expect-error: user_metadata peut être any selon la config Supabase
+      // @ts-expect-error
       (user && (user as any).user_metadata?.first_name) || 'Athlète';
     return `Bonjour ${userName}. Je suis Sprinty, ton assistant personnel. Pose-moi des questions sur ton entraînement, ta VO2 max ou ta nutrition.`;
   }, [user]);
 
+  // Conversations
   useEffect(() => {
     const fetchConversations = async () => {
       if (!user) return;
@@ -108,6 +109,7 @@ const SprintyChatView = () => {
     void fetchConversations();
   }, [user, normalizeConversation]);
 
+  // Messages
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -137,7 +139,6 @@ const SprintyChatView = () => {
                 typeof m.text === 'string' &&
                 (m.sender === 'user' || m.sender === 'sprinty')
             );
-
           setMessages(
             normalized.length > 0
               ? normalized
@@ -165,9 +166,9 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
+  // Sauvegarde local
   useEffect(() => {
     if (messages.length === 0) return;
-
     const history = messages.map((message) => {
       const { component, ...rest } = message;
       void component;
@@ -181,6 +182,7 @@ const SprintyChatView = () => {
     }
   }, [messages]);
 
+  // Scroll auto
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -288,66 +290,70 @@ const SprintyChatView = () => {
     }
   };
 
+  // ⚠️ IMPORTANT : on réserve 72px en bas pour la tabbar (à ajuster si ta tabbar est plus haute ou plus basse)
   return (
-    <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden flex flex-col">
-      {/* HEADER FIXE, séparé visuellement des messages */}
-      <div className="flex-shrink-0 z-20 bg-light-background dark:bg-dark-background border-b border-white/10">
-        <SprintyChatHeader
-          onMenuClick={() => setMenuOpen(true)}
-          mode={sprintyMode}
-          onModeChange={setSprintyMode}
-        />
-      </div>
-
-      {/* MENU CONVERSATIONS (overlay latéral) */}
-      <ConversationMenu
-        isOpen={isMenuOpen}
-        onClose={() => setMenuOpen(false)}
-        conversations={conversations}
-        activeConversationId={activeConversationId}
-        onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewConversation}
-        onOpenActions={handleOpenActions}
-      />
-
-      {/* ZONE DE MESSAGES : scrolle entre header et footer, avec marges haut/bas */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="min-h-full px-4 pt-4 pb-4 space-y-4 flex flex-col">
-          {messages
-            .filter((msg) => {
-              const isValid =
-                msg &&
-                typeof msg.text === 'string' &&
-                (msg.sender === 'user' || msg.sender === 'sprinty');
-              if (!isValid) {
-                console.warn('Invalid message in list:', msg);
-              }
-              return isValid;
-            })
-            .map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
-            ))}
-
-          {isTyping && <TypingIndicator />}
-
-          <div ref={messagesEndRef} />
+    <div className="relative bg-light-background dark:bg-dark-background"
+         style={{ height: 'calc(100vh - 72px)' }}>
+      <div className="h-full flex flex-col overflow-hidden">
+        {/* HEADER FIXE */}
+        <div className="flex-shrink-0 z-20 bg-light-background dark:bg-dark-background border-b border-white/10">
+          <SprintyChatHeader
+            onMenuClick={() => setMenuOpen(true)}
+            mode={sprintyMode}
+            onModeChange={setSprintyMode}
+          />
         </div>
-      </div>
 
-      {/* ACTIONS CONVERSATION (overlay modal) */}
-      {selectedConversation && (
-        <ConversationActions
-          isOpen={isActionsOpen}
-          onClose={() => setActionsOpen(false)}
-          conversation={selectedConversation}
-          onTogglePin={handleTogglePin}
-          onRename={handleRename}
+        {/* MENU CONVERSATIONS */}
+        <ConversationMenu
+          isOpen={isMenuOpen}
+          onClose={() => setMenuOpen(false)}
+          conversations={conversations}
+          activeConversationId={activeConversationId}
+          onSelectConversation={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          onOpenActions={handleOpenActions}
         />
-      )}
 
-      {/* FOOTER FIXE : zone de saisie collée au-dessus de la tabbar */}
-      <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 py-2 border-t border-white/10">
-        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+        {/* ZONE DE MESSAGES SCROLLABLE */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-4 pt-4 pb-4 space-y-4">
+            {messages
+              .filter((msg) => {
+                const isValid =
+                  msg &&
+                  typeof msg.text === 'string' &&
+                  (msg.sender === 'user' || msg.sender === 'sprinty');
+                if (!isValid) {
+                  console.warn('Invalid message in list:', msg);
+                }
+                return isValid;
+              })
+              .map((msg) => (
+                <MessageBubble key={msg.id} message={msg} />
+              ))}
+
+            {isTyping && <TypingIndicator />}
+
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        {/* ACTIONS CONVERSATION */}
+        {selectedConversation && (
+          <ConversationActions
+            isOpen={isActionsOpen}
+            onClose={() => setActionsOpen(false)}
+            conversation={selectedConversation}
+            onTogglePin={handleTogglePin}
+            onRename={handleRename}
+          />
+        )}
+
+        {/* FOOTER FIXE = ZONE DE SAISIE, COLLÉE AU-DESSUS DE LA TABBAR */}
+        <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 py-2 border-t border-white/10">
+          <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+        </div>
       </div>
     </div>
   );
