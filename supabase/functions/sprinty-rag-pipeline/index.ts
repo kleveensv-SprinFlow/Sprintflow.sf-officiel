@@ -4,8 +4,11 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
 import { corsHeaders } from '../_shared/cors.ts';
 
-const EMBEDDING_MODEL = 'models/text-embedding-004';
-const GENERATION_MODEL = 'gemini-1.5-flash-latest';
+// Embeddings : text-embedding-004 fonctionne bien en v1beta
+const EMBEDDING_MODEL = 'text-embedding-004';
+
+// Génération : on reste en v1beta + gemini-1.5-flash
+const GENERATION_MODEL = 'gemini-1.5-flash';
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   simplified:
@@ -22,12 +25,12 @@ interface RagPayload {
 
 async function embedText(text: string, apiKey: string): Promise<number[]> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: EMBEDDING_MODEL,
+        model: `models/${EMBEDDING_MODEL}`,
         content: {
           parts: [{ text }],
         },
@@ -57,11 +60,12 @@ async function generateAnswer(
   context: string
 ): Promise<string> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/${GENERATION_MODEL}:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${GENERATION_MODEL}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        model: `models/${GENERATION_MODEL}`,
         contents: [
           {
             role: 'user',
@@ -136,8 +140,10 @@ serve(async (req: Request) => {
 
     const systemPrompt = SYSTEM_PROMPTS[expertiseMode] ?? SYSTEM_PROMPTS.simplified;
 
+    // 1) Embedding de la question
     const queryEmbedding = await embedText(question, apiKey);
 
+    // 2) Recherche vectorielle dans corpus_embeddings
     const { data: matches, error: matchError } = await supabaseClient.rpc(
       'match_corpus_embeddings',
       {
@@ -161,6 +167,7 @@ serve(async (req: Request) => {
             .join('\n\n---\n\n')
         : '';
 
+    // 3) Génération de la réponse
     const answer = await generateAnswer(apiKey, systemPrompt, question, context);
 
     return new Response(JSON.stringify({ reply: answer }), {
