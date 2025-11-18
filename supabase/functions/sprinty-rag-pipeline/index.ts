@@ -5,7 +5,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
 import { corsHeaders } from '../_shared/cors.ts';
 
 const EMBEDDING_MODEL = 'models/text-embedding-004';
-const GENERATION_MODEL = 'models/gemini-1.5-flash-latest';
+const GENERATION_MODEL = 'gemini-1.5-flash-latest';
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   simplified:
