@@ -323,8 +323,9 @@ const SprintyChatView = () => {
   };
 
   return (
-    <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
+    <div className="relative h-full bg-light-background dark:bg-dark-background overflow-hidden flex flex-col">
+      {/* Header fixe */}
+      <div className="flex-shrink-0 z-20 bg-light-background bg-opacity-80 dark:bg-dark-background dark:bg-opacity-80 backdrop-blur-lg border-b border-white/10">
         <SprintyChatHeader
           onMenuClick={() => setMenuOpen(true)}
           mode={sprintyMode}
@@ -332,6 +333,7 @@ const SprintyChatView = () => {
         />
       </div>
 
+      {/* Menu latéral de conversations */}
       <ConversationMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -342,8 +344,9 @@ const SprintyChatView = () => {
         onOpenActions={handleOpenActions}
       />
 
-      <div className="h-full overflow-y-auto">
-        <div className="pt-20 pb-14 px-4 space-y-4">
+      {/* Zone de messages scrollable entre header et footer */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 pt-4 pb-4 space-y-4">
           {messages
             .filter((msg) => {
               const isValid =
@@ -375,7 +378,8 @@ const SprintyChatView = () => {
         />
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background px-3 pt-1 pb-2 border-t border-white/10">
+      {/* Footer fixe avec quick replies + champ de saisie */}
+      <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 pt-1 pb-2 border-t border-white/10">
         <QuickReplies onSelect={handleSendMessage} />
         <div className="mt-1">
           <ChatInput onSend={handleSendMessage} disabled={isTyping} />
