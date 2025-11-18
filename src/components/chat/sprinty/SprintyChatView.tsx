@@ -7,7 +7,6 @@ import { supabase } from '../../../lib/supabase';
 import TypingIndicator from './TypingIndicator';
 import SprintyChatHeader from './SprintyChatHeader';
 import useAuth from '../../../hooks/useAuth';
-import { BrainCircuit } from 'lucide-react';
 import ConversationMenu from './ConversationMenu';
 import ConversationActions from './ConversationActions';
 
@@ -25,7 +24,8 @@ interface ConversationRow {
   title: string | null;
   is_pinned: boolean | null;
   user_id?: string;
-  timestamp?: string | null;
+  // IMPORTANT : adapte ce champ au vrai nom dans ta DB (created_at, updated_at, etc.)
+  created_at?: string | null;
 }
 
 interface ConversationRecord {
@@ -33,7 +33,7 @@ interface ConversationRecord {
   title: string;
   is_pinned: boolean;
   user_id?: string;
-  timestamp?: string | null;
+  created_at?: string | null;
 }
 
 interface MessageRow {
@@ -45,7 +45,7 @@ interface MessageRow {
 }
 
 const SprintyChatView = () => {
-  const { user } = useAuth() || {}; // fallback au cas où useAuth ne renvoie rien
+  const { user } = useAuth() || {}; // fallback au cas où useAuth renverrait undefined
   const { id: conversationId } = useParams();
   const navigate = useNavigate();
 
@@ -68,7 +68,7 @@ const SprintyChatView = () => {
       title: conversation.title ?? 'Nouvelle conversation',
       is_pinned: Boolean(conversation.is_pinned),
       user_id: conversation.user_id,
-      timestamp: conversation.timestamp ?? null,
+      created_at: conversation.created_at ?? null,
     }),
     []
   );
@@ -97,8 +97,9 @@ const SprintyChatView = () => {
       const { data, error } = await supabase
         .from<ConversationRow>('conversations')
         .select('*')
-        .eq('user_id', user.id)
-        .order('timestamp', { ascending: false });
+        .eq('user_id', (user as any).id)
+        // IMPORTANT : adapte 'created_at' au vrai nom de ta colonne temporelle
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching conversations:', error);
@@ -132,9 +133,28 @@ const SprintyChatView = () => {
             },
           ]);
         } else {
-          setMessages((data ?? []).map(normalizeMessage));
+          const normalized = (data ?? [])
+            .map(normalizeMessage)
+            .filter(
+              (m) =>
+                m &&
+                typeof m.text === 'string' &&
+                (m.sender === 'user' || m.sender === 'sprinty')
+            );
+          setMessages(
+            normalized.length > 0
+              ? normalized
+              : [
+                  {
+                    id: Date.now().toString(),
+                    text: getWelcomeMessage(),
+                    sender: 'sprinty',
+                  },
+                ]
+          );
         }
       } else {
+        setActiveConversationId(null);
         setMessages([
           {
             id: Date.now().toString(),
@@ -148,9 +168,9 @@ const SprintyChatView = () => {
     void loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage]);
 
-  // 3) Restaurer l’historique local SI aucune conversation n’est chargée explicitement
+  // 3) Restaurer l’historique local SI aucune conversation spécifique n’est chargée
   useEffect(() => {
-    // Ne pas écraser des messages déjà chargés (ex : depuis Supabase)
+    // Si on a déjà des messages (ex : conversation chargée depuis Supabase), ne pas écraser
     if (messages.length > 0) return;
 
     const savedMessagesJSON = localStorage.getItem('sprintyChatHistory');
@@ -158,8 +178,16 @@ const SprintyChatView = () => {
       try {
         const savedMessages = JSON.parse(savedMessagesJSON);
         if (Array.isArray(savedMessages) && savedMessages.length > 0) {
-          setMessages(savedMessages);
-          return;
+          const cleaned: Message[] = savedMessages.filter(
+            (m: any) =>
+              m &&
+              typeof m.text === 'string' &&
+              (m.sender === 'user' || m.sender === 'sprinty')
+          );
+          if (cleaned.length > 0) {
+            setMessages(cleaned);
+            return;
+          }
         }
       } catch (e) {
         console.error('Failed to parse chat history:', e);
@@ -175,7 +203,7 @@ const SprintyChatView = () => {
     ]);
   }, [getWelcomeMessage, messages.length]);
 
-  // 4) Sauvegarde dans le localStorage
+  // 4) Sauvegarder dans le localStorage (format propre)
   useEffect(() => {
     if (messages.length === 0) return;
 
@@ -332,14 +360,25 @@ const SprintyChatView = () => {
 
       <div className="h-full overflow-y-auto">
         <div className="pt-20 pb-32 px-4 space-y-4">
-          {messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              sender={msg.sender}
-              text={msg.text}
-              component={msg.component}
-            />
-          ))}
+          {messages
+            .filter((msg) => {
+              const isValid =
+                msg &&
+                typeof msg.text === 'string' &&
+                (msg.sender === 'user' || msg.sender === 'sprinty');
+              if (!isValid) {
+                console.warn('Invalid message in list:', msg);
+              }
+              return isValid;
+            })
+            .map((msg) => (
+              <MessageBubble
+                key={msg.id}
+                sender={msg.sender}
+                text={msg.text}
+                component={msg.component}
+              />
+            ))}
 
           {isTyping && <TypingIndicator />}
 
