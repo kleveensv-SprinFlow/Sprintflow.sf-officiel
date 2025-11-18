@@ -12,17 +12,16 @@ const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({
   onModeChange,
 }) => {
   return (
-    // Masque opaque : même couleur que le fond, avec un léger padding
+    // Masque opaque : même couleur que le fond + légère ombre
     <header className="w-full bg-light-background dark:bg-dark-background shadow-md">
       <div className="flex items-center justify-between px-4 py-3">
-        {/* Bouton menu */}
+        {/* Bouton menu (burger) */}
         <button
           type="button"
           onClick={onMenuClick}
           className="text-white/80 hover:text-white focus:outline-none"
         >
           <span className="sr-only">Ouvrir le menu des conversations</span>
-          {/* Icône burger simple */}
           <div className="space-y-1">
             <span className="block w-5 h-0.5 bg-white rounded" />
             <span className="block w-5 h-0.5 bg-white rounded" />
@@ -40,6 +39,7 @@ const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({
           >
             Simplifié
           </button>
+
           <div className="w-10 h-5 bg-white/20 rounded-full flex items-center px-1">
             <div
               className={`w-4 h-4 bg-white rounded-full transform transition-transform ${
@@ -47,6 +47,7 @@ const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({
               }`}
             />
           </div>
+
           <button
             type="button"
             onClick={() => onModeChange('expert')}
