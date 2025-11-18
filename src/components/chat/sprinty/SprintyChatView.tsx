@@ -51,7 +51,9 @@ const SprintyChatView = () => {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [sprintyMode, setSprintyMode] = useState<SprintyMode>('simplified');
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(conversationId || null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(
+    conversationId || null
+  );
   const [isTyping, setIsTyping] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [conversations, setConversations] = useState<ConversationRecord[]>([]);
@@ -148,7 +150,6 @@ const SprintyChatView = () => {
         void component;
         return rest;
       });
-
       localStorage.setItem('sprintyChatHistory', JSON.stringify(history));
     }
   }, [messages]);
@@ -170,17 +171,22 @@ const SprintyChatView = () => {
     setIsTyping(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke<{ reply?: string }>('sprinty-rag-pipeline', {
-        body: {
-          question: sanitizedText,
-          expertiseMode: sprintyMode,
-        },
-      });
+      const { data, error } = await supabase.functions.invoke<{ reply?: string }>(
+        'sprinty-rag-pipeline',
+        {
+          body: {
+            question: sanitizedText,
+            expertiseMode: sprintyMode,
+          },
+        }
+      );
 
       if (error) throw error;
 
       const sprintyReply = {
-        text: data?.reply || "Je n'arrive pas à récupérer les informations nécessaires. Peux-tu reformuler dans un instant ?",
+        text:
+          data?.reply ||
+          "Je n'arrive pas à récupérer les informations nécessaires. Peux-tu reformuler dans un instant ?",
         sender: 'sprinty' as const,
       };
 
@@ -277,3 +283,40 @@ const SprintyChatView = () => {
       />
 
       <div className="h-full overflow-y-auto">
+        <div className="pt-20 pb-32 px-4 space-y-4">
+          {messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              sender={msg.sender}
+              text={msg.text}
+              component={msg.component}
+            />
+          ))}
+
+          {isTyping && <TypingIndicator />}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      <ConversationActions
+        isOpen={isActionsOpen}
+        onClose={() => setActionsOpen(false)}
+        conversation={selectedConversation}
+        onTogglePin={handleTogglePin}
+        onRename={handleRename}
+      />
+
+      <div className="absolute bottom-0 left-0 right-0 bg-light-background dark:bg-dark-background p-4 border-t border-white/10">
+        <QuickReplies onSelect={handleSendMessage} />
+
+        <ChatInput
+          onSend={handleSendMessage}
+          disabled={isTyping}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default SprintyChatView;
