@@ -224,7 +224,7 @@ const SprintyChatView: React.FC = () => {
         onModeChange={handleModeChange}
       />
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-24">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -244,8 +244,8 @@ const SprintyChatView: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="sticky bottom-20 bg-light-background dark:bg-dark-background border-t border-gray-200 dark:border-gray-700">
-        <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-light-background dark:bg-dark-background border-t border-gray-200 dark:border-gray-700">
+        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
 
       <ConversationMenu
