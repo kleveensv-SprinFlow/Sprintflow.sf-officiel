@@ -9,6 +9,11 @@ interface CardCarouselProps {
 }
 
 export const CardCarousel: React.FC<CardCarouselProps> = ({ options, selectedValue, onSelect }) => {
+  // ✅ Vérification de sécurité
+  if (!options || options.length === 0) {
+    return null;
+  }
+
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isScrollable, setIsScrollable] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -37,7 +42,8 @@ export const CardCarousel: React.FC<CardCarouselProps> = ({ options, selectedVal
     }
   };
 
-  const activeDotIndex = Math.round(scrollProgress * (options.length - 1));
+  // ✅ Protection contre undefined
+  const activeDotIndex = options?.length > 0 ? Math.round(scrollProgress * (options.length - 1)) : 0;
 
   return (
     <div>
