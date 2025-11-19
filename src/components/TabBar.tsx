@@ -30,7 +30,9 @@ const TabBar: React.FC<TabBarProps> = ({
 
   const renderTab = (tab: typeof tabs[0]) => {
     const isActive = activeTab === tab.id;
-    const hasNotification = tab.notification ? notificationStatus[tab.notification as keyof typeof notificationStatus] : false;
+    const hasNotification = tab.notification
+      ? notificationStatus[tab.notification as keyof typeof notificationStatus]
+      : false;
 
     const iconAnimation = isActive
       ? { scale: 1.15 }
@@ -53,19 +55,18 @@ const TabBar: React.FC<TabBarProps> = ({
         {hasNotification && (
           <span className="absolute right-1/2 top-3 h-2.5 w-2.5 translate-x-[20px] rounded-full bg-orange-accent" />
         )}
-        <motion.div
-          animate={iconAnimation}
-          transition={iconTransition}
-        >
-            <tab.Icon
-                className={`h-6 w-6 ${isActive ? 'text-sprint-accent' : 'text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary'}`}
-                fill={isActive ? 'currentColor' : 'none'}
-                strokeWidth={isActive ? 2.5 : 2}
-            />
+        <motion.div animate={iconAnimation} transition={iconTransition}>
+          <tab.Icon
+            className={`h-6 w-6 ${
+              isActive
+                ? 'text-sprint-accent'
+                : 'text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary'
+            }`}
+            fill={isActive ? 'currentColor' : 'none'}
+            strokeWidth={isActive ? 2.5 : 2}
+          />
         </motion.div>
-        <span className={`text-xs font-medium ${isActive ? 'text-sprint-light-text-primary dark:text-sprint-dark-text-primary' : 'text-transparent'}`}>
-          {tab.label}
-        </span>
+        {/* Pas de label : le nom de la page est affiché dans l’en-tête */}
       </button>
     );
   };
@@ -74,7 +75,7 @@ const TabBar: React.FC<TabBarProps> = ({
     <div className="fixed bottom-0 left-0 right-0 z-50 h-[84px] p-2">
       <div className="relative flex h-full w-full items-center justify-around rounded-2xl border border-white/10 bg-sprint-light-surface/70 dark:bg-sprint-dark-surface/70 backdrop-blur-2xl">
         {tabs.slice(0, 2).map(renderTab)}
-        <div className="w-16"></div> {/* Espace pour le FAB */}
+        <div className="w-16"></div> {/* Espace pour le bouton central flottant */}
         {tabs.slice(2, 4).map(renderTab)}
         <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[30%] transform">
           <motion.button
