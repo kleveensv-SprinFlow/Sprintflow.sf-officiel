@@ -13,6 +13,7 @@ interface DayCardProps {
   onEditClick?: (workoutId: string) => void;
   onCardClick?: (workoutId: string) => void;
   isReadOnly?: boolean;
+  isActive?: boolean;
 }
 
 const WorkoutTagBadge: React.FC<{ name: string; color?: string }> = ({ name, color }) => {
@@ -26,7 +27,30 @@ const WorkoutTagBadge: React.FC<{ name: string; color?: string }> = ({ name, col
   );
 };
 
-export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, onEditClick, onCardClick, isReadOnly = false }) => {
+const generateWorkoutPreview = (workout: Workout): string => {
+  const blocks = workout.planned_data?.blocs;
+  if (!blocks || blocks.length === 0) {
+    return workout.notes || 'Aucun détail';
+  }
+
+  const previewParts = blocks.slice(0, 3).map(block => {
+    if (block.type === 'course') {
+      return `${block.series}x${block.reps} ${block.distance}m`;
+    }
+    if (block.type === 'musculation') {
+      return `${block.series}x${block.reps} ${block.exerciceNom}`;
+    }
+    return '';
+  });
+
+  let preview = previewParts.filter(p => p).join(', ');
+  if (blocks.length > 3) {
+    preview += '...';
+  }
+  return preview;
+};
+
+export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, onEditClick, onCardClick, isReadOnly = false, isActive = false }) => {
   const { allTypes: workoutTypes } = useWorkoutTypes();
 
   const getDayLabel = () => {
@@ -62,15 +86,13 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         const workout = workouts[0];
         const workoutType = workout.tag_seance ? findWorkoutType(workout.tag_seance) : undefined;
         return (
-          <div className="text-center space-y-3">
-            <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary truncate px-2">
+          <div className="text-left space-y-2 px-1">
+            <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary truncate">
               {workoutType?.name || 'Entraînement'}
             </h4>
-            {workoutType && (
-              <div className="flex justify-center">
-                <WorkoutTagBadge name={workoutType.name} color={workoutType.color} />
-              </div>
-            )}
+            <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary line-clamp-3">
+              {generateWorkoutPreview(workout)}
+            </p>
           </div>
         );
       }
@@ -78,13 +100,23 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         const workoutType1 = workouts[0].tag_seance ? findWorkoutType(workouts[0].tag_seance) : undefined;
         const workoutType2 = workouts[1].tag_seance ? findWorkoutType(workouts[1].tag_seance) : undefined;
         return (
-          <div className="text-center space-y-3">
+          <div className="text-left space-y-3 px-1">
             <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
-              Entraînement Bi-Quotidien
+              Bi-Quotidien
             </h4>
-            <div className="flex justify-center items-center gap-2 flex-wrap">
-              {workoutType1 && <WorkoutTagBadge name={workoutType1.name} color={workoutType1.color} />}
-              {workoutType2 && <WorkoutTagBadge name={workoutType2.name} color={workoutType2.color} />}
+            <div className="space-y-2">
+              <div className="border-l-2 pl-2" style={{ borderColor: workoutType1?.color || 'currentColor' }}>
+                <p className="text-xs font-semibold truncate" style={{ color: workoutType1?.color || 'currentColor' }}>{workoutType1?.name}</p>
+                <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary line-clamp-2">
+                  {generateWorkoutPreview(workouts[0])}
+                </p>
+              </div>
+              <div className="border-l-2 pl-2" style={{ borderColor: workoutType2?.color || 'currentColor' }}>
+                <p className="text-xs font-semibold truncate" style={{ color: workoutType2?.color || 'currentColor' }}>{workoutType2?.name}</p>
+                <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary line-clamp-2">
+                  {generateWorkoutPreview(workouts[1])}
+                </p>
+              </div>
             </div>
           </div>
         );
@@ -120,13 +152,20 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   );
 
   // --- MODIFICATION PRINCIPALE ICI ---
+  const mainWorkoutType = mainWorkout?.tag_seance ? findWorkoutType(mainWorkout.tag_seance) : undefined;
+
   const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group bg-sprint-light-surface dark:bg-sprint-dark-surface shadow-premium";
+  
+  const activeClasses = isActive && mainWorkoutType ? 'shadow-glow' : '';
+  
+  const cardStyle = isActive && mainWorkoutType ? { '--glow-color': mainWorkoutType.color } as React.CSSProperties : {};
 
   if (mainWorkout && onCardClick) {
     return (
       <button 
         onClick={() => onCardClick(mainWorkout.id)} 
-        className={`${baseClasses} text-left hover:scale-[1.02] active:scale-[0.98]`}
+        className={`${baseClasses} text-left hover:scale-[1.02] active:scale-[0.98] ${activeClasses}`}
+        style={cardStyle}
       >
         {cardContent}
       </button>
@@ -134,7 +173,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   }
 
   return (
-    <div className={baseClasses}>
+    <div className={`${baseClasses} ${activeClasses}`} style={cardStyle}>
       {cardContent}
     </div>
   );
