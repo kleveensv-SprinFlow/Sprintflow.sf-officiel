@@ -53,7 +53,6 @@ export async function getSprintyAnswer(
   } catch (error) {
     console.error('[SprintyEngine] Erreur:', error);
     
-    // Messages d'erreur selon la langue
     const errorMessages = {
       fr: "Désolé, je rencontre une difficulté technique. Peux-tu reformuler ta question ou réessayer dans quelques instants ?",
       en: "Sorry, I'm experiencing a technical issue. Can you rephrase your question or try again in a moment?",
