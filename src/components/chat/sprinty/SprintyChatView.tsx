@@ -217,7 +217,7 @@ const SprintyChatView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500">
+    <div className="flex flex-col h-screen bg-light-background dark:bg-dark-background">
       <SprintyChatHeader
         onMenuClick={() => setMenuOpen(true)}
         mode={sprintyMode}
@@ -244,7 +244,9 @@ const SprintyChatView: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
+      <div className="sticky bottom-0 bg-light-background dark:bg-dark-background border-t border-gray-200 dark:border-gray-700">
+        <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
+      </div>
 
       <ConversationMenu
         isOpen={menuOpen}
