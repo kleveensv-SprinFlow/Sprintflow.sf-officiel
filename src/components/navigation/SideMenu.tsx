@@ -1,20 +1,29 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Trophy, Lightbulb, Settings, Building, Mail } from 'lucide-react';
+import { X, User, Trophy, Lightbulb, Settings, Building, Mail, Users } from 'lucide-react';
 
 interface SideMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  userRole?: string;
 }
 
-const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
+const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, userRole }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const menuItems = [
+  const baseMenuItems = [
     { path: '/profile', icon: User, label: 'Mon Profil' },
     { path: '/records', icon: Trophy, label: 'Mes Records' },
+  ];
+
+  if (userRole === 'athlète') {
+    baseMenuItems.push({ path: '/groups', icon: Users, label: 'Mon Groupe' });
+  }
+
+  const menuItems = [
+    ...baseMenuItems,
     { path: '/advice', icon: Lightbulb, label: 'Conseil' },
     { path: '/settings', icon: Settings, label: 'Paramètres' },
     { path: '/partnerships', icon: Building, label: 'Partenaires' },
