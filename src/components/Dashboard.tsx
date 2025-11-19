@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CoachDashboard } from './dashboard/CoachDashboard';
 import { AthleteDailyPlanCarousel } from './dashboard/AthleteDailyPlanCarousel';
 import { StrengthRecordsCarousel } from './dashboard/StrengthRecordsCarousel';
@@ -39,92 +39,95 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
       console.log('📊 [Dashboard] Début chargement scores pour:', user.id);
       setLoading(true);
       
-      // We load performance score regardless of check-in
+      // ▼▼▼ CORRECTION ICI ▼▼▼
+      // Appel de la fonction RPC 'get_latest_indices' qui retourne tous les indices.
       try {
-        const { data: perfData, error: perfError } = await supabase.rpc('get_indice_poids_puissance');
-        if (perfError) throw perfError;
-        console.log('💪 [Dashboard] Indice performance:', perfData);
-        setScorePerformance(perfData);
-      } catch (error) {
-        console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de performance:', error);
-        setScorePerformance(null);
-      }
+        const { data, error } = await supabase.rpc('get_latest_indices');
+        if (error) throw error;
+        console.log('💪 [Dashboard] Indices reçus:', data);
+        
+        // On met à jour les deux scores depuis la même source de données
+        setScorePerformance(data?.poids_puissance_data || null);
+        setScoreForme({ indice: data?.forme_data?.indice_de_forme || null });
 
-      if (hasCheckedInToday) {
-        console.log('✅ [Dashboard] Check-in effectué, chargement indice forme');
-        try {
-          const { data: formeData, error: formeError } = await supabase.rpc('get_current_indice_forme');
-          if (formeError) throw formeError;
-          console.log('📈 [Dashboard] Indice forme:', formeData);
-          setScoreForme({ indice: formeData });
-        } catch (error) {
-          console.error('❌ [Dashboard] Erreur lors du chargement de l\'indice de forme:', error);
-          setScoreForme({ indice: null });
-        }
-      } else {
+      } catch (error) {
+        console.error('❌ [Dashboard] Erreur lors du chargement des indices:', error);
+        setScorePerformance(null);
         setScoreForme({ indice: null });
-        console.log('ℹ️ [Dashboard] Pas de check-in aujourd\'hui, skip indice forme');
       }
-      
-      console.log('✅ [Dashboard] Scores chargés');
-    } catch (error) {
-      console.error('❌ [Dashboard] Erreur critique chargement scores:', error);
+      // ▲▲▲ FIN DE LA CORRECTION ▲▲▲
+
+    } catch (e: any) {
+      console.error('❌ [Dashboard] Erreur générale chargement scores:', e.message);
     } finally {
       setLoading(false);
-      console.log('✅ [Dashboard] Chargement terminé');
     }
   };
 
   useEffect(() => {
-    loadScores();
-  }, [user?.id, hasCheckedInToday]);
+    console.log('📊 [Dashboard] Monté ou user/role a changé. Role:', userRole);
+    if (userRole === 'athlete') {
+      loadScores();
+    } else if (!userRole) {
+      setLoading(false);
+    }
+  }, [userRole, user?.id]);
 
-  const handleCheckinSuccess = () => {
-    setCheckinOpen(false);
-    refreshWellnessData();
-  };
-  
-  const handleOnboardingComplete = () => {
-    setIsOnboardingModalOpen(false);
-    loadScores();
-  };
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (user) {
+        const { data } = await supabase.from('profiles').select('onboarding_completed').eq('id', user.id).single();
+        if (data && !data.onboarding_completed) {
+          setIsOnboardingModalOpen(true);
+        }
+      }
+    };
+    checkOnboarding();
+  }, [user]);
 
   if (userRole === 'coach') {
     return <CoachDashboard />;
   }
 
   return (
-    <div className="space-y-6">
-      <IndicesPanel
-        loading={loading}
-        scoreForme={scoreForme}
-        scorePerformance={scorePerformance}
-        hasCheckedInToday={hasCheckedInToday}
+    <div className="flex flex-col min-h-screen bg-sprint-dark-blue p-4 pt-20 md:pt-4 space-y-8">
+      <AnimatePresence>
+        {!hasCheckedInToday && !isCheckinOpen && (
+           <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-sprint-primary-dark rounded-xl p-4 text-center cursor-pointer"
+            onClick={() => setCheckinOpen(true)}
+          >
+            <p>Comment te sens-tu aujourd'hui ? Fais ton check-in.</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <IndicesPanel 
+        scoreForme={scoreForme?.indice} 
+        scorePerformance={scorePerformance} 
         onCheckinClick={() => setCheckinOpen(true)}
-        onOnboardingComplete={loadScores}
-        onUnlockPerformanceClick={() => setIsOnboardingModalOpen(true)}
-        onNavigate={() => {}} // Placeholder for now
+        hasCheckedIn={hasCheckedInToday}
       />
+      <AthleteDailyPlanCarousel />
+      <StrengthRecordsCarousel />
+      <TrackRecordsCarousel />
 
       <AnimatePresence>
         {isCheckinOpen && (
           <CheckinModal
-            isOpen={isCheckinOpen}
             onClose={() => setCheckinOpen(false)}
-            onSuccess={handleCheckinSuccess}
+            onSuccess={() => {
+              refreshWellnessData();
+              loadScores();
+            }}
           />
         )}
       </AnimatePresence>
-
-      <OnboardingPerformanceModal
-        isOpen={isOnboardingModalOpen}
-        onClose={() => setIsOnboardingModalOpen(false)}
-        onComplete={handleOnboardingComplete}
-      />
-
-      <AthleteDailyPlanCarousel userId={user?.id} />
-      <TrackRecordsCarousel userId={user?.id} />
-      <StrengthRecordsCarousel userId={user?.id} />
+       <AnimatePresence>
+        {isOnboardingModalOpen && <OnboardingPerformanceModal onClose={() => setIsOnboardingModalOpen(false)} />}
+      </AnimatePresence>
     </div>
   );
 };
