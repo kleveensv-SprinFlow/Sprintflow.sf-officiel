@@ -25,9 +25,8 @@ export async function getSprintyAnswer(
   try {
     console.log('[SprintyEngine] Appel à Mistral AI:', { question, mode, language });
 
-    const { data, error } = await supabase.functions.invoke('sprinty-mistal', {
-  body: { question, language, mode, conversationHistory }
-});
+    const { data, error } = await supabase.functions.invoke('sprinty-mistral', {
+      body: {
         question,
         language,
         mode,
