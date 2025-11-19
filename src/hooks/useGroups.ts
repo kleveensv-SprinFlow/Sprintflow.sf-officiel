@@ -245,5 +245,6 @@ export const useGroups = () => {
     fetchJoinRequests,
     respondToRequest,
     joinGroupWithCode,
+    leaveGroup,
   };
 };
