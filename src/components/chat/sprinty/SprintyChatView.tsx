@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import MessageBubble from './MessageBubble';
-import ChatInput from './ChatInput';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import TypingIndicator from './TypingIndicator';
+import { getSprintyAnswer, SprintyMode } from '../../../lib/sprintyEngine';
+import { useLanguage } from '../../../hooks/useLanguage';
 import SprintyChatHeader from './SprintyChatHeader';
-import useAuth from '../../../hooks/useAuth';
+import MessageBubble from './MessageBubble';
+import ChatInput from './ChatInput';
 import ConversationMenu from './ConversationMenu';
 import ConversationActions from './ConversationActions';
-import { sprintyLocalAnswer, SprintyMode as LocalSprintyMode } from '../../../lib/sprintyLocalEngine';
-
-type SprintyMode = LocalSprintyMode;
+import { Loader2 } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -19,104 +17,65 @@ interface Message {
   component?: React.ReactNode;
 }
 
-interface ConversationRow {
-  id: string;
-  title: string | null;
-  is_pinned: boolean | null;
-  user_id?: string;
-  created_at?: string | null;
-}
-
 interface ConversationRecord {
   id: string;
   title: string;
-  is_pinned: boolean;
-  user_id?: string;
-  created_at?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-interface MessageRow {
-  id: string;
-  text: string;
-  sender: 'user' | 'sprinty';
-  conversation_id: string;
-  timestamp?: string;
-}
-
-const SprintyChatView = () => {
-  const { user } = useAuth() || {};
-  const { id: conversationId } = useParams();
+const SprintyChatView: React.FC = () => {
+  const { id: conversationId } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-
+  const { language, t } = useLanguage();
+  
   const [messages, setMessages] = useState<Message[]>([]);
-  const [sprintyMode, setSprintyMode] = useState<SprintyMode>('simplified');
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(
-    conversationId || null
-  );
   const [isTyping, setIsTyping] = useState(false);
-  const [isMenuOpen, setMenuOpen] = useState(false);
+  const [sprintyMode, setSprintyMode] = useState<SprintyMode>('simplified');
+  const [menuOpen, setMenuOpen] = useState(false);
   const [conversations, setConversations] = useState<ConversationRecord[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<ConversationRecord | null>(null);
-  const [isActionsOpen, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const normalizeConversation = useCallback(
-    (conversation: ConversationRow): ConversationRecord => ({
-      id: conversation.id,
-      title: conversation.title ?? 'Nouvelle conversation',
-      is_pinned: Boolean(conversation.is_pinned),
-      user_id: conversation.user_id,
-      created_at: conversation.created_at ?? null,
-    }),
-    []
-  );
-
-  const normalizeMessage = useCallback(
-    (message: MessageRow): Message => ({
-      id: message.id,
-      text: message.text,
-      sender: message.sender,
-    }),
-    []
-  );
-
+  // Message de bienvenue selon la langue
   const getWelcomeMessage = useCallback(() => {
-    const userName =
-      // @ts-expect-error
-      (user && (user as any).user_metadata?.first_name) || 'Athlète';
-    return `Bonjour ${userName}. Je suis Sprinty, ton assistant personnel. Pose-moi des questions sur ton entraînement, ta VO2 max ou ta nutrition.`;
-  }, [user]);
+    return t('sprinty.welcome');
+  }, [t]);
 
   // Charger les conversations
   useEffect(() => {
-    const fetchConversations = async () => {
-      if (!user) return;
+    const loadConversations = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const { data, error } = await supabase
-        .from<ConversationRow>('conversations')
-        .select('*')
-        .eq('user_id', (user as any).id)
-        .order('created_at', { ascending: false });
+        const { data, error } = await supabase
+          .from('sprinty_conversations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching conversations:', error);
-      } else {
-        setConversations((data ?? []).map(normalizeConversation));
+        if (error) throw error;
+        setConversations(data || []);
+      } catch (error) {
+        console.error('Erreur chargement conversations:', error);
       }
     };
 
-    void fetchConversations();
-  }, [user, normalizeConversation]);
+    loadConversations();
+  }, []);
 
-  // Charger les messages
+  // Charger les messages de la conversation
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
         setActiveConversationId(conversationId);
-
+        
         const { data, error } = await supabase
-          .from<MessageRow>('messages')
+          .from('sprinty_messages')
           .select('*')
           .eq('conversation_id', conversationId)
           .order('timestamp', { ascending: true });
@@ -126,19 +85,17 @@ const SprintyChatView = () => {
           setMessages([
             {
               id: 'error',
-              text: 'Impossible de charger cette conversation.',
+              text: t('sprinty.error'),
               sender: 'sprinty',
             },
           ]);
         } else {
-          const normalized = (data ?? [])
-            .map(normalizeMessage)
-            .filter(
-              (m) =>
-                m &&
-                typeof m.text === 'string' &&
-                (m.sender === 'user' || m.sender === 'sprinty')
-            );
+          const normalized = (data ?? []).map(msg => ({
+            id: msg.id,
+            text: msg.message_text || '',
+            sender: msg.role === 'user' ? 'user' : 'sprinty'
+          })).filter(m => m.text);
+
           setMessages(
             normalized.length > 0
               ? normalized
@@ -163,26 +120,10 @@ const SprintyChatView = () => {
       }
     };
 
-    void loadMessages();
-  }, [conversationId, normalizeMessage, getWelcomeMessage]);
+    loadMessages();
+  }, [conversationId, getWelcomeMessage, t]);
 
-  // Sauvegarde locale
-  useEffect(() => {
-    if (messages.length === 0) return;
-    const history = messages.map((message) => {
-      const { component, ...rest } = message;
-      void component;
-      return rest;
-    });
-
-    try {
-      localStorage.setItem('sprintyChatHistory', JSON.stringify(history));
-    } catch (e) {
-      console.error('Failed to save chat history:', e);
-    }
-  }, [messages]);
-
-  // Scroll auto vers le bas
+  // Scroll automatique
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -201,7 +142,19 @@ const SprintyChatView = () => {
     setIsTyping(true);
 
     try {
-      const result = await sprintyLocalAnswer(sanitizedText, sprintyMode);
+      // Créer l'historique de conversation pour Mistral
+      const conversationHistory = messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }));
+
+      // Appel à Mistral AI via la nouvelle fonction
+      const result = await getSprintyAnswer(
+        sanitizedText,
+        sprintyMode,
+        language,
+        conversationHistory
+      );
 
       const sprintyReply = {
         text: result.text,
@@ -209,11 +162,26 @@ const SprintyChatView = () => {
       };
 
       addMessage(sprintyReply);
+
+      // Sauvegarder dans Supabase si conversation active
+      if (activeConversationId) {
+        await supabase.from('sprinty_messages').insert([
+          {
+            conversation_id: activeConversationId,
+            role: 'user',
+            message_text: sanitizedText,
+          },
+          {
+            conversation_id: activeConversationId,
+            role: 'assistant',
+            message_text: result.text,
+          },
+        ]);
+      }
     } catch (err) {
-      console.error('Erreur dans le moteur local Sprinty:', err);
+      console.error('Erreur Sprinty:', err);
       addMessage({
-        text:
-          "Je rencontre une difficulté pour analyser ta question en mode local. Reformule ou réessaie dans quelques instants.",
+        text: t('sprinty.error'),
         sender: 'sprinty',
       });
     } finally {
@@ -244,120 +212,64 @@ const SprintyChatView = () => {
     setActionsOpen(true);
   };
 
-  const handleTogglePin = async () => {
-    if (!selectedConversation) return;
-
-    const { data, error } = await supabase
-      .from<ConversationRow>('conversations')
-      .update({ is_pinned: !selectedConversation.is_pinned })
-      .eq('id', selectedConversation.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error pinning conversation:', error);
-    } else if (data) {
-      const normalized = normalizeConversation(data);
-      setConversations((prev) => prev.map((c) => (c.id === normalized.id ? normalized : c)));
-      setSelectedConversation(normalized);
-      setActionsOpen(false);
-    }
+  const handleModeChange = (newMode: SprintyMode) => {
+    setSprintyMode(newMode);
   };
 
-  const handleRename = async () => {
-    if (!selectedConversation) return;
-
-    const newTitle = prompt(
-      'Entrez le nouveau nom de la conversation:',
-      selectedConversation.title
-    );
-    if (newTitle && newTitle.trim() !== '') {
-      const { data, error } = await supabase
-        .from<ConversationRow>('conversations')
-        .update({ title: newTitle.trim() })
-        .eq('id', selectedConversation.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error renaming conversation:', error);
-      } else if (data) {
-        const normalized = normalizeConversation(data);
-        setConversations((prev) => prev.map((c) => (c.id === normalized.id ? normalized : c)));
-        setSelectedConversation(normalized);
-        setActionsOpen(false);
-      }
-    }
-  };
-
-  // Hauteur = écran - tabbar (72px à ajuster selon la hauteur réelle de ta tabbar)
   return (
-    <div
-      className="relative bg-light-background dark:bg-dark-background"
-      style={{ height: 'calc(100vh - 72px)' }}
-    >
-      <div className="h-full flex flex-col overflow-hidden">
-        {/* MENU CONVERSATIONS (overlay) */}
-        <ConversationMenu
-          isOpen={isMenuOpen}
-          onClose={() => setMenuOpen(false)}
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelectConversation={handleSelectConversation}
-          onNewConversation={handleNewConversation}
-          onOpenActions={handleOpenActions}
-        />
+    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500">
+      <SprintyChatHeader
+        onMenuClick={() => setMenuOpen(true)}
+        mode={sprintyMode}
+        onModeChange={handleModeChange}
+      />
 
-        {/* ZONE SCROLLABLE : header sticky + messages dessous */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Header sticky à l'intérieur de la zone scroll */}
-          <div className="sticky top-0 z-20 border-b border-white/10 bg-light-background dark:bg-dark-background">
-            <SprintyChatHeader
-              onMenuClick={() => setMenuOpen(true)}
-              mode={sprintyMode}
-              onModeChange={setSprintyMode}
-            />
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <MessageBubble message={message} />
           </div>
-
-          {/* Messages, avec marge sous le header */}
-          <div className="px-4 pt-16 pb-4 space-y-4">
-            {messages
-              .filter((msg) => {
-                const isValid =
-                  msg &&
-                  typeof msg.text === 'string' &&
-                  (msg.sender === 'user' || msg.sender === 'sprinty');
-                if (!isValid) {
-                  console.warn('Invalid message in list:', msg);
-                }
-                return isValid;
-              })
-              .map((msg) => (
-                <MessageBubble key={msg.id} message={msg} />
-              ))}
-
-            {isTyping && <TypingIndicator />}
-
-            <div ref={messagesEndRef} />
+        ))}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-2xl rounded-bl-lg px-4 py-3 flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+              <span className="text-sm text-gray-600 dark:text-gray-300">{t('sprinty.typing')}</span>
+            </div>
           </div>
-        </div>
-
-        {/* ACTIONS CONVERSATION */}
-        {selectedConversation && (
-          <ConversationActions
-            isOpen={isActionsOpen}
-            onClose={() => setActionsOpen(false)}
-            conversation={selectedConversation}
-            onTogglePin={handleTogglePin}
-            onRename={handleRename}
-          />
         )}
-
-        {/* FOOTER FIXE : SAISIE AU-DESSUS DE LA TABBAR */}
-        <div className="flex-shrink-0 bg-light-background dark:bg-dark-background px-3 py-2 border-t border-white/10">
-          <ChatInput onSend={handleSendMessage} disabled={isTyping} />
-        </div>
+        <div ref={messagesEndRef} />
       </div>
+
+      <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
+
+      <ConversationMenu
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        onSelectConversation={handleSelectConversation}
+        onNewConversation={handleNewConversation}
+        onOpenActions={handleOpenActions}
+      />
+
+      {selectedConversation && (
+        <ConversationActions
+          isOpen={actionsOpen}
+          onClose={() => {
+            setActionsOpen(false);
+            setSelectedConversation(null);
+          }}
+          conversation={selectedConversation}
+          onUpdate={() => {
+            // Recharger les conversations
+            setActionsOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };
