@@ -1,4 +1,3 @@
-// src/components/common/CardCarousel.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { SelectionCard } from './SelectionCard';
 
@@ -9,7 +8,7 @@ interface CardCarouselProps {
 }
 
 export const CardCarousel: React.FC<CardCarouselProps> = ({ options, selectedValue, onSelect }) => {
-  // ✅ Vérification de sécurité
+  // ✅ Protection contre undefined
   if (!options || options.length === 0) {
     return null;
   }
@@ -42,7 +41,7 @@ export const CardCarousel: React.FC<CardCarouselProps> = ({ options, selectedVal
     }
   };
 
-  // ✅ Protection contre undefined
+  // ✅ Protection avec optional chaining
   const activeDotIndex = options?.length > 0 ? Math.round(scrollProgress * (options.length - 1)) : 0;
 
   return (
