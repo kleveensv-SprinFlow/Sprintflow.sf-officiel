@@ -23,28 +23,32 @@ export default function Header({
   onBack,
   title,
   showWelcomeMessage,
+  userRole,
 }: HeaderProps) {
   const { profile } = useAuth();
+  const isAthlete = userRole === 'athlete';
   const [isWelcomeVisible, setWelcomeVisible] = useState(showWelcomeMessage && isDashboard);
-  const [displayText, setDisplayText] = useState(isWelcomeVisible ? `Bienvenue ${profile?.first_name || 'Athlète'}` : title);
+  const [displayText, setDisplayText] = useState(
+    isWelcomeVisible ? `Bienvenue ${profile?.first_name || 'Athlète'}` : title,
+  );
 
+  // Affiche un message de bienvenue uniquement sur le tableau de bord
   useEffect(() => {
     if (showWelcomeMessage && isDashboard) {
       const firstName = profile?.first_name || 'Athlète';
       setDisplayText(`Bienvenue ${firstName}`);
       setWelcomeVisible(true);
-
       const timer = setTimeout(() => {
         setWelcomeVisible(false);
       }, 5000);
-
       return () => clearTimeout(timer);
     } else {
       setWelcomeVisible(false);
       setDisplayText(title);
     }
   }, [showWelcomeMessage, isDashboard, profile?.first_name, title]);
-  
+
+  // Quand le message disparaît, on affiche le titre de la page
   useEffect(() => {
     if (!isWelcomeVisible) {
       setDisplayText(title);
@@ -60,7 +64,6 @@ export default function Header({
     ) : (
       displayText
     );
-
     return (
       <motion.h1
         key={displayText}
@@ -75,11 +78,20 @@ export default function Header({
     );
   };
 
+  // Pour les athlètes ou sur le tableau de bord, on affiche toujours le badge et la photo
+  const showBadge = isDashboard || isAthlete;
+  const showAvatar = isDashboard || isAthlete;
+
   return (
     <header className="sticky top-0 z-30 bg-sprint-light-surface/60 dark:bg-sprint-dark-surface/60 backdrop-blur-lg">
       <div className="px-4 py-3 flex items-center justify-between min-w-0">
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
-          {canGoBack ? (
+          {showBadge ? (
+            // Badge de niveau à gauche
+            <div className="p-2">
+              <LevelBadge level={0} />
+            </div>
+          ) : canGoBack ? (
             <button onClick={onBack} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
               <ChevronLeft className="h-6 w-6 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
             </button>
@@ -88,27 +100,24 @@ export default function Header({
               <Home className="h-6 w-6 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
             </button>
           ) : (
-            <div className="p-2"><LevelBadge level={0} /></div>
+            <div className="p-2">
+              <LevelBadge level={0} />
+            </div>
           )}
         </div>
-        
         <div className="flex-1 flex justify-center min-w-0 h-6 relative">
-          <AnimatePresence mode="wait">
-            {renderText()}
-          </AnimatePresence>
+          <AnimatePresence mode="wait">{renderText()}</AnimatePresence>
         </div>
-        
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">
-          {isDashboard && (
-            <button onClick={onProfileClick} className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-sprint-dark-surface flex items-center justify-center">
+          {showAvatar && (
+            <button
+              onClick={onProfileClick}
+              className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-sprint-dark-surface flex items-center justify-center"
+            >
               {profile?.photo_url ? (
-                <img
-                  src={profile.photo_url}
-                  alt="Photo de profil"
-                  className="w-full h-full object-cover"
-                />
+                <img src={profile.photo_url} alt="Photo de profil" className="w-full h-full object-cover" />
               ) : (
-                <UserIcon className="w-5 h-5 text-sprint-light-text-secondary" />
+                <UserIcon className="w-5 h-5 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
               )}
             </button>
           )}
