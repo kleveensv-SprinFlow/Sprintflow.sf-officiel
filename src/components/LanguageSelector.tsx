@@ -34,7 +34,7 @@ export const LanguageSelector: React.FC = () => {
             `}
           >
             <span className="text-lg">{lang.flag}</span>
-            <span>{lang.label}</span>
+            <span className="hidden sm:inline">{lang.label}</span>
             {language === lang.code && <Check className="w-4 h-4" />}
           </button>
         ))}
