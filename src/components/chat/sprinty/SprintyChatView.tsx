@@ -40,12 +40,19 @@ const SprintyChatView: React.FC = () => {
   
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Message de bienvenue selon la langue
   const getWelcomeMessage = useCallback(() => {
     return t('sprinty.welcome');
   }, [t]);
 
-  // Charger les conversations
+  const normalizeMessage = useCallback((msg: any): Message | null => {
+    if (!msg || typeof msg !== 'object') return null;
+    return {
+      id: msg.id || Date.now().toString(),
+      text: msg.message_text || msg.text || '',
+      sender: msg.role === 'user' || msg.sender === 'user' ? 'user' : 'sprinty',
+    };
+  }, []);
+
   useEffect(() => {
     const loadConversations = async () => {
       try {
@@ -68,7 +75,6 @@ const SprintyChatView: React.FC = () => {
     loadConversations();
   }, []);
 
-  // Charger les messages de la conversation
   useEffect(() => {
     const loadMessages = async () => {
       if (conversationId) {
@@ -90,11 +96,9 @@ const SprintyChatView: React.FC = () => {
             },
           ]);
         } else {
-          const normalized = (data ?? []).map(msg => ({
-            id: msg.id,
-            text: msg.message_text || '',
-            sender: msg.role === 'user' ? 'user' : 'sprinty'
-          })).filter(m => m.text);
+          const normalized = (data ?? [])
+            .map(normalizeMessage)
+            .filter((m): m is Message => m !== null && m.text.length > 0);
 
           setMessages(
             normalized.length > 0
@@ -121,9 +125,8 @@ const SprintyChatView: React.FC = () => {
     };
 
     loadMessages();
-  }, [conversationId, getWelcomeMessage, t]);
+  }, [conversationId, normalizeMessage, getWelcomeMessage, t]);
 
-  // Scroll automatique
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -142,13 +145,11 @@ const SprintyChatView: React.FC = () => {
     setIsTyping(true);
 
     try {
-      // Créer l'historique de conversation pour Mistral
       const conversationHistory = messages.map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
         content: msg.text
       }));
 
-      // Appel à Mistral AI via la nouvelle fonction
       const result = await getSprintyAnswer(
         sanitizedText,
         sprintyMode,
@@ -163,7 +164,6 @@ const SprintyChatView: React.FC = () => {
 
       addMessage(sprintyReply);
 
-      // Sauvegarder dans Supabase si conversation active
       if (activeConversationId) {
         await supabase.from('sprinty_messages').insert([
           {
@@ -265,7 +265,6 @@ const SprintyChatView: React.FC = () => {
           }}
           conversation={selectedConversation}
           onUpdate={() => {
-            // Recharger les conversations
             setActionsOpen(false);
           }}
         />
