@@ -8,9 +8,10 @@ import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';
 /**
  * Tableau de bord Athlète.
  * Affiche le panneau d’indices et les carrousels de planification et de records.
+ * Ce composant est différent de CoachDashboard.tsx, réservé aux coachs.
  */
 const Dashboard: React.FC = () => {
-  // Remplace ces valeurs par les données réelles de tes hooks
+  // Valeurs d’exemple ; remplace-les par celles de tes hooks (useIndices, useAuth, etc.)
   const indices = {
     form: 75,
     weightPowerRatio: 82,
@@ -18,20 +19,17 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-sprint-dark-blue px-4 py-6 space-y-8">
-      {/* Panneau des indices (forme et rapport poids/puissance) */}
+      {/* Indice de forme & rapport poids/puissance */}
       <IndicesPanel
         formIndex={indices.form}
         weightPowerRatio={indices.weightPowerRatio}
       />
-
-      {/* Carrousel du planning quotidien */}
+      {/* Planning quotidien de l’athlète */}
       <AthleteDailyPlanCarousel />
-
-      {/* Carrousels des records (force et course) */}
+      {/* Records de force et de sprint */}
       <StrengthRecordsCarousel />
       <TrackRecordsCarousel />
-
-      {/* Modales et autres composants à ajouter ici */}
+      {/* Autres sections ou modales spécifiques à l’athlète */}
     </div>
   );
 };
