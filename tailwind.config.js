@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+// tailwind.config.js
 export default {
   content: [
     "./index.html",
@@ -8,27 +8,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        // --- Thème "Deep Sprint" ---
-        'sprint-light-background': '#FAFAFA',
-        'sprint-light-surface': '#FFFFFF',
-        'sprint-light-text-primary': '#1E1E1E',
-        'sprint-light-text-secondary': '#616161',
+        // ————— MODE CLAIR
+        'sprint-light-background': '#F3F4F6',       // gris très clair (fond global)
+        'sprint-light-surface': '#FFFFFF',          // cartes principales
+        'sprint-light-surface-subtle': '#F9FAFB',   // petites surfaces / headers
+        'sprint-light-border-subtle': '#E5E7EB',    // bordures légères
 
-        'sprint-dark-background': '#121212',
-        'sprint-dark-surface': '#1E1E1E',
-        'sprint-dark-text-primary': '#F0F0F0',
-        'sprint-dark-text-secondary': '#A0A0A0',
-        
+        'sprint-light-text-primary': '#0F172A',
+        'sprint-light-text-secondary': '#6B7280',
+
+        // ————— MODE SOMBRE
+        'sprint-dark-background': '#020617',        // presque noir bleuté (fond global)
+        'sprint-dark-surface': '#0B1120',           // cartes
+        'sprint-dark-surface-elevated': '#111827',  // cartes très importantes / modales
+        'sprint-dark-border-subtle': '#1F2937',     // bordures discrètes
+
+        'sprint-dark-text-primary': '#E5E7EB',
+        'sprint-dark-text-secondary': '#9CA3AF',
+
+        // Accent inchangés
         'sprint-accent': '#673AB7',
-
-        // Palettes de base conservées pour les éléments comme les boutons
         'primary': '#007AFF',
         'success': '#00C853',
         'orange-accent': '#FF9800',
       },
       boxShadow: {
-        'premium-light': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'premium-dark': '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
+        'premium-light':
+          '0 10px 30px -20px rgba(15, 23, 42, 0.3)', // ombre un peu plus marquée
+        'premium-dark':
+          '0 18px 35px -24px rgba(0, 0, 0, 0.9)',
       },
       fontFamily: {
         manrope: ['Manrope', 'sans-serif'],
@@ -37,17 +45,17 @@ export default {
         din: ['"DIN 1451"', 'sans-serif'],
       },
       transitionTimingFunction: {
-        'premium': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        premium: 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
-       keyframes: {
+      keyframes: {
         pulse: {
           '0%, 100%': { opacity: 0.9 },
           '50%': { opacity: 1 },
-        }
+        },
       },
       animation: {
         'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      }
+      },
     },
   },
   plugins: [],
