@@ -11,6 +11,8 @@ export interface Group {
   coach_id: string;
   created_at: string;
   invitation_code: string;
+  type: 'groupe' | 'athlete';
+  max_members: number | null;
   group_members: { athlete_id: string; profiles: Profile | null }[];
 }
 
@@ -49,7 +51,7 @@ export const useGroups = () => {
         const groupsPromise = supabase
           .from('groups')
           .select(`
-            id, name, coach_id, created_at, invitation_code,
+            id, name, coach_id, created_at, invitation_code, type, max_members,
             group_members (
               athlete_id,
               profiles (
@@ -73,7 +75,7 @@ export const useGroups = () => {
           .from('group_members')
           .select(`
             groups (
-              id, name, coach_id, created_at, invitation_code,
+              id, name, coach_id, created_at, invitation_code, type, max_members,
               group_members (
                 athlete_id,
                 profiles (
@@ -141,12 +143,30 @@ export const useGroups = () => {
     }
   }, [groups]);
 
-  const createGroup = async (name: string) => {
+  const createGroup = async (name: string, type: 'groupe' | 'athlete', max_members: number | null) => {
     if (!user) throw new Error("Utilisateur non authentifié.");
+    
+    const groupData: { 
+      name: string; 
+      coach_id: string; 
+      type: 'groupe' | 'athlete';
+      max_members?: number | null;
+    } = {
+      name,
+      coach_id: user.id,
+      type,
+    };
+
+    if (max_members !== null) {
+      groupData.max_members = max_members;
+    }
+
     const { data, error } = await supabase
       .from('groups')
-      .insert({ name, coach_id: user.id })
-      .select().single();
+      .insert(groupData)
+      .select()
+      .single();
+
     if (error) throw error;
     if (data) await fetchGroups();
     return data;
@@ -194,12 +214,23 @@ export const useGroups = () => {
   };
 
   const joinGroupWithCode = async (invitationCode: string) => {
+    // Vérification côté client : L'athlète est-il déjà dans un groupe ?
+    if (profile?.role === 'athlete' && groups.length > 0) {
+      throw new Error("Vous êtes déjà dans un groupe. Vous ne pouvez pas en rejoindre un autre.");
+    }
+
     const { data, error } = await supabase.rpc('join_group_with_code', {
       invitation_code_param: invitationCode
     });
     if (error) throw error;
     const result = data as { status: string; message: string };
     if (result.status === 'error') throw new Error(result.message);
+    
+    // Si la demande est acceptée automatiquement, rafraîchir la liste
+    if (result.message.toLowerCase().includes('succès')) {
+        await fetchGroups();
+    }
+    
     return result;
   };
 
