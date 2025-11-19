@@ -244,7 +244,7 @@ const SprintyChatView: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-light-background dark:bg-dark-background border-t border-gray-200 dark:border-gray-700">
+      <div className="fixed bottom-20 left-0 right-0 p-4 bg-light-background dark:bg-dark-background border-t border-gray-200 dark:border-gray-700">
         <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
 
