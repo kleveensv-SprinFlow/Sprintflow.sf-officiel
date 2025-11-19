@@ -3,6 +3,7 @@ import { ArrowLeft, Users, UserPlus, Check, X, Clipboard, ClipboardCheck, Loader
 import { useGroups, Group, JoinRequest } from '../../hooks/useGroups';
 import { toast } from 'react-toastify';
 import { supabase } from '../../lib/supabase';
+import useAuth from '../../hooks/useAuth';
 
 interface GroupDetailsPageProps {
   group: Group;
@@ -11,6 +12,7 @@ interface GroupDetailsPageProps {
 }
 
 export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBack, onViewAthlete }) => {
+  const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
@@ -19,6 +21,7 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
   const [coachProfile, setCoachProfile] = useState<any>(null);
 
   const { fetchJoinRequests, respondToRequest } = useGroups();
+  const isAthlete = profile?.role === 'athlete';
 
   // Load coach information
   useEffect(() => {
@@ -84,83 +87,87 @@ export const GroupDetailsPage: React.FC<GroupDetailsPageProps> = ({ group, onBac
         </button>
         <div>
             <h1 className="text-2xl font-bold">{group.name}</h1>
-            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                <span>Code:</span>
-                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{group.invitation_code}</span>
-                <button onClick={copyToClipboard} title="Copier le code">
-                    {isCopied ? <ClipboardCheck size={16} className="text-green-500"/> : <Clipboard size={16} />}
-                </button>
-            </div>
+            {!isAthlete && (
+              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                  <span>Code:</span>
+                  <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{group.invitation_code}</span>
+                  <button onClick={copyToClipboard} title="Copier le code">
+                      {isCopied ? <ClipboardCheck size={16} className="text-green-500"/> : <Clipboard size={16} />}
+                  </button>
+              </div>
+            )}
         </div>
       </div>
 
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex space-x-4">
-          <button
-            onClick={() => setActiveTab('members')}
-            className={`flex items-center space-x-2 py-3 px-1 border-b-2 font-medium ${activeTab === 'members' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-          >
-            <Users size={18} />
-            <span>Membres ({group.group_members.length + 1})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('requests')}
-            className={`flex items-center space-x-2 py-3 px-1 border-b-2 font-medium ${activeTab === 'requests' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-          >
-            <UserPlus size={18} />
-            <span>Demandes</span>
-            {requests.length > 0 && <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{requests.length}</span>}
-          </button>
-        </nav>
-      </div>
+      {!isAthlete && (
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex space-x-4">
+            <button
+              onClick={() => setActiveTab('members')}
+              className={`flex items-center space-x-2 py-3 px-1 border-b-2 font-medium ${activeTab === 'members' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              <Users size={18} />
+              <span>Membres ({group.group_members.length + (coachProfile ? 1 : 0)})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`flex items-center space-x-2 py-3 px-1 border-b-2 font-medium ${activeTab === 'requests' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              <UserPlus size={18} />
+              <span>Demandes</span>
+              {requests.length > 0 && <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{requests.length}</span>}
+            </button>
+          </nav>
+        </div>
+      )}
 
       <div>
-        {activeTab === 'members' && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {(activeTab === 'members' || isAthlete) && (
+          <div className="space-y-3">
             {coachProfile && (
-              <div
-                key={coachProfile.id}
-                onClick={() => onViewAthlete(coachProfile.id)}
-                className="cursor-pointer text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border-2 border-orange-400"
-              >
-                <div className="relative">
-                  <img
-                    src={coachProfile.photo_url || `https://ui-avatars.com/api/?name=${coachProfile.first_name}+${coachProfile.last_name}&background=f97316`}
-                    alt="avatar"
-                    className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
-                  />
-                  <div className="absolute -top-1 -right-1 bg-orange-500 rounded-full p-1">
-                    <Crown size={16} className="text-white" />
+                <div
+                  key={coachProfile.id}
+                  onClick={() => onViewAthlete(coachProfile.id)}
+                  className="cursor-pointer flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="relative">
+                    <img
+                      src={coachProfile.photo_url || `https://ui-avatars.com/api/?name=${coachProfile.first_name}+${coachProfile.last_name}&background=f97316`}
+                      alt="avatar"
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-orange-500 rounded-full p-0.5">
+                      <Crown size={12} className="text-white" />
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <p className="font-semibold truncate">{coachProfile.first_name} {coachProfile.last_name}</p>
+                    <span className="text-sm text-gray-500">Coach</span>
                   </div>
                 </div>
-                <p className="font-semibold truncate">{coachProfile.first_name} {coachProfile.last_name}</p>
-                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">
-                  Coach
-                </span>
-              </div>
             )}
 
             {group.group_members.length > 0 ? group.group_members.map(member => (
               <div
                 key={member.athlete_id}
                 onClick={() => onViewAthlete(member.athlete_id)}
-                className="cursor-pointer text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow border-2 border-blue-400"
+                className="cursor-pointer flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <img
                   src={member.profiles?.photo_url || `https://ui-avatars.com/api/?name=${member.profiles?.first_name}+${member.profiles?.last_name}&background=3b82f6`}
                   alt="avatar"
-                  className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
+                  className="w-12 h-12 rounded-full object-cover"
                 />
-                <p className="font-semibold truncate">{member.profiles?.first_name} {member.profiles?.last_name}</p>
-                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">
-                  Athlète
-                </span>
+                <div className="ml-4">
+                  <p className="font-semibold truncate">{member.profiles?.first_name} {member.profiles?.last_name}</p>
+                  <span className="text-sm text-gray-500">Athlète</span>
+                </div>
               </div>
-            )) : !coachProfile && <p className="col-span-full text-center py-8 text-gray-500">Aucun membre dans ce groupe.</p>}
+            )) : !coachProfile && <p className="text-center py-8 text-gray-500">Aucun membre dans ce groupe.</p>}
           </div>
         )}
 
-        {activeTab === 'requests' && (
+        {!isAthlete && activeTab === 'requests' && (
           <div className="space-y-3">
             {loadingRequests ? <div className="text-center py-8"><Loader2 className="mx-auto animate-spin"/></div> 
             : requests.length === 0 ? <p className="text-center py-8 text-gray-500">Aucune demande en attente.</p> 
