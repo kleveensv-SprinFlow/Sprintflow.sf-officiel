@@ -52,7 +52,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, userRole, userId }
       icon: Users, 
       label: 'Mes Groupes',
       badge: groupCount > 0 ? groupCount : undefined,
-      highlighted: true // Pour mettre en évidence cette section
+      highlighted: true
     });
   }
 
@@ -116,7 +116,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, userRole, userId }
             </div>
             <nav className="flex-1 p-4">
               <ul className="space-y-2">
-                {menuItems.map((item) => (
+                {menuItems.map((item: any) => (
                   <li key={item.path}>
                     <button
                       onClick={() => handleNavigation(item.path)}
