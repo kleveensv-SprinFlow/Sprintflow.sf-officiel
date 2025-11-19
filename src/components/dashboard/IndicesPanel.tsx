@@ -20,7 +20,6 @@ const Gauge: React.FC<GaugeProps> = ({ value, color, label }) => {
       </h3>
       <div className="relative w-full flex justify-center items-center">
         <svg width={120} height={120} className="transform -rotate-90">
-          {/* cercle de fond */}
           <circle
             cx="60"
             cy="60"
@@ -29,7 +28,6 @@ const Gauge: React.FC<GaugeProps> = ({ value, color, label }) => {
             strokeWidth="10"
             fill="transparent"
           />
-          {/* cercle d’avancement animé */}
           <motion.circle
             cx="60"
             cy="60"
@@ -59,7 +57,7 @@ interface IndicesPanelProps {
 }
 
 /**
- * Affiche les indices de forme et de rapport poids/puissance côte à côte.
+ * Panneau qui affiche les deux indices côte à côte.
  */
 const IndicesPanel: React.FC<IndicesPanelProps> = ({
   formIndex = 0,
@@ -81,6 +79,4 @@ const IndicesPanel: React.FC<IndicesPanelProps> = ({
   );
 };
 
-// Export par défaut et export nommé pour compatibilité avec tout type d’import
 export default IndicesPanel;
-export { IndicesPanel };
