@@ -19,11 +19,11 @@ const viewTitles: Record<string, string> = {
   '/': 'Accueil',
   '/profile': 'Mon Profil',
   '/groups': 'Mon Groupe',
+  '/workouts': 'Calendrier',
   '/planning': 'Planning',
-  '/planning/plan': 'Planifier',
-  '/planning/stats': 'Statistiques',
+  '/planning/new': 'Nouvelle Séance',
   '/nutrition': 'Nutrition',
-  '/sprinty': 'Sprinty',
+  '/nutrition/add': 'Ajouter un Repas',
   '/records': 'Performances',
   '/records/new': 'Nouveau Record',
   '/settings': 'Réglages',
@@ -106,7 +106,6 @@ function App() {
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
         userRole={profile?.role}
-        userId={user?.id}  {/* ✨ LIGNE AJOUTÉE ICI */}
       />
       <ToastContainer position="bottom-center" theme="colored" />
     </div>
