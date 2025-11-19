@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CoachDashboard } from './dashboard/CoachDashboard';
 import { AthleteDailyPlanCarousel } from './dashboard/AthleteDailyPlanCarousel';
-import { StrengthRecordsCarousel } from './dashboard/StrengthRecordsCarousel';
-import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';
+import StrengthRecordsCarousel from './dashboard/StrengthRecordsCarousel';
+import TrackRecordsCarousel from './dashboard/TrackRecordsCarousel';
 import { IndicesPanel } from './dashboard/IndicesPanel';
 import { CheckinModal } from './dashboard/CheckinModal';
 import OnboardingPerformanceModal from './dashboard/OnboardingPerformanceModal';
@@ -39,14 +39,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
       console.log('📊 [Dashboard] Début chargement scores pour:', user.id);
       setLoading(true);
       
-      // ▼▼▼ CORRECTION ICI ▼▼▼
-      // Appel de la fonction RPC 'get_latest_indices' qui retourne tous les indices.
       try {
         const { data, error } = await supabase.rpc('get_latest_indices');
         if (error) throw error;
         console.log('💪 [Dashboard] Indices reçus:', data);
         
-        // On met à jour les deux scores depuis la même source de données
         setScorePerformance(data?.poids_puissance_data || null);
         setScoreForme({ indice: data?.forme_data?.indice_de_forme || null });
 
@@ -55,7 +52,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userRole }) => {
         setScorePerformance(null);
         setScoreForme({ indice: null });
       }
-      // ▲▲▲ FIN DE LA CORRECTION ▲▲▲
 
     } catch (e: any) {
       console.error('❌ [Dashboard] Erreur générale chargement scores:', e.message);
