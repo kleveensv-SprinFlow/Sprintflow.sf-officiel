@@ -5,7 +5,7 @@ import useAuth from '../../hooks/useAuth';
 import { Record } from '../../types';
 import { Loader2, Dumbbell, ArrowRight } from 'lucide-react';
 
-const StrengthRecordsCarousel: React.FC = () => {
+export const StrengthRecordsCarousel: React.FC = () => {
   const { user } = useAuth();
   const { strengthRecords: records, loading: recordsLoading } = useRecords(user?.id);
   const { bodyComps, loading: bodycompLoading } = useBodyComposition();
@@ -83,5 +83,3 @@ const StrengthRecordsCarousel: React.FC = () => {
     </div>
   );
 };
-
-export default StrengthRecordsCarousel;
