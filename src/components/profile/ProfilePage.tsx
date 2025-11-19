@@ -3,6 +3,15 @@ import { Edit, Camera, Shield, Lock, Trash2, Loader2, Target, Sun, Moon, Monitor
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
+import { LanguageSelector } from '../LanguageSelector';
+
+// Dans le JSX, après la section Theme
+<div className="space-y-3">
+  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+    Langue de Sprinty
+  </h3>
+  <LanguageSelector />
+</div>
 import { EditProfileModal } from './EditProfileModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { DeleteAccountModal } from './DeleteAccountModal';
