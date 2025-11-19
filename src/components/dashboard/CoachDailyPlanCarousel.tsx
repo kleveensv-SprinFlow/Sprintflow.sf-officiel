@@ -1,8 +1,9 @@
 // src/components/dashboard/CoachDailyPlanCarousel.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkouts } from '../../hooks/useWorkouts';
 import { Workout } from '../../types';
 import { DayCard } from '../common/DayCard';
+import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal';
 import { groupWorkoutsByDay } from '../../utils/groupWorkoutsByDay';
 import { addDays, format, isToday } from 'date-fns';
 
@@ -26,9 +27,55 @@ export const CoachDailyPlanCarousel: React.FC<CoachDailyPlanCarouselProps> = ({
 }) => {
   const { workouts, loading, error, refresh } = useWorkouts(selection);
   const [dailyWorkouts, setDailyWorkouts] = useState<Record<string, Workout[]>>({});
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+
+  const handleViewWorkout = (workoutId: string) => {
+    const workoutToShow = workouts?.find(w => w.id === workoutId);
+    if (workoutToShow) {
+      setSelectedWorkout(workoutToShow);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedWorkout(null);
+  };
   const [dateRange, setDateRange] = useState<Date[]>([]);
+  const [activeCardIndex, setActiveCardIndex] = useState(-1);
   
   const todayRef = useRef<HTMLDivElement>(null);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const index = parseInt(entry.target.getAttribute('data-index') || '0', 10);
+        setActiveCardIndex(index);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    observer.current = new IntersectionObserver(handleIntersection, {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.7,
+    });
+
+    const currentObserver = observer.current;
+
+    cardRefs.current.forEach(card => {
+      if (card) {
+        currentObserver.observe(card);
+      }
+    });
+
+    return () => {
+      if (currentObserver) {
+        currentObserver.disconnect();
+      }
+    };
+  }, [handleIntersection, dateRange]);
 
   useEffect(() => {
     // Refresh workouts when selection changes
@@ -62,7 +109,7 @@ export const CoachDailyPlanCarousel: React.FC<CoachDailyPlanCarouselProps> = ({
         <p className="text-center text-red-500 px-4">{error}</p>
       ) : (
         <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar space-x-4 pb-2 px-4">
-          {dateRange.map(date => {
+          {dateRange.map((date, index) => {
             const dateStr = format(date, 'yyyy-MM-dd');
             const workoutsForDay = loading ? null : dailyWorkouts[dateStr] || [];
             const isCurrentDay = isToday(date);
@@ -71,7 +118,13 @@ export const CoachDailyPlanCarousel: React.FC<CoachDailyPlanCarouselProps> = ({
             return (
               <div
                 key={dateStr}
-                ref={isCurrentDay ? todayRef : null}
+                ref={el => {
+                  cardRefs.current[index] = el;
+                  if (isCurrentDay) {
+                    (todayRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                  }
+                }}
+                data-index={index}
                 className="snap-center flex-shrink-0 w-[85%] md:w-[45%] lg:w-[30%] h-full"
               >
                 {loading ? (
@@ -86,8 +139,9 @@ export const CoachDailyPlanCarousel: React.FC<CoachDailyPlanCarouselProps> = ({
                     workouts={workoutsForDay} 
                     isReadOnly={false}
                     onPlanClick={onPlanWorkout}
-                    onCardClick={mainWorkout ? () => onViewWorkout(mainWorkout.id) : undefined}
+                    onCardClick={mainWorkout ? () => handleViewWorkout(mainWorkout.id) : undefined}
                     onEditClick={mainWorkout ? () => onEditWorkout(mainWorkout.id) : undefined}
+                    isActive={activeCardIndex === index}
                   />
                 )}
               </div>
@@ -95,6 +149,11 @@ export const CoachDailyPlanCarousel: React.FC<CoachDailyPlanCarouselProps> = ({
           })}
         </div>
       )}
+      <WorkoutDetailsModal
+        isOpen={!!selectedWorkout}
+        onClose={handleCloseModal}
+        workout={selectedWorkout}
+      />
     </div>
   );
 };
