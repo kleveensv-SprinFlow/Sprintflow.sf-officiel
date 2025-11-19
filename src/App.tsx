@@ -105,6 +105,7 @@ function App() {
       <SideMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
+        userRole={profile?.role}
       />
       <ToastContainer position="bottom-center" theme="colored" />
     </div>
