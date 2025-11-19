@@ -4,7 +4,6 @@ import useAuth from './useAuth';
 import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
-
 export interface Group {
   id: string;
   name: string;
@@ -25,18 +24,24 @@ export interface JoinRequest {
   profiles: Pick<Profile, 'id' | 'first_name' | 'last_name' | 'photo_url'> | null;
 }
 
+/**
+ * Hook pour gérer la logique des groupes et des suivis.
+ * Permet de récupérer les groupes du coach ou de l’athlète, de créer/supprimer un groupe,
+ * de répondre aux demandes, de rejoindre un groupe via un code d’invitation et de quitter un groupe.
+ */
 export const useGroups = () => {
   const { user, profile } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Charge les groupes du coach ou de l’athlète
   const fetchGroups = useCallback(async () => {
     if (!user || !profile) return;
     setLoading(true);
     setError(null);
 
-    logger.info('[useGroups] Début chargement groupes, role:', profile.role);
+    logger.info('[useGroups] Début chargement groupes, rôle :', profile.role);
     const timerId = logger.time('[useGroups] Temps total de chargement');
 
     try {
@@ -62,10 +67,10 @@ export const useGroups = () => {
           `)
           .eq('coach_id', user.id);
 
-        const { data: coachGroups, error: coachError } = await Promise.race([
+        const { data: coachGroups, error: coachError } = (await Promise.race([
           groupsPromise,
-          timeoutPromise
-        ]) as any;
+          timeoutPromise,
+        ])) as any;
 
         if (coachError) throw coachError;
         rawData = coachGroups;
@@ -87,10 +92,10 @@ export const useGroups = () => {
           `)
           .eq('athlete_id', user.id);
 
-        const { data: athleteGroups, error: athleteError } = await Promise.race([
+        const { data: athleteGroups, error: athleteError } = (await Promise.race([
           groupsPromise,
-          timeoutPromise
-        ]) as any;
+          timeoutPromise,
+        ])) as any;
 
         if (athleteError) throw athleteError;
         rawData = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
@@ -99,17 +104,16 @@ export const useGroups = () => {
       logger.timeEnd(timerId);
 
       if (rawData && rawData.length > 0) {
-        logger.info('[useGroups] Groupes chargés:', rawData.length);
+        logger.info('[useGroups] Groupes chargés :', rawData.length);
         setGroups(rawData);
       } else {
         logger.info('[useGroups] Aucun groupe trouvé');
         setGroups([]);
       }
-
     } catch (e: any) {
       logger.timeEnd(timerId);
-      logger.error('[useGroups] Erreur lors de la récupération des groupes:', e);
-      logger.error('[useGroups] Détails:', e.message, e.code);
+      logger.error('[useGroups] Erreur lors de la récupération des groupes :', e);
+      logger.error('[useGroups] Détails :', e.message, e.code);
       setError(e);
       setGroups([]);
     } finally {
@@ -122,11 +126,11 @@ export const useGroups = () => {
     fetchGroups();
   }, [fetchGroups]);
 
+  // Regroupe tous les athlètes d’un coach sans doublons
   const coachAthletes = useMemo(() => {
     try {
       const allAthletes = new Map<string, Profile>();
       if (!groups) return [];
-      
       groups.forEach(group => {
         if (group && group.group_members) {
           group.group_members.forEach(member => {
@@ -138,17 +142,17 @@ export const useGroups = () => {
       });
       return Array.from(allAthletes.values());
     } catch (e) {
-      console.error("Erreur critique lors du calcul de coachAthletes:", e);
+      console.error('Erreur critique lors du calcul de coachAthletes :', e);
       return [];
     }
   }, [groups]);
 
+  // Crée un groupe ou un suivi individuel
   const createGroup = async (name: string, type: 'groupe' | 'athlete', max_members: number | null) => {
-    if (!user) throw new Error("Utilisateur non authentifié.");
-    
-    const groupData: { 
-      name: string; 
-      coach_id: string; 
+    if (!user) throw new Error('Utilisateur non authentifié.');
+    const groupData: {
+      name: string;
+      coach_id: string;
       type: 'groupe' | 'athlete';
       max_members?: number | null;
     } = {
@@ -156,40 +160,30 @@ export const useGroups = () => {
       coach_id: user.id,
       type,
     };
-
     if (max_members !== null) {
       groupData.max_members = max_members;
     }
-
-    const { data, error } = await supabase
-      .from('groups')
-      .insert(groupData)
-      .select()
-      .single();
-
+    const { data, error } = await supabase.from('groups').insert(groupData).select().single();
     if (error) throw error;
     if (data) await fetchGroups();
     return data;
   };
 
+  // Supprime un groupe en toute sécurité (RPC delete_group)
   const deleteGroup = async (groupId: string) => {
-    // Appel de la fonction RPC pour une suppression sécurisée
     const { error } = await supabase.rpc('delete_group', {
-      group_id_param: groupId
+      group_id_param: groupId,
     });
-    
     if (error) {
-        // Si l'erreur vient de la fonction (ex: accès non autorisé), afficher le message
-        if (error.message.includes('Accès non autorisé')) {
-            throw new Error('Vous n\'êtes pas autorisé à supprimer ce groupe.');
-        }
-        throw error;
+      if (error.message.includes('Accès non autorisé')) {
+        throw new Error("Vous n'êtes pas autorisé à supprimer ce groupe.");
+      }
+      throw error;
     }
-    
-    // Mettre à jour l'état local pour refléter la suppression
     setGroups(prev => prev.filter(g => g.id !== groupId));
   };
 
+  // Récupère les demandes d’adhésion en attente pour un groupe
   const fetchJoinRequests = useCallback(async (groupId: string): Promise<JoinRequest[]> => {
     const { data, error } = await supabase
       .from('group_join_requests')
@@ -197,14 +191,14 @@ export const useGroups = () => {
       .eq('group_id', groupId)
       .eq('status', 'pending');
     if (error) throw error;
-
     return data || [];
   }, []);
 
+  // Répond à une demande d’adhésion
   const respondToRequest = async (requestId: string, newStatus: 'accepted' | 'rejected') => {
     const { data, error } = await supabase.rpc('respond_to_join_request', {
       request_id_param: requestId,
-      new_status_param: newStatus
+      new_status_param: newStatus,
     });
     if (error) throw error;
     const result = data as { status: string; message: string };
@@ -213,25 +207,35 @@ export const useGroups = () => {
     return result;
   };
 
+  // Rejoint un groupe via un code d’invitation (blocage à un seul groupe)
   const joinGroupWithCode = async (invitationCode: string) => {
-    // Vérification côté client : L'athlète est-il déjà dans un groupe ?
+    // Vérifie côté client : l’athlète est-il déjà dans un groupe ?
     if (profile?.role === 'athlete' && groups.length > 0) {
       throw new Error("Vous êtes déjà dans un groupe. Vous ne pouvez pas en rejoindre un autre.");
     }
-
     const { data, error } = await supabase.rpc('join_group_with_code', {
-      invitation_code_param: invitationCode
+      invitation_code_param: invitationCode,
     });
     if (error) throw error;
     const result = data as { status: string; message: string };
     if (result.status === 'error') throw new Error(result.message);
-    
-    // Si la demande est acceptée automatiquement, rafraîchir la liste
+    // Si l’adhésion est acceptée immédiatement, on recharge la liste
     if (result.message.toLowerCase().includes('succès')) {
-        await fetchGroups();
+      await fetchGroups();
     }
-    
     return result;
+  };
+
+  /**
+   * Quitte un groupe en appelant la fonction RPC leave_group
+   * et supprime localement le groupe quitté.
+   */
+  const leaveGroup = async (groupId: string) => {
+    const { error } = await supabase.rpc('leave_group', {
+      group_id_param: groupId,
+    });
+    if (error) throw error;
+    setGroups(prev => prev.filter(g => g.id !== groupId));
   };
 
   return {
