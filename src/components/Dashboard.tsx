@@ -1,16 +1,16 @@
 import React from 'react';
 import IndicesPanel from './dashboard/IndicesPanel';
-import AthleteDailyPlanCarousel from '../carousels/AthleteDailyPlanCarousel';
-import StrengthRecordsCarousel from '../carousels/StrengthRecordsCarousel';
-import TrackRecordsCarousel from '../carousels/TrackRecordsCarousel';
+import { AthleteDailyPlanCarousel } from './dashboard/AthleteDailyPlanCarousel';
+import { StrengthRecordsCarousel } from './dashboard/StrengthRecordsCarousel';
+import { TrackRecordsCarousel } from './dashboard/TrackRecordsCarousel';
 // … autres imports nécessaires (modales, hooks, etc.)
 
 /**
  * Tableau de bord Athlète.
- * Intègre le panneau d’indices (forme & poids/puissance).
+ * Affiche le panneau d’indices et les carrousels de planification et de records.
  */
 const Dashboard: React.FC = () => {
-  // Remplace ces valeurs par celles de ton hook ou de ton contexte
+  // Remplace ces valeurs par les données réelles de tes hooks
   const indices = {
     form: 75,
     weightPowerRatio: 82,
@@ -18,18 +18,20 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-sprint-dark-blue px-4 py-6 space-y-8">
-      {/* Affichage des indices côte à côte */}
+      {/* Panneau des indices (forme et rapport poids/puissance) */}
       <IndicesPanel
         formIndex={indices.form}
         weightPowerRatio={indices.weightPowerRatio}
       />
 
-      {/* Autres sections du tableau de bord */}
+      {/* Carrousel du planning quotidien */}
       <AthleteDailyPlanCarousel />
+
+      {/* Carrousels des records (force et course) */}
       <StrengthRecordsCarousel />
       <TrackRecordsCarousel />
 
-      {/* Modales et contenu additionnel ici */}
+      {/* Modales et autres composants à ajouter ici */}
     </div>
   );
 };
