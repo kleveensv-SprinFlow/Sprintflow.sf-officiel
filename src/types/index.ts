@@ -1,4 +1,5 @@
 // src/types/index.ts
+import { WorkoutBlock } from './workout';
 
 export interface Profile {
   id: string;
@@ -78,10 +79,23 @@ export interface Record {
 
 export interface Workout {
   id: string;
+  user_id?: string;
+  coach_id?: string;
+  assigned_to_group_id?: string;
+  assigned_to_user_id?: string;
   date: string;
   tag_seance?: string;
+  type: 'guidé' | 'manuscrit' | 'modèle';
   status: 'planned' | 'completed';
-  // Ajoutez d'autres champs si nécessaire
+  notes?: string;
+  planned_data?: {
+    blocs: WorkoutBlock[];
+  };
+  workout_data?: {
+    blocs: WorkoutBlock[];
+  };
+  rpe?: number;
+  duration_minutes?: number;
 }
 
 export interface Conversation {

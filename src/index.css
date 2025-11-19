@@ -75,6 +75,10 @@
   .card-glass {
     @apply bg-white/30 backdrop-blur-lg border border-white/20 rounded-xl;
   }
+
+  .shadow-glow {
+    box-shadow: 0 0 25px -5px var(--glow-color, theme('colors.sprint-accent')), 0 0 15px -10px var(--glow-color, theme('colors.sprint-accent'));
+  }
   .dark .card-glass {
     --tw-bg-opacity: 0.3;
     background-color: color-mix(in srgb, theme(colors.sprint-dark-surface) var(--tw-bg-opacity), transparent);

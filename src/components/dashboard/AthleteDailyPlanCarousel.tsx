@@ -89,12 +89,12 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
 
   return (
     <>
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary px-4">Mon Planning</h2>
+      <div className="space-y-4 px-4">
+        <h2 className="text-xl font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Mon Planning</h2>
         {error ? (
-          <p className="text-center text-red-500 px-4">{error}</p>
+          <p className="text-center text-red-500">{error}</p>
         ) : (
-          <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar space-x-4 pb-2 px-4">
+          <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar space-x-4 pb-2 -mx-4 px-4">
             {dateRange.map((date, index) => {
               const dateStr = format(date, 'yyyy-MM-dd');
               const workoutsForDay = loading ? null : dailyWorkouts[dateStr] || [];

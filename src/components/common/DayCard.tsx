@@ -50,6 +50,21 @@ const generateWorkoutPreview = (workout: Workout): string => {
   return preview;
 };
 
+const hexToRgba = (hex: string, alpha: number): string => {
+  if (!/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+    return `rgba(107, 114, 128, ${alpha})`; // Fallback to gray for invalid colors
+  }
+  let c = hex.substring(1).split('');
+  if (c.length === 3) {
+    c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+  }
+  const i = parseInt(c.join(''), 16);
+  const r = (i >> 16) & 255;
+  const g = (i >> 8) & 255;
+  const b = i & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, onEditClick, onCardClick, isReadOnly = false, isActive = false }) => {
   const { allTypes: workoutTypes } = useWorkoutTypes();
 
@@ -67,6 +82,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
 
   const hasWorkouts = workouts.length > 0;
   const mainWorkout = hasWorkouts ? workouts[0] : null;
+  const mainWorkoutType = mainWorkout?.tag_seance ? findWorkoutType(mainWorkout.tag_seance) : undefined;
 
   const renderContent = () => {
     switch (workouts.length) {
@@ -84,12 +100,8 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         );
       case 1: {
         const workout = workouts[0];
-        const workoutType = workout.tag_seance ? findWorkoutType(workout.tag_seance) : undefined;
         return (
           <div className="text-left space-y-2 px-1">
-            <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary truncate">
-              {workoutType?.name || 'Entraînement'}
-            </h4>
             <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary line-clamp-3">
               {generateWorkoutPreview(workout)}
             </p>
@@ -135,9 +147,9 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   const cardContent = (
     <>
       <header className="flex justify-between items-start">
-        <div>
+        <div className="flex items-baseline gap-x-2 flex-wrap">
           <h3 className="font-bold text-xl text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{getDayLabel()}</h3>
-          <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary">{format(date, 'd MMMM', { locale: fr })}</p>
+          {mainWorkoutType && <p className="font-semibold" style={{ color: mainWorkoutType.color }}>{mainWorkoutType.name}</p>}
         </div>
         {!isReadOnly && onEditClick && mainWorkout && (
           <div onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} className="p-2 rounded-full transition-all bg-black/5 dark:bg-white/10 opacity-0 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/20 z-10 cursor-pointer">
@@ -151,20 +163,18 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
     </>
   );
 
-  // --- MODIFICATION PRINCIPALE ICI ---
-  const mainWorkoutType = mainWorkout?.tag_seance ? findWorkoutType(mainWorkout.tag_seance) : undefined;
-
-  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group bg-sprint-light-surface dark:bg-sprint-dark-surface shadow-premium";
+  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group bg-sprint-light-surface dark:bg-sprint-dark-surface";
   
-  const activeClasses = isActive && mainWorkoutType ? 'shadow-glow' : '';
-  
-  const cardStyle = isActive && mainWorkoutType ? { '--glow-color': mainWorkoutType.color } as React.CSSProperties : {};
+  const cardStyle: React.CSSProperties = {};
+  if (isActive && mainWorkoutType?.color) {
+    cardStyle.backgroundColor = hexToRgba(mainWorkoutType.color, 0.15);
+  }
 
   if (mainWorkout && onCardClick) {
     return (
       <button 
         onClick={() => onCardClick(mainWorkout.id)} 
-        className={`${baseClasses} text-left hover:scale-[1.02] active:scale-[0.98] ${activeClasses}`}
+        className={`${baseClasses} text-left hover:scale-[1.02] active:scale-[0.98]`}
         style={cardStyle}
       >
         {cardContent}
@@ -173,7 +183,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   }
 
   return (
-    <div className={`${baseClasses} ${activeClasses}`} style={cardStyle}>
+    <div className={baseClasses} style={cardStyle}>
       {cardContent}
     </div>
   );
