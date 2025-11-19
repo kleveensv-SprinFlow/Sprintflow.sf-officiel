@@ -22,12 +22,18 @@ export const useRecords = (athleteId?: string) => {
     setError(null);
 
     try {
+      // ▼▼▼ LA CORRECTION EST ICI ▼▼▼
+      // On utilise la nouvelle fonction RPC 'get_user_records_split'
+      // et on passe le paramètre correctement nommé 'user_id_param'.
       const { data, error: rpcError } = await supabase.rpc('get_user_records_split', { user_id_param: idToFetch });
+      // ▲▲▲ FIN DE LA CORRECTION ▲▲▲
 
       if (rpcError) {
         throw new Error(`Erreur Supabase RPC: ${rpcError.message}`);
       }
-
+      
+      // La nouvelle fonction retourne un objet avec deux clés :
+      // strength_records et track_records.
       if (data) {
         setStrengthRecords(data.strength_records || []);
         setTrackRecords(data.track_records || []);
