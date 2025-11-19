@@ -77,7 +77,7 @@ const TabBar: React.FC<TabBarProps> = ({
         {tabs.slice(0, 2).map(renderTab)}
         <div className="w-16"></div> {/* Espace pour le bouton central flottant */}
         {tabs.slice(2, 4).map(renderTab)}
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[20%] transform">
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[5%] transform">
           <motion.button
             onClick={onFabClick}
             className="flex h-16 w-16 items-center justify-center rounded-full bg-sprint-accent text-white shadow-lg"
