@@ -6,8 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MISTRAL_API_KEY = 'ag_019a9cd1db3674178bfad4ff6c012ec0';
-const MISTRAL_MODEL = 'mistral-small-latest';
+// On lit la clé et le modèle depuis les variables d’environnement Supabase.
+// Définissez-les dans le dashboard Supabase au lieu de coder la clé en clair dans le fichier.
+const MISTRAL_API_KEY = Deno.env.get('MISTRAL_API_KEY') ?? '';
+const MISTRAL_MODEL   = Deno.env.get('MISTRAL_MODEL')   ?? 'mistral-small-latest';
 
 interface RequestPayload {
   question: string;
@@ -131,87 +133,81 @@ Responde en español con un alto nivel de experiencia pero siempre pedagógico.`
 };
 
 serve(async (req) => {
-  // Handle CORS
+  // Gestion du prévol CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { question, language = 'fr', mode = 'simplified', conversationHistory = [] } = await req.json() as RequestPayload;
+    const { question, language = 'fr', mode = 'simplified', conversationHistory = [] } =
+      await req.json() as RequestPayload;
 
     if (!question || question.trim().length === 0) {
       throw new Error('Question vide');
     }
 
-    // Récupérer le prompt système approprié
-    const systemPrompt = systemPrompts[language]?.[mode] || systemPrompts.fr.simplified;
+    // Vérifier la présence de la clé API
+    if (!MISTRAL_API_KEY) {
+      throw new Error('Clé API Mistral manquante. Définissez MISTRAL_API_KEY dans les variables d’environnement.');
+    }
 
-    // Construire l'historique de conversation pour Mistral
+    // Choisir le bon prompt système
+    const systemPrompt = systemPrompts[language]?.[mode] ?? systemPrompts.fr.simplified;
+
+    // Construire l’historique de conversation
     const messages = [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
-      ...conversationHistory.slice(-6), // Garder les 6 derniers messages pour le contexte
-      {
-        role: 'user',
-        content: question
-      }
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory.slice(-6),
+      { role: 'user', content: question },
     ];
 
-    console.log('Appel Mistral API avec:', { model: MISTRAL_MODEL, language, mode });
+    console.log('Appel Mistral API avec :', { model: MISTRAL_MODEL, language, mode });
 
-    // Appel à Mistral AI
+    // Appel à Mistral AI
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${MISTRAL_API_KEY}`
+        'Authorization': `Bearer ${MISTRAL_API_KEY}`,
       },
       body: JSON.stringify({
         model: MISTRAL_MODEL,
         messages: messages,
         temperature: 0.7,
         max_tokens: 800,
-        top_p: 0.95
-      })
+        top_p: 0.95,
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Erreur Mistral API:', response.status, errorText);
+      console.error('Erreur Mistral API :', response.status, errorText);
       throw new Error(`Mistral API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const answer = data.choices[0]?.message?.content || 'Aucune réponse disponible.';
+    const answer = data.choices?.[0]?.message?.content ?? 'Aucune réponse disponible.';
 
     console.log('Réponse Mistral reçue avec succès');
 
     return new Response(
-      JSON.stringify({ 
-        answer, 
-        language, 
+      JSON.stringify({
+        answer,
+        language,
         mode,
         model: MISTRAL_MODEL,
-        tokens: data.usage
+        tokens: data.usage,
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
     );
   } catch (error) {
-    console.error('Erreur dans sprinty-mistral:', error);
+    console.error('Erreur dans sprinty-mistal :', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: 'Erreur lors de la communication avec Mistral AI'
+      JSON.stringify({
+        error: (error as Error).message,
+        details: 'Erreur lors de la communication avec Mistral AI',
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 },
     );
   }
 });
