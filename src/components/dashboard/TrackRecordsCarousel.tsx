@@ -3,7 +3,7 @@ import { useRecords } from '../../hooks/useRecords';
 import useAuth from '../../hooks/useAuth';
 import { Loader2, Footprints, ArrowRight } from 'lucide-react';
 
-const TrackRecordsCarousel: React.FC = () => {
+export const TrackRecordsCarousel: React.FC = () => {
   const { user } = useAuth();
   const { trackRecords: records, loading } = useRecords(user?.id);
 
@@ -66,5 +66,3 @@ const TrackRecordsCarousel: React.FC = () => {
     </div>
   );
 };
-
-export default TrackRecordsCarousel;
