@@ -134,46 +134,6 @@ export const CoachDashboard: React.FC = () => {
     }
   };
 
-  const renderContent = () => {
-    if (!selection) {
-      return (
-        <motion.div 
-          className="text-center py-16 px-4 bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-lg"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-          <h2 className="text-2xl font-bold mb-4 text-light-title dark:text-dark-title">Bienvenue, {profile?.first_name} !</h2>
-          <p className="text-light-text dark:text-dark-text mb-8">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-            <button onClick={() => setAthleteModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-white bg-accent hover:opacity-90 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
-              <User /> Athlète
-            </button>
-            <button onClick={() => setGroupModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-light-title dark:text-dark-title bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
-              <Users /> Groupe
-            </button>
-          </div>
-        </motion.div>
-      );
-    }
-
-    if (loading) {
-      return <div className="flex justify-center items-center py-16"><Loader className="w-12 h-12 animate-spin text-accent" /></div>;
-    }
-    if (error) {
-      return <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md flex items-center"><AlertTriangle className="w-6 h-6 mr-3" /><p>{error}</p></div>;
-    }
-
-    return (
-      <CoachDailyPlanCarousel 
-        selection={selection} 
-        onPlanWorkout={handlePlanClick}
-        onEditWorkout={handleEditClick}
-        onViewWorkout={handleViewWorkout}
-      />
-    );
-  };
-
   if (selectedAthlete) {
     return <AthleteDetails athlete={selectedAthlete} onBack={() => setSelectedAthlete(null)} />;
   }
@@ -217,13 +177,48 @@ export const CoachDashboard: React.FC = () => {
             </AnimatePresence>
           </div>
           
-          <div className="space-y-2">
-            {selection && <h1 className="text-2xl font-bold text-light-title dark:text-dark-title">Planning de <span className="text-accent">{selection.name}</span></h1>}
-            {renderContent()}
+          <div className="space-y-6">
+            {!selection ? (
+              <motion.div 
+                className="text-center py-16 px-4 bg-light-card dark:bg-dark-card shadow-card-light dark:shadow-card-dark rounded-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
+                <h2 className="text-2xl font-bold mb-4 text-light-title dark:text-dark-title">Bienvenue, {profile?.first_name} !</h2>
+                <p className="text-light-text dark:text-dark-text mb-8">Pour commencer, veuillez sélectionner un athlète ou un groupe.</p>
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                  <button onClick={() => setAthleteModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-white bg-accent hover:opacity-90 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
+                    <User /> Athlète
+                  </button>
+                  <button onClick={() => setGroupModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-semibold rounded-lg text-light-title dark:text-dark-title bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105">
+                    <Users /> Groupe
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <>
+                <div>
+                  <h1 className="text-2xl font-bold text-light-title dark:text-dark-title mb-4">Planning de <span className="text-accent">{selection.name}</span></h1>
+                  {loading && <div className="flex justify-center items-center py-16"><Loader className="w-12 h-12 animate-spin text-accent" /></div>}
+                  {error && <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md flex items-center"><AlertTriangle className="w-6 h-6 mr-3" /><p>{error}</p></div>}
+                  {!loading && !error && (
+                    <CoachDailyPlanCarousel 
+                      selection={selection} 
+                      onPlanWorkout={handlePlanClick}
+                      onEditWorkout={handleEditClick}
+                      onViewWorkout={handleViewWorkout}
+                    />
+                  )}
+                </div>
 
-            <AthleteMarquee athletes={coachAthletes || []} onAthleteClick={handleAthleteMarqueeClick} />
+                <div>
+                  <h2 className="text-2xl font-bold text-light-title dark:text-dark-title mb-4">Mes Athlètes</h2>
+                  <AthleteMarquee athletes={coachAthletes || []} onAthleteClick={handleAthleteMarqueeClick} />
+                </div>
+              </>
+            )}
           </div>
-
         </div>
 
         <AthleteSelectionModal isOpen={isAthleteModalOpen} onClose={() => setAthleteModalOpen(false)} onSelect={handleSelectAthlete} />
