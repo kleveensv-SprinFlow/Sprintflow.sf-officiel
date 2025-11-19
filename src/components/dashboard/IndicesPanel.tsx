@@ -7,15 +7,11 @@ interface GaugeProps {
   label: string;
 }
 
-/**
- * Composant Gauge : affiche un anneau de progression animé avec un label et la valeur centrale.
- * value doit être un nombre entre 0 et 100 (pourcentage).
- */
 const Gauge: React.FC<GaugeProps> = ({ value, color, label }) => {
-  const normalizedValue = Math.max(0, Math.min(100, value));
+  const normalized = Math.max(0, Math.min(100, value));
   const radius = 48;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - normalizedValue / 100);
+  const offset = circumference * (1 - normalized / 100);
 
   return (
     <div className="flex-1 bg-sprint-light-card dark:bg-sprint-dark-card p-4 rounded-2xl shadow-md">
@@ -33,7 +29,7 @@ const Gauge: React.FC<GaugeProps> = ({ value, color, label }) => {
             strokeWidth="10"
             fill="transparent"
           />
-          {/* cercle d'avancement animé */}
+          {/* cercle d’avancement animé */}
           <motion.circle
             cx="60"
             cy="60"
@@ -50,7 +46,7 @@ const Gauge: React.FC<GaugeProps> = ({ value, color, label }) => {
           />
         </svg>
         <span className="absolute text-2xl font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
-          {Math.round(normalizedValue)}
+          {Math.round(normalized)}
         </span>
       </div>
     </div>
@@ -63,8 +59,7 @@ interface IndicesPanelProps {
 }
 
 /**
- * Affiche deux indices côte à côte : l'indice de forme et le rapport poids/puissance.
- * Chaque carte possède sa propre jauge circulaire animée.
+ * Affiche les indices de forme et de rapport poids/puissance côte à côte.
  */
 const IndicesPanel: React.FC<IndicesPanelProps> = ({
   formIndex = 0,
@@ -74,16 +69,18 @@ const IndicesPanel: React.FC<IndicesPanelProps> = ({
     <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
       <Gauge
         value={formIndex}
-        color="#22C55E" /* vert pour l'indice de forme */
+        color="#22C55E"
         label="Indice de forme"
       />
       <Gauge
         value={weightPowerRatio}
-        color="#F97316" /* orange pour le ratio poids/puissance */
+        color="#F97316"
         label="Rapport poids/puissance"
       />
     </div>
   );
 };
 
+// Export par défaut et export nommé pour compatibilité avec tout type d’import
 export default IndicesPanel;
+export { IndicesPanel };
