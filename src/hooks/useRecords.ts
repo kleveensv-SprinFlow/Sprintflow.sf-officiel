@@ -1,157 +1,52 @@
-import { useState, useEffect } from 'react'
-import useAuth from './useAuth'
-import { supabase } from '../lib/supabase'
-import { Record } from '../types'
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { Record } from '../types';
+import useAuth from './useAuth';
 
-export function useRecords(targetUserId?: string) {
-  const { user } = useAuth()
-  const [records, setRecords] = useState<Record[]>([])
-  const [loading, setLoading] = useState(true)
-  const userId = targetUserId || user?.id
+export const useRecords = (athleteId?: string) => {
+  const { user } = useAuth();
+  const [strengthRecords, setStrengthRecords] = useState<Record[]>([]);
+  const [trackRecords, setTrackRecords] = useState<Record[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (userId) {
-      loadRecords()
-    } else {
-      setRecords([])
-      setLoading(false)
+  const idToFetch = athleteId || user?.id;
+
+  const fetchRecords = useCallback(async () => {
+    if (!idToFetch) {
+      setLoading(false);
+      return;
     }
-  }, [userId])
 
-  useEffect(() => {
-    const handleRecordSaved = () => {
-      if (userId) {
-        loadRecords()
-      }
-    }
-    window.addEventListener('record-saved', handleRecordSaved)
-    return () => window.removeEventListener('record-saved', handleRecordSaved)
-  }, [userId])
-
-  const loadRecords = async () => {
-    if (!userId) return
+    setLoading(true);
+    setError(null);
 
     try {
-      const { data, error } = await supabase
-        .from('records')
-        .select('*')
-        .eq('user_id', userId)
-        .order('date', { ascending: false })
-      
-      if (error) {
-        console.error('Erreur chargement records:', error.message)
-        setRecords([])
-      } else {
-        const mappedRecords: Record[] = data?.map(item => ({
-          id: item.id,
-          type: item.type,
-          name: item.exercise_name,
-          value: item.performance,
-          unit: item.unit,
-          date: item.date,
-          exercice_reference_id: item.exercice_reference_id,
-          category: item.category
-        })) || []
-        setRecords(mappedRecords)
-        localStorage.setItem(`records_${userId}`, JSON.stringify(mappedRecords))
+      const { data, error: rpcError } = await supabase.rpc('get_user_records_split', { user_id_param: idToFetch });
+
+      if (rpcError) {
+        throw new Error(`Erreur Supabase RPC: ${rpcError.message}`);
       }
-    } catch (error) {
-      console.error('Erreur loadRecords:', error)
-      // En cas d'erreur réseau, essayer localStorage
-      const localRecords = localStorage.getItem(`records_${userId}`)
-      if (localRecords) {
-        try {
-          const parsedRecords = JSON.parse(localRecords)
-          setRecords(parsedRecords)
-        } catch (parseError) {
-          setRecords([])
-        }
+
+      if (data) {
+        setStrengthRecords(data.strength_records || []);
+        setTrackRecords(data.track_records || []);
       } else {
-        setRecords([])
+        setStrengthRecords([]);
+        setTrackRecords([]);
       }
+
+    } catch (e: any) {
+      console.error("Erreur lors de la récupération des records:", e.message);
+      setError(e.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [idToFetch]);
 
-  const saveRecord = async (record: Omit<Record, 'id'>) => {
-    if (!user) throw new Error('Utilisateur non connecté')
+  useEffect(() => {
+    fetchRecords();
+  }, [fetchRecords]);
 
-    const recordData = {
-      user_id: user.id,
-      exercise_name: record.name,
-      weight_kg: record.value,
-      reps: 1,
-      date: record.date,
-      ...(record.exercice_reference_id && { exercice_id: record.exercice_reference_id })
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('records')
-        .insert(recordData)
-        .select()
-        .single()
-      
-      if (error) {
-        console.error('Erreur sauvegarde record:', error)
-        throw error
-      }
-      
-      if (!data) {
-        throw new Error('Aucune donnée retournée par Supabase')
-      }
-      
-      // Mapper les données Supabase vers le format local
-      const completeRecord: Record = {
-        id: data.id,
-        type: record.type,
-        name: data.exercise_name,
-        value: parseFloat(data.weight_kg),
-        unit: record.unit,
-        date: data.date,
-        exercice_reference_id: data.exercice_id
-      }
-      
-      setRecords(prev => [completeRecord, ...prev])
-      window.dispatchEvent(new Event('record-saved'))
-
-      return completeRecord
-      
-    } catch (error) {
-      console.error('Erreur saveRecord:', error)
-      throw new Error(`Erreur sauvegarde: ${error.message || error}`)
-    }
-  }
-
-  const deleteRecord = async (id: string) => {
-    if (!user) throw new Error('Utilisateur non connecté')
-    
-    try {
-      const { error } = await supabase
-        .from('records')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
-      
-      if (error) {
-        console.error('Erreur suppression record:', error.message)
-        throw error
-      }
-      
-      setRecords(prev => prev.filter(r => r.id !== id))
-      window.dispatchEvent(new Event('record-saved'))
-    } catch (error) {
-      console.error('Erreur deleteRecord:', error)
-      throw error
-    }
-  }
-
-  return {
-    records,
-    loading,
-    saveRecord,
-    deleteRecord,
-    loadRecords
-  }
-}
+  return { strengthRecords, trackRecords, loading, error, refreshRecords: fetchRecords };
+};
