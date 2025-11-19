@@ -10,6 +10,7 @@ interface SideMenuProps {
 }
 
 const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, userRole }) => {
+  console.log('SideMenu userRole:', userRole);
   const navigate = useNavigate();
   const location = useLocation();
 
