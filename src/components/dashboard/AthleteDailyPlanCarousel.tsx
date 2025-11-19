@@ -1,5 +1,5 @@
 // src/components/dashboard/AthleteDailyPlanCarousel.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkouts } from '../../hooks/useWorkouts';
 import { Workout } from '../../types';
 import { DayCard } from '../common/DayCard';
@@ -14,8 +14,44 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
   
   // État pour gérer la séance sélectionnée et l'affichage de la modale
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [activeCardIndex, setActiveCardIndex] = useState(-1);
   
   const todayRef = useRef<HTMLDivElement>(null);
+  const observer = useRef<IntersectionObserver | null>(null);
+
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const index = parseInt(entry.target.getAttribute('data-index') || '0', 10);
+        setActiveCardIndex(index);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    observer.current = new IntersectionObserver(handleIntersection, {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.7, // La carte doit être visible à 70% pour être considérée comme active
+    });
+
+    const currentObserver = observer.current;
+
+    cardRefs.current.forEach(card => {
+      if (card) {
+        currentObserver.observe(card);
+      }
+    });
+
+    return () => {
+      if (currentObserver) {
+        currentObserver.disconnect();
+      }
+    };
+  }, [handleIntersection, dateRange]);
+
 
   useEffect(() => {
     const today = new Date();
@@ -59,7 +95,7 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
           <p className="text-center text-red-500 px-4">{error}</p>
         ) : (
           <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar space-x-4 pb-2 px-4">
-            {dateRange.map(date => {
+            {dateRange.map((date, index) => {
               const dateStr = format(date, 'yyyy-MM-dd');
               const workoutsForDay = loading ? null : dailyWorkouts[dateStr] || [];
               const isCurrentDay = isToday(date);
@@ -70,7 +106,13 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
               return (
                 <div
                   key={dateStr}
-                  ref={isCurrentDay ? todayRef : null}
+                  ref={el => {
+                    cardRefs.current[index] = el;
+                    if (isCurrentDay) {
+                      (todayRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                    }
+                  }}
+                  data-index={index}
                   className="snap-center flex-shrink-0 w-[85%] h-full"
                 >
                   {workoutsForDay ? (
@@ -79,6 +121,7 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
                       workouts={workoutsForDay} 
                       isReadOnly 
                       onCardClick={onCardClick} // <-- Ajout de la prop
+                      isActive={activeCardIndex === index}
                     />
                   ) : (
                     <div className="w-full h-full rounded-2xl p-4 flex flex-col justify-between bg-sprint-light-surface dark:bg-sprint-dark-surface/50 animate-pulse">
