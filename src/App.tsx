@@ -13,12 +13,12 @@ import SideMenu from './components/navigation/SideMenu.tsx';
 import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
 import { usePushNotifications } from './hooks/usePushNotifications.tsx';
 
-type Tab = 'accueil' | 'planning' | 'nutrition' | 'sprinty';
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
 
 const viewTitles: Record<string, string> = {
   '/': 'Accueil',
   '/profile': 'Mon Profil',
-  '/groups': 'Mon Groupe',
+  '/groups': 'Mes Suivis',
   '/workouts': 'Calendrier',
   '/planning': 'Planning',
   '/planning/new': 'Nouvelle Séance',
@@ -41,6 +41,7 @@ const viewTitles: Record<string, string> = {
 const pathToTab = (path: string): Tab => {
   if (path.startsWith('/planning')) return 'planning';
   if (path.startsWith('/nutrition')) return 'nutrition';
+  if (path.startsWith('/groups')) return 'groupes';
   if (path.startsWith('/sprinty')) return 'sprinty';
   if (path === '/') return 'accueil';
   return 'accueil'; // Onglet par défaut
@@ -68,6 +69,7 @@ function App() {
       case 'accueil': navigate('/'); break;
       case 'planning': navigate('/planning'); break;
       case 'nutrition': navigate('/nutrition'); break;
+      case 'groupes': navigate('/groups'); break;
       case 'sprinty': navigate('/sprinty'); break;
     }
   };
@@ -76,7 +78,7 @@ function App() {
     navigate('/records/new');
   };
   
-  const showTabBar = ['/', '/planning', '/nutrition', '/sprinty', '/records'].includes(currentPath);
+  const showTabBar = ['/', '/planning', '/nutrition', '/groups', '/sprinty', '/records'].includes(currentPath);
 
   return (
     <div className={`min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary ${isSprintyPage ? 'flex flex-col' : ''}`}>
@@ -100,6 +102,7 @@ function App() {
           onFabClick={handleFabClick}
           showPlanningNotification={false}
           showCoachNotification={true}
+          userRole={profile?.role}
         />
       )}
       <SideMenu
