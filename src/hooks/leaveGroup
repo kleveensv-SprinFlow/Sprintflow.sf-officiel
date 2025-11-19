@@ -1,0 +1,22 @@
+const leaveGroup = async (groupId: string) => {
+  const { error } = await supabase.rpc('leave_group', {
+    group_id_param: groupId,
+  });
+  if (error) throw error;
+  // Mise à jour locale : retirer le groupe quitté
+  setGroups(prev => prev.filter(g => g.id !== groupId));
+};
+
+return {
+  groups,
+  loading,
+  error,
+  coachAthletes,
+  createGroup,
+  deleteGroup,
+  fetchGroups,
+  fetchJoinRequests,
+  respondToRequest,
+  joinGroupWithCode,
+  leaveGroup, // <-- Ajoute cette ligne
+};
