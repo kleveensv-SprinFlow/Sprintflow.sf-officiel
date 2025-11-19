@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Calendar, Apple, Plus, BrainCircuit } from 'lucide-react';
+import { Home, Calendar, Apple, Plus, BrainCircuit, Users } from 'lucide-react';
 
-type Tab = 'accueil' | 'planning' | 'nutrition' | 'sprinty';
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
 
 interface TabBarProps {
   activeTab: Tab;
@@ -10,14 +10,8 @@ interface TabBarProps {
   onFabClick: () => void;
   showPlanningNotification?: boolean;
   showCoachNotification?: boolean;
+  userRole?: 'athlete' | 'coach';
 }
-
-const tabs = [
-  { id: 'accueil', label: 'Accueil', Icon: Home },
-  { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
-  { id: 'nutrition', label: 'Nutrition', Icon: Apple },
-  { id: 'sprinty', label: 'Sprinty', Icon: BrainCircuit, notification: 'showCoachNotification' },
-];
 
 const TabBar: React.FC<TabBarProps> = ({
   activeTab,
@@ -25,7 +19,25 @@ const TabBar: React.FC<TabBarProps> = ({
   onFabClick,
   showPlanningNotification = false,
   showCoachNotification = false,
+  userRole = 'athlete',
 }) => {
+  // Configuration pour les athlètes
+  const athleteTabs = [
+    { id: 'accueil', label: 'Accueil', Icon: Home },
+    { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
+    { id: 'nutrition', label: 'Nutrition', Icon: Apple },
+    { id: 'sprinty', label: 'Sprinty', Icon: BrainCircuit, notification: 'showCoachNotification' },
+  ];
+
+  // Configuration pour les coachs
+  const coachTabs = [
+    { id: 'accueil', label: 'Accueil', Icon: Home },
+    { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
+    { id: 'groupes', label: 'Groupes', Icon: Users },
+    { id: 'sprinty', label: 'Sprinty', Icon: BrainCircuit, notification: 'showCoachNotification' },
+  ];
+
+  const tabs = userRole === 'coach' ? coachTabs : athleteTabs;
   const notificationStatus = { showPlanningNotification, showCoachNotification };
 
   const renderTab = (tab: typeof tabs[0]) => {
@@ -66,7 +78,6 @@ const TabBar: React.FC<TabBarProps> = ({
             strokeWidth={isActive ? 2.5 : 2}
           />
         </motion.div>
-        {/* Pas de label : le nom de la page est affiché dans l’en-tête */}
       </button>
     );
   };
@@ -75,7 +86,7 @@ const TabBar: React.FC<TabBarProps> = ({
     <div className="fixed bottom-0 left-0 right-0 z-50 h-[84px] p-2">
       <div className="relative flex h-full w-full items-center justify-around rounded-2xl border border-white/10 bg-sprint-light-surface/70 dark:bg-sprint-dark-surface/70 backdrop-blur-2xl">
         {tabs.slice(0, 2).map(renderTab)}
-        <div className="w-16"></div> {/* Espace pour le bouton central flottant */}
+        <div className="w-16"></div>
         {tabs.slice(2, 4).map(renderTab)}
         <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[5%] transform">
           <motion.button
