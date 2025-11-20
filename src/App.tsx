@@ -92,8 +92,11 @@ function App() {
           onHomeClick={() => navigate('/')}
         />
       )}
-      <main className={`${isSprintyPage ? 'flex-1 overflow-hidden' : 'pt-16 px-4 pb-24'}`}>
-        <Outlet />
+      <main className={`${isSprintyPage ? 'flex-1 overflow-hidden' : 'pt-0 pb-[100px] min-h-screen'}`}>
+        {!isSprintyPage && <div className="h-16" />} {/* Espace pour le header fixe */}
+        <div className="px-4">
+          <Outlet />
+        </div>
       </main>
       {showTabBar && (
         <TabBar
