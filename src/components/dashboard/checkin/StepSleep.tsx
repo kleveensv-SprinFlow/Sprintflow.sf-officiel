@@ -23,7 +23,6 @@ export const StepSleep: React.FC<StepSleepProps> = ({
   setSleepQuality
 }) => {
   
-  // Helper for sleep quality description
   const getQualityLabel = (val: number) => {
     if (val >= 80) return "Excellent";
     if (val >= 60) return "Bon";
@@ -32,7 +31,6 @@ export const StepSleep: React.FC<StepSleepProps> = ({
     return "Mauvais";
   };
 
-  // Helper for quality color
   const getQualityColor = (val: number) => {
     if (val >= 80) return "text-green-500";
     if (val >= 60) return "text-emerald-500";
@@ -43,8 +41,6 @@ export const StepSleep: React.FC<StepSleepProps> = ({
 
   return (
     <div className="space-y-8">
-      
-      {/* Time Pickers */}
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-white/5 dark:bg-white/5 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
           <PickerWheel label="Coucher" value={bedtime} onChange={setBedtime} type="time" />
@@ -54,12 +50,10 @@ export const StepSleep: React.FC<StepSleepProps> = ({
         </div>
       </div>
 
-      {/* Duration Gauge */}
       <div className="flex justify-center">
         <SleepDurationGauge sleepDuration={sleepDuration} />
       </div>
 
-      {/* Quality Slider */}
       <div className="space-y-3">
         <div className="flex justify-between items-end px-2">
           <label className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qualité du sommeil</label>
@@ -85,7 +79,6 @@ export const StepSleep: React.FC<StepSleepProps> = ({
           </motion.div>
         </div>
       </div>
-
     </div>
   );
 };
