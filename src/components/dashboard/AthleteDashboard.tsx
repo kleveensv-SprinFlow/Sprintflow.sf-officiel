@@ -1,33 +1,54 @@
-import React from 'react';
+import React, { useState } from 'react';
 import IndicesPanel from './IndicesPanel';
 import { AthleteDailyPlanCarousel } from './AthleteDailyPlanCarousel';
 import { StrengthRecordsCarousel } from './StrengthRecordsCarousel';
 import { TrackRecordsCarousel } from './TrackRecordsCarousel';
-import { SkeletonDashboard } from '../common/Skeleton';
+import { useIndices } from '../../hooks/useIndices';
+import { CheckinModal } from './CheckinModal';
+import { useWellness } from '../../hooks/useWellness';
 import useAuth from '../../hooks/useAuth';
 
 const AthleteDashboard: React.FC = () => {
-  const { loading } = useAuth();
-  
-  if (loading) {
-    // Si le profil charge encore (cas rare avec Cache-First mais possible)
-    return <SkeletonDashboard />;
-  }
-  // Mock data for demonstration purposes
-  const indices = {
-    form: 75,
-    weightPowerRatio: 82,
+  const { formIndex, performanceIndex, loading: indicesLoading, refresh } = useIndices();
+  const { user } = useAuth();
+  const { wellnessData, refresh: refreshWellness } = useWellness(user?.id);
+  const [isCheckinModalOpen, setIsCheckinModalOpen] = useState(false);
+
+  const today = new Date().toISOString().split('T')[0];
+  const isCheckinDone = wellnessData?.some(log => log.date === today && log.ressenti_sommeil !== null);
+
+  const handleCheckinClick = () => {
+      if (!isCheckinDone) {
+          setIsCheckinModalOpen(true);
+      }
+  };
+
+  const handleCheckinSuccess = () => {
+      refreshWellness();
+      refresh(); // Refresh indices after check-in
+      setIsCheckinModalOpen(false);
   };
 
   return (
-    <div className="space-y-8">
-      <IndicesPanel
-        formIndex={indices.form}
-        weightPowerRatio={indices.weightPowerRatio}
-      />
+    <div className="space-y-8 pb-24">
+      {/* Wrap IndicesPanel in a click handler for the check-in if locked */}
+      <div onClick={!isCheckinDone ? handleCheckinClick : undefined} className={!isCheckinDone ? "cursor-pointer" : ""}>
+          <IndicesPanel
+            formIndex={formIndex}
+            performanceIndex={performanceIndex}
+            loading={indicesLoading}
+          />
+      </div>
+      
       <AthleteDailyPlanCarousel />
       <StrengthRecordsCarousel />
       <TrackRecordsCarousel />
+
+      <CheckinModal 
+        isOpen={isCheckinModalOpen} 
+        onClose={() => setIsCheckinModalOpen(false)}
+        onSuccess={handleCheckinSuccess}
+      />
     </div>
   );
 };
