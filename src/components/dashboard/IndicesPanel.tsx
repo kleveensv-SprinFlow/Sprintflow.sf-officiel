@@ -175,4 +175,26 @@ const IndicesPanel: React.FC<IndicesPanelProps> = ({
   weightPowerRatio = 0,
   formTrend,
   weightPowerTrend,
-})
+}) => {
+  return (
+    <div className="flex flex-col md:flex-row gap-4">
+      <Gauge
+        value={formIndex}
+        label="Indice de forme"
+        unit="%"
+        trend={formTrend}
+        description="Synthèse de ton état de forme actuel selon tes dernières séances et ta charge globale."
+      />
+
+      <Gauge
+        value={weightPowerRatio}
+        label="Rapport poids/puissance"
+        unit="%"
+        trend={weightPowerTrend}
+        description="Indique comment ton poids actuel impacte ta capacité à produire de la puissance."
+      />
+    </div>
+  );
+};
+
+export default IndicesPanel;
