@@ -31,14 +31,13 @@ const AthleteDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-24">
-      {/* Wrap IndicesPanel in a click handler for the check-in if locked */}
-      <div onClick={!isCheckinDone ? handleCheckinClick : undefined} className={!isCheckinDone ? "cursor-pointer" : ""}>
-          <IndicesPanel
-            formIndex={formIndex}
-            performanceIndex={performanceIndex}
-            loading={indicesLoading}
-          />
-      </div>
+      {/* Pass handleCheckinClick specifically to the IndicesPanel for the Form card */}
+      <IndicesPanel
+        formIndex={formIndex}
+        performanceIndex={performanceIndex}
+        loading={indicesLoading}
+        onFormCheckinClick={handleCheckinClick}
+      />
       
       <AthleteDailyPlanCarousel />
       <StrengthRecordsCarousel />
