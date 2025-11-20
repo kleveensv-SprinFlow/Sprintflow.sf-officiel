@@ -1,80 +1,101 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Lock, TrendingUp, Activity, Zap } from 'lucide-react';
+import { useWellness } from '../../hooks/useWellness';
+import useAuth from '../../hooks/useAuth';
 
-interface GaugeProps {
-  value: number;
-  color: string;
-  label: string;
+interface IndicesPanelProps {
+  formIndex: number;
+  performanceIndex: number;
+  loading?: boolean;
 }
 
-const Gauge: React.FC<GaugeProps> = ({ value, color, label }) => {
-  const normalized = Math.max(0, Math.min(100, value));
-  const radius = 48;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - normalized / 100);
-
+const AnimatedNumber = ({ value }: { value: number }) => {
   return (
-    <div className="flex-1 bg-sprint-light-card dark:bg-sprint-dark-card p-4 rounded-2xl shadow-md">
-      <h3 className="text-sm font-medium text-sprint-light-text-primary dark:text-sprint-dark-text-primary mb-4">
-        {label}
-      </h3>
-      <div className="relative w-full flex justify-center items-center">
-        <svg width={120} height={120} className="transform -rotate-90">
-          <circle
-            cx="60"
-            cy="60"
-            r={radius}
-            stroke="#E5E7EB"
-            strokeWidth="10"
-            fill="transparent"
-          />
-          <motion.circle
-            cx="60"
-            cy="60"
-            r={radius}
-            stroke={color}
-            strokeWidth="10"
-            strokeLinecap="round"
-            fill="transparent"
-            strokeDasharray={`${circumference} ${circumference}`}
-            strokeDashoffset={offset}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 0.8, ease: 'easeInOut' }}
-          />
-        </svg>
-        <span className="absolute text-2xl font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
-          {Math.round(normalized)}
-        </span>
-      </div>
-    </div>
+    <motion.span
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white to-white/70 dark:from-white dark:to-white/70"
+    >
+      {value}
+    </motion.span>
   );
 };
 
-interface IndicesPanelProps {
-  formIndex?: number;
-  weightPowerRatio?: number;
-}
+const GlassCard = ({ children, className = '', onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) => (
+  <div 
+    onClick={onClick}
+    className={`relative overflow-hidden rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl ${className}`}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+    {children}
+  </div>
+);
 
-/**
- * Panneau qui affiche les deux indices côte à côte.
- */
 const IndicesPanel: React.FC<IndicesPanelProps> = ({
-  formIndex = 0,
-  weightPowerRatio = 0,
+  formIndex,
+  performanceIndex,
+  loading = false,
 }) => {
+  const { user } = useAuth();
+  const { wellnessData } = useWellness(user?.id);
+  
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  
+  // Check if today's check-in is done
+  const isCheckinDone = useMemo(() => 
+    wellnessData?.some(log => log.date === today && log.ressenti_sommeil !== null) || false,
+    [wellnessData, today]
+  );
+
   return (
-    <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-      <Gauge
-        value={formIndex}
-        color="#22C55E"
-        label="Indice de forme"
-      />
-      <Gauge
-        value={weightPowerRatio}
-        color="#F97316"
-        label="Rapport poids/puissance"
-      />
+    <div className="grid grid-cols-2 gap-4 w-full">
+      {/* Left Card: Form Index */}
+      <GlassCard className={`h-40 flex flex-col justify-between p-5 transition-all duration-300 ${!isCheckinDone ? 'brightness-75' : ''}`}>
+        {!isCheckinDone ? (
+           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 backdrop-blur-sm z-10 text-center p-2">
+             <Lock className="w-8 h-8 text-white/80 mb-2" />
+             <span className="text-xs font-medium text-white/90">Check-in requis</span>
+           </div>
+        ) : null}
+
+        <div className="flex justify-between items-start z-0">
+            <div className="p-2 rounded-full bg-green-500/20 backdrop-blur-sm">
+                <Activity className="w-5 h-5 text-green-400" />
+            </div>
+            {isCheckinDone && <TrendingUp className="w-4 h-4 text-green-400/70" />}
+        </div>
+
+        <div className="mt-2 z-0">
+            <div className="text-sm font-medium text-white/60 mb-1">État de Forme</div>
+            <div className="flex items-end gap-2">
+                 {isCheckinDone ? (
+                    <AnimatedNumber value={formIndex} />
+                 ) : (
+                    <span className="text-4xl font-bold text-white/20">--</span>
+                 )}
+                 <span className="text-xs text-white/40 mb-2">/100</span>
+            </div>
+        </div>
+      </GlassCard>
+
+      {/* Right Card: Performance Index */}
+      <GlassCard className="h-40 flex flex-col justify-between p-5 bg-gradient-to-br from-orange-500/10 to-red-500/5">
+        <div className="flex justify-between items-start">
+             <div className="p-2 rounded-full bg-orange-500/20 backdrop-blur-sm">
+                <Zap className="w-5 h-5 text-orange-400" />
+            </div>
+        </div>
+
+        <div className="mt-2">
+             <div className="text-sm font-medium text-white/60 mb-1">Poids / Puissance</div>
+             <div className="flex items-end gap-2">
+                <AnimatedNumber value={performanceIndex} />
+                <span className="text-xs text-white/40 mb-2">/100</span>
+             </div>
+        </div>
+      </GlassCard>
     </div>
   );
 };
