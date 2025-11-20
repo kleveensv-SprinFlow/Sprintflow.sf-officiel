@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckinWizard } from './checkin/CheckinWizard.tsx';
 
@@ -9,6 +9,19 @@ interface CheckinModalProps {
 }
 
 export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleDragEnd = (event: any, info: any) => {
