@@ -5,6 +5,7 @@ import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
 const PROFILE_COLS = 'id,full_name,first_name,last_name,email,role,photo_url,sprinty_mode,discipline,sexe,date_de_naissance,license_number,role_specifique,onboarding_completed,preferred_language';
+const PROFILE_CACHE_KEY = 'sprintflow_profile_cache';
 
 interface AuthState {
   session: Session | null;
@@ -93,6 +94,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         logger.error('[useAuth] Profil null retourné par Supabase pour l\'utilisateur:', userId);
         logger.error('[useAuth] Cela peut indiquer un problème de permissions RLS ou un profil manquant.');
         return null;
+      }
+
+      // Mise en cache du profil
+      try {
+        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+      } catch (e) {
+        logger.warn('[useAuth] Impossible de mettre en cache le profil:', e);
       }
 
       logger.info('[useAuth] Profil chargé avec succès:', { id: profile.id, role: profile.role, name: profile.full_name });
@@ -221,6 +229,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         logger.info('[useAuth] Initialisation de l\'authentification');
 
+        // 1. Récupération synchrone de la session (Supabase le fait déjà localement)
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -230,23 +239,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!isMountedRef.current) return;
 
         const currentUser = session?.user ?? null;
+        
+        // --- STRATÉGIE CACHE-FIRST ---
+        if (currentUser) {
+          // Essayer de charger le profil depuis le cache local immédiatement
+          try {
+            const cachedProfileStr = localStorage.getItem(PROFILE_CACHE_KEY);
+            if (cachedProfileStr) {
+              const cachedProfile = JSON.parse(cachedProfileStr) as Profile;
+              // Vérification basique que le profil correspond à l'utilisateur
+              if (cachedProfile.id === currentUser.id) {
+                logger.info('[useAuth] ⚡ Profil chargé depuis le cache ! Affichage immédiat.');
+                setAuthState(createAuthState(session, currentUser, cachedProfile, true, true));
+              }
+            }
+          } catch (e) {
+            logger.warn('[useAuth] Erreur lecture cache profil:', e);
+          }
+        }
+        // -----------------------------
+
         let currentProfile: Profile | null = null;
 
         if (currentUser) {
-          logger.info('[useAuth] Utilisateur authentifié détecté:', { id: currentUser.id, email: currentUser.email });
+          logger.info('[useAuth] Utilisateur authentifié détecté, chargement frais du profil:', { id: currentUser.id });
+          
+          // On charge le profil frais depuis le serveur (en background si le cache a déjà permis d'afficher l'UI)
           currentProfile = await loadProfile(currentUser.id);
 
           if (!currentProfile) {
-            logger.warn('[useAuth] Le profil n\'a pas pu être chargé. L\'utilisateur verra ProfileLoadError.');
+            logger.warn('[useAuth] Le profil n\'a pas pu être chargé depuis le serveur.');
           }
         } else {
           logger.info('[useAuth] Aucun utilisateur authentifié trouvé.');
+          // Nettoyage du cache si pas d'utilisateur
+          localStorage.removeItem(PROFILE_CACHE_KEY);
         }
 
         if (!isMountedRef.current) return;
 
+        // Mise à jour avec les données fraîches (ou initialisation si pas de cache)
         setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
-        logger.info('[useAuth] Initialisation terminée. User:', !!currentUser, 'Profile:', !!currentProfile);
+        logger.info('[useAuth] Initialisation terminée (Données fraîches). User:', !!currentUser, 'Profile:', !!currentProfile);
+
       } catch (error) {
         logger.error('[useAuth] Erreur critique lors de l\'initialisation:', error);
         if (isMountedRef.current) {
