@@ -31,7 +31,7 @@ export const SprintyAdvice: React.FC<SprintyAdviceProps> = ({ step, data }) => {
     fetchAdvice();
 
     return () => { isMounted = false; };
-  }, [step]); // We could add 'data' dependency if we want real-time updates as user types, but simple step change is safer for rate limits.
+  }, [step]);
 
   return (
     <div className="flex items-start space-x-3 mb-6 p-1">
