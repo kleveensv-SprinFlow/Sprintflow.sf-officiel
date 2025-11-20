@@ -1,33 +1,44 @@
-// MODIFICATION 1 : La bulle elle-même (le conteneur du message)
-const bubbleContentClasses = `px-4 py-2.5 rounded-xl 
-    ${
-      isUser
-        // Bulle Utilisateur : On garde l'arrondi et on le retire SEULEMENT sur le coin bas-droit (le coin près du locuteur)
-        ? 'bg-sprint-accent text-white rounded-br-none'
-        // Bulle Sprinty : On garde l'arrondi et on le retire SEULEMENT sur le coin bas-gauche
-        : 'bg-sprint-light-surface/90 dark:bg-sprint-dark-surface-secondary text-sprint-dark-text rounded-bl-none' 
-    }
-  `;
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
 
-// MODIFICATION 2 : L'ancien code de votre composant n'utilisait pas de bulle générale, mais l'appliquait directement :
+interface MessageBubbleProps {
+  message: {
+    id: string;
+    text: string;
+    sender: 'user' | 'sprinty';
+    component?: React.ReactNode;
+  };
+}
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
-  const isUser = message.sender === 'user';
-  
-  // Bulle Content Styling: Color, Corners, and Padding
-  const bubbleContentClasses = `px-4 py-2.5 rounded-xl // <-- FORCER L'ARRONDI ICI
-    ${
-      isUser
-        // Utilisation de rounded-xl (plus sûr que 2xl) et suppression du coin bas-droit pour la queue
-        ? 'bg-sprint-accent text-white rounded-br-none'
-        // Suppression du coin bas-gauche pour la queue
-        : 'bg-sprint-light-surface/90 dark:bg-sprint-dark-surface-secondary text-sprint-dark-text rounded-bl-none' 
-    }
-  `;
+  const isUser = message.sender === 'user';
 
-  return (
-    // ... reste du code ...
-    // Le reste de la logique reste le même
-    // ...
-  );
+  return (
+    <div
+      className={`rounded-2xl max-w-md md:max-w-lg ${
+        isUser ? '' : 'shadow-md'
+      }`}
+    >
+      {message.text && (
+        <div
+          className={`px-4 py-3 ${
+            isUser
+              ? 'bg-blue-500 text-white rounded-2xl rounded-br-lg'
+              : 'bg-gray-200 dark:bg-gray-700 text-light-text dark:text-dark-text rounded-2xl rounded-bl-lg'
+          }`}
+        >
+          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-0">
+            <ReactMarkdown>{message.text}</ReactMarkdown>
+          </div>
+        </div>
+      )}
+      {message.component && (
+        <div className="mt-2">
+          {message.component}
+        </div>
+      )}
+    </div>
+  );
 };
+
+export default MessageBubble;
