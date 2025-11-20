@@ -4,7 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
-const PROFILE_COLS = 'id,full_name,first_name,last_name,role,photo_url,sprinty_mode,email,discipline,sexe';
+const PROFILE_COLS = 'id,full_name,first_name,last_name,email,role,photo_url,sprinty_mode,discipline,sexe,date_de_naissance,license_number,role_specifique,onboarding_completed,preferred_language';
 
 interface AuthState {
   session: Session | null;
@@ -53,10 +53,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     logger.info('[useAuth] Début du chargement du profil pour:', userId);
-    logger.info('[useAuth] Colonnes demandées:', PROFILE_COLUMNS);
+    logger.info('[useAuth] Colonnes demandées:', PROFILE_COLS);
 
     try {
-      // Créer un timeout de 15 secondes pour détecter les requêtes bloquées
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
           reject(new Error('Timeout: La requête Supabase n\'a pas répondu dans les 15 secondes'));
@@ -172,9 +171,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
       if (!data.user) throw new Error('Aucun utilisateur créé');
-
-      // Le profil sera créé automatiquement par le trigger handle_new_user
-      // Pas besoin de l'insérer manuellement
 
       return data;
     } catch (error) {
