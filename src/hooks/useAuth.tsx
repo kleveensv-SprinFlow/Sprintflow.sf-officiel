@@ -50,6 +50,12 @@ const createAuthState = (session: Session | null, user: User | null, profile: Pr
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authState, setAuthState] = useState<AuthState>(createEmptyAuthState());
   const isMountedRef = useRef(true);
+  const profileRef = useRef<Profile | null>(null);
+
+  // Update ref whenever state changes to access the latest profile in closures
+  useEffect(() => {
+    profileRef.current = authState.profile;
+  }, [authState.profile]);
 
   const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     logger.info('[useAuth] Début du chargement du profil pour:', userId);
@@ -109,7 +115,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const profile = await loadProfile(authState.user.id);
       if (isMountedRef.current) {
-        setAuthState(prev => createAuthState(prev.session, prev.user, profile, prev.isInitialized, true));
+        // If reload failed but we had a profile, we might want to keep it?
+        // But refreshProfile is explicit action. If it fails, we probably should let the user know or keep old one.
+        // Current behavior: update if we got something, or null if failed.
+        // Let's make it safer: if profile is null (error), keep old one?
+        // Standard behavior usually implies if refresh fails, you keep stale data.
+        
+        if (profile) {
+           setAuthState(prev => createAuthState(prev.session, prev.user, profile, prev.isInitialized, true));
+        } else {
+           logger.warn('[useAuth] Refresh failed, keeping existing profile.');
+        }
       }
     } catch (e) {
       logger.error('[useAuth] Erreur lors du rafraîchissement:', e);
@@ -247,21 +263,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       logger.info('[useAuth] Événement auth:', event);
 
       const currentUser = session?.user ?? null;
-      let currentProfile: Profile | null = null;
+
+      // Optimization: Skip reload on TOKEN_REFRESHED if we have a valid profile for this user
+      if (event === 'TOKEN_REFRESHED' &&
+          profileRef.current &&
+          currentUser &&
+          profileRef.current.id === currentUser.id) {
+        logger.info('[useAuth] TOKEN_REFRESHED: Profil déjà chargé et correspondant, on saute le rechargement.');
+        // We only update the session and user to stay fresh
+        setAuthState(prev => ({
+          ...prev,
+          session,
+          user: currentUser
+        }));
+        return;
+      }
 
       if (currentUser) {
         logger.info('[useAuth] Chargement du profil suite à l\'événement auth:', event);
-        currentProfile = await loadProfile(currentUser.id);
+        const loadedProfile = await loadProfile(currentUser.id);
 
-        if (!currentProfile) {
+        if (!isMountedRef.current) return;
+
+        if (loadedProfile) {
+          // Success: update everything
+          setAuthState(createAuthState(session, currentUser, loadedProfile, true, true));
+        } else {
+          // Failure: decide whether to keep existing profile or not
           logger.warn('[useAuth] Le profil n\'a pas pu être chargé après l\'événement:', event);
+          
+          setAuthState(prev => {
+             // If we have a previous profile and the user ID is the same, keep it!
+             // This prevents logging out user on transient network errors
+             if (prev.profile && prev.user?.id === currentUser.id) {
+                 logger.info('[useAuth] Conservation du profil existant malgré l\'échec du chargement.');
+                 // We DO update the session/user in case they changed (e.g. token refresh)
+                 return createAuthState(session, currentUser, prev.profile, true, true);
+             }
+             // If no previous profile, we are truly stuck without profile
+             return createAuthState(session, currentUser, null, true, true);
+          });
         }
+      } else {
+        // Signed out
+        setAuthState(createAuthState(session, currentUser, null, true, true));
       }
-
-      if (!isMountedRef.current) return;
-
-      setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
-      logger.info('[useAuth] État mis à jour après événement. User:', !!currentUser, 'Profile:', !!currentProfile);
+      
+      logger.info('[useAuth] État mis à jour après événement.');
     });
 
     return () => {
