@@ -1,4 +1,83 @@
-e') {
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import useAuth from './useAuth';
+import { Workout } from '../types';
+import { logger } from '../utils/logger';
+
+type Selection =
+  | {
+      type: 'athlete' | 'group';
+      id: string;
+    }
+  | null;
+
+export function useWorkouts(selection?: Selection) {
+  const { user, profile, loading: authLoading } = useAuth();
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchWorkouts = useCallback(async () => {
+    logger.info('🏋️ [useWorkouts] Début chargement workouts');
+    logger.debug(
+      '🏋️ [useWorkouts] Profile role:',
+      profile?.role,
+      'Selection:',
+      selection
+    );
+
+    // 1) Attendre que l'auth soit prête
+    if (authLoading) {
+      logger.info(
+        "🏋️ [useWorkouts] ⏳ En attente de l'initialisation auth complète..."
+      );
+      setLoading(true);
+      return;
+    }
+
+    // 2) Pas d'utilisateur connecté → rien à charger
+    if (!user) {
+      logger.warn("🏋️ [useWorkouts] 🚫 Pas d'utilisateur connecté");
+      setWorkouts([]);
+      setLoading(false);
+      return;
+    }
+
+    // 3) Profil non chargé → on arrête proprement
+    if (!profile) {
+      logger.warn(
+        '🏋️ [useWorkouts] ⚠️ Profil non disponible après initialisation auth'
+      );
+      setWorkouts([]);
+      setLoading(false);
+      return;
+    }
+
+    // 4) Coach sans sélection (athlète/groupe) → rien à afficher
+    if (profile.role === 'coach' && !selection) {
+      logger.info('🏋️ [useWorkouts] Coach sans sélection, skip');
+      setWorkouts([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      logger.info('🏋️ [useWorkouts] Chargement pour utilisateur:', user.id);
+
+      let query = supabase.from('workouts').select('*');
+
+      if (profile.role === 'coach' && selection) {
+        // Mode coach : on filtre soit par athlète, soit par groupe
+        logger.info(
+          '🏋️ [useWorkouts] Chargement pour coach, sélection:',
+          selection.type,
+          selection.id
+        );
+
+        if (selection.type === 'athlete') {
           query = query.eq('user_id', selection.id);
         } else if (selection.type === 'group') {
           query = query.eq('assigned_to_group_id', selection.id);
