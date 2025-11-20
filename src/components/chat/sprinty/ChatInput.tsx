@@ -14,8 +14,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   // Logique d'auto-redimensionnement du textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Réinitialiser la hauteur
-      // Limiter la hauteur maximale (env. 5 lignes) pour ne pas cacher tout l'écran
+      textareaRef.current.style.height = 'auto';
       const newHeight = Math.min(textareaRef.current.scrollHeight, 120); 
       textareaRef.current.style.height = `${newHeight}px`;
     }
@@ -30,14 +29,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
     onSend(text);
     setValue('');
     
-    // Réinitialiser la hauteur après l'envoi
     if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Soumettre sur Entrée, seulement si Shift n'est PAS pressé (permet Shift+Enter pour nouvelle ligne)
+    // Soumettre sur Entrée, seulement si Shift n'est PAS pressé
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -49,15 +47,17 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      // Changement: gap-2 est maintenu, mais le slot de l'avatar est retiré.
-      className="flex w-full items-end gap-2 rounded-2xl border border-white/10 bg-sprint-dark-surface/90 backdrop-blur-lg p-3 shadow-2xl"
+      // CORRECTION 1: Changement de 'items-end' à 'items-center' pour un centrage vertical propre.
+      // CORRECTION 2: Réduction du padding général (px-3 py-2.5) pour une barre plus compacte.
+      className="flex w-full items-center gap-2 rounded-2xl border border-white/10 bg-sprint-dark-surface/90 backdrop-blur-lg px-3 py-2.5 shadow-2xl"
     >
       
       {/* Zone de Saisie Multi-ligne */}
       <textarea
         ref={textareaRef}
-        rows={1} // Commence sur une ligne
-        className="flex-1 resize-none overflow-y-hidden bg-transparent outline-none text-white placeholder-gray-400 text-base leading-snug pt-2 pb-1"
+        rows={1}
+        // CORRECTION 3: Ajustement du padding vertical dans le textarea (py-1 pour centrage)
+        className="flex-1 resize-none overflow-y-hidden bg-transparent outline-none text-white placeholder-gray-400 text-base leading-snug py-1"
         placeholder="Écrivez votre question ici..."
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -69,7 +69,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
       <motion.button
         type="submit"
         disabled={isSendDisabled}
-        // Utilisation de la couleur d'accentuation pour le fond du bouton
+        // L'alignement 'items-center' de la forme gère désormais l'alignement vertical du bouton.
         className={`flex items-center justify-center rounded-full w-10 h-10 transition duration-200 ease-in-out ${
           isSendDisabled 
             ? 'bg-gray-500 opacity-60 cursor-not-allowed' 
