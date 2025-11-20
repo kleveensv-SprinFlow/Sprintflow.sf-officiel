@@ -27,10 +27,25 @@ export default function Header({
 }: HeaderProps) {
   const { profile } = useAuth();
   const isAthlete = userRole === 'athlete';
+  const [isScrolled, setIsScrolled] = useState(false);
   const [isWelcomeVisible, setWelcomeVisible] = useState(showWelcomeMessage && isDashboard);
   const [displayText, setDisplayText] = useState(
     isWelcomeVisible ? `Bienvenue ${profile?.first_name || 'Athlète'}` : title,
   );
+
+  // Gestion du scroll pour l'effet "Glassmorphism" progressif
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Affiche un message de bienvenue uniquement sur le tableau de bord
   useEffect(() => {
@@ -71,7 +86,11 @@ export default function Header({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.3 }}
-        className="absolute text-lg font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary whitespace-nowrap truncate"
+        className={`text-[17px] font-semibold tracking-tight whitespace-nowrap truncate transition-colors duration-300 ${
+           isScrolled 
+             ? 'text-sprint-light-text-primary dark:text-white' 
+             : 'text-sprint-light-text-primary dark:text-white'
+        }`}
       >
         {textContent}
       </motion.h1>
@@ -83,41 +102,69 @@ export default function Header({
   const showAvatar = isDashboard || isAthlete;
 
   return (
-    <header className="sticky top-0 z-30 bg-sprint-light-surface/60 dark:bg-sprint-dark-surface/60 backdrop-blur-lg">
-      <div className="px-4 py-3 flex items-center justify-between min-w-0">
+    <header
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ease-in-out ${
+        isScrolled
+          ? 'bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/5 py-3'
+          : 'bg-transparent border-b border-transparent py-4'
+      }`}
+    >
+      <div className="px-4 flex items-center justify-between min-w-0">
+        {/* Partie Gauche */}
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
           {showBadge ? (
-            // Badge de niveau à gauche
-            <div className="p-2">
-              <LevelBadge level={0} />
+            <div className="origin-left scale-90">
+               <LevelBadge level={0} />
             </div>
           ) : canGoBack ? (
-            <button onClick={onBack} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <ChevronLeft className="h-6 w-6 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
+            <button 
+              onClick={onBack} 
+              className={`p-2 -ml-2 rounded-full transition-colors ${
+                isScrolled 
+                  ? 'hover:bg-black/5 dark:hover:bg-white/10' 
+                  : 'bg-white/10 backdrop-blur-md hover:bg-white/20 shadow-sm'
+              }`}
+            >
+              <ChevronLeft className="h-6 w-6 text-current" strokeWidth={1.5} />
             </button>
           ) : !isDashboard ? (
-            <button onClick={onHomeClick} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <Home className="h-6 w-6 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
+            <button 
+              onClick={onHomeClick} 
+              className={`p-2 -ml-2 rounded-full transition-colors ${
+                isScrolled 
+                  ? 'hover:bg-black/5 dark:hover:bg-white/10' 
+                  : 'bg-white/10 backdrop-blur-md hover:bg-white/20 shadow-sm'
+              }`}
+            >
+              <Home className="h-5 w-5 text-current" strokeWidth={1.5} />
             </button>
           ) : (
-            <div className="p-2">
-              <LevelBadge level={0} />
+             <div className="origin-left scale-90">
+               <LevelBadge level={0} />
             </div>
           )}
         </div>
-        <div className="flex-1 flex justify-center min-w-0 h-6 relative">
+
+        {/* Titre Central */}
+        <div className="flex-1 flex justify-center min-w-0 h-6 relative overflow-hidden">
           <AnimatePresence mode="wait">{renderText()}</AnimatePresence>
         </div>
+
+        {/* Partie Droite (Avatar / Menu) */}
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">
           {showAvatar && (
             <button
               onClick={onProfileClick}
-              className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-sprint-dark-surface flex items-center justify-center"
+              className={`relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/10 transition-transform active:scale-95 ${
+                !isScrolled ? 'shadow-lg' : ''
+              }`}
             >
               {profile?.photo_url ? (
-                <img src={profile.photo_url} alt="Photo de profil" className="w-full h-full object-cover" />
+                <img src={profile.photo_url} alt="Profil" className="w-full h-full object-cover" />
               ) : (
-                <UserIcon className="w-5 h-5 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
+                <div className="w-full h-full bg-gray-100 dark:bg-white/10 flex items-center justify-center">
+                   <UserIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" strokeWidth={1.5} />
+                </div>
               )}
             </button>
           )}
