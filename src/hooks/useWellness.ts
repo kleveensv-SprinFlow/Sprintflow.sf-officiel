@@ -8,6 +8,9 @@ export type WellnessLog = {
   ressenti_sommeil: number | null;
   stress_level: number | null;
   muscle_fatigue: number | null;
+  energie_subjective: number | null;
+  humeur_subjective: number | null;
+  menstruations: boolean | null;
   heure_coucher: string | null;
   heure_lever: string | null;
   duree_sommeil_calculee: number | null;
