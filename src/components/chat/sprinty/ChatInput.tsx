@@ -2,18 +2,6 @@ import React, { useState, KeyboardEvent, FormEvent, useRef, useEffect } from 're
 import { motion } from 'framer-motion';
 import { Send } from 'lucide-react';
 
-// --- PLACEHOLDER ---
-// Ce composant placeholder sera remplacé par le véritable SprintyAvatar (qui gère l'animation)
-const SprintyAvatarPlaceholder = () => (
-  <div className="flex-shrink-0 pt-2 flex items-start">
-    <div className="h-8 w-8 rounded-full bg-sprint-accent/20 flex items-center justify-center">
-      {/* Placeholder pour l'icône BrainCircuit ou la tête du léopard */}
-      <span className="text-xs text-sprint-accent font-semibold">IA</span>
-    </div>
-  </div>
-);
-// -------------------
-
 type ChatInputProps = {
   onSend: (text: string) => void;
   disabled?: boolean;
@@ -61,13 +49,11 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      // Nouveau style : barre ancrée, coins arrondis
+      // Changement: gap-2 est maintenu, mais le slot de l'avatar est retiré.
       className="flex w-full items-end gap-2 rounded-2xl border border-white/10 bg-sprint-dark-surface/90 backdrop-blur-lg p-3 shadow-2xl"
     >
-      {/* 1. Slot pour l'Avatar (positionné en haut du champ pour l'alignement) */}
-      <SprintyAvatarPlaceholder /> 
       
-      {/* 2. Zone de Saisie Multi-ligne */}
+      {/* Zone de Saisie Multi-ligne */}
       <textarea
         ref={textareaRef}
         rows={1} // Commence sur une ligne
@@ -79,7 +65,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
         disabled={disabled}
       />
 
-      {/* 3. Bouton d'Envoi (Accent Color) */}
+      {/* Bouton d'Envoi (Accent Color) */}
       <motion.button
         type="submit"
         disabled={isSendDisabled}
