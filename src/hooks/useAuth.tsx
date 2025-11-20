@@ -4,7 +4,8 @@ import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
-const PROFILE_COLS = 'id,full_name,first_name,last_name,email,role,photo_url,sprinty_mode,discipline,sexe,date_de_naissance,license_number,role_specifique,onboarding_completed,preferred_language';
+const PROFILE_COLS =
+  'id,full_name,first_name,last_name,email,role,photo_url,sprinty_mode,discipline,sexe,date_de_naissance,license_number,role_specifique,onboarding_completed,preferred_language';
 
 interface AuthState {
   session: Session | null;
@@ -39,7 +40,13 @@ const createEmptyAuthState = (): AuthState => ({
   isProfileLoaded: false,
 });
 
-const createAuthState = (session: Session | null, user: User | null, profile: Profile | null, isInitialized: boolean, isProfileLoaded: boolean = true): AuthState => ({
+const createAuthState = (
+  session: Session | null,
+  user: User | null,
+  profile: Profile | null,
+  isInitialized: boolean,
+  isProfileLoaded: boolean = true
+): AuthState => ({
   session,
   user,
   profile,
@@ -51,95 +58,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authState, setAuthState] = useState<AuthState>(createEmptyAuthState());
   const isMountedRef = useRef(true);
 
+  /**
+   * Load profile — VERSION SANS TIMEOUT (stable)
+   */
   const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
-    logger.info('[useAuth] Début du chargement du profil pour:', userId);
-    logger.info('[useAuth] Colonnes demandées:', PROFILE_COLS);
+    logger.info('[useAuth] Chargement du profil pour:', userId);
 
     try {
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Timeout: La requête Supabase n\'a pas répondu dans les 15 secondes'));
-        }, 15000);
-      });
-
-      const queryPromise = supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select(PROFILE_COLS)
         .eq('id', userId)
         .maybeSingle();
 
-      const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]);
-
-      logger.info('[useAuth] Réponse Supabase reçue. Error:', error, 'Data:', profile);
-
       if (error) {
-        logger.error('[useAuth] Erreur Supabase lors du chargement du profil:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-          userId
-        });
+        logger.error('[useAuth] Erreur Supabase loadProfile:', error);
         return null;
       }
 
       if (!profile) {
-        logger.error('[useAuth] Profil null retourné par Supabase pour l\'utilisateur:', userId);
-        logger.error('[useAuth] Cela peut indiquer un problème de permissions RLS ou un profil manquant.');
+        logger.warn('[useAuth] Aucun profil trouvé pour:', userId);
         return null;
       }
 
-      logger.info('[useAuth] Profil chargé avec succès:', { id: profile.id, role: profile.role, name: profile.full_name });
+      logger.info('[useAuth] Profil chargé:', profile.id);
       return profile;
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('Timeout')) {
-        logger.error('[useAuth] TIMEOUT: La requête Supabase est bloquée. Cela peut être dû à:');
-        logger.error('[useAuth] - Cookies tiers bloqués (Third-party cookies)');
-        logger.error('[useAuth] - Problème de réseau ou de connectivité');
-        logger.error('[useAuth] - Configuration CORS incorrecte');
-      } else {
-        logger.error('[useAuth] Exception lors du chargement du profil:', error);
-      }
+    } catch (e) {
+      logger.error('[useAuth] Exception loadProfile:', e);
       return null;
     }
   }, []);
 
+  /**
+   * Refresh profile
+   */
   const refreshProfile = useCallback(async () => {
     if (!authState.user) return;
-    try {
-      const profile = await loadProfile(authState.user.id);
-      if (isMountedRef.current) {
-        setAuthState(prev => createAuthState(prev.session, prev.user, profile, prev.isInitialized, true));
-      }
-    } catch (e) {
-      logger.error('[useAuth] Erreur lors du rafraîchissement:', e);
+    const profile = await loadProfile(authState.user.id);
+
+    if (isMountedRef.current) {
+      setAuthState((prev) => createAuthState(prev.session, prev.user, profile, prev.isInitialized, true));
     }
   }, [authState.user, loadProfile]);
 
-  const updateSprintyMode = useCallback(async (newMode: 'simple' | 'expert') => {
-    if (!authState.user) return;
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ sprinty_mode: newMode })
-        .eq('id', authState.user.id);
-
-      if (error) throw error;
-
-      setAuthState(prev => {
-        if (!prev.profile) return prev;
-        return {
-          ...prev,
-          profile: { ...prev.profile, sprinty_mode: newMode },
-        };
-      });
-    } catch (error) {
-      logger.error('[useAuth] Erreur lors de la mise à jour du mode Sprinty:', error);
-    }
-  }, [authState.user]);
-
+  /**
+   * Update profile locally
+   */
   const updateProfile = useCallback((updatedProfileData: Partial<Profile>) => {
-    setAuthState(prev => {
+    setAuthState((prev) => {
       if (!prev.profile) return prev;
       return {
         ...prev,
@@ -148,95 +114,126 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, []);
 
+  /**
+   * Sprinty Mode
+   */
+  const updateSprintyMode = useCallback(
+    async (newMode: 'simple' | 'expert') => {
+      if (!authState.user) return;
+
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ sprinty_mode: newMode })
+          .eq('id', authState.user.id);
+
+        if (error) throw error;
+
+        setAuthState((prev) => {
+          if (!prev.profile) return prev;
+          return {
+            ...prev,
+            profile: { ...prev.profile, sprinty_mode: newMode },
+          };
+        });
+      } catch (err) {
+        logger.error('[useAuth] Erreur updateSprintyMode:', err);
+      }
+    },
+    [authState.user]
+  );
+
+  /**
+   * signIn
+   */
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
   }, []);
 
+  /**
+   * signUp
+   */
   const signUp = useCallback(async (email: string, password: string, profileData: Partial<Profile>) => {
-    try {
-      const roleMap: Record<string, string> = { 'athlète': 'athlete', 'athlete': 'athlete', 'encadrant': 'coach', 'coach': 'coach' };
-      const mappedRole = roleMap[profileData.role?.toLowerCase() || 'athlete'] || 'athlete';
-      const redirectUrl = window.location.hostname === 'localhost' ? `${window.location.origin}/` : 'https://sprintflow.one/';
+    const roleMap: Record<string, string> = {
+      'athlète': 'athlete',
+      athlete: 'athlete',
+      encadrant: 'coach',
+      coach: 'coach',
+    };
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: { ...profileData, role: mappedRole }
-        }
-      });
+    const mappedRole = roleMap[profileData.role?.toLowerCase() || 'athlete'] || 'athlete';
 
-      if (error) throw error;
-      if (!data.user) throw new Error('Aucun utilisateur créé');
+    const redirectUrl = window.location.hostname === 'localhost'
+      ? `${window.location.origin}/`
+      : 'https://sprintflow.one/';
 
-      return data;
-    } catch (error) {
-      if (error instanceof Error && error.message?.includes('User already registered')) {
-        throw new Error('Cet email est déjà utilisé.');
-      }
-      throw error;
-    }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: { ...profileData, role: mappedRole },
+      },
+    });
+
+    if (error) throw error;
+    if (!data.user) throw new Error('Aucun utilisateur créé');
+
+    return data;
   }, []);
 
+  /**
+   * resend confirmation email
+   */
   const resendConfirmationEmail = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resend({ type: 'signup', email });
     if (error) throw error;
   }, []);
 
+  /**
+   * signOut
+   */
   const signOut = useCallback(async () => {
     try {
-      logger.info('[useAuth] Déconnexion en cours...');
+      logger.info('[useAuth] Déconnexion...');
       setAuthState(createEmptyAuthState());
       await supabase.auth.signOut();
-      Object.keys(localStorage).forEach(key => { if (key.startsWith('sb-')) localStorage.removeItem(key); });
-      logger.info('[useAuth] Déconnexion réussie');
-    } catch (error) {
-      logger.error('[useAuth] Erreur critique signOut:', error);
+
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('sb-')) localStorage.removeItem(key);
+      });
+
+      logger.info('[useAuth] Déconnexion OK');
+    } catch (e) {
+      logger.error('[useAuth] signOut error:', e);
     }
   }, []);
 
+  /**
+   * INITIALISATION
+   */
   useEffect(() => {
     isMountedRef.current = true;
 
     const initAuth = async () => {
-      try {
-        logger.info('[useAuth] Initialisation de l\'authentification');
+      logger.info('[useAuth] Initialisation Auth...');
 
-        const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
 
-        if (error) {
-          logger.warn('[useAuth] Erreur lors de getSession:', error);
-        }
+      if (error) logger.warn('[useAuth] getSession error:', error);
 
-        if (!isMountedRef.current) return;
+      const currentUser = session?.user ?? null;
+      let currentProfile: Profile | null = null;
 
-        const currentUser = session?.user ?? null;
-        let currentProfile: Profile | null = null;
-
-        if (currentUser) {
-          logger.info('[useAuth] Utilisateur authentifié détecté:', { id: currentUser.id, email: currentUser.email });
-          currentProfile = await loadProfile(currentUser.id);
-
-          if (!currentProfile) {
-            logger.warn('[useAuth] Le profil n\'a pas pu être chargé. L\'utilisateur verra ProfileLoadError.');
-          }
-        } else {
-          logger.info('[useAuth] Aucun utilisateur authentifié trouvé.');
-        }
-
-        if (!isMountedRef.current) return;
-
-        setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
-        logger.info('[useAuth] Initialisation terminée. User:', !!currentUser, 'Profile:', !!currentProfile);
-      } catch (error) {
-        logger.error('[useAuth] Erreur critique lors de l\'initialisation:', error);
-        if (isMountedRef.current) {
-          setAuthState(createAuthState(null, null, null, true, true));
-        }
+      if (currentUser) {
+        currentProfile = await loadProfile(currentUser.id);
       }
+
+      if (!isMountedRef.current) return;
+
+      setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
     };
 
     initAuth();
@@ -244,24 +241,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMountedRef.current) return;
 
-      logger.info('[useAuth] Événement auth:', event);
+      const user = session?.user ?? null;
+      const profile = user ? await loadProfile(user.id) : null;
 
-      const currentUser = session?.user ?? null;
-      let currentProfile: Profile | null = null;
-
-      if (currentUser) {
-        logger.info('[useAuth] Chargement du profil suite à l\'événement auth:', event);
-        currentProfile = await loadProfile(currentUser.id);
-
-        if (!currentProfile) {
-          logger.warn('[useAuth] Le profil n\'a pas pu être chargé après l\'événement:', event);
-        }
-      }
-
-      if (!isMountedRef.current) return;
-
-      setAuthState(createAuthState(session, currentUser, currentProfile, true, true));
-      logger.info('[useAuth] État mis à jour après événement. User:', !!currentUser, 'Profile:', !!currentProfile);
+      setAuthState(createAuthState(session, user, profile, true, true));
     });
 
     return () => {
@@ -291,14 +274,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [authState, loading, isAuthReady, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail]
   );
 
-  return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
+/**
+ * HOOK
+ */
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    logger.error('[useAuth] Context is undefined! This should never happen.');
-    logger.error('[useAuth] Make sure AuthProvider is mounted in main.tsx');
+
+  if (!context) {
+    logger.error('[useAuth] AuthContext non trouvé');
     return {
       session: null,
       user: null,
@@ -311,9 +297,10 @@ export const useAuth = (): AuthContextType => {
       signOut: async () => {},
       signIn: async () => ({ user: null, session: null }),
       signUp: async () => ({ user: null, session: null }),
-      resendConfirmationEmail: async () => {}
+      resendConfirmationEmail: async () => {},
     };
   }
+
   return context;
 };
 
