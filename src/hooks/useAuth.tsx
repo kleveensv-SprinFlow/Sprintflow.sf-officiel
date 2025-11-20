@@ -4,7 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { Profile } from '../types';
 import { logger } from '../utils/logger';
 
-const PROFILE_COLUMNS = 'id, full_name, first_name, last_name, role, photo_url, sprinty_mode';
+const PROFILE_COLS = 'id,full_name,first_name,last_name,role,photo_url,sprinty_mode,email,discipline,sexe';
 
 interface AuthState {
   session: Session | null;
