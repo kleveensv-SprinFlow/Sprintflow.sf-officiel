@@ -14,32 +14,16 @@ export const useRecords = (athleteId?: string) => {
 
   const fetchRecords = useCallback(async () => {
     if (!idToFetch) {
-      console.log('❌ Aucun ID utilisateur disponible');
+      console.log('❌ [useRecords] Aucun ID utilisateur disponible');
       setLoading(false);
       return;
     }
 
-    console.log('🔍 Récupération des records pour:', idToFetch);
+    console.log('🔍 [useRecords] Récupération des records pour:', idToFetch);
     setLoading(true);
     setError(null);
 
     try {
-      // Solution 1: Essayer avec la fonction RPC
-      console.log('📞 Tentative avec RPC get_user_records_split...');
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_records_split', { 
-        user_id_param: idToFetch 
-      });
-
-      if (!rpcError && rpcData) {
-        console.log('✅ Records récupérés via RPC:', rpcData);
-        setStrengthRecords(rpcData.strength_records || []);
-        setTrackRecords(rpcData.track_records || []);
-        return;
-      }
-
-      // Solution 2: Si la RPC échoue, récupérer directement depuis la table
-      console.log('⚠️ RPC a échoué, tentative directe...', rpcError?.message);
-      
       const { data: allRecords, error: directError } = await supabase
         .from('records')
         .select('*')
@@ -47,10 +31,11 @@ export const useRecords = (athleteId?: string) => {
         .order('date', { ascending: false });
 
       if (directError) {
-        throw new Error(`Erreur lors de la récupération des records: ${directError.message}`);
+        console.error('❌ [useRecords] Erreur chargement records:', directError.message);
+        throw directError;
       }
 
-      console.log('📊 Records récupérés directement:', allRecords?.length || 0);
+      console.log('📊 [useRecords] Records récupérés:', allRecords?.length || 0);
 
       // Séparer les records en force et course
       const strength: Record[] = [];
@@ -80,14 +65,14 @@ export const useRecords = (athleteId?: string) => {
         }
       });
 
-      console.log('💪 Records de force:', strength.length);
-      console.log('🏃 Records de course:', track.length);
+      console.log('💪 [useRecords] Records de force:', strength.length);
+      console.log('🏃 [useRecords] Records de course:', track.length);
 
       setStrengthRecords(strength);
       setTrackRecords(track);
 
     } catch (e: any) {
-      console.error("❌ Erreur lors de la récupération des records:", e.message);
+      console.error("❌ [useRecords] Erreur lors de la récupération des records:", e.message);
       setError(e.message);
       setStrengthRecords([]);
       setTrackRecords([]);
@@ -106,7 +91,7 @@ export const useRecords = (athleteId?: string) => {
   return { 
     strengthRecords, 
     trackRecords, 
-    records, // Ajout pour compatibilité avec les composants existants
+    records,
     loading, 
     error, 
     refreshRecords: fetchRecords,
@@ -122,7 +107,7 @@ export const useRecords = (athleteId?: string) => {
         // Rafraîchir les records après suppression
         await fetchRecords();
       } catch (e: any) {
-        console.error('Erreur lors de la suppression:', e.message);
+        console.error('❌ [useRecords] Erreur lors de la suppression:', e.message);
         throw e;
       }
     }
