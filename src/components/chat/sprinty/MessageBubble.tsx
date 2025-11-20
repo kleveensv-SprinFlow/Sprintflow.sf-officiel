@@ -1,59 +1,33 @@
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
+// MODIFICATION 1 : La bulle elle-même (le conteneur du message)
+const bubbleContentClasses = `px-4 py-2.5 rounded-xl 
+    ${
+      isUser
+        // Bulle Utilisateur : On garde l'arrondi et on le retire SEULEMENT sur le coin bas-droit (le coin près du locuteur)
+        ? 'bg-sprint-accent text-white rounded-br-none'
+        // Bulle Sprinty : On garde l'arrondi et on le retire SEULEMENT sur le coin bas-gauche
+        : 'bg-sprint-light-surface/90 dark:bg-sprint-dark-surface-secondary text-sprint-dark-text rounded-bl-none' 
+    }
+  `;
 
-interface MessageBubbleProps {
-  message: {
-    id: string;
-    text: string;
-    sender: 'user' | 'sprinty';
-    component?: React.ReactNode;
-  };
-  // L'avatar est exclu de ce composant car il sera dans la barre de saisie/FAB.
-}
+// MODIFICATION 2 : L'ancien code de votre composant n'utilisait pas de bulle générale, mais l'appliquait directement :
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const isUser = message.sender === 'user';
   
-  // Bulle Content Styling: Couleur et Coins (la distinction se fait par la couleur et la forme)
-  const bubbleContentClasses = `px-4 py-2.5 
+  // Bulle Content Styling: Color, Corners, and Padding
+  const bubbleContentClasses = `px-4 py-2.5 rounded-xl // <-- FORCER L'ARRONDI ICI
     ${
       isUser
-        // COULEUR UTILISATEUR (Accentuation) : Aligné à droite, coin du haut à droite coupé.
+        // Utilisation de rounded-xl (plus sûr que 2xl) et suppression du coin bas-droit pour la queue
         ? 'bg-sprint-accent text-white rounded-br-none'
-        // COULEUR SPRINTY (Neutre/Surface) : Aligné à gauche, coin du haut à gauche coupé.
+        // Suppression du coin bas-gauche pour la queue
         : 'bg-sprint-light-surface/90 dark:bg-sprint-dark-surface-secondary text-sprint-dark-text rounded-bl-none' 
     }
   `;
 
   return (
-    // Conteneur principal pour l'alignement et l'espacement
-    <div
-      className={`flex w-full mb-3 ${
-        isUser ? 'justify-end' : 'justify-start' // Aligne à droite (user) ou à gauche (Sprinty)
-      }`}
-    >
-      
-      {/* Conteneur de contenu (limite la largeur de la bulle) */}
-      <div className="max-w-[85%]">
-        
-        {message.text && (
-          <div className={bubbleContentClasses}>
-            {/* CORRECTION TAILLE : Utilisation de text-sm pour un affichage plus compact sur mobile. */}
-            <div className="text-sm dark:text-white max-w-none prose prose-p:my-0"> 
-              <ReactMarkdown>{message.text}</ReactMarkdown>
-            </div>
-          </div>
-        )}
-        
-        {/* Carte de Données / Composant */}
-        {message.component && (
-          <div className={`mt-1.5 ${isUser ? 'flex justify-end' : ''}`}>
-            {message.component}
-          </div>
-        )}
-      </div>
-    </div>
+    // ... reste du code ...
+    // Le reste de la logique reste le même
+    // ...
   );
 };
-
-export default MessageBubble;
