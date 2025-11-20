@@ -46,61 +46,65 @@ const TabBar: React.FC<TabBarProps> = ({
       ? notificationStatus[tab.notification as keyof typeof notificationStatus]
       : false;
 
-    const iconAnimation = isActive
-      ? { scale: 1.15 }
-      : tab.id === 'sprinty'
-      ? { scale: [1, 1.05, 1] }
-      : { scale: 1 };
-
-    const iconTransition = isActive
-      ? { type: 'spring', stiffness: 400, damping: 10 }
-      : tab.id === 'sprinty'
-      ? { duration: 2, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }
-      : {};
-
     return (
       <button
         key={tab.id}
         onClick={() => onTabChange(tab.id as Tab)}
-        className="relative flex h-full flex-1 flex-col items-center justify-center gap-1 focus:outline-none"
+        className="group flex h-full flex-1 flex-col items-center justify-center focus:outline-none"
       >
-        {hasNotification && (
-          <span className="absolute right-1/2 top-3 h-2.5 w-2.5 translate-x-[20px] rounded-full bg-orange-accent" />
-        )}
-        <motion.div animate={iconAnimation} transition={iconTransition}>
+        <motion.div
+          animate={isActive ? { scale: 1.05 } : { scale: 1 }}
+          transition={{ duration: 0.2 }}
+          className="relative flex flex-col items-center gap-1"
+        >
+          {hasNotification && (
+            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
+          )}
           <tab.Icon
-            className={`h-6 w-6 ${
+            className={`h-[26px] w-[26px] transition-colors duration-300 ${
               isActive
-                ? 'text-sprint-accent'
-                : 'text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary'
+                ? 'text-sprint-primary dark:text-white'
+                : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'
             }`}
-            fill={isActive ? 'currentColor' : 'none'}
-            strokeWidth={isActive ? 2.5 : 2}
+            strokeWidth={1.5}
           />
+          {/* Optional: Label if we want it, but minimal style usually omits it or keeps it very small. 
+              The user said "Premium/Intemporel", often no labels or very small ones. 
+              I will omit labels for the pure icon bar look, or check if I should include them.
+              The previous version didn't show labels either, just icons in the render function.
+          */}
         </motion.div>
       </button>
     );
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 h-[84px] p-2">
-      <div className="relative flex h-full w-full items-center justify-around rounded-2xl border border-white/10 bg-sprint-light-surface/70 dark:bg-sprint-dark-surface/70 backdrop-blur-2xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-[84px] pb-5 bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-white/5">
+      <div className="flex h-full w-full items-center justify-between px-4 md:px-8 max-w-2xl mx-auto">
+        
+        {/* Left Tabs */}
         {tabs.slice(0, 2).map(renderTab)}
-        <div className="w-16"></div>
-        {tabs.slice(2, 4).map(renderTab)}
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[5%] transform">
-          <motion.button
-            onClick={onFabClick}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-sprint-accent text-white shadow-lg"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+
+        {/* Central Action Button (Formerly FAB) */}
+        <button
+          onClick={onFabClick}
+          className="group relative flex h-full flex-1 flex-col items-center justify-center focus:outline-none"
+        >
+          <motion.div
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center justify-center rounded-full bg-sprint-primary/10 dark:bg-white/10 p-3 transition-colors duration-300 group-hover:bg-sprint-primary/20 dark:group-hover:bg-white/20"
           >
-            <Plus className="h-8 w-8" strokeWidth={2.5} />
-          </motion.button>
-        </div>
+            <Plus 
+              className="h-6 w-6 text-sprint-primary dark:text-white" 
+              strokeWidth={2} // Slightly thicker for the main action
+            />
+          </motion.div>
+        </button>
+
+        {/* Right Tabs */}
+        {tabs.slice(2, 4).map(renderTab)}
       </div>
-    </div>
+    </nav>
   );
 };
 
