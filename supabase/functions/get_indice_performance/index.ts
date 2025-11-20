@@ -27,9 +27,45 @@ function interpolate(value: number, points: { x: number, y: number }[]): number 
 }
 
 // Score calculation for body composition
-function calculateCompositionScore(data: { masse_grasse_pct?: number, imc?: number }): { score: number, mode: 'expert' | 'standard', value: number } {
-  if (data.masse_grasse_pct) {
-    const mg = data.masse_grasse_pct;
+function calculateCompositionScore(data: { masse_musculaire_kg?: number, masse_grasse_pct?: number, imc?: number, poids_kg?: number, sexe?: string }): { score: number, mode: 'muscle' | 'expert' | 'standard', value: number } {
+  const { masse_musculaire_kg, masse_grasse_pct, imc, poids_kg, sexe } = data;
+
+  // 1. Priority: Muscle Mass (if available)
+  if (masse_musculaire_kg && poids_kg && poids_kg > 0) {
+    const musclePct = (masse_musculaire_kg / poids_kg) * 100;
+    
+    // Heuristic ranges for Muscle % (Skeletal Muscle Mass)
+    // Men: 40-50% is excellent. <33% low.
+    // Women: 30-40% is excellent. <24% low.
+    // Using InBody/Tanita standard approximations for athletes.
+    
+    let points;
+    if (sexe === 'femme') {
+       points = [
+         { x: 20, y: 20 },
+         { x: 24, y: 50 },
+         { x: 28, y: 75 },
+         { x: 33, y: 100 },
+         { x: 40, y: 100 }
+       ];
+    } else {
+       // Men
+       points = [
+         { x: 28, y: 20 },
+         { x: 33, y: 50 },
+         { x: 38, y: 75 },
+         { x: 44, y: 100 },
+         { x: 55, y: 100 }
+       ];
+    }
+    
+    const score = interpolate(musclePct, points);
+    return { score: Math.round(score), mode: 'muscle', value: Math.round(musclePct * 10) / 10 };
+  }
+
+  // 2. Fallback: Fat Mass
+  if (masse_grasse_pct) {
+    const mg = masse_grasse_pct;
     // Optimal: 8-12 -> 100, 15 -> 75, 18 -> 60, >20 -> <40
     const points = [
       { x: 8, y: 100 },
@@ -46,8 +82,8 @@ function calculateCompositionScore(data: { masse_grasse_pct?: number, imc?: numb
     return { score: Math.max(0, Math.min(100, score)), mode: 'expert', value: mg };
   }
 
-  if (data.imc) {
-    const imc = data.imc;
+  // 3. Fallback: BMI (IMC)
+  if (imc) {
     // Optimal: 20-23 -> 100, 19/24 -> 75, 18/25 -> 50
     const points = [
         { x: 17, y: 30 },
@@ -101,11 +137,11 @@ Deno.serve(async (req: Request) => {
 
     const athleteId = userData.user.id;
 
-    // 1. Get athlete's body data
-    const { data: profile } = await supabase.from('profiles').select('taille_cm').eq('id', athleteId).single();
+    // 1. Get athlete's body data and profile
+    const { data: profile } = await supabase.from('profiles').select('taille_cm, sexe').eq('id', athleteId).single();
     const { data: latestBodyComp } = await supabase
       .from('donnees_corporelles')
-      .select('poids_kg, masse_grasse_pct')
+      .select('poids_kg, masse_grasse_pct, masse_musculaire_kg')
       .eq('athlete_id', athleteId)
       .order('date', { ascending: false })
       .limit(1)
@@ -118,7 +154,13 @@ Deno.serve(async (req: Request) => {
     const imc = profile?.taille_cm ? poidsKg / Math.pow(profile.taille_cm / 100, 2) : undefined;
     
     // 2. Calculate Body Composition Score (40% of total)
-    const compoData = calculateCompositionScore({ masse_grasse_pct: latestBodyComp.masse_grasse_pct, imc });
+    const compoData = calculateCompositionScore({ 
+      masse_musculaire_kg: latestBodyComp.masse_musculaire_kg,
+      masse_grasse_pct: latestBodyComp.masse_grasse_pct, 
+      imc,
+      poids_kg: poidsKg,
+      sexe: profile?.sexe
+    });
     const scoreComposition = Math.round(compoData.score);
     
     // 3. Calculate Relative Strength Score (60% of total)
@@ -148,11 +190,11 @@ Deno.serve(async (req: Request) => {
         
         const qualiteCible = record.exercice_reference?.qualite_cible || record.exercice_personnalise?.qualite_cible;
 
-        if (qualiteCible.toLowerCase().includes('explosivité')) {
+        if (qualiteCible && qualiteCible.toLowerCase().includes('explosivité')) {
             if (performanceScore > bestExplosiviteScore) {
                 bestExplosiviteScore = performanceScore;
             }
-        } else if (qualiteCible.toLowerCase().includes('force maximale')) {
+        } else if (qualiteCible && qualiteCible.toLowerCase().includes('force maximale')) {
             if (performanceScore > bestForceMaxScore) {
                 bestForceMaxScore = performanceScore;
             }
