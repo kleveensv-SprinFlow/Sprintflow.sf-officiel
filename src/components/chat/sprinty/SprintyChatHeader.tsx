@@ -40,13 +40,17 @@ const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({
             Simplifié
           </button>
 
-          <div className="w-10 h-5 bg-white/20 rounded-full flex items-center px-1">
+          <button
+            type="button"
+            onClick={() => onModeChange(mode === 'simplified' ? 'expert' : 'simplified')}
+            className="w-10 h-5 bg-white/20 rounded-full flex items-center px-1 focus:outline-none cursor-pointer"
+          >
             <div
               className={`w-4 h-4 bg-white rounded-full transform transition-transform ${
                 mode === 'simplified' ? 'translate-x-0' : 'translate-x-5'
               }`}
             />
-          </div>
+          </button>
 
           <button
             type="button"
