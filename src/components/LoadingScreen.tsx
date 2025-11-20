@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Lottie from 'lottie-react';
+import animationData from '../assets/sports_loading_final.json';
 
 const loadingMessages = [
   "Installation des haies...",
@@ -26,25 +28,24 @@ export function LoadingScreen() {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 flex flex-col items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
       {/* Container principal pour centrer le contenu */}
       <div className="flex-grow flex items-center justify-center">
-        {/* Logo animé */}
-        <img
-          src="/logo-sprintflow.png"
-          alt="SprintFlow Logo"
-          className="w-40 h-40 animate-spin-float"
-        />
+        {/* Logo Lottie animé */}
+        <div className="w-64 h-64">
+          <Lottie 
+            animationData={animationData} 
+            loop={true}
+            autoplay={true}
+          />
+        </div>
       </div>
 
-      {/* Container pour la barre de chargement et le texte en bas */}
-      <div className="w-full max-w-xs p-4 mb-8">
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-2 font-semibold">
+      {/* Container pour le texte en bas */}
+      <div className="w-full max-w-xs p-4 mb-12">
+        <p className="text-center text-sm text-gray-400 font-medium animate-pulse tracking-wide">
           {currentMessage}
         </p>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
-          <div className="h-full rounded-full animate-progress-bar"></div>
-        </div>
       </div>
     </div>
   );
