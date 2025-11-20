@@ -1,11 +1,7 @@
-
 export const getSprintyAdvice = async (step: 'sleep' | 'wellness' | 'cycle' | 'summary', data?: any): Promise<string> => {
   // Simulate network delay to feel like an API
   await new Promise(resolve => setTimeout(resolve, 800));
 
-  // Here we could add complex logic based on 'data' (e.g., if sleep < 6h, give specific advice)
-  // Since we are simulating an AI response, we use context-aware static responses for now.
-  
   switch (step) {
     case 'sleep':
       if (data?.sleepDuration && data.sleepDuration < 420) {
