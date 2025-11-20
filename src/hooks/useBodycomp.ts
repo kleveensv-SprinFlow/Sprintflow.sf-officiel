@@ -15,41 +15,44 @@ export interface BodycompData {
 export const useBodycomp = () => {
   const { user } = useAuth();
   const [lastWeight, setLastWeight] = useState<{weight: number} | null>(null);
+  const [history, setHistory] = useState<BodycompData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchLastWeight();
+      fetchData();
     }
   }, [user]);
 
-  const fetchLastWeight = async () => {
+  const fetchData = async () => {
     if (!user) return;
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('donnees_corporelles')
-        .select('poids_kg')
+        .select('*')
         .eq('athlete_id', user.id)
-        .order('date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('date', { ascending: false });
 
       if (error) {
-        console.error('Error fetching last weight:', error);
+        console.error('Error fetching body composition:', error);
         setLastWeight({ weight: 75 });
-      } else if (data) {
-        setLastWeight({ weight: data.poids_kg });
+        setHistory([]);
+      } else if (data && data.length > 0) {
+        setHistory(data);
+        setLastWeight({ weight: data[0].poids_kg });
       } else {
-        setLastWeight({ weight: 75 });
+        setLastWeight({ weight: 75 }); // Fallback default
+        setHistory([]);
       }
     } catch (error) {
-      console.error('Error fetching last weight:', error);
+      console.error('Error fetching body composition:', error);
       setLastWeight({ weight: 75 });
+      setHistory([]);
     } finally {
       setLoading(false);
     }
   };
 
-  return { lastWeight, loading };
+  return { lastWeight, history, loading, refresh: fetchData };
 };
