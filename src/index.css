@@ -4,6 +4,7 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+@import './styles/animations.css';
 
 /* 2. Base layer and animations */
 @layer base {
