@@ -4,7 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { getSprintyAdvice } from '../../services/sprintyAdvisor.ts';
 
 interface SprintyAdviceProps {
-  step: 'sleep' | 'wellness' | 'cycle' | 'summary';
+  step: 'sleep' | 'wellness' | 'injuries' | 'cycle' | 'summary';
   data?: any;
 }
 
