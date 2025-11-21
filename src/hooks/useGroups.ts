@@ -123,11 +123,15 @@ export const useGroups = () => {
   const fetchGroupsAnalytics = useCallback(async () => {
     if (!user || profile?.role !== 'coach') return;
     
-    // Ne pas mettre setLoading(true) ici si on veut éviter un flash global si utilisé en parallèle
-    // Mais pour l'instant on gère le loading global
     try {
+      // Calculate local date to ensure we match the user's perception of "today"
+      const d = new Date();
+      const offset = d.getTimezoneOffset() * 60000;
+      const today = new Date(d.getTime() - offset).toISOString().split('T')[0];
+
       const { data, error } = await supabase.rpc('get_coach_groups_analytics', {
-        coach_uuid: user.id
+        coach_uuid: user.id,
+        query_date: today // Pass local date
       });
 
       if (error) throw error;
