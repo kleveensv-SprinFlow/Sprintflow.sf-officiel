@@ -108,3 +108,24 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+@keyframes shine-electric {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-text-shine-electric {
+  background: linear-gradient(
+    90deg, 
+    #3b82f6 0%,   /* Blue-500 */
+    #8b5cf6 50%,  /* Violet-500 */
+    #3b82f6 100%  /* Blue-500 */
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine-electric 3s linear infinite;
+  font-weight: 700;
+}
