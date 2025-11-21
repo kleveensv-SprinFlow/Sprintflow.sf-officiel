@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Home, Calendar, Apple, Plus, BrainCircuit, Users } from 'lucide-react';
+import { Home, Calendar, Apple, Plus, Users, MessageCircle } from 'lucide-react';
 
 type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
 
@@ -11,6 +11,7 @@ interface TabBarProps {
   showPlanningNotification?: boolean;
   showCoachNotification?: boolean;
   userRole?: 'athlete' | 'coach';
+  isFabOpen?: boolean;
 }
 
 const TabBar: React.FC<TabBarProps> = ({
@@ -20,13 +21,14 @@ const TabBar: React.FC<TabBarProps> = ({
   showPlanningNotification = false,
   showCoachNotification = false,
   userRole = 'athlete',
+  isFabOpen = false
 }) => {
   // Configuration pour les athlètes
   const athleteTabs = [
     { id: 'accueil', label: 'Accueil', Icon: Home },
     { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
     { id: 'nutrition', label: 'Nutrition', Icon: Apple },
-    { id: 'sprinty', label: 'Sprinty', Icon: BrainCircuit, notification: 'showCoachNotification' },
+    { id: 'sprinty', label: 'Sprinty', Icon: MessageCircle, notification: 'showCoachNotification' },
   ];
 
   // Configuration pour les coachs
@@ -34,7 +36,7 @@ const TabBar: React.FC<TabBarProps> = ({
     { id: 'accueil', label: 'Accueil', Icon: Home },
     { id: 'planning', label: 'Planning', Icon: Calendar, notification: 'showPlanningNotification' },
     { id: 'groupes', label: 'Groupes', Icon: Users },
-    { id: 'sprinty', label: 'Sprinty', Icon: BrainCircuit, notification: 'showCoachNotification' },
+    { id: 'sprinty', label: 'Sprinty', Icon: MessageCircle, notification: 'showCoachNotification' },
   ];
 
   const tabs = userRole === 'coach' ? coachTabs : athleteTabs;
@@ -68,35 +70,40 @@ const TabBar: React.FC<TabBarProps> = ({
             }`}
             strokeWidth={1.5}
           />
-          {/* Optional: Label if we want it, but minimal style usually omits it or keeps it very small. 
-              The user said "Premium/Intemporel", often no labels or very small ones. 
-              I will omit labels for the pure icon bar look, or check if I should include them.
-              The previous version didn't show labels either, just icons in the render function.
-          */}
         </motion.div>
       </button>
     );
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 h-[84px] pb-5 bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-white/5">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-[64px] pb-1 bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-white/5">
       <div className="flex h-full w-full items-center justify-between px-4 md:px-8 max-w-2xl mx-auto">
         
         {/* Left Tabs */}
         {tabs.slice(0, 2).map(renderTab)}
 
-        {/* Central Action Button (Formerly FAB) */}
+        {/* Central Action Button (FAB) */}
         <button
           onClick={onFabClick}
           className="group relative flex h-full flex-1 flex-col items-center justify-center focus:outline-none"
         >
           <motion.div
+            animate={{ rotate: isFabOpen ? 45 : 0 }}
+            transition={{ duration: 0.2 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center justify-center rounded-full bg-sprint-primary/10 dark:bg-white/10 p-3 transition-colors duration-300 group-hover:bg-sprint-primary/20 dark:group-hover:bg-white/20"
+            className={`flex items-center justify-center rounded-full p-3 transition-colors duration-300 ${
+                isFabOpen 
+                ? 'bg-sprint-primary text-white dark:bg-white dark:text-black'
+                : 'bg-sprint-primary/10 dark:bg-white/10 group-hover:bg-sprint-primary/20 dark:group-hover:bg-white/20'
+            }`}
           >
             <Plus 
-              className="h-6 w-6 text-sprint-primary dark:text-white" 
-              strokeWidth={2} // Slightly thicker for the main action
+              className={`h-6 w-6 ${
+                  isFabOpen
+                  ? 'text-current'
+                  : 'text-sprint-primary dark:text-white'
+              }`}
+              strokeWidth={2}
             />
           </motion.div>
         </button>
