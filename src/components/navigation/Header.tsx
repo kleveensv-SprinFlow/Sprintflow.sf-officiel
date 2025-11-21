@@ -114,7 +114,11 @@ export default function Header({
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
           {showBadge ? (
             <div className="origin-left scale-90">
-               <LevelBadge level={0} />
+              {profile && profile.level !== undefined ? (
+                 <LevelBadge level={profile.level} />
+              ) : (
+                <div className="w-8 h-8"></div> // Placeholder
+              )}
             </div>
           ) : canGoBack ? (
             <button 
@@ -140,7 +144,11 @@ export default function Header({
             </button>
           ) : (
              <div className="origin-left scale-90">
-               <LevelBadge level={0} />
+               {profile && profile.level !== undefined ? (
+                  <LevelBadge level={profile.level} />
+               ) : (
+                 <div className="w-8 h-8"></div> // Placeholder
+               )}
             </div>
           )}
         </div>
