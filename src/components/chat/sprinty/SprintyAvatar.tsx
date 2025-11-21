@@ -21,7 +21,6 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
   };
 
   const dataKey = getDataKey(expression);
-  // Fallback to neutral if specific expression data is missing (since we only fully populated neutral/success etc in this step)
   const currentData = sprintyData.expressions[dataKey] || sprintyData.expressions.neutral;
 
   // Idle breathing animation
@@ -36,12 +35,13 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
     }
   };
 
-  // Blinking animation for eyes
+  // Blinking animation for eyes (squash the whole eye)
   const blinkVariants = {
     blink: {
       scaleY: [1, 0.1, 1],
       transition: {
         duration: 0.3,
+        times: [0, 0.5, 1], // Fast blink
         repeat: Infinity,
         repeatDelay: 4
       }
@@ -67,6 +67,15 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
         variants={breathingVariants}
         animate="idle"
       >
+        <defs>
+            <clipPath id="clip_eye_R">
+                <path d={currentData.eyeR.white} />
+            </clipPath>
+            <clipPath id="clip_eye_L">
+                <path d={currentData.eyeL.white} />
+            </clipPath>
+        </defs>
+
         {/* --- STATIC BASE LAYER --- */}
         
         {/* Ears (Behind Head) */}
@@ -89,7 +98,6 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
             </g>
         </g>
 
-        {/* Ear Hair (Behind Head but in front of ears?) - SVG order puts them after ears */}
         <path d={sprintyData.base.earR.hair} fill="black" />
         <path d={sprintyData.base.earL.hair} fill="black" />
 
@@ -100,21 +108,17 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
           <path d={sprintyData.base.headShadowL} fill="#EBECED" />
           <path d={sprintyData.base.headShadowR} fill="#EBECE8" />
           
-          {/* Spots */}
           <g id="spots">
               {sprintyData.base.spots.map((d, i) => (
                   <path key={i} d={d} fill="#485760" />
               ))}
           </g>
           
-          {/* Eye Spots (Base) */}
           <path d={sprintyData.base.eyeSpotR} fill="#E0E1E1" />
           <path d={sprintyData.base.eyeSpotL} fill="#E0E1E1" />
         </g>
 
-        {/* --- CAP LAYER (Behind Face details?) No, Cap is usually on top of head base but behind face features? 
-            In SVG: Head -> Spots -> Eye Spots -> Cap -> Face Features. Let's follow that order. 
-        */}
+        {/* Cap */}
         <g id="cap">
             <path d={sprintyData.base.cap.top} fill="#5D7A9C" stroke="black" strokeWidth="6" />
             <path d={sprintyData.base.cap.side} fill="#32455D" stroke="black" strokeWidth="6" />
@@ -126,20 +130,18 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
             <path d={sprintyData.base.cap.logo54} fill="#FBFAF8" stroke="#FBFAF8" />
         </g>
 
-        {/* --- FACE BASE (Chin, Nose, Whiskers) --- */}
+        {/* Face Base */}
         <g id="face-base">
             <path d={sprintyData.base.chin} fill="#E0DFDF" />
             <path d={sprintyData.base.chinShadow} fill="#B0B0B1" />
             <path d={sprintyData.base.chinDark} fill="black" />
             
-            {/* Nose */}
             <g id="nose">
                 {sprintyData.base.nose.map((d, i) => (
                     <path key={i} d={d} fill={i===1 ? "#C2A4A3" : "black"} stroke={i < 2 || i===3 ? "black" : "none"} />
                 ))}
             </g>
 
-            {/* Whiskers */}
             <g id="whiskers">
                 {sprintyData.base.whiskers.map((d, i) => (
                     <path key={i} d={d} fill="black" />
@@ -147,7 +149,6 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
             </g>
         </g>
 
-        {/* --- CAP TOP LAYERS (Shadows over head) --- */}
         <path d={sprintyData.base.cap.shadeHighlight} fill="#587295" />
         <path d={sprintyData.base.cap.shadowL} fill="black" fillOpacity="0.26" />
         <path d={sprintyData.base.cap.vector11} fill="#587295" />
@@ -163,42 +164,49 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Right Eye */}
-            <g id="eye_R_dynamic">
-              <path d={currentData.eyeR.outer} fill="#020201" />
+            {/* Right Eye - Whole Group Blinks */}
+            <motion.g 
+                id="eye_R_dynamic"
+                variants={blinkVariants} 
+                animate="blink" 
+                style={{ transformOrigin: "353px 620px" }}
+            >
+              {/* Mask/Background */}
               <path d={currentData.eyeR.white} fill="white" />
-              {/* Masking usually needed here, but for simplicity we layer pupil on top if it fits, 
-                  or we'd need to implement SVG masks. 
-                  Given the complexity, we'll try layering. 
-                  The SVG uses masks. To do this properly in React without defs clutter, 
-                  we might need <defs> with mask. 
-              */}
-              <motion.g variants={blinkVariants} animate="blink" style={{ originY: "650px" }}> 
-                  {/* Pupil Group */}
-                  <g>
-                      {currentData.eyeR.pupil.cyan && <path d={currentData.eyeR.pupil.cyan} fill="#1097AF" />}
-                      {currentData.eyeR.pupil.black && <path d={currentData.eyeR.pupil.black} fill="black" />}
-                      {currentData.eyeR.pupil.highlightUpper && <path d={currentData.eyeR.pupil.highlightUpper} fill="#F0EFEF" />}
-                      {currentData.eyeR.pupil.highlightLower && <path d={currentData.eyeR.pupil.highlightLower} fill="#F0EFEF" />}
-                  </g>
+              
+              {/* Pupil Group - CLIPPED */}
+              <g clipPath="url(#clip_eye_R)">
+                  {currentData.eyeR.pupil.cyan && <path d={currentData.eyeR.pupil.cyan} fill="#1097AF" />}
+                  {currentData.eyeR.pupil.black && <path d={currentData.eyeR.pupil.black} fill="black" />}
+                  {currentData.eyeR.pupil.highlightUpper && <path d={currentData.eyeR.pupil.highlightUpper} fill="#F0EFEF" />}
+                  {currentData.eyeR.pupil.highlightLower && <path d={currentData.eyeR.pupil.highlightLower} fill="#F0EFEF" />}
+                  {/* Shadow inside the eye ball, also clipped */}
                   <path d={currentData.eyeR.eyeBallShadow} fill="black" fillOpacity="0.28" />
-              </motion.g>
-            </g>
+              </g>
 
-            {/* Left Eye */}
-            <g id="eye_L_dynamic">
-              <path d={currentData.eyeL.outer} fill="#020201" />
+              {/* Outline on top */}
+              <path d={currentData.eyeR.outer} fill="#020201" fillRule="evenodd" />
+            </motion.g>
+
+            {/* Left Eye - Whole Group Blinks */}
+            <motion.g 
+                id="eye_L_dynamic"
+                variants={blinkVariants} 
+                animate="blink" 
+                style={{ transformOrigin: "671px 620px" }}
+            >
               <path d={currentData.eyeL.white} fill="white" />
-              <motion.g variants={blinkVariants} animate="blink" style={{ originY: "650px" }}>
-                  <g>
-                      {currentData.eyeL.pupil.cyan && <path d={currentData.eyeL.pupil.cyan} fill="#1097AF" />}
-                      {currentData.eyeL.pupil.black && <path d={currentData.eyeL.pupil.black} fill="black" />}
-                      {currentData.eyeL.pupil.highlightUpper && <path d={currentData.eyeL.pupil.highlightUpper} fill="#F0EFEF" />}
-                      {currentData.eyeL.pupil.highlightLower && <path d={currentData.eyeL.pupil.highlightLower} fill="#F0EFEF" />}
-                  </g>
+              
+              <g clipPath="url(#clip_eye_L)">
+                  {currentData.eyeL.pupil.cyan && <path d={currentData.eyeL.pupil.cyan} fill="#1097AF" />}
+                  {currentData.eyeL.pupil.black && <path d={currentData.eyeL.pupil.black} fill="black" />}
+                  {currentData.eyeL.pupil.highlightUpper && <path d={currentData.eyeL.pupil.highlightUpper} fill="#F0EFEF" />}
+                  {currentData.eyeL.pupil.highlightLower && <path d={currentData.eyeL.pupil.highlightLower} fill="#F0EFEF" />}
                   <path d={currentData.eyeL.eyeBallShadow} fill="black" fillOpacity="0.28" />
-              </motion.g>
-            </g>
+              </g>
+
+              <path d={currentData.eyeL.outer} fill="#020201" fillRule="evenodd" />
+            </motion.g>
 
             {/* Mouth */}
             <path 
