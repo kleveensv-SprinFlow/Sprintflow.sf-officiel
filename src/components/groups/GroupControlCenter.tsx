@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, Settings, Share2, Users, TrendingUp, 
-  AlertTriangle, Activity, CheckCircle, XCircle,
+  ArrowLeft, Settings, Users, 
+  AlertTriangle, Activity, CheckCircle,
   ClipboardList
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,8 +10,6 @@ import { supabase } from '../../lib/supabase';
 import { Profile } from '../../types';
 import { Group } from '../../hooks/useGroups';
 import { useWellness, WellnessLog } from '../../hooks/useWellness';
-import { JoinGroupModal } from './JoinGroupModal';
-import ConfirmationModal from '../common/ConfirmationModal';
 
 interface GroupControlCenterProps {
   group: Group;
@@ -40,7 +38,10 @@ export const GroupControlCenter: React.FC<GroupControlCenterProps> = ({ group, o
   const fetchGroupData = async () => {
     setLoading(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Calculate local date to query
+      const d = new Date();
+      const offset = d.getTimezoneOffset() * 60000;
+      const today = new Date(d.getTime() - offset).toISOString().split('T')[0];
       
       // 1. Fetch wellness logs for all members for today
       const memberIds = group.group_members.map(m => m.athlete_id);
