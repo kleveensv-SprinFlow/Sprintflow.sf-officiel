@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { getSprintyAnswer, SprintyMode } from '../../../lib/sprintyEngine';
 import { useLanguage } from '../../../hooks/useLanguage';
+import { useSprinty } from '../../../context/SprintyContext';
 import SprintyChatHeader from './SprintyChatHeader';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
@@ -38,6 +39,7 @@ const SprintyChatView: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<ConversationRecord | null>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   
+  const { setExpression } = useSprinty();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const getWelcomeMessage = useCallback(() => {
@@ -143,6 +145,7 @@ const SprintyChatView: React.FC = () => {
     const userMessage = { text: sanitizedText, sender: 'user' as const };
     addMessage(userMessage);
     setIsTyping(true);
+    setExpression('typing');
 
     try {
       const conversationHistory = messages.map(msg => ({
@@ -163,6 +166,8 @@ const SprintyChatView: React.FC = () => {
       };
 
       addMessage(sprintyReply);
+      setExpression('success');
+      setTimeout(() => setExpression('neutral'), 3000);
 
       if (activeConversationId) {
         await supabase.from('sprinty_messages').insert([
@@ -184,8 +189,12 @@ const SprintyChatView: React.FC = () => {
         text: t('sprinty.error'),
         sender: 'sprinty',
       });
+      setExpression('perplexed');
     } finally {
       setIsTyping(false);
+      if (messages.length > 0 && !isTyping) {
+         // Keep typing/success state briefly or revert? handled above with timeout for success
+      }
     }
   };
 
