@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Plus, Users, Loader2, X, Trash2 } from 'lucide-react';
-import { useGroups, Group } from '../../hooks/useGroups';
+import { useGroups, Group, GroupAnalytics } from '../../hooks/useGroups';
 import { GroupDetailsPage } from './GroupDetailsPage';
+import { GroupControlCenter } from './GroupControlCenter';
 import { AthleteDetails } from './AthleteDetails';
 import { Profile } from '../../types';
 import { toast } from 'react-toastify';
@@ -9,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import ConfirmationModal from '../common/ConfirmationModal';
 import { JoinGroupModal } from './JoinGroupModal';
 import useAuth from '../../hooks/useAuth';
+import { GroupLiquidCard } from './GroupLiquidCard';
 
 // Modale de création d’un groupe
 interface CreateGroupModalProps {
@@ -143,7 +145,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ onClose, onCreate }
 // --- Composant principal ---
 const GroupManagement: React.FC = () => {
   const { user, profile } = useAuth();
-  const { groups, loading, createGroup, deleteGroup, fetchGroups } = useGroups();
+  const { groups, groupsAnalytics, loading, createGroup, deleteGroup, fetchGroups } = useGroups();
   const [currentView, setCurrentView] = useState<'list' | 'details' | 'athlete'>('list');
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
@@ -159,13 +161,27 @@ const GroupManagement: React.FC = () => {
     setCurrentView('details');
   };
 
+  const handleSelectGroupByAnalytics = (analyticsGroup: GroupAnalytics) => {
+    // Find full group object from the analytics data
+    const fullGroup = groups.find(g => g.id === analyticsGroup.group_id);
+    if (fullGroup) {
+      handleSelectGroup(fullGroup);
+    } else {
+      // Fallback if groups list isn't synced with analytics list for some reason
+      // Should rarely happen
+      toast.error("Erreur lors de l'ouverture du groupe");
+    }
+  };
+
   const handleViewAthlete = async (athleteId: string) => {
+    // First check if athlete is in the selected group members
     const athleteProfile = selectedGroup?.group_members.find(m => m.athlete_id === athleteId)?.profiles as Profile;
 
     if (athleteProfile) {
       setSelectedAthlete(athleteProfile);
       setCurrentView('athlete');
     } else {
+      // Fallback fetch if missing
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -208,14 +224,12 @@ const GroupManagement: React.FC = () => {
     }
   };
 
-  // Ouvre la modale de confirmation de suppression
   const handleDeleteClick = (groupId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setGroupToDelete(groupId);
     setDeleteModalOpen(true);
   };
 
-  // Supprime après confirmation
   const handleConfirmDelete = async () => {
     if (!groupToDelete) return;
     try {
@@ -239,7 +253,14 @@ const GroupManagement: React.FC = () => {
   }
 
   if (currentView === 'details' && selectedGroup) {
-    return <GroupDetailsPage group={selectedGroup} onBack={handleBackToList} onViewAthlete={handleViewAthlete} />;
+    if (isCoach) {
+      return <GroupControlCenter group={selectedGroup} onBack={handleBackToList} onViewAthlete={handleViewAthlete} />;
+    } else {
+      // Keep old view for athletes viewing their group (rare case if they can view details)
+      // Actually athletes usually see 'AthleteGroupView'. Assuming this component is mainly for coach.
+      // But if an athlete manages a group (unlikely), or views their group details:
+      return <GroupDetailsPage group={selectedGroup} onBack={handleBackToList} onViewAthlete={handleViewAthlete} />;
+    }
   }
 
   if (currentView === 'athlete' && selectedAthlete) {
@@ -254,7 +275,7 @@ const GroupManagement: React.FC = () => {
   }
 
   return (
-    <div className="p-4 space-y-5">
+    <div className="p-4 space-y-5 pb-24">
       {isCoach && isCreateModalOpen && (
         <CreateGroupModal onClose={() => setCreateModalOpen(false)} onCreate={handleCreateGroup} />
       )}
@@ -272,20 +293,20 @@ const GroupManagement: React.FC = () => {
         />
       )}
 
-      {/* Titre harmonisé : Mes Suivis (coach) ou Mes Groupes (athlète) */}
+      {/* Titre harmonisé */}
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        {isCoach ? 'Mes Suivis' : 'Mes Groupes'}
+        {isCoach ? 'Tableau de bord des Groupes' : 'Mes Groupes'}
       </h1>
 
       {groups.length === 0 ? (
         <div className="text-center py-20 flex flex-col items-center justify-center">
           <Users size={60} className="text-gray-400 mb-4" />
           <h3 className="text-xl font-semibold mb-2">
-            {isCoach ? 'Commencez par créer un suivi' : "Vous n'êtes dans aucun groupe"}
+            {isCoach ? 'Aucun groupe actif' : "Vous n'êtes dans aucun groupe"}
           </h3>
           <p className="text-gray-500 mb-6 max-w-sm">
             {isCoach
-              ? 'Créez des groupes pour gérer vos athlètes ou des suivis individuels.'
+              ? 'Créez votre premier groupe pour commencer à suivre la forme de vos athlètes.'
               : 'Rejoignez un groupe ou un coach en utilisant un code d’invitation.'}
           </p>
           <button
@@ -297,43 +318,58 @@ const GroupManagement: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {groups.map(group => (
-            <div
-              key={group.id}
-              onClick={() => handleSelectGroup(group)}
-              className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer flex justify-between items-center"
-            >
-              <div>
-                <div className="flex items-center space-x-3">
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      group.type === 'athlete'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    }`}
-                  >
-                    {group.type === 'athlete' ? 'Athlète' : 'Groupe'}
-                  </span>
-                  <h3 className="text-lg font-bold">{group.name}</h3>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {group.group_members.length}
-                  {group.max_members ? ` / ${group.max_members}` : ''} membre(s)
-                </p>
-              </div>
-              {isCoach && (
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={e => handleDeleteClick(group.id, e)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors"
-                  >
-                    <Trash2 size={18} className="text-red-500" />
-                  </button>
-                </div>
-              )}
+        <div className="space-y-6">
+          {/* New Liquid Grid for Coaches */}
+          {isCoach && groupsAnalytics.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {groupsAnalytics.map(analyticsGroup => (
+                <GroupLiquidCard 
+                  key={analyticsGroup.group_id}
+                  group={analyticsGroup}
+                  onClick={() => handleSelectGroupByAnalytics(analyticsGroup)}
+                  onDelete={(e) => handleDeleteClick(analyticsGroup.group_id, e)}
+                />
+              ))}
             </div>
-          ))}
+          ) : (
+            /* Fallback / Athlete View (Simple List) */
+            <div className="space-y-4">
+              {groups.map(group => (
+                <div
+                  key={group.id}
+                  onClick={() => handleSelectGroup(group)}
+                  className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer flex justify-between items-center"
+                >
+                  <div>
+                    <div className="flex items-center space-x-3">
+                      <span
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          group.type === 'athlete'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        }`}
+                      >
+                        {group.type === 'athlete' ? 'Athlète' : 'Groupe'}
+                      </span>
+                      <h3 className="text-lg font-bold">{group.name}</h3>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {group.group_members.length}
+                      {group.max_members ? ` / ${group.max_members}` : ''} membre(s)
+                    </p>
+                  </div>
+                  {isCoach && (
+                    <button
+                      onClick={e => handleDeleteClick(group.id, e)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors"
+                    >
+                      <Trash2 size={18} className="text-red-500" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {isCoach && (
             <div className="pt-4">
