@@ -3,18 +3,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import useAuth from '../../../hooks/useAuth.tsx';
 import { useWellness } from '../../../hooks/useWellness.ts';
+import { supabase } from '../../../lib/supabase.ts'; // Import Supabase directly for injury logs
 import { SprintyAdvice } from '../SprintyAdvice.tsx';
 import { StepSleep } from './steps/StepSleep.tsx';
 import { StepWellness } from './steps/StepWellness.tsx';
 import { StepCycle } from './steps/StepCycle.tsx';
 import { StepSummary } from './steps/StepSummary.tsx';
+import { StepInjuries, InjuryRecord } from './StepInjuries.tsx'; // Import new step
 
 interface CheckinWizardProps {
   onClose: () => void;
   onSuccess: () => void;
 }
 
-type Step = 'sleep' | 'wellness' | 'cycle' | 'summary';
+type Step = 'sleep' | 'wellness' | 'injuries' | 'cycle' | 'summary';
 
 export const CheckinWizard: React.FC<CheckinWizardProps> = ({ onClose, onSuccess }) => {
   const { user, profile } = useAuth();
@@ -30,6 +32,7 @@ export const CheckinWizard: React.FC<CheckinWizardProps> = ({ onClose, onSuccess
   const [energy, setEnergy] = useState(75);
   const [mood, setMood] = useState(75);
   const [menstruations, setMenstruations] = useState(false);
+  const [injuries, setInjuries] = useState<InjuryRecord[]>([]);
 
   // Derived State
   const isFemale = useMemo(() => profile?.sexe === 'femme', [profile]);
@@ -47,13 +50,15 @@ export const CheckinWizard: React.FC<CheckinWizardProps> = ({ onClose, onSuccess
   // Navigation Logic
   const nextStep = () => {
     if (step === 'sleep') setStep('wellness');
-    else if (step === 'wellness') setStep(isFemale ? 'cycle' : 'summary');
+    else if (step === 'wellness') setStep('injuries'); // Insert injuries step
+    else if (step === 'injuries') setStep(isFemale ? 'cycle' : 'summary');
     else if (step === 'cycle') setStep('summary');
   };
 
   const prevStep = () => {
-    if (step === 'summary') setStep(isFemale ? 'cycle' : 'wellness');
-    else if (step === 'cycle') setStep('wellness');
+    if (step === 'summary') setStep(isFemale ? 'cycle' : 'injuries');
+    else if (step === 'cycle') setStep('injuries');
+    else if (step === 'injuries') setStep('wellness');
     else if (step === 'wellness') setStep('sleep');
   };
 
@@ -66,6 +71,7 @@ export const CheckinWizard: React.FC<CheckinWizardProps> = ({ onClose, onSuccess
       const wakeupDate = new Date(`${today}T${wakeupTime}:00`);
       if (wakeupDate < bedtimeDate) wakeupDate.setDate(wakeupDate.getDate() + 1);
 
+      // 1. Log Wellness
       await logDailyCheckin({
         date: today,
         heure_coucher: bedtimeDate.toISOString(),
@@ -78,6 +84,28 @@ export const CheckinWizard: React.FC<CheckinWizardProps> = ({ onClose, onSuccess
         humeur_subjective: mood,
         menstruations: isFemale ? menstruations : false
       });
+
+      // 2. Log Injuries
+      if (injuries.length > 0) {
+        const injuryLogs = injuries.map(injury => ({
+            user_id: user.id,
+            date: today,
+            zone: injury.id,
+            pain_level: injury.painLevel,
+            side: injury.id.includes('_left') ? 'left' : injury.id.includes('_right') ? 'right' : 'center',
+            // orientation could be inferred or stored if needed, keeping simple for now
+        }));
+
+        const { error: injuryError } = await supabase
+            .from('injury_logs')
+            .insert(injuryLogs);
+
+        if (injuryError) {
+            console.error("Error logging injuries:", injuryError);
+            // Non-blocking error, we still succeed check-in
+        }
+      }
+
       onSuccess();
     } catch (error) {
       console.error(error);
@@ -142,7 +170,7 @@ export const CheckinWizard: React.FC<CheckinWizardProps> = ({ onClose, onSuccess
                 x: { type: "spring", stiffness: 300, damping: 30 },
                 opacity: { duration: 0.2 }
               }}
-              className="w-full"
+              className="w-full h-full"
             >
               {step === 'sleep' && (
                 <StepSleep
@@ -158,6 +186,12 @@ export const CheckinWizard: React.FC<CheckinWizardProps> = ({ onClose, onSuccess
                   fatigue={fatigue} setFatigue={setFatigue}
                   energy={energy} setEnergy={setEnergy}
                   mood={mood} setMood={setMood}
+                />
+              )}
+              {step === 'injuries' && (
+                <StepInjuries 
+                    injuries={injuries}
+                    setInjuries={setInjuries}
                 />
               )}
               {step === 'cycle' && (
@@ -182,7 +216,7 @@ export const CheckinWizard: React.FC<CheckinWizardProps> = ({ onClose, onSuccess
 
       {/* Footer Navigation (only for non-summary steps) */}
       {step !== 'summary' && (
-        <div className="pt-4 pb-6 px-4 border-t border-gray-100 dark:border-white/5 mt-auto">
+        <div className="pt-4 pb-6 px-4 border-t border-gray-100 dark:border-white/5 mt-auto z-20 bg-white dark:bg-[#1F2937]">
           <button
             onClick={() => paginate(1)}
             className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
