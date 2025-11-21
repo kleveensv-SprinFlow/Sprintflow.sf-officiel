@@ -171,10 +171,13 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
                 animate="blink" 
                 style={{ transformOrigin: "353px 620px" }}
             >
-              {/* Mask/Background */}
+              {/* Outline/Background (Back) */}
+              <path d={currentData.eyeR.outer} fill="#020201" />
+              
+              {/* White Eyeball (Middle) */}
               <path d={currentData.eyeR.white} fill="white" />
               
-              {/* Pupil Group - CLIPPED */}
+              {/* Pupil Group - CLIPPED (Front) */}
               <g clipPath="url(#clip_eye_R)">
                   {currentData.eyeR.pupil.cyan && <path d={currentData.eyeR.pupil.cyan} fill="#1097AF" />}
                   {currentData.eyeR.pupil.black && <path d={currentData.eyeR.pupil.black} fill="black" />}
@@ -183,9 +186,6 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
                   {/* Shadow inside the eye ball, also clipped */}
                   <path d={currentData.eyeR.eyeBallShadow} fill="black" fillOpacity="0.28" />
               </g>
-
-              {/* Outline on top */}
-              <path d={currentData.eyeR.outer} fill="#020201" fillRule="evenodd" />
             </motion.g>
 
             {/* Left Eye - Whole Group Blinks */}
@@ -195,8 +195,13 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
                 animate="blink" 
                 style={{ transformOrigin: "671px 620px" }}
             >
+              {/* Outline/Background (Back) */}
+              <path d={currentData.eyeL.outer} fill="#020201" />
+
+              {/* White Eyeball (Middle) */}
               <path d={currentData.eyeL.white} fill="white" />
               
+              {/* Pupil Group - CLIPPED (Front) */}
               <g clipPath="url(#clip_eye_L)">
                   {currentData.eyeL.pupil.cyan && <path d={currentData.eyeL.pupil.cyan} fill="#1097AF" />}
                   {currentData.eyeL.pupil.black && <path d={currentData.eyeL.pupil.black} fill="black" />}
@@ -204,8 +209,6 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
                   {currentData.eyeL.pupil.highlightLower && <path d={currentData.eyeL.pupil.highlightLower} fill="#F0EFEF" />}
                   <path d={currentData.eyeL.eyeBallShadow} fill="black" fillOpacity="0.28" />
               </g>
-
-              <path d={currentData.eyeL.outer} fill="#020201" fillRule="evenodd" />
             </motion.g>
 
             {/* Mouth */}
