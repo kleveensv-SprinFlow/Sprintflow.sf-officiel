@@ -4,6 +4,7 @@ import { useLocalStorage } from 'react-use';
 import { Loader, AlertTriangle, Users, User, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 import { AthleteSelectionModal } from './AthleteSelectionModal';
 import { GroupSelectionModal } from './GroupSelectionModal';
 import { CoachDailyPlanCarousel } from './CoachDailyPlanCarousel';
@@ -125,11 +126,13 @@ export const CoachDashboard: React.FC = () => {
         await planWorkout(creationPayload);
       }
       setFormState({ isOpen: false, initialData: undefined, date: undefined });
+      toast.success('Séance enregistrée avec succès !');
     } catch (e) {
+      console.error(e);
       if (e instanceof Error) {
-        alert(`Erreur: ${e.message}`);
+        toast.error(`Erreur: ${e.message}`);
       } else {
-        alert('Une erreur inconnue est survenue.');
+        toast.error('Une erreur inconnue est survenue.');
       }
     }
   };
