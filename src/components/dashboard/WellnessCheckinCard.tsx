@@ -35,7 +35,14 @@ export const WellnessCheckinCard: React.FC<WellnessCheckinCardProps> = ({ onClos
     return Math.round((wakeupDate.getTime() - bedtimeDate.getTime()) / (1000 * 60));
   }, [bedtime, wakeupTime]);
   
-  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  // Use local date for check-in to handle timezone correctly
+  const today = useMemo(() => {
+    const d = new Date();
+    // Offset in milliseconds
+    const offset = d.getTimezoneOffset() * 60000;
+    // Calculate local time
+    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+  }, []);
   
   const hasSubmittedToday = useMemo(() => 
     wellnessData?.some(log => log.date === today && log.ressenti_sommeil !== null) || false,
