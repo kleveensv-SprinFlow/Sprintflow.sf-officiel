@@ -14,6 +14,8 @@ import FabMenu from './components/navigation/FabMenu.tsx';
 import WeightEntryModal from './components/dashboard/WeightEntryModal.tsx';
 import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
 import { usePushNotifications } from './hooks/usePushNotifications.tsx';
+import { SprintyProvider, useSprinty } from './context/SprintyContext.tsx';
+import SprintyMenu from './components/chat/sprinty/SprintyMenu.tsx';
 
 type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
 
@@ -49,7 +51,8 @@ const pathToTab = (path: string): Tab => {
   return 'accueil'; // Onglet par défaut
 };
 
-function App() {
+// Inner App component to consume SprintyContext
+function InnerApp() {
   const { user, loading, profile } = useAuth();
   useTheme(); // Initialise et applique le thème
   usePushNotifications(); // Initialise la logique des notifications push
@@ -59,6 +62,7 @@ function App() {
   const [isFabMenuOpen, setFabMenuOpen] = useState(false);
   const [isWeightModalOpen, setWeightModalOpen] = useState(false);
   const showWelcomeMessage = useDailyWelcome();
+  const { isMenuOpen: isSprintyMenuOpen, setMenuOpen: setSprintyMenuOpen } = useSprinty();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Auth />;
@@ -79,6 +83,11 @@ function App() {
   };
 
   const handleFabClick = () => {
+    if (currentPath.startsWith('/sprinty')) {
+      // Logic for Sprinty avatar click is handled in TabBar via SprintyContext
+      // This handler is for the standard FAB
+      return; 
+    }
     setFabMenuOpen(!isFabMenuOpen);
   };
 
@@ -143,6 +152,9 @@ function App() {
           isFabOpen={isFabMenuOpen}
         />
       )}
+      
+      <SprintyMenu isOpen={isSprintyMenuOpen} onClose={() => setSprintyMenuOpen(false)} />
+
       <SideMenu
         isOpen={isMenuOpen}
         onClose={() => setMenuOpen(false)}
@@ -150,6 +162,14 @@ function App() {
       />
       <ToastContainer position="bottom-center" theme="colored" />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <SprintyProvider>
+      <InnerApp />
+    </SprintyProvider>
   );
 }
 
