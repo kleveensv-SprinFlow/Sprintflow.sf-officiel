@@ -1,5 +1,5 @@
 // src/components/dashboard/CoachDashboard.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from 'react-use';
 import { Loader, AlertTriangle, Users, User, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -50,7 +50,7 @@ export const CoachDashboard: React.FC = () => {
   const [formState, setFormState] = useState<FormState>({ isOpen: false });
   const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
 
-  const { coachAthletes } = useGroups();
+  const { coachAthletes, groups, loading: groupsLoading } = useGroups();
   const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
 
   const { workouts, loading, error, planWorkout, updateWorkout } = useWorkouts(selection || undefined);
@@ -59,6 +59,24 @@ export const CoachDashboard: React.FC = () => {
   const { groupRecords, groupWellnessScore, loading: analyticsLoading } = useGroupAnalytics(
     selection?.type === 'group' ? selection.id : undefined
   );
+
+  // Auto-selection logic: if nothing is selected, select the first group or athlete automatically
+  useEffect(() => {
+    if (!selection && !groupsLoading) {
+      if (groups && groups.length > 0) {
+        setSelection({ type: 'group', id: groups[0].id, name: groups[0].name });
+      } else if (coachAthletes && coachAthletes.length > 0) {
+        const firstAthlete = coachAthletes[0];
+        const name = `${firstAthlete.first_name} ${firstAthlete.last_name || ''}`.trim();
+        setSelection({
+          type: 'athlete',
+          id: firstAthlete.id,
+          name: name
+        });
+      }
+    }
+  }, [selection, groups, coachAthletes, groupsLoading, setSelection]);
+
 
   const handleSelectAthlete = (athlete: { id: string; name: string }) => {
     setSelection({ type: 'athlete', ...athlete });
@@ -236,12 +254,6 @@ export const CoachDashboard: React.FC = () => {
                 )}
 
                 {/* Athlete Marquee - Only show for athlete selection or if not a group (though selection forces one of two) */}
-                {/* Wait, design requirement: "les record a la place du carroussel athlète" for Group view. */}
-                {/* For Athlete view, we likely still want the marquee or maybe not? The original code showed Marquee for both contexts? */}
-                {/* Original code logic: `selection` exists -> show marquee of `coachAthletes`. */}
-                {/* If I am in "Athlete View" (for a specific athlete), showing "My Athletes" at bottom is fine for navigation. */}
-                {/* If I am in "Group View", user explicitly asked to replace it with Records. */}
-                
                 {selection.type !== 'group' && (
                   <div>
                     <h2 className="text-2xl font-bold text-light-title dark:text-dark-title mb-4">Mes Athlètes</h2>
