@@ -95,6 +95,38 @@ export const useRecords = (athleteId?: string) => {
     loading, 
     error, 
     refreshRecords: fetchRecords,
+    addRecord: async (record: Omit<Record, 'id'>) => {
+      try {
+        const { error } = await supabase
+          .from('records')
+          .insert([
+            {
+              user_id: idToFetch,
+              exercise_name: record.name || record.exercise_name, // Fallback for legacy or different naming
+              value: record.value,
+              unit: record.unit,
+              date: record.date,
+              type: record.type,
+              shoe_type: record.shoe_type,
+              location: record.location,
+              weather: record.weather,
+              notes: record.notes,
+              // Si l'exercice personnalisé ou de référence est utilisé, s'assurer que les champs sont bien mappés si nécessaire
+              // Pour l'instant on suppose que 'record' contient les bons champs correspondant à la DB ou que Supabase gère
+              // Note: le type Record a 'name' ou 'exercise_name' selon l'interface.
+              // En DB c'est souvent 'exercise_name'.
+            }
+          ]);
+
+        if (error) throw error;
+
+        // Rafraîchir les records après ajout
+        await fetchRecords();
+      } catch (e: any) {
+        console.error("❌ [useRecords] Erreur lors de l'ajout:", e.message);
+        throw e;
+      }
+    },
     deleteRecord: async (recordId: string) => {
       try {
         const { error } = await supabase
