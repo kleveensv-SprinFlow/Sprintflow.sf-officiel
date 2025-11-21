@@ -113,3 +113,15 @@ export interface Message {
   content: string;
   created_at: string;
 }
+export interface GroupRecord {
+  id: string;
+  user_id: string;
+  athlete_first_name: string;
+  athlete_last_name: string;
+  athlete_photo_url?: string | null;
+  exercise_name: string;
+  value: number;
+  unit: string;
+  date: string;
+  type: string;
+}
