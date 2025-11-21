@@ -37,10 +37,10 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
   > = {
     neutral: { fill: '#B2B2B3' }, // 1_neutral.svg
     success: { fill: '#B2B2B3' }, // 2_success.svg
-    sleep: { fill: '#B2B2B3' },   // 6_sleep.svg
+    sleep: { fill: '#B2B2B3' }, // 6_sleep.svg
     perplexed: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 }, // 3_perplexed.svg
-    caution: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 },   // bouche marquée
-    frustrated: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 },// bouche marquée
+    caution: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 }, // bouche marquée
+    frustrated: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 }, // bouche marquée
   };
 
   const mouthStyle = mouthStyles[dataKey] ?? mouthStyles.neutral;
@@ -60,9 +60,9 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
   // Animation de clignement pour les yeux (squash vertical du groupe)
   const blinkVariants = {
     blink: {
-      scaleY: [1, 0.1, 1],
+      scaleY: [1, 0.3, 1], // 0.3 au lieu de 0.1 pour un blink plus naturel
       transition: {
-        duration: 0.3,
+        duration: 0.25,
         times: [0, 0.5, 1],
         repeat: Infinity,
         repeatDelay: 4,
@@ -291,7 +291,10 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
               id="eye_R_dynamic"
               variants={blinkVariants}
               animate="blink"
-              style={{ transformOrigin: '353px 620px' }}
+              style={{
+                transformOrigin: '50% 50%',
+                transformBox: 'fill-box' as any,
+              }}
             >
               <path d={currentData.eyeR.outer} fill="#020201" />
               <path d={currentData.eyeR.white} fill="white" />
@@ -337,7 +340,10 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
               id="eye_L_dynamic"
               variants={blinkVariants}
               animate="blink"
-              style={{ transformOrigin: '671px 620px' }}
+              style={{
+                transformOrigin: '50% 50%',
+                transformBox: 'fill-box' as any,
+              }}
             >
               <path d={currentData.eyeL.outer} fill="#020201" />
               <path d={currentData.eyeL.white} fill="white" />
