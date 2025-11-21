@@ -1,6 +1,8 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Calendar, Apple, Plus, Users, MessageCircle } from 'lucide-react';
+import SprintyAvatar from './chat/sprinty/SprintyAvatar';
+import { useSprinty } from '../context/SprintyContext';
 
 type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
 
@@ -23,6 +25,7 @@ const TabBar: React.FC<TabBarProps> = ({
   userRole = 'athlete',
   isFabOpen = false
 }) => {
+  const { toggleMenu } = useSprinty();
   // Configuration pour les athlètes
   const athleteTabs = [
     { id: 'accueil', label: 'Accueil', Icon: Home },
@@ -82,31 +85,55 @@ const TabBar: React.FC<TabBarProps> = ({
         {/* Left Tabs */}
         {tabs.slice(0, 2).map(renderTab)}
 
-        {/* Central Action Button (FAB) */}
-        <button
-          onClick={onFabClick}
-          className="group relative flex h-full flex-1 flex-col items-center justify-center focus:outline-none"
-        >
-          <motion.div
-            animate={{ rotate: isFabOpen ? 45 : 0 }}
-            transition={{ duration: 0.2 }}
-            whileTap={{ scale: 0.95 }}
-            className={`flex items-center justify-center rounded-full p-3 transition-colors duration-300 ${
-                isFabOpen 
-                ? 'bg-sprint-primary text-white dark:bg-white dark:text-black'
-                : 'bg-sprint-primary/10 dark:bg-white/10 group-hover:bg-sprint-primary/20 dark:group-hover:bg-white/20'
-            }`}
-          >
-            <Plus 
-              className={`h-6 w-6 ${
-                  isFabOpen
-                  ? 'text-current'
-                  : 'text-sprint-primary dark:text-white'
-              }`}
-              strokeWidth={2}
-            />
-          </motion.div>
-        </button>
+        {/* Central Action Button (FAB) or Sprinty Avatar */}
+        <div className="group relative flex h-full flex-1 flex-col items-center justify-center focus:outline-none">
+          <AnimatePresence mode="wait">
+            {activeTab === 'sprinty' ? (
+              <motion.div
+                key="sprinty"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="w-14 h-14 -mt-4" // Slightly larger and lifted
+              >
+                <SprintyAvatar 
+                  onClick={toggleMenu}
+                  scale={1.2}
+                />
+              </motion.div>
+            ) : (
+              <motion.button
+                key="fab"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                onClick={onFabClick}
+                className="flex items-center justify-center"
+              >
+                <motion.div
+                  animate={{ rotate: isFabOpen ? 45 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`flex items-center justify-center rounded-full p-3 transition-colors duration-300 ${
+                      isFabOpen 
+                      ? 'bg-sprint-primary text-white dark:bg-white dark:text-black'
+                      : 'bg-sprint-primary/10 dark:bg-white/10 group-hover:bg-sprint-primary/20 dark:group-hover:bg-white/20'
+                  }`}
+                >
+                  <Plus 
+                    className={`h-6 w-6 ${
+                        isFabOpen
+                        ? 'text-current'
+                        : 'text-sprint-primary dark:text-white'
+                    }`}
+                    strokeWidth={2}
+                  />
+                </motion.div>
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Right Tabs */}
         {tabs.slice(2, 4).map(renderTab)}
