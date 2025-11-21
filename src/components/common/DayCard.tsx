@@ -2,9 +2,10 @@
 import React from 'react';
 import { format, isToday, isYesterday, isTomorrow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Plus, Edit3 } from 'lucide-react';
+import { Plus, Edit3, CheckCircle2, Clock, Dumbbell } from 'lucide-react';
 import { Workout } from '../../types';
 import { useWorkoutTypes } from '../../hooks/useWorkoutTypes';
+import { motion } from 'framer-motion';
 
 interface DayCardProps {
   date: Date;
@@ -16,19 +17,8 @@ interface DayCardProps {
   isActive?: boolean;
 }
 
-const WorkoutTagBadge: React.FC<{ name: string; color?: string }> = ({ name, color }) => {
-  return (
-    <div
-      className="px-3 py-1 rounded-full text-sm font-semibold text-white shadow-sm"
-      style={{ backgroundColor: color || '#6B7280' }}
-    >
-      {name}
-    </div>
-  );
-};
-
 const generateWorkoutPreview = (workout: Workout): string => {
-  const blocks = workout.planned_data?.blocs;
+  const blocks = workout.planned_data?.blocs || workout.workout_data?.blocs;
   if (!blocks || blocks.length === 0) {
     return workout.notes || 'Aucun détail';
   }
@@ -83,28 +73,53 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   const hasWorkouts = workouts.length > 0;
   const mainWorkout = hasWorkouts ? workouts[0] : null;
   const mainWorkoutType = mainWorkout?.tag_seance ? findWorkoutType(mainWorkout.tag_seance) : undefined;
+  const isCompleted = mainWorkout?.status === 'completed';
 
   const renderContent = () => {
     switch (workouts.length) {
       case 0:
         return (
           !isReadOnly && onPlanClick && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onPlanClick(date); }}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 font-semibold rounded-lg text-white bg-sprint-accent hover:opacity-90 transition-all duration-300 ease-in-out shadow-md transform hover:scale-105"
-            >
-              <Plus size={18} />
-              Planifier
-            </button>
+            <div className="flex items-center justify-center w-full h-full">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => { e.stopPropagation(); onPlanClick(date); }}
+                className="group relative flex items-center justify-center w-16 h-16 rounded-full bg-sprint-light-surface dark:bg-white/5 border-2 border-dashed border-gray-300 dark:border-white/20 hover:border-sprint-accent dark:hover:border-sprint-accent transition-colors duration-300"
+              >
+                <Plus size={32} className="text-gray-400 group-hover:text-sprint-accent transition-colors duration-300" />
+              </motion.button>
+              <div className="absolute bottom-6 text-sm font-medium text-gray-400 group-hover:text-sprint-accent transition-colors duration-300">
+                Planifier
+              </div>
+            </div>
           )
         );
       case 1: {
         const workout = workouts[0];
         return (
-          <div className="text-left space-y-2 px-1">
-            <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary line-clamp-3">
-              {generateWorkoutPreview(workout)}
-            </p>
+          <div className="flex flex-col h-full justify-between py-2">
+             <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                   {workout.type === 'guidé' ? <Clock size={18} className="text-gray-400"/> : <Dumbbell size={18} className="text-gray-400"/>}
+                   <h4 className={`text-xl font-bold line-clamp-2 leading-tight ${isCompleted ? 'text-white' : 'text-sprint-light-text-primary dark:text-sprint-dark-text-primary'}`}>
+                     {workoutTypeLabel(workout)}
+                   </h4>
+                </div>
+                
+                <p className={`text-lg font-medium line-clamp-3 ${isCompleted ? 'text-white/90' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {generateWorkoutPreview(workout)}
+                </p>
+             </div>
+
+             {isCompleted && (
+                <div className="flex items-center gap-2 mt-auto pt-4">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-1">
+                        <CheckCircle2 size={20} className="text-white" />
+                    </div>
+                    <span className="text-white font-bold tracking-wide text-sm uppercase">Séance Terminée</span>
+                </div>
+             )}
           </div>
         );
       }
@@ -112,22 +127,22 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         const workoutType1 = workouts[0].tag_seance ? findWorkoutType(workouts[0].tag_seance) : undefined;
         const workoutType2 = workouts[1].tag_seance ? findWorkoutType(workouts[1].tag_seance) : undefined;
         return (
-          <div className="text-left space-y-3 px-1">
-            <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
+          <div className="flex flex-col h-full gap-4 py-2">
+            <h4 className="font-extrabold text-xl tracking-tight text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
               Bi-Quotidien
             </h4>
-            <div className="space-y-2">
-              <div className="border-l-2 pl-2" style={{ borderColor: workoutType1?.color || 'currentColor' }}>
-                <p className="text-xs font-semibold truncate" style={{ color: workoutType1?.color || 'currentColor' }}>{workoutType1?.name}</p>
-                <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary line-clamp-2">
+            <div className="flex flex-col gap-3 overflow-hidden">
+              <div className="relative pl-3 border-l-4 rounded-sm" style={{ borderColor: workoutType1?.color || 'currentColor' }}>
+                 <p className="text-xs font-bold uppercase tracking-wider mb-0.5 opacity-80" style={{ color: workoutType1?.color || 'currentColor' }}>{workoutType1?.name || 'Séance 1'}</p>
+                 <p className="text-sm font-medium truncate text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
                   {generateWorkoutPreview(workouts[0])}
-                </p>
+                 </p>
               </div>
-              <div className="border-l-2 pl-2" style={{ borderColor: workoutType2?.color || 'currentColor' }}>
-                <p className="text-xs font-semibold truncate" style={{ color: workoutType2?.color || 'currentColor' }}>{workoutType2?.name}</p>
-                <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary line-clamp-2">
+              <div className="relative pl-3 border-l-4 rounded-sm" style={{ borderColor: workoutType2?.color || 'currentColor' }}>
+                 <p className="text-xs font-bold uppercase tracking-wider mb-0.5 opacity-80" style={{ color: workoutType2?.color || 'currentColor' }}>{workoutType2?.name || 'Séance 2'}</p>
+                 <p className="text-sm font-medium truncate text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
                   {generateWorkoutPreview(workouts[1])}
-                </p>
+                 </p>
               </div>
             </div>
           </div>
@@ -135,55 +150,101 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
       }
       default:
         return (
-          <div className="text-center">
-            <h4 className="font-bold text-lg text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
-              {workouts.length} Séances Planifiées
+          <div className="flex items-center justify-center h-full">
+            <h4 className="font-extrabold text-2xl text-center leading-tight text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
+              {workouts.length}<br/>
+              <span className="text-lg font-medium text-gray-500">Séances</span>
             </h4>
           </div>
         );
     }
   };
 
+  const workoutTypeLabel = (workout: Workout) => {
+      if (workout.tag_seance) {
+          const type = findWorkoutType(workout.tag_seance);
+          return type?.name || 'Entraînement';
+      }
+      return 'Entraînement';
+  }
+
+  // Styles dynamiques
+  const baseClasses = "relative w-full min-h-[280px] rounded-3xl p-6 flex flex-col justify-between overflow-hidden transition-all duration-300";
+  
+  let backgroundStyle: React.CSSProperties = {};
+  let textHeaderColor = "text-sprint-light-text-primary dark:text-sprint-dark-text-primary";
+
+  if (isCompleted && mainWorkoutType?.color) {
+      // Style "Addictive/Gratifiant" pour le status Completed
+      backgroundStyle = {
+          background: `linear-gradient(135deg, ${mainWorkoutType.color} 0%, ${hexToRgba(mainWorkoutType.color, 0.8)} 100%)`,
+          boxShadow: `0 10px 30px -10px ${mainWorkoutType.color}`,
+      };
+      textHeaderColor = "text-white";
+  } else if (isActive) {
+       // Active "Planned" state
+       backgroundStyle = { backgroundColor: 'var(--sprint-light-surface)', borderColor: mainWorkoutType?.color }; 
+       // Note: We handle dark mode via classes, but inline styles override. 
+       // Better to use classes for basic backgrounds and style for dynamic colors.
+  }
+
   const cardContent = (
     <>
-      <header className="flex justify-between items-start">
-        <div className="flex items-baseline gap-x-2 flex-wrap">
-          <h3 className="font-bold text-xl text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{getDayLabel()}</h3>
-          {mainWorkoutType && <p className="font-semibold" style={{ color: mainWorkoutType.color }}>{mainWorkoutType.name}</p>}
+      {/* Header Date */}
+      <header className="flex justify-between items-start mb-4 z-10 relative">
+        <div className="flex flex-col">
+          <h3 className={`text-3xl font-extrabold tracking-tight capitalize ${textHeaderColor}`}>
+            {format(date, 'EEE', { locale: fr }).replace('.', '')}
+          </h3>
+           <span className={`text-lg font-semibold opacity-60 ${textHeaderColor}`}>
+            {format(date, 'd MMM', { locale: fr })}
+           </span>
         </div>
-        {!isReadOnly && onEditClick && mainWorkout && (
-          <div onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} className="p-2 rounded-full transition-all bg-black/5 dark:bg-white/10 opacity-0 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/20 z-10 cursor-pointer">
-            <Edit3 size={16} className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
-          </div>
+        
+        {!isReadOnly && onEditClick && mainWorkout && !isCompleted && (
+          <motion.button 
+             whileHover={{ scale: 1.1 }}
+             whileTap={{ scale: 0.9 }}
+             onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} 
+             className="p-2 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+          >
+            <Edit3 size={18} className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
+          </motion.button>
         )}
       </header>
-      <div className="flex-grow flex items-center justify-center">
+
+      {/* Main Content */}
+      <div className="flex-grow z-10 relative">
         {renderContent()}
       </div>
+      
+      {/* Decorative Background Elements for Minimalist feel */}
+      {!isCompleted && hasWorkouts && mainWorkoutType && (
+         <div 
+            className="absolute top-0 right-0 w-32 h-32 rounded-bl-full opacity-10 pointer-events-none"
+            style={{ backgroundColor: mainWorkoutType.color }} 
+         />
+      )}
     </>
   );
 
-  const baseClasses = "w-full min-h-[250px] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 group bg-sprint-light-surface dark:bg-sprint-dark-surface";
-  
-  const cardStyle: React.CSSProperties = {};
-  if (isActive && mainWorkoutType?.color) {
-    cardStyle.backgroundColor = hexToRgba(mainWorkoutType.color, 0.15);
-  }
-
+  // Wrapper logic
   if (mainWorkout && onCardClick) {
     return (
-      <button 
+      <motion.button 
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         onClick={() => onCardClick(mainWorkout.id)} 
-        className={`${baseClasses} text-left hover:scale-[1.02] active:scale-[0.98]`}
-        style={cardStyle}
+        className={`${baseClasses} text-left shadow-neumorphic-flat dark:shadow-none bg-sprint-light-surface dark:bg-sprint-dark-surface`}
+        style={isCompleted ? backgroundStyle : {}}
       >
         {cardContent}
-      </button>
+      </motion.button>
     );
   }
 
   return (
-    <div className={baseClasses} style={cardStyle}>
+    <div className={`${baseClasses} shadow-neumorphic-flat dark:shadow-none bg-sprint-light-surface dark:bg-sprint-dark-surface`} style={isCompleted ? backgroundStyle : {}}>
       {cardContent}
     </div>
   );
