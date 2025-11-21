@@ -179,12 +179,28 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
               
               {/* Pupil Group - CLIPPED (Front) */}
               <g clipPath="url(#clip_eye_R)">
-                  {currentData.eyeR.pupil.cyan && <path d={currentData.eyeR.pupil.cyan} fill="#1097AF" />}
+                  {/* Base Dark Blue Cornea */}
+                  {currentData.eyeR.pupil.base && (
+                    <circle 
+                      cx={currentData.eyeR.pupil.base.cx} 
+                      cy={currentData.eyeR.pupil.base.cy} 
+                      r={currentData.eyeR.pupil.base.r} 
+                      fill={currentData.eyeR.pupil.base.fill} 
+                    />
+                  )}
+                  
+                  {/* Detail/Highlight Cyan */}
+                  {currentData.eyeR.pupil.cyan && <path d={currentData.eyeR.pupil.cyan} fill="#34DCED" />}
+                  
+                  {/* Pupil Black */}
                   {currentData.eyeR.pupil.black && <path d={currentData.eyeR.pupil.black} fill="black" />}
+                  
+                  {/* Highlights */}
                   {currentData.eyeR.pupil.highlightUpper && <path d={currentData.eyeR.pupil.highlightUpper} fill="#F0EFEF" />}
                   {currentData.eyeR.pupil.highlightLower && <path d={currentData.eyeR.pupil.highlightLower} fill="#F0EFEF" />}
+                  
                   {/* Shadow inside the eye ball, also clipped */}
-                  <path d={currentData.eyeR.eyeBallShadow} fill="black" fillOpacity="0.28" />
+                  {currentData.eyeR.eyeBallShadow && <path d={currentData.eyeR.eyeBallShadow} fill="black" fillOpacity="0.28" />}
               </g>
             </motion.g>
 
@@ -203,11 +219,28 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({ className = '', onClick, 
               
               {/* Pupil Group - CLIPPED (Front) */}
               <g clipPath="url(#clip_eye_L)">
-                  {currentData.eyeL.pupil.cyan && <path d={currentData.eyeL.pupil.cyan} fill="#1097AF" />}
+                  {/* Base Dark Blue Cornea */}
+                  {currentData.eyeL.pupil.base && (
+                    <circle 
+                      cx={currentData.eyeL.pupil.base.cx} 
+                      cy={currentData.eyeL.pupil.base.cy} 
+                      r={currentData.eyeL.pupil.base.r} 
+                      fill={currentData.eyeL.pupil.base.fill} 
+                    />
+                  )}
+
+                  {/* Detail/Highlight Cyan */}
+                  {currentData.eyeL.pupil.cyan && <path d={currentData.eyeL.pupil.cyan} fill="#34DCED" />}
+                  
+                  {/* Pupil Black */}
                   {currentData.eyeL.pupil.black && <path d={currentData.eyeL.pupil.black} fill="black" />}
+                  
+                  {/* Highlights */}
                   {currentData.eyeL.pupil.highlightUpper && <path d={currentData.eyeL.pupil.highlightUpper} fill="#F0EFEF" />}
                   {currentData.eyeL.pupil.highlightLower && <path d={currentData.eyeL.pupil.highlightLower} fill="#F0EFEF" />}
-                  <path d={currentData.eyeL.eyeBallShadow} fill="black" fillOpacity="0.28" />
+                  
+                  {/* Shadow inside the eye ball, also clipped */}
+                  {currentData.eyeL.eyeBallShadow && <path d={currentData.eyeL.eyeBallShadow} fill="black" fillOpacity="0.28" />}
               </g>
             </motion.g>
 
