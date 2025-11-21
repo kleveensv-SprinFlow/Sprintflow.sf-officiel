@@ -15,6 +15,17 @@ export interface Group {
   group_members: { athlete_id: string; profiles: Profile | null }[];
 }
 
+export interface GroupAnalytics {
+  group_id: string;
+  group_name: string;
+  member_count: number;
+  avg_score: number;
+  checkin_count: number;
+  alerts_count: number;
+  pending_requests_count: number;
+  max_members: number | null;
+}
+
 export interface JoinRequest {
   id: string;
   group_id: string;
@@ -26,33 +37,27 @@ export interface JoinRequest {
 
 /**
  * Hook pour gérer la logique des groupes et des suivis.
- * Permet de récupérer les groupes du coach ou de l’athlète, de créer/supprimer un groupe,
- * de répondre aux demandes, de rejoindre un groupe via un code d’invitation et de quitter un groupe.
  */
 export const useGroups = () => {
   const { user, profile } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
+  const [groupsAnalytics, setGroupsAnalytics] = useState<GroupAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Charge les groupes du coach ou de l’athlète
+  // Charge les groupes complets (structure)
   const fetchGroups = useCallback(async () => {
     if (!user || !profile) return;
     setLoading(true);
     setError(null);
 
-    logger.info('[useGroups] Début chargement groupes, rôle :', profile.role);
-    const timerId = logger.time('[useGroups] Temps total de chargement');
-
     try {
       let rawData;
-
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout chargement groupes après 10s')), 10000)
       );
 
       if (profile.role === 'coach') {
-        logger.info('[useGroups] Chargement groupes coach');
         const groupsPromise = supabase
           .from('groups')
           .select(`
@@ -75,7 +80,6 @@ export const useGroups = () => {
         if (coachError) throw coachError;
         rawData = coachGroups;
       } else {
-        logger.info('[useGroups] Chargement groupes athlète');
         const groupsPromise = supabase
           .from('group_members')
           .select(`
@@ -101,30 +105,44 @@ export const useGroups = () => {
         rawData = athleteGroups?.map((item: any) => item.groups).filter(Boolean) || [];
       }
 
-      logger.timeEnd(timerId);
-
-      if (rawData && rawData.length > 0) {
-        logger.info('[useGroups] Groupes chargés :', rawData.length);
+      if (rawData) {
         setGroups(rawData);
       } else {
-        logger.info('[useGroups] Aucun groupe trouvé');
         setGroups([]);
       }
     } catch (e: any) {
-      logger.timeEnd(timerId);
-      logger.error('[useGroups] Erreur lors de la récupération des groupes :', e);
-      logger.error('[useGroups] Détails :', e.message, e.code);
+      console.error('[useGroups] Erreur lors de la récupération des groupes :', e);
       setError(e);
       setGroups([]);
     } finally {
       setLoading(false);
-      logger.info('[useGroups] Chargement terminé');
+    }
+  }, [user, profile]);
+
+  // Charge les analytics des groupes (pour le coach uniquement)
+  const fetchGroupsAnalytics = useCallback(async () => {
+    if (!user || profile?.role !== 'coach') return;
+    
+    // Ne pas mettre setLoading(true) ici si on veut éviter un flash global si utilisé en parallèle
+    // Mais pour l'instant on gère le loading global
+    try {
+      const { data, error } = await supabase.rpc('get_coach_groups_analytics', {
+        coach_uuid: user.id
+      });
+
+      if (error) throw error;
+      setGroupsAnalytics(data as GroupAnalytics[] || []);
+    } catch (e) {
+      console.error('[useGroups] Erreur analytics:', e);
     }
   }, [user, profile]);
 
   useEffect(() => {
     fetchGroups();
-  }, [fetchGroups]);
+    if (profile?.role === 'coach') {
+      fetchGroupsAnalytics();
+    }
+  }, [fetchGroups, fetchGroupsAnalytics, profile?.role]);
 
   // Regroupe tous les athlètes d’un coach sans doublons
   const coachAthletes = useMemo(() => {
@@ -147,7 +165,6 @@ export const useGroups = () => {
     }
   }, [groups]);
 
-  // Crée un groupe ou un suivi individuel
   const createGroup = async (name: string, type: 'groupe' | 'athlete', max_members: number | null) => {
     if (!user) throw new Error('Utilisateur non authentifié.');
     const groupData: {
@@ -165,11 +182,13 @@ export const useGroups = () => {
     }
     const { data, error } = await supabase.from('groups').insert(groupData).select().single();
     if (error) throw error;
-    if (data) await fetchGroups();
+    if (data) {
+      await fetchGroups();
+      await fetchGroupsAnalytics();
+    }
     return data;
   };
 
-  // Supprime un groupe en toute sécurité (RPC delete_group)
   const deleteGroup = async (groupId: string) => {
     const { error } = await supabase.rpc('delete_group', {
       group_id_param: groupId,
@@ -181,9 +200,9 @@ export const useGroups = () => {
       throw error;
     }
     setGroups(prev => prev.filter(g => g.id !== groupId));
+    setGroupsAnalytics(prev => prev.filter(g => g.group_id !== groupId));
   };
 
-  // Récupère les demandes d’adhésion en attente pour un groupe
   const fetchJoinRequests = useCallback(async (groupId: string): Promise<JoinRequest[]> => {
     const { data, error } = await supabase
       .from('group_join_requests')
@@ -194,7 +213,6 @@ export const useGroups = () => {
     return data || [];
   }, []);
 
-  // Répond à une demande d’adhésion
   const respondToRequest = async (requestId: string, newStatus: 'accepted' | 'rejected') => {
     const { data, error } = await supabase.rpc('respond_to_join_request', {
       request_id_param: requestId,
@@ -203,13 +221,15 @@ export const useGroups = () => {
     if (error) throw error;
     const result = data as { status: string; message: string };
     if (result.status === 'error') throw new Error(result.message);
-    if (newStatus === 'accepted') await fetchGroups();
+    
+    if (newStatus === 'accepted') {
+      await fetchGroups();
+      await fetchGroupsAnalytics();
+    }
     return result;
   };
 
-  // Rejoint un groupe via un code d’invitation (blocage à un seul groupe)
   const joinGroupWithCode = async (invitationCode: string) => {
-    // Vérifie côté client : l’athlète est-il déjà dans un groupe ?
     if (profile?.role === 'athlete' && groups.length > 0) {
       throw new Error("Vous êtes déjà dans un groupe. Vous ne pouvez pas en rejoindre un autre.");
     }
@@ -219,17 +239,12 @@ export const useGroups = () => {
     if (error) throw error;
     const result = data as { status: string; message: string };
     if (result.status === 'error') throw new Error(result.message);
-    // Si l’adhésion est acceptée immédiatement, on recharge la liste
     if (result.message.toLowerCase().includes('succès')) {
       await fetchGroups();
     }
     return result;
   };
 
-  /**
-   * Quitte un groupe en appelant la fonction RPC leave_group
-   * et supprime localement le groupe quitté.
-   */
   const leaveGroup = async (groupId: string) => {
     const { error } = await supabase.rpc('leave_group', {
       group_id_param: groupId,
@@ -240,12 +255,14 @@ export const useGroups = () => {
 
   return {
     groups,
+    groupsAnalytics,
     loading,
     error,
     coachAthletes,
     createGroup,
     deleteGroup,
     fetchGroups,
+    fetchGroupsAnalytics,
     fetchJoinRequests,
     respondToRequest,
     joinGroupWithCode,
