@@ -15,6 +15,9 @@ import useAuth from '../../hooks/useAuth';
 import { useGroups } from '../../hooks/useGroups';
 import { AthleteMarquee } from './AthleteMarquee';
 import { AthleteDetails } from '../groups/AthleteDetails';
+import { GroupWellnessGauge } from './GroupWellnessGauge';
+import { GroupRecordsCarousel } from './GroupRecordsCarousel';
+import { useGroupAnalytics } from '../../hooks/useGroupAnalytics';
 import { Profile, Workout } from '../../types';
 import { WorkoutBlock } from '../workouts/WorkoutBuilder';
 
@@ -51,6 +54,11 @@ export const CoachDashboard: React.FC = () => {
   const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
 
   const { workouts, loading, error, planWorkout, updateWorkout } = useWorkouts(selection || undefined);
+
+  // Group Analytics Hook - only fetches if selection is a group
+  const { groupRecords, groupWellnessScore, loading: analyticsLoading } = useGroupAnalytics(
+    selection?.type === 'group' ? selection.id : undefined
+  );
 
   const handleSelectAthlete = (athlete: { id: string; name: string }) => {
     setSelection({ type: 'athlete', ...athlete });
@@ -215,10 +223,31 @@ export const CoachDashboard: React.FC = () => {
                   )}
                 </div>
 
-                <div>
-                  <h2 className="text-2xl font-bold text-light-title dark:text-dark-title mb-4">Mes Athlètes</h2>
-                  <AthleteMarquee athletes={coachAthletes || []} onAthleteClick={handleAthleteMarqueeClick} />
-                </div>
+                {/* Group Analytics Section */}
+                {selection.type === 'group' && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-6"
+                    >
+                        <GroupWellnessGauge score={groupWellnessScore} loading={analyticsLoading} />
+                        <GroupRecordsCarousel records={groupRecords} loading={analyticsLoading} />
+                    </motion.div>
+                )}
+
+                {/* Athlete Marquee - Only show for athlete selection or if not a group (though selection forces one of two) */}
+                {/* Wait, design requirement: "les record a la place du carroussel athlète" for Group view. */}
+                {/* For Athlete view, we likely still want the marquee or maybe not? The original code showed Marquee for both contexts? */}
+                {/* Original code logic: `selection` exists -> show marquee of `coachAthletes`. */}
+                {/* If I am in "Athlete View" (for a specific athlete), showing "My Athletes" at bottom is fine for navigation. */}
+                {/* If I am in "Group View", user explicitly asked to replace it with Records. */}
+                
+                {selection.type !== 'group' && (
+                  <div>
+                    <h2 className="text-2xl font-bold text-light-title dark:text-dark-title mb-4">Mes Athlètes</h2>
+                    <AthleteMarquee athletes={coachAthletes || []} onAthleteClick={handleAthleteMarqueeClick} />
+                  </div>
+                )}
               </>
             )}
           </div>
