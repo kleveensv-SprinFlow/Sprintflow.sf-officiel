@@ -71,12 +71,15 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
   const [customExerciceName, setCustomExerciceName] = useState('');
 
   const pickerValues = useMemo(() => {
+    let rawValues: number[];
     if (type === 'exercise') {
       // 0 to 300 kg, step 0.5
-      return Array.from({ length: 601 }, (_, i) => i * 0.5);
+      rawValues = Array.from({ length: 601 }, (_, i) => i * 0.5);
+    } else {
+       // For jump and throw, 0 to 100 m, step 0.01
+      rawValues = Array.from({ length: 10001 }, (_, i) => parseFloat((i * 0.01).toFixed(2)));
     }
-    // For jump and throw, 0 to 100 m, step 0.01
-    return Array.from({ length: 10001 }, (_, i) => parseFloat((i * 0.01).toFixed(2)));
+    return rawValues.map(v => ({ value: v, label: v.toString() }));
   }, [type]);
 
   if (showCustomForm) {
@@ -164,10 +167,10 @@ export const RecordsForm: React.FC<RecordsFormProps> = ({ records, onSave, onCan
                 />
               ) : (
                 <PickerWheel
-                  values={pickerValues}
-                  initialValue={value ?? 0}
+                  options={pickerValues}
+                  value={value ?? 0}
                   onChange={setValue}
-                  suffix={type === 'exercise' ? ' kg' : ' m'}
+                  label={type === 'exercise' ? 'Charge (kg)' : 'Distance (m)'}
                 />
               )}
             </div>
