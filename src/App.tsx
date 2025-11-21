@@ -10,6 +10,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import TabBar from './components/TabBar.tsx';
 import Header from './components/navigation/Header.tsx';
 import SideMenu from './components/navigation/SideMenu.tsx';
+import FabMenu from './components/navigation/FabMenu.tsx';
+import WeightEntryModal from './components/dashboard/WeightEntryModal.tsx';
 import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
 import { usePushNotifications } from './hooks/usePushNotifications.tsx';
 
@@ -54,6 +56,8 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const [isFabMenuOpen, setFabMenuOpen] = useState(false);
+  const [isWeightModalOpen, setWeightModalOpen] = useState(false);
   const showWelcomeMessage = useDailyWelcome();
 
   if (loading) return <LoadingScreen />;
@@ -75,7 +79,25 @@ function App() {
   };
 
   const handleFabClick = () => {
-    navigate('/records/new');
+    setFabMenuOpen(!isFabMenuOpen);
+  };
+
+  const handleFabAction = (action: string) => {
+    setFabMenuOpen(false);
+    switch (action) {
+      case 'record':
+        navigate('/records/new');
+        break;
+      case 'workout':
+        navigate('/planning/new');
+        break;
+      case 'weight':
+        setWeightModalOpen(true);
+        break;
+      case 'sleep':
+        navigate('/sleep/add');
+        break;
+    }
   };
   
   const showTabBar = ['/', '/planning', '/nutrition', '/groups', '/sprinty', '/records'].includes(currentPath);
@@ -98,6 +120,18 @@ function App() {
           <Outlet />
         </div>
       </main>
+      
+      <FabMenu 
+        isOpen={isFabMenuOpen} 
+        onClose={() => setFabMenuOpen(false)} 
+        onAction={handleFabAction} 
+      />
+      
+      <WeightEntryModal 
+        isOpen={isWeightModalOpen} 
+        onClose={() => setWeightModalOpen(false)} 
+      />
+
       {showTabBar && (
         <TabBar
           activeTab={pathToTab(currentPath)}
@@ -106,6 +140,7 @@ function App() {
           showPlanningNotification={false}
           showCoachNotification={true}
           userRole={profile?.role}
+          isFabOpen={isFabMenuOpen}
         />
       )}
       <SideMenu
