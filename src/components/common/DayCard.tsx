@@ -85,11 +85,11 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={(e) => { e.stopPropagation(); onPlanClick(date); }}
-                className="group relative flex items-center justify-center w-16 h-16 rounded-full bg-sprint-light-surface dark:bg-white/5 border-2 border-dashed border-gray-300 dark:border-white/20 hover:border-sprint-accent dark:hover:border-sprint-accent transition-colors duration-300"
+                className="group relative flex items-center justify-center w-16 h-16 rounded-full bg-gray-200/50 dark:bg-white/10 border-2 border-dashed border-gray-400 dark:border-white/20 hover:border-sprint-accent transition-colors duration-300"
               >
-                <Plus size={32} className="text-gray-400 group-hover:text-sprint-accent transition-colors duration-300" />
+                <Plus size={32} className="text-gray-500 dark:text-white/40 group-hover:text-sprint-accent transition-colors duration-300" />
               </motion.button>
-              <div className="absolute bottom-6 text-sm font-medium text-gray-400 group-hover:text-sprint-accent transition-colors duration-300">
+              <div className="absolute bottom-6 text-sm font-medium text-gray-500 dark:text-white/40 group-hover:text-sprint-accent transition-colors duration-300">
                 Planifier
               </div>
             </div>
@@ -101,13 +101,13 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
           <div className="flex flex-col h-full justify-between py-2">
              <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                   {workout.type === 'guidé' ? <Clock size={18} className="text-gray-400"/> : <Dumbbell size={18} className="text-gray-400"/>}
-                   <h4 className={`text-xl font-bold line-clamp-2 leading-tight ${isCompleted ? 'text-white' : 'text-sprint-light-text-primary dark:text-sprint-dark-text-primary'}`}>
+                   {workout.type === 'guidé' ? <Clock size={18} className="text-gray-500 dark:text-white/60"/> : <Dumbbell size={18} className="text-gray-500 dark:text-white/60"/>}
+                   <h4 className={`text-xl font-bold line-clamp-2 leading-tight ${isCompleted ? 'text-white' : 'text-sprint-light-text-primary dark:text-white'}`}>
                      {workoutTypeLabel(workout)}
                    </h4>
                 </div>
                 
-                <p className={`text-lg font-medium line-clamp-3 ${isCompleted ? 'text-white/90' : 'text-gray-500 dark:text-gray-400'}`}>
+                <p className={`text-lg font-medium line-clamp-3 ${isCompleted ? 'text-white/90' : 'text-gray-500 dark:text-white/70'}`}>
                   {generateWorkoutPreview(workout)}
                 </p>
              </div>
@@ -128,19 +128,19 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         const workoutType2 = workouts[1].tag_seance ? findWorkoutType(workouts[1].tag_seance) : undefined;
         return (
           <div className="flex flex-col h-full gap-4 py-2">
-            <h4 className="font-extrabold text-xl tracking-tight text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
+            <h4 className="font-extrabold text-xl tracking-tight text-sprint-light-text-primary dark:text-white">
               Bi-Quotidien
             </h4>
             <div className="flex flex-col gap-3 overflow-hidden">
               <div className="relative pl-3 border-l-4 rounded-sm" style={{ borderColor: workoutType1?.color || 'currentColor' }}>
                  <p className="text-xs font-bold uppercase tracking-wider mb-0.5 opacity-80" style={{ color: workoutType1?.color || 'currentColor' }}>{workoutType1?.name || 'Séance 1'}</p>
-                 <p className="text-sm font-medium truncate text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
+                 <p className="text-sm font-medium truncate text-sprint-light-text-primary dark:text-white/80">
                   {generateWorkoutPreview(workouts[0])}
                  </p>
               </div>
               <div className="relative pl-3 border-l-4 rounded-sm" style={{ borderColor: workoutType2?.color || 'currentColor' }}>
                  <p className="text-xs font-bold uppercase tracking-wider mb-0.5 opacity-80" style={{ color: workoutType2?.color || 'currentColor' }}>{workoutType2?.name || 'Séance 2'}</p>
-                 <p className="text-sm font-medium truncate text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
+                 <p className="text-sm font-medium truncate text-sprint-light-text-primary dark:text-white/80">
                   {generateWorkoutPreview(workouts[1])}
                  </p>
               </div>
@@ -151,9 +151,9 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
       default:
         return (
           <div className="flex items-center justify-center h-full">
-            <h4 className="font-extrabold text-2xl text-center leading-tight text-sprint-light-text-primary dark:text-sprint-dark-text-primary">
+            <h4 className="font-extrabold text-2xl text-center leading-tight text-sprint-light-text-primary dark:text-white">
               {workouts.length}<br/>
-              <span className="text-lg font-medium text-gray-500">Séances</span>
+              <span className="text-lg font-medium text-white/60">Séances</span>
             </h4>
           </div>
         );
@@ -169,27 +169,54 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   }
 
   // Styles dynamiques
-  const baseClasses = "relative w-full min-h-[280px] rounded-3xl p-6 flex flex-col justify-between overflow-hidden transition-all duration-300";
+  // Base Glass Styles (replaces old neumorphic classes)
+  const baseClasses = "relative w-full min-h-[280px] rounded-3xl p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 border shadow-xl backdrop-blur-md";
   
   let backgroundStyle: React.CSSProperties = {};
-  let textHeaderColor = "text-sprint-light-text-primary dark:text-sprint-dark-text-primary";
+  // Default text color adaptable to Glass mode (usually white-ish on dark glass)
+  let textHeaderColor = "text-sprint-light-text-primary dark:text-white";
 
   if (isCompleted && mainWorkoutType?.color) {
-      // Style "Addictive/Gratifiant" pour le status Completed
+      // Style "Solid/Gratifiant" pour le status Completed (unchanged mostly, just clearer variables)
       backgroundStyle = {
           background: `linear-gradient(135deg, ${mainWorkoutType.color} 0%, ${hexToRgba(mainWorkoutType.color, 0.8)} 100%)`,
+          borderColor: 'transparent',
           boxShadow: `0 10px 30px -10px ${mainWorkoutType.color}`,
       };
       textHeaderColor = "text-white";
-  } else if (isActive) {
-       // Active "Planned" state
-       backgroundStyle = { backgroundColor: 'var(--sprint-light-surface)', borderColor: mainWorkoutType?.color }; 
-       // Note: We handle dark mode via classes, but inline styles override. 
-       // Better to use classes for basic backgrounds and style for dynamic colors.
+  } else if (hasWorkouts && mainWorkoutType?.color) {
+      // Style "Tinted Glass" pour le status Planned
+      backgroundStyle = {
+          backgroundColor: hexToRgba(mainWorkoutType.color, 0.15),
+          borderColor: hexToRgba(mainWorkoutType.color, 0.3),
+      };
+      // We keep the default textHeaderColor (Dark on Light, White on Dark)
+      // but the glass background might need adjustment. 
+      // If user is in Dark Mode -> bg is transparent white/color -> text white is good.
+      // If user is in Light Mode -> bg is transparent color -> text black is good.
+  } else {
+      // Style "Default Glass" (Rest Day / No Type)
+      // Matches IndicesPanel: bg-white/10 border-white/20
+      backgroundStyle = {
+        // We rely on classes for basic glass, but can enforce it here if needed.
+        // Using classes below for defaults.
+      };
   }
+
+  // Determine default glass classes (applied when not overridden by style, or alongside it)
+  // If Completed: style overrides background.
+  // If Planned: style overrides background color.
+  // If Rest: Use these defaults.
+  // Updated for visibility: Light mode uses gray-200/50, Dark mode uses white/10
+  const glassClasses = (isCompleted || (hasWorkouts && mainWorkoutType)) 
+    ? "" 
+    : "bg-gray-100/80 dark:bg-white/10 border-gray-200 dark:border-white/20"; 
 
   const cardContent = (
     <>
+       {/* Glass Shine Overlay (copied from IndicesPanel) - Only for Dark Mode or Colored Cards */}
+       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+
       {/* Header Date */}
       <header className="flex justify-between items-start mb-4 z-10 relative">
         <div className="flex flex-col">
@@ -208,7 +235,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
              onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} 
              className="p-2 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
           >
-            <Edit3 size={18} className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
+            <Edit3 size={18} className={`text-sprint-light-text-secondary dark:text-white/80`} />
           </motion.button>
         )}
       </header>
@@ -221,7 +248,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
       {/* Decorative Background Elements for Minimalist feel */}
       {!isCompleted && hasWorkouts && mainWorkoutType && (
          <div 
-            className="absolute top-0 right-0 w-32 h-32 rounded-bl-full opacity-10 pointer-events-none"
+            className="absolute top-0 right-0 w-32 h-32 rounded-bl-full opacity-20 pointer-events-none"
             style={{ backgroundColor: mainWorkoutType.color }} 
          />
       )}
@@ -235,8 +262,8 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => onCardClick(mainWorkout.id)} 
-        className={`${baseClasses} text-left shadow-neumorphic-flat dark:shadow-none bg-sprint-light-surface dark:bg-sprint-dark-surface`}
-        style={isCompleted ? backgroundStyle : {}}
+        className={`${baseClasses} ${glassClasses} text-left`}
+        style={backgroundStyle}
       >
         {cardContent}
       </motion.button>
@@ -244,7 +271,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   }
 
   return (
-    <div className={`${baseClasses} shadow-neumorphic-flat dark:shadow-none bg-sprint-light-surface dark:bg-sprint-dark-surface`} style={isCompleted ? backgroundStyle : {}}>
+    <div className={`${baseClasses} ${glassClasses}`} style={backgroundStyle}>
       {cardContent}
     </div>
   );
