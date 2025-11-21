@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Home, User as UserIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useLocalStorage } from 'react-use';
 import useAuth from '../../hooks/useAuth';
+import { useGroups } from '../../hooks/useGroups';
 import LevelBadge from '../common/LevelBadge';
 
 interface HeaderProps {
@@ -26,7 +29,12 @@ export default function Header({
   userRole,
 }: HeaderProps) {
   const { profile } = useAuth();
+  const { groups, coachAthletes } = useGroups();
+  const [selection] = useLocalStorage<{ type: 'athlete' | 'group'; name: string } | null>('coach-dashboard-selection', null);
+  
   const isAthlete = userRole === 'athlete';
+  const isCoachDashboard = isDashboard && userRole === 'coach';
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isWelcomeVisible, setWelcomeVisible] = useState(showWelcomeMessage && isDashboard);
   const [displayText, setDisplayText] = useState(
@@ -47,9 +55,9 @@ export default function Header({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Affiche un message de bienvenue uniquement sur le tableau de bord
+  // Affiche un message de bienvenue uniquement sur le tableau de bord (et si ce n'est pas le dashboard coach qui a sa propre logique)
   useEffect(() => {
-    if (showWelcomeMessage && isDashboard) {
+    if (showWelcomeMessage && isDashboard && !isCoachDashboard) {
       const firstName = profile?.first_name || 'Athlète';
       setDisplayText(`Bienvenue ${firstName}`);
       setWelcomeVisible(true);
@@ -61,7 +69,7 @@ export default function Header({
       setWelcomeVisible(false);
       setDisplayText(title);
     }
-  }, [showWelcomeMessage, isDashboard, profile?.first_name, title]);
+  }, [showWelcomeMessage, isDashboard, profile?.first_name, title, isCoachDashboard]);
 
   // Quand le message disparaît, on affiche le titre de la page
   useEffect(() => {
@@ -98,7 +106,8 @@ export default function Header({
   };
 
   // Pour les athlètes ou sur le tableau de bord, on affiche toujours le badge et la photo
-  const showBadge = isDashboard || isAthlete;
+  // Sauf si c'est le dashboard coach où on remplace le badge par le nom du groupe
+  const showBadge = (isDashboard && !isCoachDashboard) || isAthlete;
   const showAvatar = isDashboard || isAthlete;
 
   return (
@@ -111,8 +120,27 @@ export default function Header({
     >
       <div className="px-4 flex items-center justify-between min-w-0">
         {/* Partie Gauche */}
-        <div className="flex items-center space-x-2 flex-shrink-0 w-1/4">
-          {showBadge ? (
+        <div className={`flex items-center space-x-2 flex-shrink-0 ${isCoachDashboard ? 'flex-1' : 'w-1/4'}`}>
+          {isCoachDashboard ? (
+            // Logique spécifique Header Coach Dashboard
+            selection ? (
+              <div className="flex items-center overflow-hidden">
+                <span className="text-gray-500 dark:text-gray-400 mr-1.5 text-[15px] font-medium whitespace-nowrap">
+                  {selection.type === 'group' ? 'Groupe' : 'Athlète'}
+                </span>
+                <span className="animate-text-shine-electric text-[15px] truncate">
+                  {selection.name}
+                </span>
+              </div>
+            ) : (
+               // Si pas de sélection, vérifier s'il y a des données (attente auto-select) ou si c'est vide (lien création)
+               (!groups || groups.length === 0) && (!coachAthletes || coachAthletes.length === 0) ? (
+                  <Link to="/groups" className="text-sm font-medium text-accent hover:underline whitespace-nowrap animate-pulse">
+                    Créer mon premier groupe
+                  </Link>
+               ) : null // On n'affiche rien pendant que l'auto-select se fait
+            )
+          ) : showBadge ? (
             <div className="origin-left scale-90">
               {profile && profile.level !== undefined ? (
                  <LevelBadge level={profile.level} />
@@ -153,10 +181,12 @@ export default function Header({
           )}
         </div>
 
-        {/* Titre Central */}
-        <div className="flex-1 flex justify-center min-w-0 h-6 relative overflow-hidden">
-          <AnimatePresence mode="wait">{renderText()}</AnimatePresence>
-        </div>
+        {/* Titre Central - Masqué sur le Dashboard Coach */}
+        {!isCoachDashboard && (
+          <div className="flex-1 flex justify-center min-w-0 h-6 relative overflow-hidden">
+            <AnimatePresence mode="wait">{renderText()}</AnimatePresence>
+          </div>
+        )}
 
         {/* Partie Droite (Avatar / Menu) */}
         <div className="flex items-center space-x-2 flex-shrink-0 w-1/4 justify-end">
