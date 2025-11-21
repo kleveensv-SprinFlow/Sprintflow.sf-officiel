@@ -61,8 +61,9 @@ export const AthleteDailyPlanCarousel: React.FC = () => {
 
   useEffect(() => {
     if (workouts) {
-      const plannedWorkouts = workouts.filter(w => w.status === 'planned');
-      setDailyWorkouts(groupWorkoutsByDay(plannedWorkouts));
+      // Filter for both planned and completed workouts
+      const relevantWorkouts = workouts.filter(w => w.status === 'planned' || w.status === 'completed');
+      setDailyWorkouts(groupWorkoutsByDay(relevantWorkouts));
     }
   }, [workouts]);
 
