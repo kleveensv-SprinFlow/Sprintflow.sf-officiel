@@ -16,7 +16,7 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
 }) => {
   const { expression } = useSprinty();
 
-  // Map expressions "alias" vers les clés réelles du dataset
+  // Map des alias d'expressions vers les clés réelles
   const getDataKey = (
     expr: SprintyExpression,
   ): keyof typeof sprintyData.expressions => {
@@ -30,7 +30,7 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
   const currentData =
     sprintyData.expressions[dataKey] || sprintyData.expressions.neutral;
 
-  // Styles de bouche calqués sur les SVG d’origine
+  // Styles de bouche dérivés des SVG d'origine
   const mouthStyles: Record<
     keyof typeof sprintyData.expressions,
     { fill?: string; stroke?: string; strokeWidth?: number }
@@ -39,13 +39,13 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
     success: { fill: '#B2B2B3' }, // 2_success.svg
     sleep: { fill: '#B2B2B3' }, // 6_sleep.svg
     perplexed: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 }, // 3_perplexed.svg
-    caution: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 }, // bouche marquée
-    frustrated: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 }, // bouche marquée
+    caution: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 },
+    frustrated: { fill: '#8B3033', stroke: 'black', strokeWidth: 8 },
   };
 
   const mouthStyle = mouthStyles[dataKey] ?? mouthStyles.neutral;
 
-  // Animation de respiration (léger mouvement vertical du visage)
+  // Légère respiration sur tout l'avatar
   const breathingVariants = {
     idle: {
       y: [0, -2, 0],
@@ -53,19 +53,6 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
         duration: 3,
         repeat: Infinity,
         ease: 'easeInOut',
-      },
-    },
-  };
-
-  // Animation de clignement pour les yeux (squash vertical du groupe)
-  const blinkVariants = {
-    blink: {
-      scaleY: [1, 0.3, 1], // 0.3 au lieu de 0.1 pour un blink plus naturel
-      transition: {
-        duration: 0.25,
-        times: [0, 0.5, 1],
-        repeat: Infinity,
-        repeatDelay: 4,
       },
     },
   };
@@ -89,7 +76,7 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
         variants={breathingVariants}
         animate="idle"
       >
-        {/* CLIP POUR LES YEUX (permet de garder la pupille à l’intérieur du blanc) */}
+        {/* Clip pour garder la pupille à l'intérieur du blanc */}
         <defs>
           <clipPath id="clip_eye_R">
             <path d={currentData.eyeR.white} />
@@ -99,7 +86,7 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
           </clipPath>
         </defs>
 
-        {/* --- COUCHE STATIQUE : VISAGE EXACT D’ORIGINE --- */}
+        {/* --- COUCHE STATIQUE : visage identique au SVG --- */}
 
         {/* Oreilles derrière la tête */}
         <g id="ears">
@@ -133,6 +120,7 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
               fillOpacity={0.26}
             />
           </g>
+
           {/* Oreille gauche */}
           <g id="ear_L">
             <path
@@ -169,7 +157,7 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
         <path d={sprintyData.base.earR.hair} fill="black" />
         <path d={sprintyData.base.earL.hair} fill="black" />
 
-        {/* Tête / visage de base */}
+        {/* Tête + tâches */}
         <g id="head-group">
           <path
             d={sprintyData.base.head}
@@ -181,14 +169,12 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
           <path d={sprintyData.base.headShadowL} fill="#EBECED" />
           <path d={sprintyData.base.headShadowR} fill="#EBECE8" />
 
-          {/* Taches de pelage */}
           <g id="spots">
             {sprintyData.base.spots.map((d, i) => (
               <path key={i} d={d} fill="#485760" />
             ))}
           </g>
 
-          {/* Zones plus claires autour des yeux */}
           <path d={sprintyData.base.eyeSpotR} fill="#E0E1E1" />
           <path d={sprintyData.base.eyeSpotL} fill="#E0E1E1" />
         </g>
@@ -239,7 +225,7 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
           />
         </g>
 
-        {/* Bas du visage / menton, nez, moustaches */}
+        {/* Menton / nez / moustaches */}
         <g id="face-base">
           <path d={sprintyData.base.chin} fill="#E0DFDF" />
           <path d={sprintyData.base.chinShadow} fill="#B0B0B1" />
@@ -277,7 +263,7 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
           fillOpacity={0.16}
         />
 
-        {/* --- COUCHE DYNAMIQUE : YEUX + BOUCHE + ACCESSOIRES --- */}
+        {/* --- COUCHE DYNAMIQUE : expressions --- */}
         <AnimatePresence mode="wait">
           <motion.g
             key={dataKey}
@@ -286,16 +272,8 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Œil droit */}
-            <motion.g
-              id="eye_R_dynamic"
-              variants={blinkVariants}
-              animate="blink"
-              style={{
-                transformOrigin: '50% 50%',
-                transformBox: 'fill-box' as any,
-              }}
-            >
+            {/* Œil droit – identique au SVG, sans transformation */}
+            <g id="eye_R_dynamic">
               <path d={currentData.eyeR.outer} fill="#020201" />
               <path d={currentData.eyeR.white} fill="white" />
               <g clipPath="url(#clip_eye_R)">
@@ -333,18 +311,10 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
                   />
                 )}
               </g>
-            </motion.g>
+            </g>
 
-            {/* Œil gauche */}
-            <motion.g
-              id="eye_L_dynamic"
-              variants={blinkVariants}
-              animate="blink"
-              style={{
-                transformOrigin: '50% 50%',
-                transformBox: 'fill-box' as any,
-              }}
-            >
+            {/* Œil gauche – identique au SVG, sans transformation */}
+            <g id="eye_L_dynamic">
               <path d={currentData.eyeL.outer} fill="#020201" />
               <path d={currentData.eyeL.white} fill="white" />
               <g clipPath="url(#clip_eye_L)">
@@ -382,12 +352,12 @@ const SprintyAvatar: React.FC<SprintyAvatarProps> = ({
                   />
                 )}
               </g>
-            </motion.g>
+            </g>
 
-            {/* Bouche : d identique aux SVG + style dérivé des SVG */}
+            {/* Bouche */}
             <path d={currentData.mouth} {...mouthStyle} />
 
-            {/* Langue (présente uniquement sur certaines expressions) */}
+            {/* Langue */}
             {currentData.tongue && (
               <path d={currentData.tongue} fill="#E2313C" />
             )}
