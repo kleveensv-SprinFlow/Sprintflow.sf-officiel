@@ -1,0 +1,48 @@
+-- Create injury_logs table
+CREATE TABLE IF NOT EXISTS public.injury_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    zone TEXT NOT NULL, -- e.g., 'shoulder_left', 'knee_right', 'back_lower'
+    pain_level INTEGER NOT NULL CHECK (pain_level >= 0 AND pain_level <= 10),
+    side TEXT, -- 'left', 'right', 'center' (can be redundant with zone, but useful)
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.injury_logs ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+-- Users can insert their own injury logs
+CREATE POLICY "Users can insert their own injury logs"
+    ON public.injury_logs
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (auth.uid() = user_id);
+
+-- Users can read their own injury logs
+CREATE POLICY "Users can read their own injury logs"
+    ON public.injury_logs
+    FOR SELECT
+    TO authenticated
+    USING (auth.uid() = user_id);
+
+-- Coaches can read injury logs of their athletes
+CREATE POLICY "Coaches can read injury logs of their athletes"
+    ON public.injury_logs
+    FOR SELECT
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.coach_athlete_links
+            WHERE coach_id = auth.uid()
+            AND athlete_id = injury_logs.user_id
+        )
+    );
+
+-- Add updated_at trigger
+CREATE TRIGGER update_injury_logs_updated_at
+    BEFORE UPDATE ON public.injury_logs
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
