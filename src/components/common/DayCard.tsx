@@ -85,11 +85,11 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={(e) => { e.stopPropagation(); onPlanClick(date); }}
-                className="group relative flex items-center justify-center w-12 h-12 rounded-full bg-gray-200/50 dark:bg-white/10 border-2 border-dashed border-gray-400 dark:border-white/20 hover:border-sprint-accent transition-colors duration-300"
+                className="group relative flex items-center justify-center w-12 h-12 rounded-full bg-gray-200/50 dark:bg-white/20 border-2 border-dashed border-gray-400 dark:border-white/40 hover:border-sprint-accent transition-colors duration-300"
               >
-                <Plus size={24} className="text-gray-500 dark:text-white/40 group-hover:text-sprint-accent transition-colors duration-300" />
+                <Plus size={24} className="text-gray-600 dark:text-white/70 group-hover:text-sprint-accent transition-colors duration-300" />
               </motion.button>
-              <div className="absolute bottom-2 text-xs font-medium text-gray-500 dark:text-white/40 group-hover:text-sprint-accent transition-colors duration-300">
+              <div className="absolute bottom-2 text-xs font-medium text-gray-600 dark:text-white/70 group-hover:text-sprint-accent transition-colors duration-300">
                 Planifier
               </div>
             </div>
@@ -101,13 +101,13 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
           <div className="flex flex-col h-full justify-between py-2">
              <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                   {workout.type === 'guidé' ? <Clock size={16} className="text-gray-500 dark:text-white/60"/> : <Dumbbell size={16} className="text-gray-500 dark:text-white/60"/>}
+                   {workout.type === 'guidé' ? <Clock size={16} className="text-gray-600 dark:text-white/80"/> : <Dumbbell size={16} className="text-gray-600 dark:text-white/80"/>}
                    <h4 className={`text-lg font-bold line-clamp-2 leading-tight ${isCompleted ? 'text-white' : 'text-sprint-light-text-primary dark:text-white'}`}>
                      {workoutTypeLabel(workout)}
                    </h4>
                 </div>
                 
-                <p className={`text-base font-medium line-clamp-4 ${isCompleted ? 'text-white/90' : 'text-gray-500 dark:text-white/70'}`}>
+                <p className={`text-base font-medium line-clamp-4 ${isCompleted ? 'text-white/90' : 'text-gray-600 dark:text-white/80'}`}>
                   {generateWorkoutPreview(workout)}
                 </p>
              </div>
@@ -134,13 +134,13 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
             <div className="flex flex-col gap-2 overflow-hidden">
               <div className="relative pl-3 border-l-4 rounded-sm" style={{ borderColor: workoutType1?.color || 'currentColor' }}>
                  <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5 opacity-80" style={{ color: workoutType1?.color || 'currentColor' }}>{workoutType1?.name || 'Séance 1'}</p>
-                 <p className="text-xs font-medium truncate text-sprint-light-text-primary dark:text-white/80">
+                 <p className="text-xs font-medium truncate text-sprint-light-text-primary dark:text-white/90">
                   {generateWorkoutPreview(workouts[0])}
                  </p>
               </div>
               <div className="relative pl-3 border-l-4 rounded-sm" style={{ borderColor: workoutType2?.color || 'currentColor' }}>
                  <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5 opacity-80" style={{ color: workoutType2?.color || 'currentColor' }}>{workoutType2?.name || 'Séance 2'}</p>
-                 <p className="text-xs font-medium truncate text-sprint-light-text-primary dark:text-white/80">
+                 <p className="text-xs font-medium truncate text-sprint-light-text-primary dark:text-white/90">
                   {generateWorkoutPreview(workouts[1])}
                  </p>
               </div>
@@ -153,7 +153,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
           <div className="flex items-center justify-center h-full">
             <h4 className="font-extrabold text-xl text-center leading-tight text-sprint-light-text-primary dark:text-white">
               {workouts.length}<br/>
-              <span className="text-base font-medium text-white/60">Séances</span>
+              <span className="text-base font-medium text-white/70">Séances</span>
             </h4>
           </div>
         );
@@ -198,7 +198,6 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
       // If user is in Light Mode -> bg is transparent color -> text black is good.
   } else {
       // Style "Default Glass" (Rest Day / No Type)
-      // Matches IndicesPanel: bg-white/10 border-white/20
       backgroundStyle = {
         // We rely on classes for basic glass, but can enforce it here if needed.
         // Using classes below for defaults.
@@ -209,10 +208,10 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
   // If Completed: style overrides background.
   // If Planned: style overrides background color.
   // If Rest: Use these defaults.
-  // Updated for visibility: Light mode uses gray-200/50, Dark mode uses white/10
+  // Updated for visibility: Light mode uses gray-200/80, Dark mode uses white/20 (was white/10)
   const glassClasses = (isCompleted || (hasWorkouts && mainWorkoutType)) 
     ? "" 
-    : "bg-gray-100/80 dark:bg-white/10 border-gray-200 dark:border-white/20"; 
+    : "bg-gray-100/80 dark:bg-white/20 border-gray-200 dark:border-white/20"; 
 
   const cardContent = (
     <>
@@ -225,7 +224,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
           <h3 className={`text-2xl font-extrabold tracking-tight capitalize ${textHeaderColor}`}>
             {format(date, 'EEE', { locale: fr }).replace('.', '')}
           </h3>
-           <span className={`text-sm font-semibold opacity-60 ${textHeaderColor}`}>
+           <span className={`text-sm font-semibold opacity-70 ${textHeaderColor}`}>
             {format(date, 'd MMM', { locale: fr })}
            </span>
         </div>
@@ -235,7 +234,7 @@ export const DayCard: React.FC<DayCardProps> = ({ date, workouts, onPlanClick, o
              whileHover={{ scale: 1.1 }}
              whileTap={{ scale: 0.9 }}
              onClick={(e) => { e.stopPropagation(); onEditClick(mainWorkout.id); }} 
-             className="p-1.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+             className="p-1.5 rounded-full bg-black/5 dark:bg-white/20 hover:bg-black/10 dark:hover:bg-white/30 transition-colors"
           >
             <Edit3 size={16} className={`text-sprint-light-text-secondary dark:text-white/80`} />
           </motion.button>
