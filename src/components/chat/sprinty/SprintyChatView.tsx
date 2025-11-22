@@ -222,15 +222,10 @@ const SprintyChatView: React.FC = () => {
   };
 
   return (
-    // Immersive layout: Removed z-30 to avoid stacking context trap. Let it be natural DOM order (behind TabBar).
-    <div className="fixed inset-0 bg-sprint-light-background dark:bg-sprint-dark-background overflow-hidden">
+    <div className="fixed inset-0 bg-[#020617] overflow-hidden">
       
-      {/* Ambient Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-pink-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000" />
-      </div>
+      {/* Subtle Background Gradient (Deep Blue to Black) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#050B14] via-[#020617] to-[#020617]" />
 
       <SprintyChatHeader
         onMenuClick={() => setMenuOpen(true)}
@@ -239,8 +234,8 @@ const SprintyChatView: React.FC = () => {
       />
 
       {/* Scrollable Message Area */}
-      {/* Adjusted padding bottom: 80px (input position) + ~60px (input height) + 20px buffer = ~160px */}
-      <div className="absolute inset-0 overflow-y-auto pt-[70px] pb-[160px] px-4 space-y-6 no-scrollbar">
+      {/* Added padding top for header and bottom for input area */}
+      <div className="absolute inset-0 overflow-y-auto pt-[70px] pb-[140px] px-4 space-y-6 no-scrollbar">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -253,7 +248,7 @@ const SprintyChatView: React.FC = () => {
         {/* Typing Indicator */}
         {isTyping && (
           <div className="flex justify-start animate-fade-in">
-            <div className="bg-white/50 dark:bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2 shadow-sm">
+            <div className="bg-[#1E293B] border border-white/5 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2 shadow-sm">
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
@@ -265,10 +260,7 @@ const SprintyChatView: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Gradient for visual fade behind TabBar area - z-40 to be below TabBar (z-50) but above messages */}
-      <div className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-[#0B1120] dark:via-[#0B1120]/90 dark:to-transparent z-40 pointer-events-none" />
-
-      {/* Input Container - Explicitly placed above TabBar (z-60 > z-50) */}
+      {/* Input Container - Floating above TabBar */}
       <div className="fixed bottom-[80px] left-0 right-0 px-4 z-[60]">
         <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
