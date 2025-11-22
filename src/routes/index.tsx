@@ -7,7 +7,7 @@ import PlanningPage from '../pages/PlanningPage';
 import NutritionPage from '../pages/NutritionPage';
 import RecordsPage from '../components/records/RecordsPage';
 import ChatPage from '../pages/ChatPage';
-import SprintyChatView from '../components/chat/sprinty/SprintyChatView';
+import SprintyPage from '../components/pages/SprintyPage'; // Updated import
 import ConversationHistoryView from '../components/chat/ConversationHistoryView';
 import AdvicePage from '../components/advice/AdvicePage';
 import SleepPage from '../pages/SleepPage';
@@ -68,7 +68,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: '/sprinty/:id?',
-    element: <SprintyChatView />,
+    element: <SprintyPage />, // Updated element
   },
   {
     path: '/sprinty/history',
