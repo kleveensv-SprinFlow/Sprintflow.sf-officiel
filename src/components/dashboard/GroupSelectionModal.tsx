@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 interface GroupSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (group: { id: string; name: string }) => void;
+  onSelect: (group: { id: string; name: string; color?: string }) => void;
 }
 
 export const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({ isOpen, onClose, onSelect }) => {
@@ -48,10 +48,14 @@ export const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({ isOpen
               {groups.map(group => (
                 <li key={group.id}>
                   <button
-                    onClick={() => onSelect({ id: group.id, name: group.name })}
-                    className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => onSelect({ id: group.id, name: group.name, color: group.color })}
+                    className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center"
                   >
-                    {group.name}
+                    <span 
+                      className="w-4 h-4 rounded-full mr-3 shrink-0" 
+                      style={{ backgroundColor: group.color || '#9CA3AF' }} // Default gray if no color
+                    />
+                    <span className="font-medium">{group.name}</span>
                   </button>
                 </li>
               ))}
