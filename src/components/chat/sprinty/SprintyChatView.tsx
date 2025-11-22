@@ -42,6 +42,7 @@ const SprintyChatView: React.FC = () => {
   const { setExpression } = useSprinty();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Welcome Message
   const getWelcomeMessage = useCallback(() => {
     return t('sprinty.welcome');
   }, [t]);
@@ -130,6 +131,7 @@ const SprintyChatView: React.FC = () => {
   }, [conversationId, normalizeMessage, getWelcomeMessage, t]);
 
   useEffect(() => {
+    // Auto-scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
@@ -138,7 +140,6 @@ const SprintyChatView: React.FC = () => {
   };
 
   const handleSendMessage = async (text: string) => {
-    console.log('[SprintyChatView] handleSendMessage:', text);
     const sanitizedText = text.trim();
     if (!sanitizedText) return;
 
@@ -192,9 +193,6 @@ const SprintyChatView: React.FC = () => {
       setExpression('perplexed');
     } finally {
       setIsTyping(false);
-      if (messages.length > 0 && !isTyping) {
-         // Keep typing/success state briefly or revert? handled above with timeout for success
-      }
     }
   };
 
@@ -226,14 +224,25 @@ const SprintyChatView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-light-background dark:bg-dark-background">
+    // Immersive layout: Fixed container covering the screen
+    <div className="fixed inset-0 bg-sprint-light-background dark:bg-sprint-dark-background overflow-hidden">
+      
+      {/* Ambient Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-pink-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000" />
+      </div>
+
       <SprintyChatHeader
         onMenuClick={() => setMenuOpen(true)}
         mode={sprintyMode}
         onModeChange={handleModeChange}
       />
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-24">
+      {/* Scrollable Message Area */}
+      {/* Added pt-[70px] for header and pb-[140px] for input area + TabBar space */}
+      <div className="absolute inset-0 overflow-y-auto pt-[70px] pb-[150px] px-4 space-y-6 no-scrollbar">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -242,18 +251,25 @@ const SprintyChatView: React.FC = () => {
             <MessageBubble message={message} />
           </div>
         ))}
+        
+        {/* Typing Indicator */}
         {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-gray-200 dark:bg-gray-700 rounded-2xl rounded-bl-lg px-4 py-3 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-              <span className="text-sm text-gray-600 dark:text-gray-300">{t('sprinty.typing')}</span>
+          <div className="flex justify-start animate-fade-in">
+            <div className="bg-white/50 dark:bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2 shadow-sm">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+              </div>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="fixed bottom-20 left-0 right-0 p-4 bg-light-background dark:bg-dark-background border-t border-gray-200 dark:border-gray-700">
+      {/* Fixed Input Area at Bottom */}
+      {/* bottom-[64px] to sit exactly on top of the 64px TabBar */}
+      <div className="fixed bottom-[64px] left-0 right-0 p-4 bg-gradient-to-t from-white/80 via-white/50 to-transparent dark:from-[#0B1120]/80 dark:via-[#0B1120]/50 dark:to-transparent z-10">
         <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
 
