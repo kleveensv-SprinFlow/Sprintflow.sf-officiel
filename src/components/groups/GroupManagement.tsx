@@ -8,7 +8,7 @@ import { Profile } from '../../types';
 import { toast } from 'react-toastify';
 import { supabase } from '../../lib/supabase';
 import ConfirmationModal from '../common/ConfirmationModal';
-import { JoinGroupModal } from './JoinGroupModal';
+import JoinGroupModal from './JoinGroupModal';
 import useAuth from '../../hooks/useAuth';
 import { GroupLiquidCard } from './GroupLiquidCard';
 import { SprintyWizard } from './SprintyWizard';
