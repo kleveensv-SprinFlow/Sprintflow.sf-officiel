@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { SprintyProvider } from './context/SprintyContext.tsx';
 import SprintyChatView from './components/chat/sprinty/SprintyChatView.tsx';
 import TabBar from './components/TabBar.tsx';
@@ -17,11 +17,9 @@ import 'react-toastify/dist/ReactToastify.css';
 function App() {
   return (
     <SprintyProvider>
-      <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<TestLayout />} />
-          </Routes>
-      </BrowserRouter>
+        <Routes>
+          <Route path="/" element={<TestLayout />} />
+        </Routes>
     </SprintyProvider>
   );
 }
