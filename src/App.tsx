@@ -1,313 +1,52 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../../../lib/supabase';
-import { getSprintyAnswer, SprintyMode } from '../../../lib/sprintyEngine';
-import { useLanguage } from '../../../hooks/useLanguage';
-import { useSprinty } from '../../../context/SprintyContext';
-import SprintyChatHeader from './SprintyChatHeader';
-import MessageBubble from './MessageBubble';
-import ChatInput from './ChatInput';
-import ConversationMenu from './ConversationMenu';
-import ConversationActions from './ConversationActions';
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { SprintyProvider } from './context/SprintyContext.tsx';
+import SprintyChatView from './components/chat/sprinty/SprintyChatView.tsx';
+import TabBar from './components/TabBar.tsx';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'sprinty';
-  component?: React.ReactNode;
-}
+// MOCK: SprintyChatView for visualization
+// We are importing the REAL one, but we must MOCK it in the file itself or here.
+// But we can't easily mock imports here without Jest/Vitest.
+// So we modified SprintyChatView.tsx to have mock data? NO I haven't yet.
 
-interface ConversationRecord {
-  id: string;
-  title: string;
-  created_at: string;
-  updated_at: string;
-}
+// I will modify App.tsx to JUST render the Sprinty View, bypassing Auth.
+// And I will modify SprintyChatView.tsx to use static data.
 
-const SprintyChatView: React.FC = () => {
-  const { id: conversationId } = useParams<{ id?: string }>();
-  const navigate = useNavigate();
-  const { language, t } = useLanguage();
-  
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [sprintyMode, setSprintyMode] = useState<SprintyMode>('simplified');
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [conversations, setConversations] = useState<ConversationRecord[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [selectedConversation, setSelectedConversation] = useState<ConversationRecord | null>(null);
-  const [actionsOpen, setActionsOpen] = useState(false);
-  
-  const { setExpression } = useSprinty();
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-  const getWelcomeMessage = useCallback(() => {
-    return t('sprinty.welcome');
-  }, [t]);
-
-  const normalizeMessage = useCallback((msg: any): Message | null => {
-    if (!msg || typeof msg !== 'object') return null;
-    return {
-      id: msg.id || Date.now().toString(),
-      text: msg.message_text || msg.text || '',
-      sender: msg.role === 'user' || msg.sender === 'user' ? 'user' : 'sprinty',
-    };
-  }, []);
-
-  useEffect(() => {
-    const loadConversations = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data, error } = await supabase
-          .from('sprinty_conversations')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('updated_at', { ascending: false });
-
-        if (error) throw error;
-        setConversations(data || []);
-      } catch (error) {
-        console.error('Erreur chargement conversations:', error);
-      }
-    };
-
-    loadConversations();
-  }, []);
-
-  useEffect(() => {
-    const loadMessages = async () => {
-      if (conversationId) {
-        setActiveConversationId(conversationId);
-        
-        const { data, error } = await supabase
-          .from('sprinty_messages')
-          .select('*')
-          .eq('conversation_id', conversationId)
-          .order('timestamp', { ascending: true });
-
-        if (error) {
-          console.error('Error loading messages:', error);
-          setMessages([
-            {
-              id: 'error',
-              text: t('sprinty.error'),
-              sender: 'sprinty',
-            },
-          ]);
-        } else {
-          // MOCK DATA FOR VERIFICATION
-          setMessages([
-             { id: '1', text: 'Salut ! Je suis Sprinty. Comment puis-je t\'aider ?', sender: 'sprinty' },
-             { id: '2', text: 'Je veux voir si le chat s\'affiche bien.', sender: 'user' },
-             { id: '3', text: 'D\'accord ! Regardons ça ensemble. Le header doit être visible en haut, et la barre de saisie en bas.', sender: 'sprinty' },
-             { id: '4', text: 'Exactement.', sender: 'user' },
-             { id: '5', text: 'Message de remplissage pour tester le défilement... 1', sender: 'sprinty' },
-             { id: '6', text: 'Message de remplissage pour tester le défilement... 2', sender: 'user' },
-             { id: '7', text: 'Message de remplissage pour tester le défilement... 3', sender: 'sprinty' },
-             { id: '8', text: 'Message de remplissage pour tester le défilement... 4', sender: 'user' },
-             { id: '9', text: 'Message de remplissage pour tester le défilement... 5', sender: 'sprinty' },
-             { id: '10', text: 'Message de remplissage pour tester le défilement... 6', sender: 'user' },
-             { id: '11', text: 'Message de remplissage pour tester le défilement... 7', sender: 'sprinty' },
-             { id: '12', text: 'Message de remplissage pour tester le défilement... 8', sender: 'user' },
-             { id: '13', text: 'Dernier message tout en bas !', sender: 'sprinty' },
-          ]);
-        }
-      } else {
-        // MOCK DATA FOR VERIFICATION (Default state)
-        setMessages([
-             { id: '1', text: 'Salut ! Je suis Sprinty. Comment puis-je t\'aider ?', sender: 'sprinty' },
-             { id: '2', text: 'Je veux voir si le chat s\'affiche bien.', sender: 'user' },
-             { id: '3', text: 'D\'accord ! Regardons ça ensemble. Le header doit être visible en haut, et la barre de saisie en bas.', sender: 'sprinty' },
-             { id: '4', text: 'Exactement.', sender: 'user' },
-             { id: '5', text: 'Message de remplissage pour tester le défilement... 1', sender: 'sprinty' },
-             { id: '6', text: 'Message de remplissage pour tester le défilement... 2', sender: 'user' },
-             { id: '7', text: 'Message de remplissage pour tester le défilement... 3', sender: 'sprinty' },
-             { id: '8', text: 'Message de remplissage pour tester le défilement... 4', sender: 'user' },
-             { id: '9', text: 'Message de remplissage pour tester le défilement... 5', sender: 'sprinty' },
-             { id: '10', text: 'Message de remplissage pour tester le défilement... 6', sender: 'user' },
-             { id: '11', text: 'Message de remplissage pour tester le défilement... 7', sender: 'sprinty' },
-             { id: '12', text: 'Message de remplissage pour tester le défilement... 8', sender: 'user' },
-             { id: '13', text: 'Dernier message tout en bas !', sender: 'sprinty' },
-        ]);
-      }
-    };
-
-    // Force load messages immediately (ignoring Supabase for now)
-    loadMessages();
-  }, [conversationId, normalizeMessage, getWelcomeMessage, t]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
-
-  const addMessage = (message: Omit<Message, 'id'>) => {
-    setMessages((prev) => [...prev, { ...message, id: Date.now().toString() }]);
-  };
-
-  const handleSendMessage = async (text: string) => {
-    const sanitizedText = text.trim();
-    if (!sanitizedText) return;
-
-    const userMessage = { text: sanitizedText, sender: 'user' as const };
-    addMessage(userMessage);
-    setIsTyping(true);
-    setExpression('typing');
-
-    try {
-      const conversationHistory = messages.map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'assistant',
-        content: msg.text
-      }));
-
-      const result = await getSprintyAnswer(
-        sanitizedText,
-        sprintyMode,
-        language,
-        conversationHistory
-      );
-
-      const sprintyReply = {
-        text: result.text,
-        sender: 'sprinty' as const,
-      };
-
-      addMessage(sprintyReply);
-      setExpression('success');
-      setTimeout(() => setExpression('neutral'), 3000);
-
-      if (activeConversationId) {
-        await supabase.from('sprinty_messages').insert([
-          {
-            conversation_id: activeConversationId,
-            role: 'user',
-            message_text: sanitizedText,
-          },
-          {
-            conversation_id: activeConversationId,
-            role: 'assistant',
-            message_text: result.text,
-          },
-        ]);
-      }
-    } catch (err) {
-      console.error('Erreur Sprinty:', err);
-      addMessage({
-        text: t('sprinty.error'),
-        sender: 'sprinty',
-      });
-      setExpression('perplexed');
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleSelectConversation = (id: string) => {
-    navigate(`/sprinty/${id}`);
-    setMenuOpen(false);
-  };
-
-  const handleNewConversation = () => {
-    navigate('/sprinty');
-    setMessages([
-      {
-        id: Date.now().toString(),
-        text: getWelcomeMessage(),
-        sender: 'sprinty',
-      },
-    ]);
-    setActiveConversationId(null);
-    setMenuOpen(false);
-  };
-
-  const handleOpenActions = (conversation: ConversationRecord) => {
-    setSelectedConversation(conversation);
-    setActionsOpen(true);
-  };
-
-  const handleModeChange = (newMode: SprintyMode) => {
-    setSprintyMode(newMode);
-  };
-
+function App() {
   return (
-    // Immersive layout: Removed z-30 to avoid stacking context trap. Let it be natural DOM order (behind TabBar).
-    <div className="fixed inset-0 bg-sprint-light-background dark:bg-sprint-dark-background overflow-hidden">
-      
-      {/* Ambient Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-pink-400/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000" />
-      </div>
+    <SprintyProvider>
+      <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<TestLayout />} />
+          </Routes>
+      </BrowserRouter>
+    </SprintyProvider>
+  );
+}
 
-      <SprintyChatHeader
-        onMenuClick={() => setMenuOpen(true)}
-        mode={sprintyMode}
-        onModeChange={handleModeChange}
-      />
-
-      {/* Scrollable Message Area */}
-      {/* Adjusted padding bottom: 80px (input position) + ~60px (input height) + 20px buffer = ~160px */}
-      <div className="absolute inset-0 overflow-y-auto pt-[70px] pb-[160px] px-4 space-y-6 no-scrollbar">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <MessageBubble message={message} />
+function TestLayout() {
+  // Simulate the App's structure for Sprinty page
+  return (
+    <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex flex-col">
+       {/* Main Content Area */}
+       <main className="flex-1 overflow-hidden">
+          <div className="px-4">
+             <SprintyChatView />
           </div>
-        ))}
-        
-        {/* Typing Indicator */}
-        {isTyping && (
-          <div className="flex justify-start animate-fade-in">
-            <div className="bg-white/50 dark:bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2 shadow-sm">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+       </main>
 
-      {/* Gradient for visual fade behind TabBar area - z-40 to be below TabBar (z-50) but above messages */}
-      <div className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-[#0B1120] dark:via-[#0B1120]/90 dark:to-transparent z-40 pointer-events-none" />
-
-      {/* Input Container - Explicitly placed above TabBar (z-60 > z-50) */}
-      <div className="fixed bottom-[80px] left-0 right-0 px-4 z-[60]">
-        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
-      </div>
-
-      <ConversationMenu
-        isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        conversations={conversations}
-        activeConversationId={activeConversationId}
-        onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewConversation}
-        onOpenActions={handleOpenActions}
-      />
-
-      {selectedConversation && (
-        <ConversationActions
-          isOpen={actionsOpen}
-          onClose={() => {
-            setActionsOpen(false);
-            setSelectedConversation(null);
-          }}
-          conversation={selectedConversation}
-          onUpdate={() => {
-            setActionsOpen(false);
-          }}
-        />
-      )}
+       {/* TabBar */}
+       <TabBar
+          activeTab="sprinty"
+          onTabChange={() => {}}
+          onFabClick={() => {}}
+          userRole="athlete"
+       />
+       <ToastContainer />
     </div>
   );
-};
+}
 
-export default SprintyChatView;
+export default App;
