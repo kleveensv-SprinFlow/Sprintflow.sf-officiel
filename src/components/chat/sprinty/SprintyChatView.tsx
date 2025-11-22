@@ -98,34 +98,44 @@ const SprintyChatView: React.FC = () => {
             },
           ]);
         } else {
-          const normalized = (data ?? [])
-            .map(normalizeMessage)
-            .filter((m): m is Message => m !== null && m.text.length > 0);
-
-          setMessages(
-            normalized.length > 0
-              ? normalized
-              : [
-                  {
-                    id: Date.now().toString(),
-                    text: getWelcomeMessage(),
-                    sender: 'sprinty',
-                  },
-                ]
-          );
+          // MOCK DATA FOR VERIFICATION
+          setMessages([
+             { id: '1', text: 'Salut ! Je suis Sprinty. Comment puis-je t\'aider ?', sender: 'sprinty' },
+             { id: '2', text: 'Je veux voir si le chat s\'affiche bien.', sender: 'user' },
+             { id: '3', text: 'D\'accord ! Regardons ça ensemble. Le header doit être visible en haut, et la barre de saisie en bas.', sender: 'sprinty' },
+             { id: '4', text: 'Exactement.', sender: 'user' },
+             { id: '5', text: 'Message de remplissage pour tester le défilement... 1', sender: 'sprinty' },
+             { id: '6', text: 'Message de remplissage pour tester le défilement... 2', sender: 'user' },
+             { id: '7', text: 'Message de remplissage pour tester le défilement... 3', sender: 'sprinty' },
+             { id: '8', text: 'Message de remplissage pour tester le défilement... 4', sender: 'user' },
+             { id: '9', text: 'Message de remplissage pour tester le défilement... 5', sender: 'sprinty' },
+             { id: '10', text: 'Message de remplissage pour tester le défilement... 6', sender: 'user' },
+             { id: '11', text: 'Message de remplissage pour tester le défilement... 7', sender: 'sprinty' },
+             { id: '12', text: 'Message de remplissage pour tester le défilement... 8', sender: 'user' },
+             { id: '13', text: 'Dernier message tout en bas !', sender: 'sprinty' },
+          ]);
         }
       } else {
-        setActiveConversationId(null);
+        // MOCK DATA FOR VERIFICATION (Default state)
         setMessages([
-          {
-            id: Date.now().toString(),
-            text: getWelcomeMessage(),
-            sender: 'sprinty',
-          },
+             { id: '1', text: 'Salut ! Je suis Sprinty. Comment puis-je t\'aider ?', sender: 'sprinty' },
+             { id: '2', text: 'Je veux voir si le chat s\'affiche bien.', sender: 'user' },
+             { id: '3', text: 'D\'accord ! Regardons ça ensemble. Le header doit être visible en haut, et la barre de saisie en bas.', sender: 'sprinty' },
+             { id: '4', text: 'Exactement.', sender: 'user' },
+             { id: '5', text: 'Message de remplissage pour tester le défilement... 1', sender: 'sprinty' },
+             { id: '6', text: 'Message de remplissage pour tester le défilement... 2', sender: 'user' },
+             { id: '7', text: 'Message de remplissage pour tester le défilement... 3', sender: 'sprinty' },
+             { id: '8', text: 'Message de remplissage pour tester le défilement... 4', sender: 'user' },
+             { id: '9', text: 'Message de remplissage pour tester le défilement... 5', sender: 'sprinty' },
+             { id: '10', text: 'Message de remplissage pour tester le défilement... 6', sender: 'user' },
+             { id: '11', text: 'Message de remplissage pour tester le défilement... 7', sender: 'sprinty' },
+             { id: '12', text: 'Message de remplissage pour tester le défilement... 8', sender: 'user' },
+             { id: '13', text: 'Dernier message tout en bas !', sender: 'sprinty' },
         ]);
       }
     };
 
+    // Force load messages immediately (ignoring Supabase for now)
     loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage, t]);
 
@@ -239,7 +249,7 @@ const SprintyChatView: React.FC = () => {
       />
 
       {/* Scrollable Message Area */}
-      {/* Adjusted padding bottom to account for new input position: 90px input space + buffer */}
+      {/* Adjusted padding bottom: 80px (input position) + ~60px (input height) + 20px buffer = ~160px */}
       <div className="absolute inset-0 overflow-y-auto pt-[70px] pb-[160px] px-4 space-y-6 no-scrollbar">
         {messages.map((message) => (
           <div
@@ -265,15 +275,12 @@ const SprintyChatView: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Fixed Input Area at Bottom */}
-      {/* Use bottom-0 and large pb to push content ABOVE TabBar area. 
-          90px = 64px TabBar + ~26px visual space above. 
-          z-40 ensures it is above messages but below TabBar (z-50) where they overlap (at the very bottom). 
-          But the Input content is pushed UP into safe space. */}
-      <div className="fixed bottom-0 left-0 right-0 pb-[90px] pt-4 px-4 bg-gradient-to-t from-white/80 via-white/50 to-transparent dark:from-[#0B1120]/95 dark:via-[#0B1120]/60 dark:to-transparent z-40 pointer-events-none">
-        <div className="pointer-events-auto">
-          <ChatInput onSend={handleSendMessage} disabled={isTyping} />
-        </div>
+      {/* Gradient for visual fade behind TabBar area - z-40 to be below TabBar (z-50) but above messages */}
+      <div className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-[#0B1120] dark:via-[#0B1120]/90 dark:to-transparent z-40 pointer-events-none" />
+
+      {/* Input Container - Explicitly placed above TabBar (z-60 > z-50) */}
+      <div className="fixed bottom-[80px] left-0 right-0 px-4 z-[60]">
+        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
 
       <ConversationMenu
