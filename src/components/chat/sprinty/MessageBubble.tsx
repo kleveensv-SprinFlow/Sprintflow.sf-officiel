@@ -24,7 +24,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         className={`rounded-2xl px-5 py-3.5 shadow-sm backdrop-blur-md border ${
           isUser
             ? 'bg-blue-600/90 border-blue-500/50 text-white rounded-br-sm ml-auto'
-            : 'bg-white/60 dark:bg-white/10 border-white/40 dark:border-white/10 text-gray-800 dark:text-gray-100 rounded-bl-sm'
+            : 'bg-white/70 dark:bg-white/15 border-white/40 dark:border-white/20 text-gray-800 dark:text-gray-100 rounded-bl-sm'
         }`}
       >
         {message.text && (
