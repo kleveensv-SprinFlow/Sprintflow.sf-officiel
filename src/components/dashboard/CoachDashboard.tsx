@@ -25,6 +25,7 @@ type Selection = {
   type: 'athlete' | 'group';
   id: string;
   name: string;
+  color?: string;
 } | null;
 
 type FormState = {
@@ -64,7 +65,12 @@ export const CoachDashboard: React.FC = () => {
   useEffect(() => {
     if (!selection && !groupsLoading) {
       if (groups && groups.length > 0) {
-        setSelection({ type: 'group', id: groups[0].id, name: groups[0].name });
+        setSelection({ 
+            type: 'group', 
+            id: groups[0].id, 
+            name: groups[0].name, 
+            color: groups[0].color 
+        });
       } else if (coachAthletes && coachAthletes.length > 0) {
         const firstAthlete = coachAthletes[0];
         const name = `${firstAthlete.first_name} ${firstAthlete.last_name || ''}`.trim();
@@ -90,7 +96,7 @@ export const CoachDashboard: React.FC = () => {
     }
   };
 
-  const handleSelectGroup = (group: { id: string; name: string }) => {
+  const handleSelectGroup = (group: { id: string; name: string; color?: string }) => {
     setSelection({ type: 'group', ...group });
     setGroupModalOpen(false);
   };
