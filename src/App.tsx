@@ -16,6 +16,7 @@ import { useDailyWelcome } from './hooks/useDailyWelcome.ts';
 import { usePushNotifications } from './hooks/usePushNotifications.tsx';
 import { SprintyProvider, useSprinty } from './context/SprintyContext.tsx';
 import SprintyMenu from './components/chat/sprinty/SprintyMenu.tsx';
+import CharacterSelectorModal from './components/chat/sprinty/CharacterSelectorModal.tsx';
 
 type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
 
@@ -153,7 +154,9 @@ function InnerApp() {
         />
       )}
       
+      {/* Sprinty Components */}
       <SprintyMenu isOpen={isSprintyMenuOpen} onClose={() => setSprintyMenuOpen(false)} />
+      <CharacterSelectorModal />
 
       <SideMenu
         isOpen={isMenuOpen}
