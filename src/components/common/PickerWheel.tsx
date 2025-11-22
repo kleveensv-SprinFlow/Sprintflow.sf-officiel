@@ -48,7 +48,9 @@ const Wheel: React.FC<WheelProps> = ({ options, value, onChange }) => {
 
   return (
     <div className="relative" style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS, width: '80px' }}>
-      <div className="absolute top-1/2 left-0 right-0 h-9 bg-gray-200 dark:bg-white/10 rounded-lg transform -translate-y-1/2 z-0 border border-primary/30" />
+      {/* Highlight Box */}
+      <div className="absolute top-1/2 left-0 right-0 h-9 bg-gray-100 dark:bg-white/20 rounded-lg transform -translate-y-1/2 z-0 border border-primary/30" />
+      
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
@@ -61,8 +63,8 @@ const Wheel: React.FC<WheelProps> = ({ options, value, onChange }) => {
             onClick={() => scrollToIndex(options.findIndex(o => o.value === option.value))}
             className={`h-9 flex items-center justify-center text-xl font-semibold select-none cursor-pointer snap-center transition-colors duration-200 ${
                 option.value === value 
-                  ? 'text-primary dark:text-white' 
-                  : 'text-gray-400 dark:text-gray-500'
+                  ? 'text-primary dark:text-white scale-110' 
+                  : 'text-gray-500 dark:text-gray-400 opacity-60'
               }`}
           >
             {option.label}
@@ -79,7 +81,7 @@ interface PickerWheelProps {
   value: number | string;
   onChange: (value: any) => void;
   label?: string;
-  type?: 'number' | 'time'; // Add 'time' support if previously assumed
+  type?: 'number' | 'time';
   disabled?: boolean;
 }
 
@@ -87,11 +89,9 @@ export const PickerWheel: React.FC<PickerWheelProps> = ({ options, value, onChan
   const [isOpen, setIsOpen] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
 
-  // Generate default options for time if type is 'time'
   const safeOptions = React.useMemo(() => {
       if (options) return options;
       if (type === 'time') {
-          // Generate HH:MM options every 15 minutes for simplicity, or use specialized logic
           const timeOptions = [];
           for (let h = 0; h < 24; h++) {
               for (let m = 0; m < 60; m += 15) {
@@ -101,7 +101,6 @@ export const PickerWheel: React.FC<PickerWheelProps> = ({ options, value, onChan
           }
           return timeOptions;
       }
-      // Default number range 0-100
       return Array.from({ length: 101 }, (_, i) => ({ value: i, label: i.toString() }));
   }, [options, type]);
 
@@ -122,12 +121,12 @@ export const PickerWheel: React.FC<PickerWheelProps> = ({ options, value, onChan
 
   return (
     <div className="flex flex-col items-center w-full">
-      {label && <label className="block text-sm text-center font-medium text-gray-700 dark:text-gray-300 mb-2 opacity-80">{label}</label>}
+      {label && <label className="block text-sm text-center font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>}
       <button
         type="button"
         onClick={handleOpen}
         disabled={disabled}
-        className="w-full h-14 px-4 bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl flex items-center justify-center text-xl font-bold border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white shadow-sm active:scale-95 transition-transform"
+        className="w-full h-14 px-4 bg-white dark:bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-xl font-bold border border-gray-200 dark:border-white/20 text-gray-900 dark:text-white shadow-sm active:scale-95 transition-transform"
       >
         {displayLabel}
       </button>
@@ -150,8 +149,8 @@ export const PickerWheel: React.FC<PickerWheelProps> = ({ options, value, onChan
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center w-full mb-2 sm:hidden">
-                 <span className="text-lg font-bold">{label || 'Sélectionner'}</span>
-                 <button onClick={() => setIsOpen(false)} className="text-gray-500">Annuler</button>
+                 <span className="text-lg font-bold text-gray-900 dark:text-white">{label || 'Sélectionner'}</span>
+                 <button onClick={() => setIsOpen(false)} className="text-gray-500 dark:text-gray-400">Annuler</button>
               </div>
               
               <Wheel options={safeOptions} value={currentValue} onChange={setCurrentValue} />
