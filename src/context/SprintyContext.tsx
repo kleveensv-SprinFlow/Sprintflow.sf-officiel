@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth'; // Assuming this hook exists
 
 export type SprintyExpression = 'neutral' | 'happy' | 'success' | 'thinking' | 'perplexed' | 'caution' | 'frustrated' | 'sleep' | 'typing';
 
@@ -12,6 +11,11 @@ interface SprintyContextType {
   toggleMenu: () => void;
   isThinking: boolean;
   sendMessageToSprinty: (message: string) => Promise<void>;
+  
+  // New Feature: Character Selector Overlay
+  isCharacterSelectorOpen: boolean;
+  setCharacterSelectorOpen: (isOpen: boolean) => void;
+  toggleCharacterSelector: () => void;
 }
 
 const SprintyContext = createContext<SprintyContextType | undefined>(undefined);
@@ -20,11 +24,10 @@ export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [expression, setExpression] = useState<SprintyExpression>('neutral');
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  // We can't use useAuth here easily if SprintyProvider is outside AuthProvider.
-  // Assuming SprintyProvider is inside AuthProvider or we fetch user manually.
-  // To be safe, we'll get the user session inside the function.
+  const [isCharacterSelectorOpen, setCharacterSelectorOpen] = useState(false);
 
   const toggleMenu = () => setMenuOpen(prev => !prev);
+  const toggleCharacterSelector = () => setCharacterSelectorOpen(prev => !prev);
 
   const sendMessageToSprinty = async (message: string) => {
     try {
@@ -70,7 +73,10 @@ export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children })
       setMenuOpen, 
       toggleMenu,
       isThinking,
-      sendMessageToSprinty
+      sendMessageToSprinty,
+      isCharacterSelectorOpen,
+      setCharacterSelectorOpen,
+      toggleCharacterSelector
     }}>
       {children}
     </SprintyContext.Provider>
