@@ -14,26 +14,28 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const isUser = message.sender === 'user';
 
   return (
-    <div className="relative max-w-[85%] md:max-w-md">
-      {/* Affichage du nom (Optionnel, pour plus de clarté) */}
-      <div className={`text-xs mb-1 px-2 opacity-70 ${isUser ? 'text-right' : 'text-left'}`}>
-        {isUser ? 'Moi' : 'Sprinty'}
-      </div>
-
+    <div className="flex flex-col max-w-[85%] md:max-w-md">
+      {/* Label Sprinty au-dessus de la bulle */}
+      {!isUser && (
+        <div className="text-xs font-medium text-gray-500 ml-1 mb-1">
+          Sprinty
+        </div>
+      )}
+      
       <div
-        className={`rounded-2xl px-5 py-3.5 shadow-sm backdrop-blur-md border ${
+        className={`rounded-2xl px-5 py-4 shadow-sm border leading-relaxed ${
           isUser
-            ? 'bg-blue-600/90 border-blue-500/50 text-white rounded-br-sm ml-auto'
-            : 'bg-white/70 dark:bg-white/15 border-white/40 dark:border-white/20 text-gray-800 dark:text-gray-100 rounded-bl-sm'
+            ? 'bg-blue-600 text-white border-transparent rounded-br-sm ml-auto'
+            : 'bg-[#1E293B] text-gray-100 border-white/5 rounded-bl-sm'
         }`}
       >
         {message.text && (
-          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-0 leading-relaxed break-words">
+          <div className="prose prose-sm prose-invert max-w-none prose-p:my-0 prose-headings:text-white prose-strong:text-white prose-a:text-blue-400">
             <ReactMarkdown>{message.text}</ReactMarkdown>
           </div>
         )}
         {message.component && (
-          <div className="mt-3 p-2 bg-black/5 rounded-lg">
+          <div className="mt-3">
             {message.component}
           </div>
         )}
