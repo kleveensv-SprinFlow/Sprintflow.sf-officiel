@@ -17,7 +17,7 @@ export default {
         'sprint-light-border-subtle': '#E5E7EB',
 
         'sprint-light-text-primary': '#0F172A',
-        'sprint-light-text-secondary': '#6B7280',
+        'sprint-light-text-secondary': '#4B5563',   // UPDATED: Gray-600 for better contrast (was Gray-500)
 
         // Mode sombre
         'sprint-dark-background': '#020617',        // fond global
@@ -27,6 +27,21 @@ export default {
 
         'sprint-dark-text-primary': '#E5E7EB',
         'sprint-dark-text-secondary': '#9CA3AF',
+
+        // ——— COMPATIBILITY & MISSING CLASSES MAPPING ———
+        // These were used in components but undefined, causing visibility issues.
+        
+        // Light Mode Text
+        'light-title': '#111827',  // Gray-900
+        'light-text': '#374151',   // Gray-700
+        'light-label': '#4B5563',  // Gray-600
+        'light-card': '#FFFFFF',   // White
+
+        // Dark Mode Text
+        'dark-title': '#F9FAFB',   // Gray-50
+        'dark-text': '#E5E7EB',    // Gray-200
+        'dark-label': '#D1D5DB',   // Gray-300 (Lightened from 400 for better contrast)
+        'dark-card': '#111827',    // Gray-900
 
         // ——— INDIGO / COULEUR DE MARQUE
 
