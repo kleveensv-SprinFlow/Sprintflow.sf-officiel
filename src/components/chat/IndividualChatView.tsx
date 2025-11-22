@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useIndividualChat } from '../../hooks/useIndividualChat';
 import useAuth from '../../hooks/useAuth';
-import { MessageCircle, Send, User, ArrowLeft } from 'lucide-react';
+import { MessageCircle, Send, User, ArrowLeft, Sparkles } from 'lucide-react';
 import { Conversation } from '../../hooks/useConversations';
+import { useSprinty } from '../../context/SprintyContext';
 
 interface IndividualChatViewProps {
   conversation: Conversation;
@@ -13,14 +14,35 @@ export const IndividualChatView: React.FC<IndividualChatViewProps> = ({ conversa
   const { user } = useAuth();
   const { messages, sendMessage } = useIndividualChat(conversation.partner_id || null);
   const [messageInput, setMessageInput] = useState('');
+  const { isThinking, sendMessageToSprinty } = useSprinty();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Check if this is a chat with Sprinty
+  const isSprintyChat = conversation.partner_id === '00000000-0000-0000-0000-000000000000';
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isThinking]);
 
   const handleSendMessage = async () => {
     if (!messageInput.trim()) return;
+    
+    const msg = messageInput;
+    setMessageInput(''); // Clear immediately for better UX
+
     try {
-      await sendMessage(messageInput);
-      setMessageInput('');
+      if (isSprintyChat) {
+        // Use Sprinty context logic
+        await sendMessageToSprinty(msg);
+      } else {
+        // Normal chat logic
+        await sendMessage(msg);
+      }
     } catch (error) {
       console.error('Erreur envoi message:', error);
+      setMessageInput(msg); // Restore on error
     }
   };
 
@@ -49,7 +71,7 @@ export const IndividualChatView: React.FC<IndividualChatViewProps> = ({ conversa
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="text-center py-8">
             <MessageCircle className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
@@ -68,13 +90,28 @@ export const IndividualChatView: React.FC<IndividualChatViewProps> = ({ conversa
                   </div>
                 )}
                 <div className={`p-3 rounded-lg ${message.sender_id === user?.id ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                  <p className="text-sm">{message.message}</p>
+                  <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                 </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Thinking Indicator */}
+      {isThinking && isSprintyChat && (
+         <div className="px-4 pb-2">
+           <div className="flex items-center space-x-2 animate-pulse">
+             <div className="relative">
+               <div className="absolute inset-0 bg-blue-400 rounded-full blur opacity-40 animate-pulse"></div>
+               <Sparkles className="relative w-5 h-5 text-sprint-primary dark:text-blue-400" />
+             </div>
+             <span className="text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r from-sprint-primary to-purple-600 dark:from-blue-400 dark:to-purple-400">
+               Sprinty réfléchit...
+             </span>
+           </div>
+         </div>
+      )}
 
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex space-x-3">
@@ -83,10 +120,15 @@ export const IndividualChatView: React.FC<IndividualChatViewProps> = ({ conversa
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Votre message..."
-            className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 border-transparent rounded-lg focus:ring-2 focus:ring-primary-500"
+            placeholder={isThinking ? "Sprinty réfléchit..." : "Votre message..."}
+            disabled={isThinking}
+            className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 border-transparent rounded-lg focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
           />
-          <button onClick={handleSendMessage} disabled={!messageInput.trim()} className="bg-primary-500 hover:bg-primary-600 disabled:opacity-50 p-3 rounded-lg text-white">
+          <button 
+            onClick={handleSendMessage} 
+            disabled={!messageInput.trim() || isThinking} 
+            className="bg-primary-500 hover:bg-primary-600 disabled:opacity-50 p-3 rounded-lg text-white transition-colors"
+          >
             <Send className="h-5 w-5" />
           </button>
         </div>
