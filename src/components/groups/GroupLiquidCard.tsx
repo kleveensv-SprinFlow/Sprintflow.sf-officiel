@@ -33,6 +33,7 @@ export const GroupLiquidCard: React.FC<GroupLiquidCardProps> = ({ group, onClick
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className="relative w-full h-48 rounded-2xl overflow-hidden shadow-neumorphic bg-white dark:bg-gray-800 cursor-pointer group border border-white/20"
+      style={group.color ? { borderColor: `${group.color}40` } : undefined} // Subtle border hint of group color
     >
       {/* Liquid Animation Container */}
       <div className="absolute inset-0 z-0 flex items-end">
@@ -55,7 +56,10 @@ export const GroupLiquidCard: React.FC<GroupLiquidCardProps> = ({ group, onClick
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight truncate pr-2">
+            <h3 
+              className="text-xl font-bold text-gray-900 dark:text-white leading-tight truncate pr-2"
+              style={group.color ? { textShadow: `0 0 15px ${group.color}40` } : undefined}
+            >
               {group.group_name}
             </h3>
             <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -70,9 +74,11 @@ export const GroupLiquidCard: React.FC<GroupLiquidCardProps> = ({ group, onClick
               {score}%
             </div>
           ) : (
-            <div className="px-2 py-1 rounded-lg text-xs font-bold bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-              --
-            </div>
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: group.color || '#9CA3AF' }} 
+              title="Couleur du groupe"
+            />
           )}
         </div>
 
