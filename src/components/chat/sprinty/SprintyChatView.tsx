@@ -98,44 +98,34 @@ const SprintyChatView: React.FC = () => {
             },
           ]);
         } else {
-          // MOCK DATA FOR VERIFICATION
-          setMessages([
-             { id: '1', text: 'Salut ! Je suis Sprinty. Comment puis-je t\'aider ?', sender: 'sprinty' },
-             { id: '2', text: 'Je veux voir si le chat s\'affiche bien.', sender: 'user' },
-             { id: '3', text: 'D\'accord ! Regardons ça ensemble. Le header doit être visible en haut, et la barre de saisie en bas.', sender: 'sprinty' },
-             { id: '4', text: 'Exactement.', sender: 'user' },
-             { id: '5', text: 'Message de remplissage pour tester le défilement... 1', sender: 'sprinty' },
-             { id: '6', text: 'Message de remplissage pour tester le défilement... 2', sender: 'user' },
-             { id: '7', text: 'Message de remplissage pour tester le défilement... 3', sender: 'sprinty' },
-             { id: '8', text: 'Message de remplissage pour tester le défilement... 4', sender: 'user' },
-             { id: '9', text: 'Message de remplissage pour tester le défilement... 5', sender: 'sprinty' },
-             { id: '10', text: 'Message de remplissage pour tester le défilement... 6', sender: 'user' },
-             { id: '11', text: 'Message de remplissage pour tester le défilement... 7', sender: 'sprinty' },
-             { id: '12', text: 'Message de remplissage pour tester le défilement... 8', sender: 'user' },
-             { id: '13', text: 'Dernier message tout en bas !', sender: 'sprinty' },
-          ]);
+          const normalized = (data ?? [])
+            .map(normalizeMessage)
+            .filter((m): m is Message => m !== null && m.text.length > 0);
+
+          setMessages(
+            normalized.length > 0
+              ? normalized
+              : [
+                  {
+                    id: Date.now().toString(),
+                    text: getWelcomeMessage(),
+                    sender: 'sprinty',
+                  },
+                ]
+          );
         }
       } else {
-        // MOCK DATA FOR VERIFICATION (Default state)
+        setActiveConversationId(null);
         setMessages([
-             { id: '1', text: 'Salut ! Je suis Sprinty. Comment puis-je t\'aider ?', sender: 'sprinty' },
-             { id: '2', text: 'Je veux voir si le chat s\'affiche bien.', sender: 'user' },
-             { id: '3', text: 'D\'accord ! Regardons ça ensemble. Le header doit être visible en haut, et la barre de saisie en bas.', sender: 'sprinty' },
-             { id: '4', text: 'Exactement.', sender: 'user' },
-             { id: '5', text: 'Message de remplissage pour tester le défilement... 1', sender: 'sprinty' },
-             { id: '6', text: 'Message de remplissage pour tester le défilement... 2', sender: 'user' },
-             { id: '7', text: 'Message de remplissage pour tester le défilement... 3', sender: 'sprinty' },
-             { id: '8', text: 'Message de remplissage pour tester le défilement... 4', sender: 'user' },
-             { id: '9', text: 'Message de remplissage pour tester le défilement... 5', sender: 'sprinty' },
-             { id: '10', text: 'Message de remplissage pour tester le défilement... 6', sender: 'user' },
-             { id: '11', text: 'Message de remplissage pour tester le défilement... 7', sender: 'sprinty' },
-             { id: '12', text: 'Message de remplissage pour tester le défilement... 8', sender: 'user' },
-             { id: '13', text: 'Dernier message tout en bas !', sender: 'sprinty' },
+          {
+            id: Date.now().toString(),
+            text: getWelcomeMessage(),
+            sender: 'sprinty',
+          },
         ]);
       }
     };
 
-    // Force load messages immediately (ignoring Supabase for now)
     loadMessages();
   }, [conversationId, normalizeMessage, getWelcomeMessage, t]);
 
