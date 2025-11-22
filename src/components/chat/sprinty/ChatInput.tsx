@@ -47,14 +47,14 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full items-center gap-2 rounded-2xl border border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/60 backdrop-blur-xl px-4 py-3 shadow-lg"
+      className="flex w-full items-center gap-2 rounded-[2rem] border border-white/5 bg-[#0F1623] px-4 py-3 shadow-xl"
     >
       
       {/* Zone de Saisie Multi-ligne */}
       <textarea
         ref={textareaRef}
         rows={1}
-        className="flex-1 resize-none overflow-y-hidden bg-transparent outline-none text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-base leading-snug py-1"
+        className="flex-1 resize-none overflow-y-hidden bg-transparent outline-none text-white placeholder-gray-500 text-[15px] leading-relaxed py-1 ml-2"
         placeholder="Écrivez votre question ici..."
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -66,14 +66,14 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
       <motion.button
         type="submit"
         disabled={isSendDisabled}
-        className={`flex items-center justify-center rounded-full w-10 h-10 transition duration-200 ease-in-out shadow-md ${
+        className={`flex items-center justify-center rounded-full w-10 h-10 transition-all duration-200 ease-in-out ${
           isSendDisabled 
-            ? 'bg-gray-300 dark:bg-gray-700 opacity-60 cursor-not-allowed' 
-            : 'bg-blue-600 hover:bg-blue-700 text-white'
+            ? 'bg-white/10 text-gray-500 cursor-not-allowed' 
+            : 'bg-white/10 hover:bg-white/20 text-white'
         }`}
         whileTap={{ scale: 0.9 }}
       >
-        <Send size={18} className="text-white" />
+        <Send size={18} className={isSendDisabled ? "opacity-50" : "opacity-100"} strokeWidth={2} />
       </motion.button>
     </form>
   );
