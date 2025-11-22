@@ -11,8 +11,8 @@ const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({
   onModeChange,
 }) => {
   return (
-    // z-50 to match TabBar priority and ensure visibility over content
-    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border-b border-white/20 dark:border-white/10 shadow-sm">
+    // z-[60] to ensure visibility over TabBar and content
+    <header className="fixed top-0 left-0 right-0 z-[60] w-full bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border-b border-white/20 dark:border-white/10 shadow-sm">
       <div className="flex items-center justify-between px-4 py-3 h-[60px]">
         {/* Left: Toggle Mode */}
         <div className="flex items-center gap-2">
