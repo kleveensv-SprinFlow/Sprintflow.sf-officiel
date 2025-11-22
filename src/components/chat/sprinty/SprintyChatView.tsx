@@ -225,7 +225,8 @@ const SprintyChatView: React.FC = () => {
 
   return (
     // Immersive layout: Fixed container covering the screen
-    <div className="fixed inset-0 bg-sprint-light-background dark:bg-sprint-dark-background overflow-hidden">
+    // z-30 to ensure it sits above standard page content but below TabBar (z-50) if TabBar is meant to overlay
+    <div className="fixed inset-0 z-30 bg-sprint-light-background dark:bg-sprint-dark-background overflow-hidden">
       
       {/* Ambient Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -269,7 +270,8 @@ const SprintyChatView: React.FC = () => {
 
       {/* Fixed Input Area at Bottom */}
       {/* bottom-[64px] to sit exactly on top of the 64px TabBar */}
-      <div className="fixed bottom-[64px] left-0 right-0 p-4 bg-gradient-to-t from-white/80 via-white/50 to-transparent dark:from-[#0B1120]/80 dark:via-[#0B1120]/50 dark:to-transparent z-10">
+      {/* z-40 to ensure it's above the message list and above general content */}
+      <div className="fixed bottom-[64px] left-0 right-0 p-4 bg-gradient-to-t from-white/80 via-white/50 to-transparent dark:from-[#0B1120]/80 dark:via-[#0B1120]/50 dark:to-transparent z-40">
         <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
 
