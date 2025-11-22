@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Home, User as UserIcon } from 'lucide-react';
+import { ChevronLeft, User as UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 import useAuth from '../../hooks/useAuth';
@@ -10,27 +10,28 @@ import LevelBadge from '../common/LevelBadge';
 interface HeaderProps {
   userRole?: 'athlete' | 'coach' | 'developer';
   onProfileClick?: () => void;
-  onHomeClick?: () => void;
+  onHomeClick?: () => void; // kept for interface compatibility but unused
   isDashboard: boolean;
   canGoBack?: boolean;
   onBack?: () => void;
   title: string;
   showWelcomeMessage: boolean;
+  customColor?: string; // Added prop for custom theme color
 }
 
 export default function Header({
   onProfileClick,
-  onHomeClick,
   isDashboard,
   canGoBack,
   onBack,
   title,
   showWelcomeMessage,
   userRole,
+  customColor,
 }: HeaderProps) {
   const { profile } = useAuth();
   const { groups, coachAthletes } = useGroups();
-  const [selection] = useLocalStorage<{ type: 'athlete' | 'group'; name: string } | null>('coach-dashboard-selection', null);
+  const [selection] = useLocalStorage<{ type: 'athlete' | 'group'; name: string; id: string; color?: string } | null>('coach-dashboard-selection', null);
   
   const isAthlete = userRole === 'athlete';
   const isCoachDashboard = isDashboard && userRole === 'coach';
@@ -41,7 +42,9 @@ export default function Header({
     isWelcomeVisible ? `Bienvenue ${profile?.first_name || 'Athlète'}` : title,
   );
 
-  // Gestion du scroll pour l'effet "Glassmorphism" progressif
+  // Special override for "Gestion des suivis" title on Groups page
+  const isGroupsPage = window.location.pathname.includes('/groups');
+  
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -55,7 +58,6 @@ export default function Header({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Affiche un message de bienvenue uniquement sur le tableau de bord (et si ce n'est pas le dashboard coach qui a sa propre logique)
   useEffect(() => {
     if (showWelcomeMessage && isDashboard && !isCoachDashboard) {
       const firstName = profile?.first_name || 'Athlète';
@@ -71,7 +73,6 @@ export default function Header({
     }
   }, [showWelcomeMessage, isDashboard, profile?.first_name, title, isCoachDashboard]);
 
-  // Quand le message disparaît, on affiche le titre de la page
   useEffect(() => {
     if (!isWelcomeVisible) {
       setDisplayText(title);
@@ -80,6 +81,13 @@ export default function Header({
 
   const renderText = () => {
     const firstName = profile?.first_name || 'Athlète';
+    
+    // Logic for Group Management Page Title (Aligned Left, Standard Text)
+    if (isGroupsPage) {
+       // Logic handled in render structure below (no center title)
+       return null;
+    }
+
     const textContent = isWelcomeVisible ? (
       <>
         Bienvenue <span className="animate-shine">{firstName}</span>
@@ -101,10 +109,17 @@ export default function Header({
     );
   };
 
-  // Pour les athlètes ou sur le tableau de bord, on affiche toujours le badge et la photo
-  // Sauf si c'est le dashboard coach où on remplace le badge par le nom du groupe
   const showBadge = (isDashboard && !isCoachDashboard) || isAthlete;
-  const showAvatar = isDashboard || isAthlete;
+  const showAvatar = isDashboard || isAthlete || isGroupsPage;
+
+  // Helper to generate gradient text style
+  const getGradientStyle = (hexColor: string) => ({
+    backgroundImage: `linear-gradient(to right, ${hexColor}, #FFFFFF, ${hexColor})`,
+    backgroundSize: '200% auto',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    animation: 'shine 3s linear infinite',
+  });
 
   return (
     <header
@@ -116,25 +131,29 @@ export default function Header({
     >
       <div className="px-4 flex items-center justify-between min-w-0">
         {/* Partie Gauche */}
-        <div className={`flex items-center space-x-2 flex-shrink-0 ${isCoachDashboard ? 'flex-1' : 'w-1/4'}`}>
-          {isCoachDashboard ? (
+        <div className={`flex items-center space-x-2 flex-shrink-0 ${isCoachDashboard || isGroupsPage ? 'flex-1' : 'w-1/4'}`}>
+          {isGroupsPage ? (
+             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Gestion des suivis</h1>
+          ) : isCoachDashboard ? (
             // Logique spécifique Header Coach Dashboard
             selection ? (
               <div className="flex items-center overflow-hidden">
-                <span className="text-gray-600 dark:text-gray-300 mr-1.5 text-[15px] font-semibold whitespace-nowrap">
+                <span className="text-gray-600 dark:text-gray-300 mr-2 text-[15px] font-semibold whitespace-nowrap hidden md:inline">
                   {selection.type === 'group' ? 'Groupe' : 'Athlète'}
                 </span>
-                <span className="animate-text-shine-electric text-[15px] font-bold truncate">
+                <span 
+                  className="text-[17px] font-extrabold truncate"
+                  style={selection.color ? getGradientStyle(selection.color) : undefined}
+                >
                   {selection.name}
                 </span>
               </div>
             ) : (
-               // Si pas de sélection, vérifier s'il y a des données (attente auto-select) ou si c'est vide (lien création)
                (!groups || groups.length === 0) && (!coachAthletes || coachAthletes.length === 0) ? (
                   <Link to="/groups" className="text-sm font-bold text-accent hover:underline whitespace-nowrap animate-pulse">
                     Créer mon premier groupe
                   </Link>
-               ) : null // On n'affiche rien pendant que l'auto-select se fait
+               ) : null 
             )
           ) : showBadge ? (
             <div className="origin-left scale-90">
@@ -155,30 +174,20 @@ export default function Header({
             >
               <ChevronLeft className="h-6 w-6" strokeWidth={2} />
             </button>
-          ) : !isDashboard ? (
-            <button 
-              onClick={onHomeClick} 
-              className={`p-2 -ml-2 rounded-full transition-colors ${
-                isScrolled 
-                  ? 'hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-white' 
-                  : 'bg-white/20 backdrop-blur-md hover:bg-white/30 shadow-sm text-gray-800 dark:text-white'
-              }`}
-            >
-              <Home className="h-5 w-5" strokeWidth={2} />
-            </button>
           ) : (
+             // Removed Home button logic entirely for cleaner look
              <div className="origin-left scale-90">
                {profile && profile.level !== undefined ? (
                   <LevelBadge level={profile.level} />
                ) : (
-                 <div className="w-8 h-8"></div> // Placeholder
+                 <div className="w-8 h-8"></div> 
                )}
             </div>
           )}
         </div>
 
-        {/* Titre Central - Masqué sur le Dashboard Coach */}
-        {!isCoachDashboard && (
+        {/* Titre Central - Masqué sur le Dashboard Coach et Groups Page */}
+        {!isCoachDashboard && !isGroupsPage && (
           <div className="flex-1 flex justify-center min-w-0 h-6 relative overflow-hidden">
             <AnimatePresence mode="wait">{renderText()}</AnimatePresence>
           </div>
