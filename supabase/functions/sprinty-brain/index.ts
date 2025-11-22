@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-// SECURITY: Use Environment Variables for sensitive keys.
-// User must set these using:
-// npx supabase secrets set GEMINI_API_KEY="AIza..."
-// npx supabase secrets set GOOGLE_SEARCH_KEY="AIza..."
-// npx supabase secrets set GOOGLE_SEARCH_CX="20f2..."
+// KEYS
+// Ensure these are set in Supabase Secrets:
+// MISTRAL_API_KEY
+// GOOGLE_SEARCH_KEY
+// GOOGLE_SEARCH_CX
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +13,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -25,21 +24,20 @@ serve(async (req) => {
       throw new Error('Missing user_id or message')
     }
 
-    // Retrieve keys from environment variables
-    // Note: For the purpose of this deliverable, if ENV vars are not set, we fall back to provided keys
-    // BUT in production code, falling back to hardcoded keys is a risk. 
-    // Given the prompt constraints, I will use Deno.env.get primarily.
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || "AIzaSyAI7DX-pdET2GDzGMszu5frBOa_Untb8us"
+    const MISTRAL_API_KEY = Deno.env.get('MISTRAL_API_KEY')
+    if (!MISTRAL_API_KEY) {
+       throw new Error("MISTRAL_API_KEY not set")
+    }
+    // We use provided keys as fallback if env not set, just in case, but prefer env.
     const GOOGLE_SEARCH_KEY = Deno.env.get('GOOGLE_SEARCH_KEY') || "AIzaSyBiMqJ-qu304PkH6attZAYcc7pFkvQCeNY"
     const GOOGLE_SEARCH_CX = Deno.env.get('GOOGLE_SEARCH_CX') || "20f28f7d4a9e841cd"
     const SPRINTY_ID = "00000000-0000-0000-0000-000000000000"
 
-    // Initialize Supabase Client with Service Role to access all data and send as Sprinty
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 1. Fetch Context (Parallel)
+    // 1. Fetch Context
     const [
       { data: workouts },
       { data: records },
@@ -84,7 +82,6 @@ serve(async (req) => {
       const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_SEARCH_KEY}&cx=${GOOGLE_SEARCH_CX}&q=${encodeURIComponent(message)}`
       const searchRes = await fetch(searchUrl)
       const searchData = await searchRes.json()
-      
       if (searchData.items && searchData.items.length > 0) {
         searchResultsText = searchData.items.slice(0, 3).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n')
       }
@@ -92,44 +89,53 @@ serve(async (req) => {
       console.error("Search failed", e)
     }
 
-    // 3. Call Gemini
+    // 3. Call Mistral
     const systemPrompt = `
     Tu es Sprinty, un coach sportif virtuel expert en athlétisme de haut niveau, nutrition et physiologie.
-    Tu t'adresses à un athlète dont voici les données complètes (entraînements, records, bien-être, nutrition).
     
     CONTEXTE DE L'ATHLÈTE :
     ${context}
 
-    RÉSULTATS DE RECHERCHE WEB (pour t'aider à répondre) :
+    RÉSULTATS DE RECHERCHE WEB (Info fraîche) :
     ${searchResultsText}
 
     CONSIGNES :
-    1. Analyse les données de l'athlète pour personnaliser ta réponse. (Ex: "Vu que tu as mal dormi hier...", "Bravo pour ton PR au squat...").
-    2. Utilise les infos du web si pertinent pour donner des conseils scientifiques ou actualisés.
-    3. Sois encourageant, précis et concis.
-    4. Réponds toujours en Français.
-    5. Si la question n'a rien à voir avec le sport, ramène gentiment le sujet au sport ou réponds brièvement.
+    1. Analyse les données de l'athlète pour personnaliser ta réponse.
+    2. Utilise les infos du web si pertinent.
+    3. Ton ton est professionnel, calme, très encourageant et tu inspires confiance.
+    4. Utilise le Markdown (Gras, listes) pour la lisibilité.
+    5. Ne donne JAMAIS de conseil médical.
+    6. Réponds toujours en Français.
     `
 
-    const geminiPayload = {
-      contents: [{
-        parts: [
-          { text: systemPrompt },
-          { text: `Message de l'athlète : "${message}"` }
-        ]
-      }]
+    const mistralPayload = {
+        model: "mistral-small-latest", // Or use env var MISTRAL_MODEL
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
     }
 
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const mistralRes = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiPayload)
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MISTRAL_API_KEY}`
+      },
+      body: JSON.stringify(mistralPayload)
     })
 
-    const geminiData = await geminiRes.json()
-    const aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "Désolé, je n'ai pas réussi à formuler une réponse. Peux-tu reformuler ?"
+    if (!mistralRes.ok) {
+        const errTxt = await mistralRes.text()
+        throw new Error(`Mistral Error: ${mistralRes.status} - ${errTxt}`)
+    }
 
-    // 4. Save Response to DB
+    const mistralData = await mistralRes.json()
+    const aiResponse = mistralData.choices?.[0]?.message?.content || "Désolé, je n'ai pas réussi à formuler une réponse."
+
+    // 4. Save Response
     const { error: insertError } = await supabase
       .from('individual_chat_messages')
       .insert({
@@ -138,10 +144,7 @@ serve(async (req) => {
         message: aiResponse
       })
 
-    if (insertError) {
-      console.error("Failed to save AI message", insertError)
-      throw insertError
-    }
+    if (insertError) throw insertError
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
