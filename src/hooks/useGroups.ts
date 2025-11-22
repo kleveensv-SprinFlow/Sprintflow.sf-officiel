@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import useAuth from './useAuth';
 import { Profile } from '../types';
-import { logger } from '../utils/logger';
 
 export interface Group {
   id: string;
@@ -12,6 +11,7 @@ export interface Group {
   invitation_code: string;
   type: 'groupe' | 'athlete';
   max_members: number | null;
+  color?: string; // New field for group theme color
   group_members: { athlete_id: string; profiles: Profile | null }[];
 }
 
@@ -24,6 +24,7 @@ export interface GroupAnalytics {
   alerts_count: number;
   pending_requests_count: number;
   max_members: number | null;
+  color?: string;
 }
 
 export interface JoinRequest {
@@ -61,7 +62,7 @@ export const useGroups = () => {
         const groupsPromise = supabase
           .from('groups')
           .select(`
-            id, name, coach_id, created_at, invitation_code, type, max_members,
+            id, name, coach_id, created_at, invitation_code, type, max_members, color,
             group_members (
               athlete_id,
               profiles (
@@ -84,7 +85,7 @@ export const useGroups = () => {
           .from('group_members')
           .select(`
             groups (
-              id, name, coach_id, created_at, invitation_code, type, max_members,
+              id, name, coach_id, created_at, invitation_code, type, max_members, color,
               group_members (
                 athlete_id,
                 profiles (
@@ -169,17 +170,19 @@ export const useGroups = () => {
     }
   }, [groups]);
 
-  const createGroup = async (name: string, type: 'groupe' | 'athlete', max_members: number | null) => {
+  const createGroup = async (name: string, type: 'groupe' | 'athlete', max_members: number | null, color: string = '#3B82F6') => {
     if (!user) throw new Error('Utilisateur non authentifié.');
     const groupData: {
       name: string;
       coach_id: string;
       type: 'groupe' | 'athlete';
       max_members?: number | null;
+      color: string;
     } = {
       name,
       coach_id: user.id,
       type,
+      color,
     };
     if (max_members !== null) {
       groupData.max_members = max_members;
