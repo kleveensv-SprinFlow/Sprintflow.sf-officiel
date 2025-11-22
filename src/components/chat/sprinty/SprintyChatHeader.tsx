@@ -11,7 +11,7 @@ const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({
   onModeChange,
 }) => {
   return (
-    <header className="fixed top-0 left-0 right-0 z-20 w-full bg-white/70 dark:bg-[#0B1120]/70 backdrop-blur-xl border-b border-white/20 dark:border-white/10">
+    <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white/70 dark:bg-[#0B1120]/70 backdrop-blur-xl border-b border-white/20 dark:border-white/10">
       <div className="flex items-center justify-between px-4 py-3 h-[60px]">
         {/* Left: Toggle Mode */}
         <div className="flex items-center gap-2">
