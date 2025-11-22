@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { format, eachDayOfInterval, startOfWeek, endOfWeek, isSameDay, addDays, subDays, parseISO } from 'date-fns';
+import { ChevronLeft, ChevronRight, Copy, Clipboard, AlertCircle } from 'lucide-react';
+import { format, eachDayOfInterval, startOfWeek, endOfWeek, isSameDay, addDays, subDays, parseISO, differenceInCalendarDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { toast } from 'react-toastify';
 
 import { useWorkouts } from '../../hooks/useWorkouts';
 import { useGroups } from '../../hooks/useGroups';
@@ -13,6 +14,7 @@ import { useWorkoutTypes } from '../../hooks/useWorkoutTypes';
 import { TemplateSelectionModal } from '../workouts/TemplateSelectionModal';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal';
+import { PlanningDayCard } from './PlanningDayCard';
 import { Workout } from '../../types';
 
 type ActiveFilter = {
@@ -25,7 +27,14 @@ type SelectionType = 'group' | 'athlete';
 
 export const CoachPlanning: React.FC = () => {
   const { user } = useAuth();
-  const { workouts, planWorkout } = useWorkouts();
+  // Pass the active filter to useWorkouts to fetch relevant data
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
+  const selectionForHook = useMemo(() => {
+    if (!activeFilter) return undefined;
+    return { type: activeFilter.type, id: activeFilter.id };
+  }, [activeFilter]);
+
+  const { workouts, planWorkout, batchPlanWorkouts } = useWorkouts(selectionForHook);
   const { groups, loading: loadingGroups } = useGroups();
   const { linkedAthletes, loading: loadingAthletes } = useCoachLinks(user?.id);
   const { allTypes: workoutTypes } = useWorkoutTypes();
@@ -39,57 +48,47 @@ export const CoachPlanning: React.FC = () => {
   }, [workoutTypes]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectionType, setSelectionType] = useState<SelectionType>('group');
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
+  const [selectionType, setSelectionType] = useState<SelectionType>('athlete'); // Default to athlete
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [initialWorkoutData, setInitialWorkoutData] = useState<any>(null);
   const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
+  
+  // Clipboard state for Copy/Paste Week
+  const [weekClipboard, setWeekClipboard] = useState<Workout[] | null>(null);
 
   useEffect(() => {
-    // Set default filter to the first group when data is available
-    if (selectionType === 'group' && !loadingGroups && groups.length > 0) {
-      if (!activeFilter || activeFilter.type !== 'group') {
-        setActiveFilter({ type: 'group', id: groups[0].id, name: groups[0].name });
+    // Logic to select the first available item if nothing is selected
+    if (!activeFilter) {
+      if (selectionType === 'athlete' && !loadingAthletes && linkedAthletes.length > 0) {
+        const firstAthlete = linkedAthletes[0];
+        setActiveFilter({ type: 'athlete', id: firstAthlete.id, name: `${firstAthlete.first_name} ${firstAthlete.last_name}` });
+      } else if (selectionType === 'group' && !loadingGroups && groups.length > 0) {
+        const firstGroup = groups[0];
+        setActiveFilter({ type: 'group', id: firstGroup.id, name: firstGroup.name });
       }
-    // Set default filter to the first athlete when data is available
-    } else if (selectionType === 'athlete' && !loadingAthletes && linkedAthletes.length > 0) {
-      if (!activeFilter || activeFilter.type !== 'athlete') {
-        const athlete = linkedAthletes[0];
-        setActiveFilter({ type: 'athlete', id: athlete.id, name: `${athlete.first_name} ${athlete.last_name}` });
-      }
-    // If a type is selected but its list is empty, clear the filter
-    } else if ((selectionType === 'group' && !loadingGroups && groups.length === 0) || (selectionType === 'athlete' && !loadingAthletes && linkedAthletes.length === 0)) {
-        setActiveFilter(null);
     }
-  }, [selectionType, groups, linkedAthletes, loadingGroups, loadingAthletes, activeFilter]);
-
+  }, [activeFilter, selectionType, loadingAthletes, linkedAthletes, loadingGroups, groups]);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
-  const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   const filteredWorkouts = useMemo(() => {
+    // Filter workouts to only show those that belong to the current filter
+    // Note: useWorkouts hook already filters by API, but we double check client side or for completed workouts
     if (!activeFilter) return [];
     
-    if (activeFilter.type === 'group') {
-      return workouts.filter(w => w.assigned_to_group_id === activeFilter.id && w.status === 'planned');
-    }
-    if (activeFilter.type === 'athlete') {
-      return workouts.filter(w =>
-        (w.assigned_to_user_id === activeFilter.id && w.status === 'planned') ||
-        (w.user_id === activeFilter.id && w.status === 'completed')
-      );
-    }
-    return [];
+    // The useWorkouts hook with 'selection' arg returns exactly what we need, so we just return 'workouts'
+    // However, if we want to be safe about the date range (though not strictly necessary for display if we map by day)
+    return workouts; 
   }, [workouts, activeFilter]);
 
-  const handleDateClick = (date: Date) => {
+  const handleAddWorkout = (date: Date) => {
     if (!activeFilter) {
-      alert("Veuillez d'abord sélectionner un groupe ou un athlète.");
+      toast.error("Veuillez d'abord sélectionner un athlète ou un groupe.");
       return;
     }
     setSelectedDate(date);
@@ -112,10 +111,7 @@ export const CoachPlanning: React.FC = () => {
   };
 
   const handleSaveWorkout = async (payload: { blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
-    if (!selectedDate || !activeFilter) {
-        alert("Veuillez sélectionner un groupe ou un athlète pour assigner la séance.");
-        return;
-    }
+    if (!selectedDate || !activeFilter) return;
 
     const workoutTypeName = workoutTypeMap.get(payload.tag_seance)?.name || 'Séance';
 
@@ -128,18 +124,216 @@ export const CoachPlanning: React.FC = () => {
       date: format(selectedDate, 'yyyy-MM-dd'),
     };
 
-    if (activeFilter.type === 'group' && activeFilter.id) {
+    if (activeFilter.type === 'group') {
       planningPayload.assigned_to_group_id = activeFilter.id;
-    } else if (activeFilter.type === 'athlete' && activeFilter.id) {
+    } else {
       planningPayload.assigned_to_user_id = activeFilter.id;
     }
 
-    await planWorkout(planningPayload);
-    setWorkoutFormOpen(false);
+    try {
+        await planWorkout(planningPayload);
+        toast.success("Séance planifiée avec succès");
+        setWorkoutFormOpen(false);
+    } catch (e) {
+        toast.error("Erreur lors de la planification");
+        console.error(e);
+    }
+  };
+
+  const copyWeek = () => {
+      // Get all workouts visible in the current week
+      const currentWeekWorkouts = filteredWorkouts.filter(w => {
+          const wDate = parseISO(w.date);
+          return wDate >= weekStart && wDate <= weekEnd;
+      });
+
+      if (currentWeekWorkouts.length === 0) {
+          toast.info("Aucune séance à copier pour cette semaine.");
+          return;
+      }
+
+      setWeekClipboard(currentWeekWorkouts);
+      toast.success(`${currentWeekWorkouts.length} séances copiées !`);
+  };
+
+  const pasteWeek = async () => {
+      if (!weekClipboard || weekClipboard.length === 0) {
+          toast.error("Le presse-papier est vide.");
+          return;
+      }
+      if (!activeFilter) return;
+
+      // Calculate the start of the week where the source workouts came from
+      // We assume the clipboard contains workouts from a single week.
+      // We take the date of the first workout in clipboard to determine the "source Monday"
+      const sourceDate = parseISO(weekClipboard[0].date);
+      const sourceWeekStart = startOfWeek(sourceDate, { weekStartsOn: 1 });
+      
+      const targetWeekStart = weekStart; // The Monday of the currently viewed week
+
+      const newPlannings = weekClipboard.map(w => {
+          const originalDate = parseISO(w.date);
+          // Calculate day offset from Monday (0 to 6)
+          const dayOffset = differenceInCalendarDays(originalDate, sourceWeekStart);
+          // Calculate new date
+          const newDate = addDays(targetWeekStart, dayOffset);
+          
+          return {
+              date: format(newDate, 'yyyy-MM-dd'),
+              type: w.type,
+              tag_seance: w.tag_seance,
+              notes: w.notes,
+              // Use planned_data if available (status planned), or construct it from workout_data if completed
+              planned_data: w.planned_data || w.workout_data, 
+              assigned_to_user_id: activeFilter.type === 'athlete' ? activeFilter.id : undefined,
+              assigned_to_group_id: activeFilter.type === 'group' ? activeFilter.id : undefined,
+          };
+      });
+
+      if (confirm(`Voulez-vous coller ${newPlannings.length} séances sur la semaine du ${format(targetWeekStart, 'd MMM')} ?`)) {
+          try {
+            await batchPlanWorkouts(newPlannings);
+            toast.success("Semaine collée avec succès !");
+            setWeekClipboard(null); // Optional: Clear clipboard or keep it for multiple pastes
+          } catch (e) {
+              console.error(e);
+              toast.error("Erreur lors du collage de la semaine.");
+          }
+      }
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="pb-24 pt-4 px-4 max-w-3xl mx-auto min-h-screen">
+      
+      {/* --- HEADER --- */}
+      <header className="mb-6 space-y-4">
+        
+        {/* Context Selector (Athlete/Group) */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-sm border border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row gap-2">
+           {/* Type Toggles */}
+           <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl shrink-0">
+               <button
+                  onClick={() => { setSelectionType('athlete'); setActiveFilter(null); }}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      selectionType === 'athlete' 
+                      ? 'bg-white dark:bg-gray-600 shadow-sm text-sprint-primary' 
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  }`}
+               >
+                   Athlètes
+               </button>
+               <button
+                  onClick={() => { setSelectionType('group'); setActiveFilter(null); }}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      selectionType === 'group' 
+                      ? 'bg-white dark:bg-gray-600 shadow-sm text-sprint-primary' 
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  }`}
+               >
+                   Groupes
+               </button>
+           </div>
+
+           {/* Dropdown */}
+           <div className="flex-1 px-1">
+               <select
+                 className="w-full h-full bg-transparent font-semibold text-gray-900 dark:text-white outline-none cursor-pointer py-2"
+                 value={activeFilter?.id || ''}
+                 onChange={(e) => {
+                   const id = e.target.value;
+                   if (selectionType === 'athlete') {
+                     const a = linkedAthletes.find(l => l.id === id);
+                     if (a) setActiveFilter({ type: 'athlete', id: a.id, name: `${a.first_name} ${a.last_name}`});
+                   } else {
+                     const g = groups.find(gr => gr.id === id);
+                     if (g) setActiveFilter({ type: 'group', id: g.id, name: g.name });
+                   }
+                 }}
+               >
+                 <option value="" disabled>Sélectionner...</option>
+                 {selectionType === 'athlete' ? (
+                     linkedAthletes.map(a => (
+                         <option key={a.id} value={a.id}>{a.first_name} {a.last_name}</option>
+                     ))
+                 ) : (
+                     groups.map(g => (
+                         <option key={g.id} value={g.id}>{g.name}</option>
+                     ))
+                 )}
+               </select>
+           </div>
+        </div>
+
+        {/* Week Navigator & Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+            {/* Arrows & Date */}
+            <div className="flex items-center gap-4">
+                <button 
+                    onClick={() => setCurrentDate(subDays(currentDate, 7))}
+                    className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                    <ChevronLeft size={20} />
+                </button>
+                
+                <div className="text-center">
+                    <span className="block text-xs text-gray-500 font-medium uppercase tracking-wider">Semaine du</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">
+                        {format(weekStart, 'd MMM', { locale: fr })} - {format(weekEnd, 'd MMM yyyy', { locale: fr })}
+                    </span>
+                </div>
+
+                <button 
+                    onClick={() => setCurrentDate(addDays(currentDate, 7))}
+                    className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                    <ChevronRight size={20} />
+                </button>
+            </div>
+
+            {/* Week Actions (Copy/Paste) */}
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={copyWeek}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    title="Copier cette semaine"
+                >
+                    <Copy size={16} />
+                    <span className="hidden sm:inline">Copier</span>
+                </button>
+                
+                {weekClipboard && (
+                    <button
+                        onClick={pasteWeek}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-sprint-primary rounded-lg shadow-sm hover:bg-sprint-primary/90 transition-colors animate-pulse"
+                        title="Coller la semaine copiée"
+                    >
+                        <Clipboard size={16} />
+                        <span className="hidden sm:inline">Coller</span>
+                    </button>
+                )}
+            </div>
+        </div>
+
+      </header>
+
+      {/* --- BODY (Daily List) --- */}
+      <div className="space-y-3">
+        {days.map(day => {
+            const dayWorkouts = filteredWorkouts.filter(w => isSameDay(parseISO(w.date), day));
+            return (
+                <PlanningDayCard
+                    key={day.toISOString()}
+                    date={day}
+                    workouts={dayWorkouts}
+                    onAdd={() => handleAddWorkout(day)}
+                    onEdit={(w) => setViewingWorkout(w)}
+                    workoutTypeMap={workoutTypeMap}
+                />
+            );
+        })}
+      </div>
+
+      {/* --- MODALS --- */}
       {isTemplateModalOpen && (
         <TemplateSelectionModal
           onClose={() => setTemplateModalOpen(false)}
@@ -147,6 +341,7 @@ export const CoachPlanning: React.FC = () => {
           onSelect={handleSelectTemplate}
         />
       )}
+      
       {isWorkoutFormOpen && (
         <NewWorkoutForm
           userRole="coach"
@@ -156,145 +351,11 @@ export const CoachPlanning: React.FC = () => {
         />
       )}
 
-      <h1 className="text-2xl font-bold">Calendrier de Planification</h1>
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
-                <button
-                    onClick={() => setSelectionType('group')}
-                    className={`px-4 py-1 rounded-md text-sm font-semibold transition-colors ${
-                        selectionType === 'group' ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow' : 'text-gray-600 dark:text-gray-300'
-                    }`}
-                >
-                    Groupes
-                </button>
-                <button
-                    onClick={() => setSelectionType('athlete')}
-                    className={`px-4 py-1 rounded-md text-sm font-semibold transition-colors ${
-                        selectionType === 'athlete' ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow' : 'text-gray-600 dark:text-gray-300'
-                    }`}
-                >
-                    Athlètes
-                </button>
-            </div>
-            
-            {selectionType === 'group' && (
-                <select
-                    className="p-2 border rounded-lg dark:bg-gray-700 w-full sm:w-auto"
-                    value={activeFilter?.id || ''}
-                    onChange={(e) => {
-                        const id = e.target.value;
-                        const group = groups.find(g => g.id === id);
-                        if(group) setActiveFilter({ type: 'group', id, name: group.name });
-                    }}
-                    disabled={loadingGroups || groups.length === 0}
-                >
-                    {loadingGroups ? (
-                        <option>Chargement...</option>
-                    ) : groups.length > 0 ? (
-                        groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)
-                    ) : (
-                        <option>Aucun groupe</option>
-                    )}
-                </select>
-            )}
-
-            {selectionType === 'athlete' && (
-                <select
-                    className="p-2 border rounded-lg dark:bg-gray-700 w-full sm:w-auto"
-                    value={activeFilter?.id || ''}
-                    onChange={(e) => {
-                        const id = e.target.value;
-                        const athlete = linkedAthletes.find(a => a.id === id);
-                        if(athlete) setActiveFilter({ type: 'athlete', id, name: `${athlete.first_name} ${athlete.last_name}` });
-                    }}
-                    disabled={loadingAthletes || linkedAthletes.length === 0}
-                >
-                     {loadingAthletes ? (
-                        <option>Chargement...</option>
-                    ) : linkedAthletes.length > 0 ? (
-                        linkedAthletes.map(a => <option key={a.id} value={a.id}>{a.first_name} {a.last_name}</option>)
-                    ) : (
-                        <option>Aucun athlète</option>
-                    )}
-                </select>
-            )}
-        </div>
-        <div className="flex items-center gap-4 self-center">
-          <button onClick={() => setCurrentDate(subDays(currentDate, 7))}><ChevronLeft /></button>
-          <h2 className="text-lg font-semibold w-48 text-center">
-            {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'd MMM', { locale: fr })} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'd MMM yyyy', { locale: fr })}
-          </h2>
-          <button onClick={() => setCurrentDate(addDays(currentDate, 7))}><ChevronRight /></button>
-        </div>
-      </div>
-
-      <div className="hidden md:grid grid-cols-7 gap-2 text-center font-bold mb-2">
-        {weekDays.map(day => <div key={day}>{day}</div>)}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
-        {days.map((day, index) => {
-          const isToday = isSameDay(day, new Date());
-
-          const workoutsForDay = filteredWorkouts.filter(w => {
-            const dateToCompare = w.date; 
-            return dateToCompare ? isSameDay(parseISO(dateToCompare), day) : false;
-          });
-
-          return (
-            <div
-              key={day.toString()}
-              className={`min-h-[12rem] rounded-lg p-2 flex flex-col relative transition-shadow hover:shadow-lg ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-white dark:bg-gray-800'}`}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className={`font-bold md:hidden ${isToday ? 'text-primary-600' : ''}`}>{weekDays[index]}</span>
-                <span className={`font-semibold text-lg ${isToday ? 'text-primary-500' : ''}`}>{format(day, 'd')}</span>
-              </div>
-              
-              <div className="flex-grow overflow-y-auto text-sm space-y-2 pr-2">
-                {workoutsForDay.map(w => {
-                  const typeInfo = w.tag_seance ? workoutTypeMap.get(w.tag_seance) : null;
-                  const workoutName = typeInfo ? typeInfo.name : w.title;
-                  const workoutColor = typeInfo ? typeInfo.color : '#6b7280'; 
-
-                  return (
-                    <div
-                      key={w.id}
-                      onClick={() => setViewingWorkout(w)}
-                      className="p-2 rounded-lg shadow-sm truncate bg-gray-50 dark:bg-gray-700/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      style={{
-                        borderLeft: `4px solid ${workoutColor}`
-                      }}
-                      title={workoutName}
-                    >
-                      <p className="font-semibold">{workoutName}</p>
-                      <p className="text-xs opacity-80">{w.type === 'guidé' ? 'Guidée' : 'Manuscrit'}</p>
-                      {w.status === 'completed' && w.rpe && (
-                        <p className="font-bold text-xs mt-1">RPE: {w.rpe}</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              <button 
-                onClick={() => handleDateClick(day)}
-                className={`absolute bottom-2 right-2 flex items-center justify-center w-8 h-8 rounded-full text-white shadow-lg transition-colors ${activeFilter ? 'bg-primary-500 hover:bg-primary-600' : 'bg-gray-400 cursor-not-allowed'}`}
-                aria-label="Ajouter une séance"
-                disabled={!activeFilter}
-              >
-                <Plus size={20} />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
       <WorkoutDetailsModal
         isOpen={!!viewingWorkout}
         onClose={() => setViewingWorkout(null)}
         workout={viewingWorkout}
+        canEdit={true} 
       />
     </div>
   );
