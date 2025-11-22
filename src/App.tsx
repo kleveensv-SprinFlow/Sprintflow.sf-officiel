@@ -1,49 +1,145 @@
-import React from 'react';
-import { Route, Routes } from 'react-router-dom';
-import { SprintyProvider } from './context/SprintyContext.tsx';
-import SprintyChatView from './components/chat/sprinty/SprintyChatView.tsx';
-import TabBar from './components/TabBar.tsx';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import TabBar from './components/TabBar';
+import Auth from './components/Auth';
+import LoadingScreen from './components/LoadingScreen';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { SprintyProvider } from './context/SprintyContext';
+import FabMenu from './components/navigation/FabMenu';
+import WeightEntryModal from './components/dashboard/WeightEntryModal';
+import Header from './components/navigation/Header';
 
-// MOCK: SprintyChatView for visualization
-// We are importing the REAL one, but we must MOCK it in the file itself or here.
-// But we can't easily mock imports here without Jest/Vitest.
-// So we modified SprintyChatView.tsx to have mock data? NO I haven't yet.
-
-// I will modify App.tsx to JUST render the Sprinty View, bypassing Auth.
-// And I will modify SprintyChatView.tsx to use static data.
+type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
 
 function App() {
+  const { user, loading, profile } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const [activeTab, setActiveTab] = useState<Tab>('accueil');
+  const [isFabOpen, setIsFabOpen] = useState(false);
+  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
+
+  // Helper to determine if we are on the Sprinty page
+  const isSprintyPage = location.pathname.startsWith('/sprinty');
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/' || path === '/dashboard') setActiveTab('accueil');
+    else if (path.startsWith('/planning')) setActiveTab('planning');
+    else if (path.startsWith('/nutrition')) setActiveTab('nutrition');
+    else if (path.startsWith('/groups')) setActiveTab('groupes');
+    else if (path.startsWith('/sprinty')) setActiveTab('sprinty');
+    else setActiveTab('accueil'); // Default
+  }, [location.pathname]);
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    if (tab === 'accueil') navigate('/');
+    else if (tab === 'planning') navigate('/planning');
+    else if (tab === 'nutrition') navigate('/nutrition');
+    else if (tab === 'groupes') navigate('/groups');
+    else if (tab === 'sprinty') navigate('/sprinty');
+  };
+
+  const handleFabAction = (actionId: string) => {
+    setIsFabOpen(false);
+    switch (actionId) {
+      case 'record':
+        navigate('/records/new');
+        break;
+      case 'workout':
+        navigate('/planning/new');
+        break;
+      case 'sleep':
+        navigate('/sleep/add');
+        break;
+      case 'weight':
+        setIsWeightModalOpen(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Helper to get page title based on route
+  const getPageTitle = (path: string) => {
+    if (path === '/' || path === '/dashboard') return 'Tableau de Bord';
+    if (path.startsWith('/planning')) return 'Planning';
+    if (path.startsWith('/nutrition')) return 'Nutrition';
+    if (path.startsWith('/groups')) return 'Groupes';
+    if (path.startsWith('/records')) return 'Records';
+    if (path.startsWith('/profile')) return 'Mon Profil';
+    if (path.startsWith('/settings')) return 'Paramètres';
+    if (path.startsWith('/chat')) return 'Messages';
+    return 'SprintFlow';
+  };
+
+  if (loading) return <LoadingScreen />;
+
+  if (!user) {
+    return (
+      <>
+        <Auth />
+        <ToastContainer position="top-right" autoClose={3000} theme="dark" />
+      </>
+    );
+  }
+
   return (
     <SprintyProvider>
-        <Routes>
-          <Route path="/" element={<TestLayout />} />
-        </Routes>
+      <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex flex-col">
+        
+        {/* Global Header - Hidden on Sprinty pages */}
+        {!isSprintyPage && (
+          <Header 
+            title={getPageTitle(location.pathname)}
+            showWelcomeMessage={location.pathname === '/'}
+            isDashboard={location.pathname === '/'}
+            userRole={profile?.role as 'athlete' | 'coach'}
+            onProfileClick={() => navigate('/profile')}
+            onHomeClick={() => navigate('/')}
+            canGoBack={location.pathname !== '/' && !['/planning', '/nutrition', '/groups', '/sprinty'].includes(location.pathname)}
+            onBack={() => navigate(-1)}
+          />
+        )}
+
+        {/* Main Content Area */}
+        {/* 
+            Conditional styling:
+            - Sprinty page: overflow-hidden, no padding (full screen, handles own scroll)
+            - Other pages: overflow-y-auto, pb-[80px] (standard scrollable content with tab bar spacing)
+        */}
+        <main className={`flex-1 ${isSprintyPage ? 'overflow-hidden' : 'overflow-x-hidden overflow-y-auto pb-[80px] pt-[70px]'}`}>
+          <Outlet />
+        </main>
+
+        {/* Modals */}
+        <FabMenu 
+          isOpen={isFabOpen} 
+          onClose={() => setIsFabOpen(false)} 
+          onAction={handleFabAction} 
+        />
+        
+        <WeightEntryModal 
+          isOpen={isWeightModalOpen} 
+          onClose={() => setIsWeightModalOpen(false)} 
+        />
+
+        {/* TabBar */}
+        <TabBar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onFabClick={() => setIsFabOpen(!isFabOpen)}
+          userRole={profile?.role as 'athlete' | 'coach'}
+          isFabOpen={isFabOpen}
+        />
+        
+        <ToastContainer position="bottom-center" autoClose={3000} theme="dark" />
+      </div>
     </SprintyProvider>
-  );
-}
-
-function TestLayout() {
-  // Simulate the App's structure for Sprinty page
-  return (
-    <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex flex-col">
-       {/* Main Content Area */}
-       <main className="flex-1 overflow-hidden">
-          <div className="px-4">
-             <SprintyChatView />
-          </div>
-       </main>
-
-       {/* TabBar */}
-       <TabBar
-          activeTab="sprinty"
-          onTabChange={() => {}}
-          onFabClick={() => {}}
-          userRole="athlete"
-       />
-       <ToastContainer />
-    </div>
   );
 }
 
