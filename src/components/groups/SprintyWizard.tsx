@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Users, User, Check, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import SprintyAvatar from '../chat/sprinty/SprintyAvatar';
+import { useSprinty } from '../../context/SprintyContext';
 
 interface SprintyWizardProps {
   onCreate: (name: string, type: 'groupe' | 'athlete', maxMembers: number | null, color: string) => Promise<void>;
@@ -20,16 +22,30 @@ const PREMIUM_COLORS = [
 ];
 
 export const SprintyWizard: React.FC<SprintyWizardProps> = ({ onCreate }) => {
+  const { setExpression } = useSprinty();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [groupType, setGroupType] = useState<'groupe' | 'athlete' | null>(null);
   const [name, setName] = useState('');
   const [color, setColor] = useState(PREMIUM_COLORS[0].hex);
   const [isCreating, setIsCreating] = useState(false);
   
-  // Sprinty Animation State (simulated with ID toggling logic if we were controlling the SVG directly, 
-  // but here we assume the standard animated SVG loops or we switch assets. 
-  // Based on memory, we can't easily control internal SVG states from an <img /> tag without complex JS.
-  // For this implementation, we will use the animated SVG and overlay "speech bubbles".)
+  // Manage Sprinty's Expression based on step
+  useEffect(() => {
+    switch (step) {
+      case 1:
+        setExpression('happy');
+        break;
+      case 2:
+        setExpression('thinking');
+        break;
+      case 3:
+        setExpression('typing'); // or 'neutral'
+        break;
+      case 4:
+        setExpression('success'); // or 'happy'
+        break;
+    }
+  }, [step, setExpression]);
   
   const handleNextStep = () => {
     if (step === 1) setStep(2);
@@ -44,7 +60,6 @@ export const SprintyWizard: React.FC<SprintyWizardProps> = ({ onCreate }) => {
     if (!name.trim()) return;
     setIsCreating(true);
     try {
-      // Default max members: 1 for athlete, null (unlimited) for group for simplicity in wizard
       const maxMembers = groupType === 'athlete' ? 1 : null;
       await onCreate(name, groupType!, maxMembers, color);
       setStep(4);
@@ -55,23 +70,6 @@ export const SprintyWizard: React.FC<SprintyWizardProps> = ({ onCreate }) => {
     }
   };
 
-  const variants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 1000 : -1000,
-      opacity: 0
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1
-    },
-    exit: (direction: number) => ({
-      zIndex: 0,
-      x: direction < 0 ? 1000 : -1000,
-      opacity: 0
-    })
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-black text-white overflow-hidden">
       {/* Background Elements */}
@@ -80,21 +78,17 @@ export const SprintyWizard: React.FC<SprintyWizardProps> = ({ onCreate }) => {
         <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-600/20 blur-[100px]" />
       </div>
 
-      {/* Sprinty Avatar Container */}
+      {/* Sprinty Avatar Container (Interactive) */}
       <motion.div 
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="absolute top-12 md:top-20 left-1/2 transform -translate-x-1/2 w-32 h-32 md:w-48 md:h-48 z-20"
       >
-         <img 
-           src="/assets/sprinty-avatar-animated.svg" 
-           alt="Sprinty" 
-           className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" 
-         />
+         <SprintyAvatar scale={1.2} className="w-full h-full drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
       </motion.div>
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-2xl px-6 mt-32 md:mt-40">
+      <div className="relative z-10 w-full max-w-2xl px-6 mt-20 md:mt-40">
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
@@ -135,35 +129,35 @@ export const SprintyWizard: React.FC<SprintyWizardProps> = ({ onCreate }) => {
               exit={{ opacity: 0, x: -50 }}
               className="space-y-8"
             >
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2">Quel type de suivi veux-tu créer ?</h2>
-                <p className="text-gray-400">Choisis l'option qui correspond le mieux à tes besoins actuels.</p>
+              <div className="text-center mb-4 md:mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">Quel type de suivi veux-tu créer ?</h2>
+                <p className="text-sm md:text-base text-gray-400">Choisis l'option qui correspond le mieux à tes besoins actuels.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
                 <button
                   onClick={() => handleTypeSelect('groupe')}
-                  className="group relative p-6 h-64 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary-500/50 transition-all duration-300 flex flex-col items-center justify-center text-center gap-4 hover:scale-105 hover:shadow-xl"
+                  className="group relative p-4 md:p-6 h-40 md:h-64 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary-500/50 transition-all duration-300 flex flex-col items-center justify-center text-center gap-2 md:gap-4 hover:scale-105 hover:shadow-xl"
                 >
-                  <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/40 transition-colors">
-                    <Users className="w-8 h-8 text-blue-400" />
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/40 transition-colors">
+                    <Users className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-2">Groupe d'Athlètes</h3>
-                    <p className="text-sm text-gray-400">Idéal pour les clubs, les équipes ou les classes. Suis plusieurs athlètes en même temps.</p>
+                    <h3 className="text-lg md:text-xl font-bold text-white mb-1 md:mb-2">Groupe d'Athlètes</h3>
+                    <p className="text-xs md:text-sm text-gray-400">Idéal pour les clubs, les équipes ou les classes. Suis plusieurs athlètes en même temps.</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleTypeSelect('athlete')}
-                  className="group relative p-6 h-64 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-green-500/50 transition-all duration-300 flex flex-col items-center justify-center text-center gap-4 hover:scale-105 hover:shadow-xl"
+                  className="group relative p-4 md:p-6 h-40 md:h-64 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-green-500/50 transition-all duration-300 flex flex-col items-center justify-center text-center gap-2 md:gap-4 hover:scale-105 hover:shadow-xl"
                 >
-                  <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center group-hover:bg-green-500/40 transition-colors">
-                    <User className="w-8 h-8 text-green-400" />
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-green-500/20 flex items-center justify-center group-hover:bg-green-500/40 transition-colors">
+                    <User className="w-6 h-6 md:w-8 md:h-8 text-green-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-2">Suivi Individuel</h3>
-                    <p className="text-sm text-gray-400">Parfait pour un coaching personnalisé 1-to-1. Focus total sur un seul athlète.</p>
+                    <h3 className="text-lg md:text-xl font-bold text-white mb-1 md:mb-2">Suivi Individuel</h3>
+                    <p className="text-xs md:text-sm text-gray-400">Parfait pour un coaching personnalisé 1-to-1. Focus total sur un seul athlète.</p>
                   </div>
                 </button>
               </div>
@@ -175,13 +169,13 @@ export const SprintyWizard: React.FC<SprintyWizardProps> = ({ onCreate }) => {
               key="step3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-full max-w-md mx-auto bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-2xl"
+              className="w-full max-w-md mx-auto bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 md:p-8 shadow-2xl"
             >
-              <h2 className="text-2xl font-bold text-center text-white mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-center text-white mb-4 md:mb-6">
                 {groupType === 'groupe' ? 'Nomme ta Team' : 'Nom de l\'athlète'}
               </h2>
               
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Nom</label>
                   <input
