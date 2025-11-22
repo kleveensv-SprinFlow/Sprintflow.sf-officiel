@@ -193,6 +193,59 @@ export function useWorkouts(selection?: Selection) {
     return data;
   };
 
+  const batchPlanWorkouts = async (
+    plannings: Array<{
+      date: string;
+      type: 'guidé' | 'manuscrit' | 'modèle';
+      tag_seance?: string;
+      notes?: string;
+      planned_data?: { blocs: any[] };
+      assigned_to_user_id?: string;
+      assigned_to_group_id?: string;
+    }>
+  ) => {
+    if (!user || profile?.role !== 'coach') {
+      throw new Error('Action non autorisée.');
+    }
+
+    const insertData = plannings.map(planning => {
+      if (!planning.assigned_to_user_id && !planning.assigned_to_group_id) {
+        throw new Error('Chaque séance doit être assignée à un athlète ou à un groupe.');
+      }
+
+      const data: any = {
+        ...planning,
+        coach_id: user.id,
+        status: 'planned',
+      };
+
+      if (planning.assigned_to_user_id) {
+        data.user_id = planning.assigned_to_user_id;
+      } else if (planning.assigned_to_group_id) {
+        // On assigne au coach par défaut pour garder une référence
+        data.user_id = user.id;
+      }
+      return data;
+    });
+
+    const { data, error } = await supabase
+      .from('workouts')
+      .insert(insertData)
+      .select();
+
+    if (error) throw error;
+
+    if (data) {
+      setWorkouts(prev =>
+        [...(data as Workout[]), ...prev].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+      );
+    }
+
+    return data;
+  };
+
   const completeWorkout = async (
     plannedWorkoutId: string,
     performance: {
@@ -304,5 +357,6 @@ export function useWorkouts(selection?: Selection) {
     updateWorkout,
     deleteWorkout,
     refresh: fetchWorkouts,
+    batchPlanWorkouts,
   };
 }
