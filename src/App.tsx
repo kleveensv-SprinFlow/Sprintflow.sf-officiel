@@ -9,7 +9,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import { SprintyProvider } from './context/SprintyContext';
 import FabMenu from './components/navigation/FabMenu';
 import WeightEntryModal from './components/dashboard/WeightEntryModal';
-import Header from './components/navigation/Header';
 
 type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
 
@@ -21,9 +20,6 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('accueil');
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
-
-  // Helper to determine if we are on the Sprinty page
-  const isSprintyPage = location.pathname.startsWith('/sprinty');
 
   useEffect(() => {
     const path = location.pathname;
@@ -64,19 +60,6 @@ function App() {
     }
   };
 
-  // Helper to get page title based on route
-  const getPageTitle = (path: string) => {
-    if (path === '/' || path === '/dashboard') return 'Tableau de Bord';
-    if (path.startsWith('/planning')) return 'Planning';
-    if (path.startsWith('/nutrition')) return 'Nutrition';
-    if (path.startsWith('/groups')) return 'Groupes';
-    if (path.startsWith('/records')) return 'Records';
-    if (path.startsWith('/profile')) return 'Mon Profil';
-    if (path.startsWith('/settings')) return 'Paramètres';
-    if (path.startsWith('/chat')) return 'Messages';
-    return 'SprintFlow';
-  };
-
   if (loading) return <LoadingScreen />;
 
   if (!user) {
@@ -91,28 +74,8 @@ function App() {
   return (
     <SprintyProvider>
       <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex flex-col">
-        
-        {/* Global Header - Hidden on Sprinty pages */}
-        {!isSprintyPage && (
-          <Header 
-            title={getPageTitle(location.pathname)}
-            showWelcomeMessage={location.pathname === '/'}
-            isDashboard={location.pathname === '/'}
-            userRole={profile?.role as 'athlete' | 'coach'}
-            onProfileClick={() => navigate('/profile')}
-            onHomeClick={() => navigate('/')}
-            canGoBack={location.pathname !== '/' && !['/planning', '/nutrition', '/groups', '/sprinty'].includes(location.pathname)}
-            onBack={() => navigate(-1)}
-          />
-        )}
-
         {/* Main Content Area */}
-        {/* 
-            Conditional styling:
-            - Sprinty page: overflow-hidden, no padding (full screen, handles own scroll)
-            - Other pages: overflow-y-auto, pb-[80px] (standard scrollable content with tab bar spacing)
-        */}
-        <main className={`flex-1 ${isSprintyPage ? 'overflow-hidden' : 'overflow-x-hidden overflow-y-auto pb-[80px] pt-[70px]'}`}>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto pb-[80px]">
           <Outlet />
         </main>
 
