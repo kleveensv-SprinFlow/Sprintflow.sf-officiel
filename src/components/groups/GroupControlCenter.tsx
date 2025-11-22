@@ -137,6 +137,11 @@ export const GroupControlCenter: React.FC<GroupControlCenterProps> = ({ group, o
     }
   };
 
+  // Dynamic Gradient for the Group Card based on group.color
+  const gradientStyle = group.color 
+    ? { background: `linear-gradient(135deg, ${group.color} 0%, ${group.color}dd 100%)` }
+    : undefined; // Default handled by class if undefined, but let's force it here or let it fallback
+
   return (
     <div className="pb-20 animate-fade-in">
       {/* Header */}
@@ -144,7 +149,12 @@ export const GroupControlCenter: React.FC<GroupControlCenterProps> = ({ group, o
         <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
           <ArrowLeft size={24} className="text-gray-700 dark:text-gray-200" />
         </button>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate max-w-[200px]">{group.name}</h1>
+        <h1 
+          className="text-xl font-bold text-gray-900 dark:text-white truncate max-w-[200px]"
+          style={group.color ? { color: group.color } : undefined}
+        >
+          {group.name}
+        </h1>
         <button 
           onClick={() => setActiveTab('settings')}
           className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -154,10 +164,13 @@ export const GroupControlCenter: React.FC<GroupControlCenterProps> = ({ group, o
       </div>
 
       {/* Quick Stats / Invitation Code */}
-      <div className="mb-8 p-4 rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-lg">
+      <div 
+        className={`mb-8 p-4 rounded-xl text-white shadow-lg ${!group.color ? 'bg-gradient-to-br from-primary-600 to-primary-800' : ''}`}
+        style={gradientStyle}
+      >
         <div className="flex justify-between items-start mb-4">
             <div>
-                <p className="text-primary-100 text-sm">Code d'invitation</p>
+                <p className="text-white/80 text-sm">Code d'invitation</p>
                 <div className="flex items-center space-x-2 mt-1">
                     <span className="text-2xl font-mono font-bold tracking-widest">{group.invitation_code}</span>
                     <button onClick={handleCopyCode} className="p-1 hover:bg-white/20 rounded transition-colors">
@@ -166,18 +179,18 @@ export const GroupControlCenter: React.FC<GroupControlCenterProps> = ({ group, o
                 </div>
             </div>
             <div className="text-right">
-                <p className="text-primary-100 text-sm">Membres</p>
+                <p className="text-white/80 text-sm">Membres</p>
                 <p className="text-2xl font-bold">{totalMembers}</p>
             </div>
         </div>
         <div className="flex space-x-4 text-sm">
-            <div className="flex items-center bg-white/10 px-3 py-1 rounded-lg">
+            <div className="flex items-center bg-white/10 px-3 py-1 rounded-lg backdrop-blur-sm">
                 <Activity size={16} className="mr-2" />
                 <span>{checkedInCount}/{totalMembers} Check-ins</span>
             </div>
             {alerts.length > 0 && (
-                <div className="flex items-center bg-red-500/20 px-3 py-1 rounded-lg border border-red-400/30">
-                    <AlertTriangle size={16} className="mr-2 text-red-200" />
+                <div className="flex items-center bg-red-500/30 px-3 py-1 rounded-lg border border-red-400/30 backdrop-blur-sm">
+                    <AlertTriangle size={16} className="mr-2 text-red-100" />
                     <span>{alerts.length} Alerte(s)</span>
                 </div>
             )}
