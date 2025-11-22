@@ -25,7 +25,7 @@ const TabBar: React.FC<TabBarProps> = ({
   userRole = 'athlete',
   isFabOpen = false
 }) => {
-  const { toggleMenu } = useSprinty();
+  const { toggleCharacterSelector } = useSprinty();
   // Configuration pour les athlètes
   const athleteTabs = [
     { id: 'accueil', label: 'Accueil', Icon: Home },
@@ -95,11 +95,15 @@ const TabBar: React.FC<TabBarProps> = ({
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="w-14 h-14 -mt-4" // Slightly larger and lifted
+                className="w-16 h-16 -mt-6 cursor-pointer" // Enlarged (w-16 h-16) and lifted more (-mt-6)
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleCharacterSelector();
+                }}
               >
                 <SprintyAvatar 
-                  onClick={toggleMenu}
-                  scale={1.2}
+                  onClick={() => {}} // Handled by parent div to ensure touch target
+                  scale={1.3} // Slight increase in internal scale
                 />
               </motion.div>
             ) : (
