@@ -7,66 +7,40 @@ interface SprintyChatHeaderProps {
 }
 
 const SprintyChatHeader: React.FC<SprintyChatHeaderProps> = ({
-  onMenuClick,
   mode,
   onModeChange,
 }) => {
   return (
-    // Effet verre dépoli : fond semi-transparent + blur
-    <header className="w-full bg-light-background/60 dark:bg-dark-background/60 backdrop-blur-md border-b border-white/10">
-      <div className="flex items-center justify-between px-4 py-3">
-        {/* Bouton menu (burger) */}
-        <button
-          type="button"
-          onClick={onMenuClick}
-          className="text-white/80 hover:text-white focus:outline-none"
-        >
-          <span className="sr-only">Ouvrir le menu des conversations</span>
-          <div className="space-y-1">
-            <span className="block w-5 h-0.5 bg-white rounded" />
-            <span className="block w-5 h-0.5 bg-white rounded" />
-          </div>
-        </button>
-
-        {/* Toggle Simplifié / Expert */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => onModeChange('simplified')}
-            className={`text-sm ${
-              mode === 'simplified' ? 'text-white font-semibold' : 'text-white/60'
-            }`}
-          >
-            Simplifié
-          </button>
-
+    <header className="fixed top-0 left-0 right-0 z-20 w-full bg-white/70 dark:bg-[#0B1120]/70 backdrop-blur-xl border-b border-white/20 dark:border-white/10">
+      <div className="flex items-center justify-between px-4 py-3 h-[60px]">
+        {/* Left: Toggle Mode */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => onModeChange(mode === 'simplified' ? 'expert' : 'simplified')}
-            className="w-10 h-5 bg-white/20 rounded-full flex items-center px-1 focus:outline-none cursor-pointer"
+            className="relative h-7 w-12 rounded-full bg-gray-200 dark:bg-white/10 transition-colors focus:outline-none"
           >
-            <div
-              className={`w-4 h-4 bg-white rounded-full transform transition-transform ${
-                mode === 'simplified' ? 'translate-x-0' : 'translate-x-5'
+             <span className="sr-only">Changer le mode</span>
+             <div
+              className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                mode === 'expert' ? 'translate-x-5 bg-indigo-500' : 'translate-x-0'
               }`}
             />
           </button>
-
-          <button
-            type="button"
-            onClick={() => onModeChange('expert')}
-            className={`text-sm ${
-              mode === 'expert' ? 'text-white font-semibold' : 'text-white/60'
-            }`}
-          >
-            Expert
-          </button>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+             {mode === 'simplified' ? 'Simple' : 'Expert'}
+          </span>
         </div>
 
-        {/* Avatar Sprinty (placeholder) */}
-        <div className="w-8 h-8 rounded-full bg-white/20 overflow-hidden flex items-center justify-center">
-          <span className="text-xs text-white/80">SP</span>
+        {/* Center: Sprinty Title with Shine */}
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          <h1 className="text-2xl tracking-tight animate-text-shine-electric">
+            Sprinty
+          </h1>
         </div>
+
+        {/* Right: Empty for balance (or future use) */}
+        <div className="w-12" />
       </div>
     </header>
   );
