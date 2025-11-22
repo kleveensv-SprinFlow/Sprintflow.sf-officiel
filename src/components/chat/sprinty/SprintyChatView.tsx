@@ -42,7 +42,6 @@ const SprintyChatView: React.FC = () => {
   const { setExpression } = useSprinty();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Welcome Message
   const getWelcomeMessage = useCallback(() => {
     return t('sprinty.welcome');
   }, [t]);
@@ -131,7 +130,6 @@ const SprintyChatView: React.FC = () => {
   }, [conversationId, normalizeMessage, getWelcomeMessage, t]);
 
   useEffect(() => {
-    // Auto-scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
@@ -224,9 +222,8 @@ const SprintyChatView: React.FC = () => {
   };
 
   return (
-    // Immersive layout: Fixed container covering the screen
-    // z-30 to ensure it sits above standard page content but below TabBar (z-50) if TabBar is meant to overlay
-    <div className="fixed inset-0 z-30 bg-sprint-light-background dark:bg-sprint-dark-background overflow-hidden">
+    // Immersive layout: Removed z-30 to avoid stacking context trap. Let it be natural DOM order (behind TabBar).
+    <div className="fixed inset-0 bg-sprint-light-background dark:bg-sprint-dark-background overflow-hidden">
       
       {/* Ambient Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -242,8 +239,8 @@ const SprintyChatView: React.FC = () => {
       />
 
       {/* Scrollable Message Area */}
-      {/* Added pt-[70px] for header and pb-[140px] for input area + TabBar space */}
-      <div className="absolute inset-0 overflow-y-auto pt-[70px] pb-[150px] px-4 space-y-6 no-scrollbar">
+      {/* Adjusted padding bottom to account for new input position: 90px input space + buffer */}
+      <div className="absolute inset-0 overflow-y-auto pt-[70px] pb-[160px] px-4 space-y-6 no-scrollbar">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -269,10 +266,14 @@ const SprintyChatView: React.FC = () => {
       </div>
 
       {/* Fixed Input Area at Bottom */}
-      {/* bottom-[64px] to sit exactly on top of the 64px TabBar */}
-      {/* z-40 to ensure it's above the message list and above general content */}
-      <div className="fixed bottom-[64px] left-0 right-0 p-4 bg-gradient-to-t from-white/80 via-white/50 to-transparent dark:from-[#0B1120]/80 dark:via-[#0B1120]/50 dark:to-transparent z-40">
-        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+      {/* Use bottom-0 and large pb to push content ABOVE TabBar area. 
+          90px = 64px TabBar + ~26px visual space above. 
+          z-40 ensures it is above messages but below TabBar (z-50) where they overlap (at the very bottom). 
+          But the Input content is pushed UP into safe space. */}
+      <div className="fixed bottom-0 left-0 right-0 pb-[90px] pt-4 px-4 bg-gradient-to-t from-white/80 via-white/50 to-transparent dark:from-[#0B1120]/95 dark:via-[#0B1120]/60 dark:to-transparent z-40 pointer-events-none">
+        <div className="pointer-events-auto">
+          <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+        </div>
       </div>
 
       <ConversationMenu
