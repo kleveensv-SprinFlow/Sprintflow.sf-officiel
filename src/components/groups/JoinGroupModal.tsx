@@ -260,7 +260,7 @@ interface JoinGroupModalProps {
   onSuccess: () => void;
 }
 
-const JoinGroupModal: React.FC<JoinGroupModalProps> = ({ onClose, onSuccess }) => {
+export const JoinGroupModal: React.FC<JoinGroupModalProps> = ({ onClose, onSuccess }) => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const { joinGroup } = useGroups();
