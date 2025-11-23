@@ -13,9 +13,12 @@
   to = "/index.html"
   status = 200
 
+# Cache Control pour le fichier HTML principal (index.html)
+# Force la revalidation à chaque visite pour éviter de voir une ancienne version
 [[headers]]
   for = "/*"
   [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
