@@ -3,3 +3,6 @@
 [functions]
   [functions.daily-summary]
     schedule = "0 11 * * *" # Exécute tous les jours à 11h00 UTC
+
+[auth]
+  pwned_password_check_enabled = true
