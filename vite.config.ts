@@ -13,6 +13,11 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // Force le nouveau Service Worker à s'activer immédiatement
+        skipWaiting: true,
+        clientsClaim: true,
+        // Nettoyage automatique des vieux caches
+        cleanupOutdatedCaches: true,
       },
       manifest: {
         name: 'SprintFlow',
