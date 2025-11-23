@@ -51,14 +51,29 @@ export default defineConfig({
     minify: 'esbuild',
     target: 'es2015',
     cssCodeSplit: true,
+    // Augmentation de la limite d'avertissement pour éviter le message jaune
+    chunkSizeWarningLimit: 3000, 
     rollupOptions: {
       output: {
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+        // C'est ici que la magie opère pour diviser le fichier lourd :
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // Sépare les grosses librairies spécifiques pour alléger le chargement
+            if (id.includes('lottie')) {
+              return 'lottie-vendor';
+            }
+            if (id.includes('supabase')) {
+              return 'supabase-vendor';
+            }
+            // Tout le reste des modules va dans un fichier 'vendor' général
+            return 'vendor';
+          }
+        },
       }
     },
-    chunkSizeWarningLimit: 1000,
   },
   esbuild: {
     drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
