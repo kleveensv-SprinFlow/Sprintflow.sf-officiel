@@ -28,9 +28,8 @@ serve(async (req) => {
     if (!MISTRAL_API_KEY) {
        throw new Error("MISTRAL_API_KEY not set")
     }
-    // We use provided keys as fallback if env not set, just in case, but prefer env.
-    const GOOGLE_SEARCH_KEY = Deno.env.get('GOOGLE_SEARCH_KEY') || "AIzaSyBiMqJ-qu304PkH6attZAYcc7pFkvQCeNY"
-    const GOOGLE_SEARCH_CX = Deno.env.get('GOOGLE_SEARCH_CX') || "20f28f7d4a9e841cd"
+    const GOOGLE_SEARCH_KEY = Deno.env.get('GOOGLE_SEARCH_KEY')
+    const GOOGLE_SEARCH_CX = Deno.env.get('GOOGLE_SEARCH_CX')
     const SPRINTY_ID = "00000000-0000-0000-0000-000000000000"
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
@@ -76,17 +75,19 @@ serve(async (req) => {
     ${JSON.stringify(nutrition?.map(n => ({ date: n.date, aliment: n.aliment_nom, kcal: n.kcal, proteines: n.proteines_g })))}
     `
 
-    // 2. Search
+    // 2. Search (optional - only if keys are configured)
     let searchResultsText = ""
-    try {
-      const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_SEARCH_KEY}&cx=${GOOGLE_SEARCH_CX}&q=${encodeURIComponent(message)}`
-      const searchRes = await fetch(searchUrl)
-      const searchData = await searchRes.json()
-      if (searchData.items && searchData.items.length > 0) {
-        searchResultsText = searchData.items.slice(0, 3).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n')
+    if (GOOGLE_SEARCH_KEY && GOOGLE_SEARCH_CX) {
+      try {
+        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_SEARCH_KEY}&cx=${GOOGLE_SEARCH_CX}&q=${encodeURIComponent(message)}`
+        const searchRes = await fetch(searchUrl)
+        const searchData = await searchRes.json()
+        if (searchData.items && searchData.items.length > 0) {
+          searchResultsText = searchData.items.slice(0, 3).map((item: any) => `- ${item.title}: ${item.snippet}`).join('\n')
+        }
+      } catch (e) {
+        console.error("Search failed", e)
       }
-    } catch (e) {
-      console.error("Search failed", e)
     }
 
     // 3. Call Mistral
