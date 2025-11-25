@@ -4,14 +4,6 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 import { LanguageSelector } from '../LanguageSelector';
-
-// Dans le JSX, après la section Theme
-<div className="space-y-3">
-  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-    Langue de Sprinty
-  </h3>
-  <LanguageSelector />
-</div>
 import { EditProfileModal } from './EditProfileModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { DeleteAccountModal } from './DeleteAccountModal';
@@ -252,6 +244,12 @@ const ProfilePage: React.FC = () => {
           <button onClick={() => setTheme('system')} className={`flex-1 p-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${theme === 'system' ? 'bg-white dark:bg-gray-800 shadow text-blue-600 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
             <Monitor className="w-4 h-4" /> Système
           </button>
+        </div>
+         <div className="space-y-3 mt-4">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Langue de Sprinty
+            </h3>
+            <LanguageSelector />
         </div>
       </div>
 

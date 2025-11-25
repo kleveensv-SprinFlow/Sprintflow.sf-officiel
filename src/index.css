@@ -1,80 +1,38 @@
-/* 1. Import Manrope Font with specified weights */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap');
-
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+/* src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 @import './styles/animations.css';
 
-/* 2. Base layer and animations */
+/* La police DIN 1451 doit être chargée localement si elle n'est pas sur Google Fonts.
+   Pour l'instant, on se base sur la config Tailwind qui la déclare. */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @layer base {
-  /* Définition des variables CSS pour les ombres dynamiques */
-  :root {
-    --shadow-premium: theme('boxShadow.premium-light');
-  }
-
-  .dark {
-    --shadow-premium: theme('boxShadow.premium-dark');
-  }
-
+  /* 1. Forcer le thème sombre et la typographie de base */
   body {
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
+    @apply bg-sprint-dark-background text-sprint-dark-text-primary;
+    font-family: theme('fontFamily.manrope'), sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
-  @keyframes fadeIn-slideUp {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+
+  /* 2. Appliquer la typographie "Industriel / Tech" aux titres */
+  h1, h2, h3, h4, h5, h6, .font-din-title {
+    @apply font-din uppercase tracking-wider font-bold;
   }
 
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.6s ease-out;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
-  }
-  
-  @keyframes pop-in {
-    0% { opacity: 0; transform: scale(0.9); }
-    80% { opacity: 1; transform: scale(1.02); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-
-  /* Ambient Blob Animation */
-  @keyframes float-blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
-  }
-  
-  .animate-blob {
-    animation: float-blob 7s infinite;
-  }
-  
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
-  
-  .animation-delay-4000 {
-    animation-delay: 4s;
+  /* Appliquer aux labels importants et données chiffrées */
+  .font-din-data {
+    @apply font-din uppercase;
   }
 }
 
-/* 3. Custom utility classes */
 @layer utilities {
+  /* 3. Simplification des classes utilitaires pour le mode sombre uniquement */
   .shadow-premium {
-    box-shadow: var(--shadow-premium);
+    @apply shadow-premium-dark;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -85,74 +43,13 @@
     scrollbar-width: none;
   }
 
-  .text-shadow-light {
-    text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
-  }
   .text-shadow-dark {
     text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
   }
 
-  /* Nouvelle classe pour l'effet "verre dépoli" - UPDATED FOR BETTER VISIBILITY */
   .card-glass {
-    @apply bg-white/60 backdrop-blur-lg border border-white/40 rounded-xl shadow-sm;
-  }
-
-  .shadow-glow {
-    box-shadow: 0 0 25px -5px var(--glow-color, theme('colors.sprint-accent')), 0 0 15px -10px var(--glow-color, theme('colors.sprint-accent'));
-  }
-  
-  .dark .card-glass {
-    --tw-bg-opacity: 0.7; /* Increased from 0.3 */
+    --tw-bg-opacity: 0.7;
     background-color: color-mix(in srgb, theme(colors.sprint-dark-surface) var(--tw-bg-opacity), transparent);
-    @apply border-white/10;
+    @apply backdrop-blur-lg border border-white/10 rounded-xl;
   }
-}
-
-@keyframes shine-effect {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-@keyframes shine {
-  to {
-    background-position: 200% center;
-  }
-}
-
-.animate-shine {
-  background: linear-gradient(to right, currentColor 0%, #e2e8f0 50%, currentColor 100%);
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shine-effect 2.5s linear 1;
-}
-
-.dark .animate-shine {
-  background: linear-gradient(to right, currentColor 0%, #6b7280 50%, currentColor 100%);
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-@keyframes shine-electric {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.animate-text-shine-electric {
-  background: linear-gradient(
-    90deg, 
-    #3b82f6 0%,   /* Blue-500 */
-    #8b5cf6 50%,  /* Violet-500 */
-    #3b82f6 100%  /* Blue-500 */
-  );
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shine-electric 3s linear infinite;
-  font-weight: 700;
 }
