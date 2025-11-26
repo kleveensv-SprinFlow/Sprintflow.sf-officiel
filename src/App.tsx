@@ -15,6 +15,7 @@ import NewWorkoutForm from './components/workouts/NewWorkoutForm';
 import MyFollowUpsPage from './components/coach/MyFollowUpsPage';
 import MyAthletes360Page from './components/coach/MyAthletes360Page';
 import ManagePlanningPage from './components/coach/ManagePlanningPage';
+import { ActionType } from './data/actions';
 
 const HubView = lazy(() => import('./components/hub/HubView'));
 const SprintyView = () => <div className="p-4 text-white">Sprinty Chat View</div>;
@@ -153,9 +154,8 @@ function App() {
           {showHub && (
             <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-50" />}>
               <HubView 
-                onAction={(actionId) => {
-                  // @ts-ignore
-                  handleAction(actionId);
+                onAction={(actionId: ActionType) => {
+                  handleAction(actionId as ActionView);
                   setShowHub(false);
                 }}
                 onClose={() => setShowHub(false)}
