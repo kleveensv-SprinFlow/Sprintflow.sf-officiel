@@ -138,7 +138,7 @@ Deno.serve(async (req: Request) => {
     const athleteId = userData.user.id;
 
     // 1. Get athlete's body data and profile
-    const { data: profile } = await supabase.from('profiles').select('taille_cm, sexe').eq('id', athleteId).single();
+    const { data: profile } = await supabase.from('profiles').select('taille_cm, sexe').eq('id', athleteId).maybeSingle();
     const { data: latestBodyComp } = await supabase
       .from('donnees_corporelles')
       .select('poids_kg, masse_grasse_pct, masse_musculaire_kg')
@@ -190,14 +190,16 @@ Deno.serve(async (req: Request) => {
         
         const qualiteCible = record.exercice_reference?.qualite_cible || record.exercice_personnalise?.qualite_cible;
 
-        if (qualiteCible && qualiteCible.toLowerCase().includes('explosivité')) {
-            if (performanceScore > bestExplosiviteScore) {
-                bestExplosiviteScore = performanceScore;
-            }
-        } else if (qualiteCible && qualiteCible.toLowerCase().includes('force maximale')) {
-            if (performanceScore > bestForceMaxScore) {
-                bestForceMaxScore = performanceScore;
-            }
+        if (typeof qualiteCible === 'string') {
+          if (qualiteCible.toLowerCase().includes('explosivité')) {
+              if (performanceScore > bestExplosiviteScore) {
+                  bestExplosiviteScore = performanceScore;
+              }
+          } else if (qualiteCible.toLowerCase().includes('force maximale')) {
+              if (performanceScore > bestForceMaxScore) {
+                  bestForceMaxScore = performanceScore;
+              }
+          }
         }
     }
 
