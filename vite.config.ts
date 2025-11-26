@@ -8,37 +8,37 @@ export default defineConfig({
   plugins: [
     react(),
     svgr(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
-      workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-      },
-      manifest: {
-        name: 'SprintFlow',
-        short_name: 'SprintFlow',
-        description: 'Votre application de suivi pour athlètes.',
-        theme_color: '#1F2937',
-        background_color: '#1F2937',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        orientation: 'portrait',
-        icons: [
-          {
-            src: 'logo.jpg', // Assurez-vous que public/logo.jpg existe
-            sizes: '512x512',
-            type: 'image/jpeg',
-            purpose: 'any maskable',
-          },
-          {
-            src: 'logo.jpg',
-            sizes: '192x192',
-            type: 'image/jpeg',
-          },
-        ],
-      },
-    }),
+    // VitePWA({
+    //   registerType: 'autoUpdate',
+    //   includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+    //   workbox: {
+    //     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+    //   },
+    //   manifest: {
+    //     name: 'SprintFlow',
+    //     short_name: 'SprintFlow',
+    //     description: 'Votre application de suivi pour athlètes.',
+    //     theme_color: '#1F2937',
+    //     background_color: '#1F2937',
+    //     display: 'standalone',
+    //     scope: '/',
+    //     start_url: '/',
+    //     orientation: 'portrait',
+    //     icons: [
+    //       {
+    //         src: 'logo.jpg', // Assurez-vous que public/logo.jpg existe
+    //         sizes: '512x512',
+    //         type: 'image/jpeg',
+    //         purpose: 'any maskable',
+    //       },
+    //       {
+    //         src: 'logo.jpg',
+    //         sizes: '192x192',
+    //         type: 'image/jpeg',
+    //       },
+    //     ],
+    //   },
+    // }),
   ],
   optimizeDeps: {
     exclude: ['lucide-react'],
