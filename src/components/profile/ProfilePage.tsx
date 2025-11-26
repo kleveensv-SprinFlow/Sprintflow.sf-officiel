@@ -1,282 +1,183 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Edit, Camera, Shield, Lock, Trash2, Loader2, Target, Sun, Moon, Monitor, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import useAuth from '../../hooks/useAuth';
+import { Profile } from '../../types';
+import { useGroups } from '../../hooks/useGroups';
+import { usePersonalCoach } from '../../hooks/usePersonalCoach';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../hooks/useAuth';
-import { useTheme } from '../../hooks/useTheme';
-import { LanguageSelector } from '../LanguageSelector';
-
-// Dans le JSX, après la section Theme
-<div className="space-y-3">
-  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-    Langue de Sprinty
-  </h3>
-  <LanguageSelector />
-</div>
-import { EditProfileModal } from './EditProfileModal';
-import { ChangePasswordModal } from './ChangePasswordModal';
-import { DeleteAccountModal } from './DeleteAccountModal';
-import { SetObjectifModal } from './SetObjectifModal';
 import { toast } from 'react-toastify';
-import OnboardingPerformanceModal from '../dashboard/OnboardingPerformanceModal';
+import { Loader2 } from 'lucide-react';
 
-interface ProfileData {
-  id: string;
-  email?: string;
-  full_name?: string;
-  first_name?: string;
-  last_name?: string;
-  date_de_naissance?: string;
-  sexe?: string;
-  height?: number;
-  discipline?: string;
-  license_number?: string;
-  role?: string;
-  photo_url?: string;
-}
-
-interface Objectif {
-  id: string;
-  titre: string;
-  description?: string;
-  date_limite?: string;
-  progres: number;
-  statut: string;
-}
-
-const ProfilePage: React.FC = () => {
-  const { user, signOut, profile: authProfile, updateProfile } = useAuth();
-  const { theme, setTheme } = useTheme();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [objectifs, setObjectifs] = useState<Objectif[]>([]);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showObjectifModal, setShowObjectifModal] = useState(false);
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (authProfile) {
-      setProfile({
-        id: authProfile.id,
-        email: user?.email,
-        full_name: authProfile.full_name,
-        first_name: authProfile.first_name,
-        last_name: authProfile.last_name,
-        date_de_naissance: authProfile.date_de_naissance,
-        sexe: authProfile.sexe,
-        height: authProfile.height,
-        discipline: authProfile.discipline,
-        license_number: authProfile.license_number,
-        role: authProfile.role,
-        photo_url: authProfile.photo_url
-      });
-    }
-  }, [authProfile, user]);
-
-  useEffect(() => {
-    if (user) {
-      loadObjectifs();
-    }
-  }, [user]);
-
-  const loadObjectifs = async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from('objectifs')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    if (!error && data) {
-      setObjectifs(data);
-    }
-  };
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    setUploadingPhoto(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      await updateProfile({ photo_url: publicUrlData.publicUrl });
-      setProfile(prev => prev ? { ...prev, photo_url: publicUrlData.publicUrl } : null);
-      toast.success('Photo de profil mise à jour !');
-    } catch (error: any) {
-      toast.error('Erreur lors du téléchargement de la photo');
-      console.error(error);
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
-
-  const handleSaveProfile = async (updates: Partial<ProfileData>) => {
-    try {
-      await updateProfile(updates);
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
-      toast.success('Profil mis à jour !');
-      setShowEditModal(false);
-    } catch (error) {
-      toast.error('Erreur lors de la mise à jour du profil');
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      await supabase.auth.admin.deleteUser(user!.id);
-      await signOut();
-      toast.success('Compte supprimé avec succès');
-    } catch (error) {
-      toast.error('Erreur lors de la suppression du compte');
-    }
-  };
-
-  const handleAddObjectif = async (objectif: Omit<Objectif, 'id'>) => {
-    if (!user) return;
-    const { error } = await supabase.from('objectifs').insert({ ...objectif, user_id: user.id });
-    if (!error) {
-      toast.success('Objectif ajouté !');
-      loadObjectifs();
-      setShowObjectifModal(false);
-    } else {
-      toast.error('Erreur lors de l\'ajout de l\'objectif');
-    }
-  };
-
-  const getInitials = (prof: ProfileData | null) => {
-    if (!prof) return '?';
-    const first = prof.first_name?.[0] || prof.full_name?.[0] || '';
-    const last = prof.last_name?.[0] || '';
-    return (first + last).toUpperCase() || '?';
-  };
-
-  const getFullName = (prof: ProfileData | null) => {
-    if (!prof) return 'Utilisateur';
-    return prof.full_name || `${prof.first_name || ''} ${prof.last_name || ''}`.trim() || 'Utilisateur';
-  };
-
-  const formatDate = (date?: string) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('fr-FR');
-  };
-
-  const ProfileCard = ({ profile, onEdit }: { profile: ProfileData | null, onEdit: () => void }) => {
-    if (!profile) return null;
-    
-    return (
-      <div className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-2xl shadow-premium border border-gray-200 dark:border-gray-700 p-6 relative overflow-hidden">
-        <div className="absolute top-4 right-4">
-          <button onClick={onEdit} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600">
-            <Edit className="w-5 h-5 text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary" />
-          </button>
-        </div>
-        <div className="flex items-center space-x-6">
-          <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sprint-accent to-blue-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-4 border-white dark:border-gray-700">
-              {profile.photo_url ? <img src={profile.photo_url} alt="Avatar" className="w-full h-full object-cover" /> : getInitials(profile)}
-            </div>
-            <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} className="absolute -bottom-1 -right-1 p-2 bg-sprint-accent hover:bg-blue-700 text-white rounded-full shadow-md">
-              {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" onChange={handlePhotoUpload} className="hidden" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{getFullName(profile)}</h1>
-            <p className="text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary">{profile.email}</p>
-            <p className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary capitalize">{profile.role}</p>
-          </div>
-        </div>
-        <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6 grid grid-cols-2 gap-x-6 gap-y-4">
-          <div>
-            <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">Date de Naissance</label>
-            <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{formatDate(profile.date_de_naissance)}</p>
-          </div>
-          <div>
-            <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">Sexe</label>
-            <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary capitalize">{profile.sexe || 'N/A'}</p>
-          </div>
-          {profile.role === 'athlete' && (
-            <>
-              <div>
-                <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">Taille</label>
-                <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{profile.height ? `${profile.height} cm` : 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">Discipline</label>
-                <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary capitalize">{profile.discipline || 'N/A'}</p>
-              </div>
-            </>
-          )}
-          <div>
-            <label className="text-sm text-sprint-light-text-secondary dark:text-sprint-dark-text-secondary block">N° de License</label>
-            <p className="font-bold text-sprint-light-text-primary dark:text-sprint-dark-text-primary">{profile.license_number || 'Non renseigné'}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-xl mx-auto p-4 md:p-6 space-y-6">
-      <ProfileCard profile={profile} onEdit={() => setShowEditModal(true)} />
-
-      <div className="bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow-premium border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-sprint-light-text-primary dark:text-sprint-dark-text-primary">Apparence</h2>
-        <div className="flex justify-around rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
-          <button onClick={() => setTheme('light')} className={`flex-1 p-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${theme === 'light' ? 'bg-white shadow text-blue-600' : 'text-gray-600 dark:text-gray-300'}`}>
-            <Sun className="w-4 h-4" /> Clair
-          </button>
-          <button onClick={() => setTheme('dark')} className={`flex-1 p-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${theme === 'dark' ? 'bg-gray-800 shadow text-white' : 'text-gray-600 dark:text-gray-300'}`}>
-            <Moon className="w-4 h-4" /> Sombre
-          </button>
-          <button onClick={() => setTheme('system')} className={`flex-1 p-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 ${theme === 'system' ? 'bg-white dark:bg-gray-800 shadow text-blue-600 dark:text-white' : 'text-gray-600 dark:text-gray-300'}`}>
-            <Monitor className="w-4 h-4" /> Système
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <button onClick={() => setShowPasswordModal(true)} className="w-full flex items-center gap-4 p-4 bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow hover:shadow-lg">
-          <Lock className="w-5 h-5" />
-          <span className="font-semibold">Changer le mot de passe</span>
-        </button>
-        <button onClick={() => setShowDeleteModal(true)} className="w-full flex items-center gap-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30">
-          <Trash2 className="w-5 h-5" />
-          <span className="font-semibold">Supprimer mon compte</span>
-        </button>
-        <button onClick={signOut} className="w-full flex items-center gap-4 p-4 bg-sprint-light-surface dark:bg-sprint-dark-surface rounded-lg shadow hover:shadow-lg">
-          <LogOut className="w-5 h-5" />
-          <span className="font-semibold">Déconnexion</span>
-        </button>
-      </div>
-
-      {showEditModal && <EditProfileModal profile={profile} onSave={handleSaveProfile} onClose={() => setShowEditModal(false)} />}
-      {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
-      {showDeleteModal && <DeleteAccountModal onConfirm={handleDeleteAccount} onClose={() => setShowDeleteModal(false)} />}
-      {showObjectifModal && <SetObjectifModal onSave={handleAddObjectif} onClose={() => setShowObjectifModal(false)} />}
-      {showOnboardingModal && <OnboardingPerformanceModal onClose={() => setShowOnboardingModal(false)} />}
-    </div>
-  );
+// --- Composants de champ éditable (inchangés) ---
+const EditableProfileField = ({ label, value, type = 'text', onSave }: { label: string; value: string; type?: string; onSave: (newValue: string) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentValue, setCurrentValue] = useState(value);
+  const handleSave = () => { onSave(currentValue); setIsEditing(false); };
+  if (isEditing) { return <input type={type} value={currentValue} onChange={(e) => setCurrentValue(e.target.value)} onBlur={handleSave} autoFocus className="w-full bg-transparent border-b-2 border-accent text-lg focus:outline-none text-white"/>; }
+  return <div onClick={() => setIsEditing(true)} className="p-2 -mx-2 rounded-md hover:bg-white/10 cursor-pointer transition-colors"><p className="text-xs text-gray-400 capitalize">{label}</p><p className="text-lg">{value || 'Non défini'}</p></div>;
+};
+const EditableSelectField = ({ label, value, options, onSave }: { label: string; value: string; options: {value: string, label: string}[]; onSave: (newValue: string) => void }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const handleSave = (newValue: string) => { onSave(newValue); setIsEditing(false); };
+    if (isEditing) { return <select value={value} onChange={(e) => handleSave(e.target.value)} onBlur={() => setIsEditing(false)} autoFocus className="w-full bg-gray-700 border-accent text-lg focus:outline-none text-white rounded-md p-2 mt-1">{options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}</select>; }
+    return <div onClick={() => setIsEditing(true)} className="p-2 -mx-2 rounded-md hover:bg-white/10 cursor-pointer transition-colors"><p className="text-xs text-gray-400 capitalize">{label}</p><p className="text-lg capitalize">{value || 'Non défini'}</p></div>;
 };
 
-export default ProfilePage;
+// --- Section pour rejoindre via un code ---
+const JoinSection = ({ placeholder, onJoin, isLoading }: { placeholder: string; onJoin: (code: string) => Promise<any>; isLoading: boolean }) => {
+    const [code, setCode] = useState('');
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!code) return;
+        const result = await onJoin(code);
+        if (result.success) {
+            toast.success(result.message);
+            setCode('');
+        } else {
+            toast.error(result.message);
+        }
+    };
+    return (
+        <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+            <input type="text" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder={placeholder} className="flex-grow bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-accent" />
+            <button type="submit" disabled={isLoading} className="bg-accent text-white font-bold py-2 px-4 rounded-md transition-opacity hover:opacity-90 disabled:opacity-50">
+                {isLoading ? <Loader2 className="animate-spin" /> : 'Rejoindre'}
+            </button>
+        </form>
+    );
+};
+
+// --- Section d'affichage du groupe ---
+const GroupSection = () => {
+    const { groups, isLoading } = useGroups();
+    const [isLeaving, setIsLeaving] = useState(false);
+    const userGroup = groups.length > 0 ? groups[0] : null;
+
+    const handleLeaveGroup = async () => {
+        if (!userGroup) return;
+        setIsLeaving(true);
+        const { data, error } = await supabase.rpc('leave_group', { p_group_id: userGroup.id });
+        if (error || !data.success) {
+            toast.error(error?.message || data.message || "Erreur en quittant le groupe.");
+        } else {
+            toast.success(data.message);
+            // Re-fetch des groupes est géré par SWR dans le hook
+        }
+        setIsLeaving(false);
+    };
+
+    const handleJoinGroup = async (code: string) => {
+        const { data, error } = await supabase.rpc('join_group_with_code', { p_invitation_code: code });
+        if (error) return { success: false, message: error.message };
+        return data;
+    };
+    
+    if (isLoading) return <div className="text-center"><Loader2 className="animate-spin inline-block"/></div>;
+
+    if (!userGroup) {
+        return <JoinSection placeholder="Code du groupe" onJoin={handleJoinGroup} isLoading={isLeaving} />;
+    }
+
+    return (
+        <div>
+            <h4 className="font-bold text-lg">{userGroup.name}</h4>
+            <p className="text-sm text-gray-400">{userGroup.member_count} membre(s)</p>
+            <button onClick={handleLeaveGroup} disabled={isLeaving} className="mt-2 text-sm text-red-500 hover:underline disabled:opacity-50">
+                {isLeaving ? 'Départ...' : 'Quitter le groupe'}
+            </button>
+        </div>
+    );
+};
+
+// --- Section d'affichage du coach personnel ---
+const CoachSection = () => {
+    const { personalCoach, isLoading, joinCoach, leaveCoach } = usePersonalCoach();
+    const [isLeaving, setIsLeaving] = useState(false);
+
+    const handleLeave = async () => {
+        if (!personalCoach) return;
+        setIsLeaving(true);
+        const result = await leaveCoach(personalCoach.id);
+        if (result.success) toast.success(result.message);
+        else toast.error(result.message);
+        setIsLeaving(false);
+    };
+
+    if (isLoading) return <div className="text-center"><Loader2 className="animate-spin inline-block"/></div>;
+
+    if (!personalCoach) {
+        return <JoinSection placeholder="Code du coach" onJoin={joinCoach} isLoading={isLeaving} />;
+    }
+
+    return (
+        <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+                <img src={personalCoach.photo_url || ''} alt={personalCoach.full_name || 'Coach'} className="w-10 h-10 rounded-full object-cover" />
+                <div>
+                    <h4 className="font-bold">{personalCoach.full_name}</h4>
+                    <p className="text-sm text-gray-400">Coach Personnel</p>
+                </div>
+            </div>
+            <button onClick={handleLeave} disabled={isLeaving} className="text-sm text-red-500 hover:underline disabled:opacity-50">
+                {isLeaving ? 'Départ...' : 'Quitter'}
+            </button>
+        </div>
+    );
+};
+
+
+// --- Composant principal de la page de profil ---
+export default function ProfilePage() {
+  const { profile, updateProfile } = useAuth();
+
+  const handleFieldSave = (field: keyof Profile) => async (newValue: string | number) => {
+    if (!profile) return;
+    updateProfile({ ...profile, [field]: newValue });
+    const { error } = await supabase.from('profiles').update({ [field]: newValue }).eq('id', profile.id);
+    if (error) {
+      toast.error("Erreur lors de la sauvegarde.");
+      // Optionnel: Revert local state on error
+    } else {
+      toast.success("Profil mis à jour !");
+    }
+  };
+  
+  const genderOptions = [ { value: 'homme', label: 'Homme' }, { value: 'femme', label: 'Femme' }, { value: 'autre', label: 'Autre' }];
+
+  if (!profile) return <div className="pt-20 text-center"><Loader2 className="animate-spin"/></div>;
+
+  return (
+    <div className="min-h-screen bg-sprint-dark-background text-white pt-20 p-4">
+      <div className="flex items-center space-x-4 p-4 rounded-lg bg-gray-800/50 mb-8">
+        <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-accent/50">
+          <img src={profile.photo_url || ''} alt="Profil" className="w-full h-full object-cover" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold">{profile.first_name} {profile.last_name}</h2>
+          <p className="text-sm text-gray-400">{profile.email}</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-md font-semibold text-gray-400 border-b border-gray-700 pb-2 mb-4">Informations Personnelles</h3>
+        <EditableProfileField label="Prénom" value={profile.first_name || ''} onSave={handleFieldSave('first_name')} />
+        <EditableProfileField label="Nom" value={profile.last_name || ''} onSave={handleFieldSave('last_name')} />
+        <EditableProfileField label="Date de Naissance" value={profile.date_de_naissance || ''} type="date" onSave={handleFieldSave('date_de_naissance')} />
+        <EditableSelectField label="Genre" value={profile.sexe || ''} options={genderOptions} onSave={handleFieldSave('sexe')} />
+        <EditableProfileField label="Pays" value={"France"} onSave={() => {}} />
+      </div>
+
+      <div className="space-y-4 mt-8">
+        <h3 className="text-md font-semibold text-gray-400 border-b border-gray-700 pb-2 mb-4">Informations Athlète</h3>
+        <EditableProfileField label="Numéro de licence" value={profile.license_number || ''} onSave={handleFieldSave('license_number')} />
+        <EditableProfileField label="Taille (cm)" value={String(profile.height || '')} type="number" onSave={(val) => handleFieldSave('height')(Number(val))} />
+        <EditableProfileField label="Poids (kg)" value={String(profile.weight || '')} type="number" onSave={(val) => handleFieldSave('weight')(Number(val))} />
+      </div>
+
+      <div className="mt-10">
+        <h3 className="text-md font-semibold text-gray-400 border-b border-gray-700 pb-2 mb-4">Connexions</h3>
+        <div className="p-4 mt-2 rounded-lg bg-gray-800/50"><GroupSection /></div>
+        <div className="p-4 mt-4 rounded-lg bg-gray-800/50"><CoachSection /></div>
+      </div>
+    </div>
+  );
+}
