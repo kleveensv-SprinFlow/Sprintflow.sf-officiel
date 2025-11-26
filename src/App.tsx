@@ -24,7 +24,7 @@ type MainView = 'dashboard' | 'profile' | 'settings';
 type ActionView = null | 'new-workout' | 'new-record' | 'my-follow-ups' | 'my-athletes-360' | 'manage-planning';
 
 function App() {
-  const { user, loading, profile } = useAuth();
+  const { user, loading, profile, profileLoading } = useAuth();
   
   const [mainView, setMainView] = useState<MainView>('dashboard');
   const [activeTab, setActiveTab] = useState<Tab>('accueil');
@@ -77,15 +77,16 @@ function App() {
     const userRole = profile?.role as 'athlete' | 'coach';
     switch (activeTab) {
       case 'accueil':
-        return <Dashboard userRole={userRole} onViewChange={() => {}} />;
+        return <Dashboard userRole={userRole} onViewChange={() => {}} isLoading={profileLoading} />;
       case 'actions':
+        if (profileLoading) return null; // Or a spinner
         return userRole === 'coach' 
           ? <CoachActionsCarousel onAction={handleAction} /> 
           : <ActionsCarousel onAction={handleAction} />;
       case 'sprinty':
         return <SprintyView />;
       default:
-        return <Dashboard userRole={userRole} onViewChange={() => {}} />;
+        return <Dashboard userRole={userRole} onViewChange={() => {}} isLoading={profileLoading} />;
     }
   }
 
@@ -93,7 +94,7 @@ function App() {
     <SprintyProvider>
       <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex flex-col overflow-hidden">
         
-        <Header currentView={mainView} onNavigate={handleNavigation} />
+        <Header currentView={mainView} onNavigate={handleNavigation} isLoading={profileLoading} />
 
         <main className="flex-1 pt-[60px] pb-[64px] overflow-y-auto">
           <AnimatePresence mode="wait">

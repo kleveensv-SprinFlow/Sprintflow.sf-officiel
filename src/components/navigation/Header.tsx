@@ -4,13 +4,12 @@ import useAuth from '../../hooks/useAuth';
 
 // Définition des nouvelles props pour le Header
 interface HeaderProps {
-  // La vue actuelle détermine les boutons affichés
   currentView: 'dashboard' | 'profile' | 'settings';
-  // Une fonction unique pour gérer toutes les actions de navigation
   onNavigate: (target: 'profile' | 'settings' | 'back') => void;
+  isLoading: boolean;
 }
 
-export default function Header({ currentView, onNavigate }: HeaderProps) {
+export default function Header({ currentView, onNavigate, isLoading }: HeaderProps) {
   const { profile } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -46,6 +45,9 @@ export default function Header({ currentView, onNavigate }: HeaderProps) {
   // Logique d'affichage pour la partie droite du header
   const renderRightPart = () => {
     if (currentView === 'dashboard') {
+      if (isLoading) {
+        return <div className="w-9 h-9 rounded-full bg-gray-300 dark:bg-gray-700 animate-pulse" />;
+      }
       return (
         <button
           onClick={() => onNavigate('profile')}
