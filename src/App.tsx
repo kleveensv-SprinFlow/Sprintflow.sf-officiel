@@ -17,7 +17,7 @@ import MyAthletes360Page from './components/coach/MyAthletes360Page';
 import ManagePlanningPage from './components/coach/ManagePlanningPage';
 import { ActionType } from './data/actions';
 
-const HubView = lazy(() => import('./components/hub/HubView'));
+const HubView = lazy(() => import('./components/hub/HubView.tsx'));
 const SprintyView = () => <div className="p-4 text-white">Sprinty Chat View</div>;
 
 type MainView = 'dashboard' | 'profile' | 'settings';
