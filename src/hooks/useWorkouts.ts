@@ -17,6 +17,11 @@ export function useWorkouts(selection?: Selection) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Clés de dépendance stables pour les objets
+  const selectionKey = JSON.stringify(selection);
+  const userKey = JSON.stringify(user);
+  const profileKey = JSON.stringify(profile);
+
   const fetchWorkouts = useCallback(async () => {
     logger.info('🏋️ [useWorkouts] Début chargement workouts');
     logger.debug(
@@ -133,7 +138,7 @@ export function useWorkouts(selection?: Selection) {
       setLoading(false);
       logger.info('✅ [useWorkouts] Chargement terminé');
     }
-  }, [selection, user, profile, authLoading]);
+  }, [selectionKey, userKey, profileKey, authLoading]);
 
   useEffect(() => {
     fetchWorkouts();
