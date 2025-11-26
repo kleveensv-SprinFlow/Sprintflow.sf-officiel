@@ -31,10 +31,16 @@ const LastWorkoutCard: React.FC = () => {
   }
 
   const renderWorkoutContent = (workout: Workout) => {
-    // Re-using the detailed rendering logic
+    const data = workout.workout_data || workout.planned_data;
+    const blocks = data?.blocks;
+
+    if (!blocks || blocks.length === 0) {
+      return <p className="text-gray-600 dark:text-gray-300 mt-2">Aucun détail disponible pour cet entraînement.</p>;
+    }
+
     return (
       <div className="space-y-3 mt-4">
-        {workout.workout_data?.blocks.map((block, index) => (
+        {blocks.map((block, index) => (
           <div key={index} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600/50">
             <p className="font-bold text-md text-gray-800 dark:text-gray-100">
               <span className="text-sprint-primary">{index + 1}.</span> {block.name}
