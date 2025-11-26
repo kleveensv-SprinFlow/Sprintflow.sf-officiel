@@ -1,46 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from './hooks/useAuth';
-import TabBar from './components/TabBar';
+import TabBar, { Tab } from './components/TabBar';
 import Auth from './components/Auth';
 import LoadingScreen from './components/LoadingScreen';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SprintyProvider } from './context/SprintyContext';
-import FabMenu from './components/navigation/FabMenu';
-import WeightEntryModal from './components/dashboard/WeightEntryModal';
 import Header from './components/navigation/Header';
 import ProfilePage from './components/profile/ProfilePage';
 import SettingsPage from './components/profile/SettingsPage';
 import { AnimatePresence, motion } from 'framer-motion';
+import Dashboard from './components/Dashboard';
+import ActionsCarousel from './components/dashboard/ActionsCarousel';
+import CoachActionsCarousel from './components/dashboard/CoachActionsCarousel';
+import NewWorkoutForm from './components/workouts/NewWorkoutForm';
+import MyFollowUpsPage from './components/coach/MyFollowUpsPage';
+import MyAthletes360Page from './components/coach/MyAthletes360Page';
+import ManagePlanningPage from './components/coach/ManagePlanningPage';
 
-type Tab = 'accueil' | 'planning' | 'nutrition' | 'groupes' | 'sprinty';
+const SprintyView = () => <div className="p-4 text-white">Sprinty Chat View</div>;
+
 type MainView = 'dashboard' | 'profile' | 'settings';
+type ActionView = null | 'new-workout' | 'new-record' | 'my-follow-ups' | 'my-athletes-360' | 'manage-planning';
 
 function App() {
   const { user, loading, profile } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
   
-  // Nouvel état pour gérer la navigation plein écran
   const [mainView, setMainView] = useState<MainView>('dashboard');
-
-  // Logique existante pour la TabBar
   const [activeTab, setActiveTab] = useState<Tab>('accueil');
-  const [isFabOpen, setIsFabOpen] = useState(false);
-  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
+  const [activeAction, setActiveAction] = useState<ActionView>(null);
 
-  useEffect(() => {
-    const path = location.pathname;
-    if (path === '/' || path.startsWith('/dashboard')) setActiveTab('accueil');
-    // ... autre logique de TabBar
-  }, [location.pathname]);
-
-  const handleFabAction = (actionId: string) => {
-    // ... logique du FAB
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
   };
 
-  // --- NOUVELLE LOGIQUE DE NAVIGATION ---
+  const handleAction = (action: ActionView) => {
+    setActiveAction(action);
+  };
+
   const handleNavigation = (target: 'profile' | 'settings' | 'back') => {
     if (target === 'back') {
       if (mainView === 'settings') setMainView('profile');
@@ -56,15 +53,41 @@ function App() {
     out: { opacity: 0, x: '-50%' },
   };
 
+  const viewVariants = {
+    initial: { opacity: 0 },
+    in: { opacity: 1 },
+    out: { opacity: 0 },
+  };
+
   const pageTransition = {
     type: 'tween',
     ease: 'anticipate',
     duration: 0.4,
   };
 
-  // Le LoadingScreen et l'Auth restent inchangés
+  const viewTransition = {
+    type: 'fade',
+    duration: 0.2,
+  };
+
   if (loading) return <LoadingScreen />;
   if (!user) return <><Auth /><ToastContainer /></>;
+
+  const renderDashboardView = () => {
+    const userRole = profile?.role as 'athlete' | 'coach';
+    switch (activeTab) {
+      case 'accueil':
+        return <Dashboard userRole={userRole} onViewChange={() => {}} />;
+      case 'actions':
+        return userRole === 'coach'
+          ? <CoachActionsCarousel onAction={handleAction} />
+          : <ActionsCarousel onAction={handleAction} />;
+      case 'sprinty':
+        return <SprintyView />;
+      default:
+        return <Dashboard userRole={userRole} onViewChange={() => {}} />;
+    }
+  }
 
   return (
     <SprintyProvider>
@@ -72,11 +95,11 @@ function App() {
         
         <Header currentView={mainView} onNavigate={handleNavigation} />
 
-        <main className="flex-1 pt-[60px] overflow-y-auto">
+        <main className="flex-1 pt-[60px] pb-[64px] overflow-y-auto">
           <AnimatePresence mode="wait">
-            {mainView === 'dashboard' && (
-              <motion.div key="dashboard" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-                <Outlet />
+            {mainView === 'dashboard' && !activeAction && (
+              <motion.div key={activeTab} initial="initial" animate="in" exit="out" variants={viewVariants} transition={viewTransition}>
+                {renderDashboardView()}
               </motion.div>
             )}
             {mainView === 'profile' && (
@@ -89,21 +112,36 @@ function App() {
                 <SettingsPage />
               </motion.div>
             )}
+             {mainView === 'dashboard' && activeAction === 'new-workout' && (
+              <motion.div key="new-workout" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+                <NewWorkoutForm onClose={() => handleAction(null)} />
+              </motion.div>
+            )}
+            {mainView === 'dashboard' && activeAction === 'my-follow-ups' && (
+              <motion.div key="my-follow-ups" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+                <MyFollowUpsPage onBack={() => handleAction(null)} />
+              </motion.div>
+            )}
+            {mainView === 'dashboard' && activeAction === 'my-athletes-360' && (
+              <motion.div key="my-athletes-360" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+                <MyAthletes360Page onBack={() => handleAction(null)} />
+              </motion.div>
+            )}
+            {mainView === 'dashboard' && activeAction === 'manage-planning' && (
+              <motion.div key="manage-planning" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+                <ManagePlanningPage onBack={() => handleAction(null)} />
+              </motion.div>
+            )}
           </AnimatePresence>
         </main>
         
-        {/* Les modales et la TabBar ne s'affichent que sur le dashboard */}
         <AnimatePresence>
           {mainView === 'dashboard' && (
             <motion.div initial={{ opacity: 0}} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <FabMenu isOpen={isFabOpen} onClose={() => setIsFabOpen(false)} onAction={handleFabAction} />
-              <WeightEntryModal isOpen={isWeightModalOpen} onClose={() => setIsWeightModalOpen(false)} />
               <TabBar
                 activeTab={activeTab}
-                onTabChange={(tab) => navigate(tab === 'accueil' ? '/' : `/${tab}`)}
-                onFabClick={() => setIsFabOpen(!isFabOpen)}
+                onTabChange={handleTabChange}
                 userRole={profile?.role as 'athlete' | 'coach'}
-                isFabOpen={isFabOpen}
               />
             </motion.div>
           )}
