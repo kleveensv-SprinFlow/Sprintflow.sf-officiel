@@ -118,26 +118,40 @@ function calculatePerformanceScore(ratio: number, base?: number, avance?: number
 
 
 Deno.serve(async (req: Request) => {
+  console.log('🚀 [get_indice_performance] Received request');
   if (req.method === 'OPTIONS') {
+    console.log('OPTIONS request, returning CORS headers.');
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // 1. Setup & Auth
+    console.log('🔑 [get_indice_performance] Initializing Supabase client...');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization header manquante' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    
     const token = authHeader.replace('Bearer ', '');
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !userData.user) {
+      console.warn('⚠️ [get_indice_performance] Auth error:', userError?.message);
       return new Response(JSON.stringify({ error: 'Non autorisé' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-
     const athleteId = userData.user.id;
+    console.log(`👤 [get_indice_performance] Authenticated user: ${athleteId}`);
 
-    // 1. Get athlete's body data and profile
+    // 2. Get athlete's body data and profile
+    console.log('Fetching profile and body composition data...');
     const { data: profile } = await supabase.from('profiles').select('taille_cm, sexe').eq('id', athleteId).maybeSingle();
     const { data: latestBodyComp } = await supabase
       .from('donnees_corporelles')
@@ -148,12 +162,14 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (!latestBodyComp?.poids_kg) {
+      console.warn(`⚠️ [get_indice_performance] Missing weight for user ${athleteId}`);
       return new Response(JSON.stringify({ error: 'Poids corporel manquant.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     const poidsKg = latestBodyComp.poids_kg;
-    const imc = profile?.taille_cm ? poidsKg / Math.pow(profile.taille_cm / 100, 2) : undefined;
+    const imc = profile?.taille_cm && poidsKg > 0 ? poidsKg / Math.pow(profile.taille_cm / 100, 2) : undefined;
     
-    // 2. Calculate Body Composition Score (40% of total)
+    // 3. Calculate Body Composition Score (40% of total)
+    console.log('Calculating composition score...');
     const compoData = calculateCompositionScore({ 
       masse_musculaire_kg: latestBodyComp.masse_musculaire_kg,
       masse_grasse_pct: latestBodyComp.masse_grasse_pct, 
@@ -163,7 +179,8 @@ Deno.serve(async (req: Request) => {
     });
     const scoreComposition = Math.round(compoData.score);
     
-    // 3. Calculate Relative Strength Score (60% of total)
+    // 4. Calculate Relative Strength Score (60% of total)
+    console.log('Fetching records for strength score...');
     const { data: allRecords, error: recordsError } = await supabase
       .from('records')
       .select(`
@@ -177,6 +194,7 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', athleteId);
 
     if (recordsError) throw recordsError;
+    console.log(`Found ${allRecords?.length || 0} records for user.`);
 
     let bestExplosiviteScore = 0;
     let bestForceMaxScore = 0;
@@ -185,7 +203,7 @@ Deno.serve(async (req: Request) => {
         const ref = record.exercice_reference || record.exercice_personnalise?.ref;
         if (!ref) continue;
 
-        const ratio = ref.unite === 'kg' ? record.value / poidsKg : record.value;
+        const ratio = ref.unite === 'kg' && poidsKg > 0 ? record.value / poidsKg : record.value;
         const performanceScore = calculatePerformanceScore(ratio, ref.ratio_base, ref.ratio_avance, ref.ratio_elite);
         
         const qualiteCible = record.exercice_reference?.qualite_cible || record.exercice_personnalise?.qualite_cible;
@@ -202,6 +220,7 @@ Deno.serve(async (req: Request) => {
           }
         }
     }
+    console.log(`Calculated strength scores: Explo=${bestExplosiviteScore}, ForceMax=${bestForceMaxScore}`);
 
     let scoreForceRelative = 0;
     const hasExplo = bestExplosiviteScore > 0;
@@ -217,8 +236,10 @@ Deno.serve(async (req: Request) => {
         scoreForceRelative = 50; // Default if no relevant records
     }
     
-    // 4. Final Score Calculation
+    // 5. Final Score Calculation
+    console.log('Calculating final score...');
     const scoreFinal = Math.round((scoreComposition * 0.4) + (scoreForceRelative * 0.6));
+    console.log(`✅ [get_indice_performance] Success! Final score for ${athleteId}: ${scoreFinal}`);
 
     return new Response(
       JSON.stringify({
@@ -242,7 +263,7 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('Erreur in get_indice_performance:', error);
+    console.error('❌ [get_indice_performance] Erreur inattendue:', error);
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
