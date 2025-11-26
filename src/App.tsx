@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useAuth } from './hooks/useAuth';
 import TabBar, { Tab } from './components/TabBar';
 import Auth from './components/Auth';
@@ -11,13 +11,12 @@ import ProfilePage from './components/profile/ProfilePage';
 import SettingsPage from './components/profile/SettingsPage';
 import { AnimatePresence, motion } from 'framer-motion';
 import Dashboard from './components/Dashboard';
-import ActionsCarousel from './components/dashboard/ActionsCarousel';
-import CoachActionsCarousel from './components/dashboard/CoachActionsCarousel';
 import NewWorkoutForm from './components/workouts/NewWorkoutForm';
 import MyFollowUpsPage from './components/coach/MyFollowUpsPage';
 import MyAthletes360Page from './components/coach/MyAthletes360Page';
 import ManagePlanningPage from './components/coach/ManagePlanningPage';
 
+const HubView = lazy(() => import('./components/hub/HubView'));
 const SprintyView = () => <div className="p-4 text-white">Sprinty Chat View</div>;
 
 type MainView = 'dashboard' | 'profile' | 'settings';
@@ -29,9 +28,14 @@ function App() {
   const [mainView, setMainView] = useState<MainView>('dashboard');
   const [activeTab, setActiveTab] = useState<Tab>('accueil');
   const [activeAction, setActiveAction] = useState<ActionView>(null);
+  const [showHub, setShowHub] = useState(false);
 
   const handleTabChange = (tab: Tab) => {
-    setActiveTab(tab);
+    if (tab === 'actions') {
+      setShowHub(true);
+    } else {
+      setActiveTab(tab);
+    }
   };
 
   const handleAction = (action: ActionView) => {
@@ -78,11 +82,6 @@ function App() {
     switch (activeTab) {
       case 'accueil':
         return <Dashboard userRole={userRole} onViewChange={() => {}} isLoading={profileLoading} />;
-      case 'actions':
-        if (profileLoading) return null; // Or a spinner
-        return userRole === 'coach' 
-          ? <CoachActionsCarousel onAction={handleAction} /> 
-          : <ActionsCarousel onAction={handleAction} />;
       case 'sprinty':
         return <SprintyView />;
       default:
@@ -149,6 +148,21 @@ function App() {
         </AnimatePresence>
         
         <ToastContainer position="bottom-center" autoClose={3000} theme="dark" />
+        
+        <AnimatePresence>
+          {showHub && (
+            <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-50" />}>
+              <HubView 
+                onAction={(actionId) => {
+                  // @ts-ignore
+                  handleAction(actionId);
+                  setShowHub(false);
+                }}
+                onClose={() => setShowHub(false)}
+              />
+            </Suspense>
+          )}
+        </AnimatePresence>
       </div>
     </SprintyProvider>
   );
