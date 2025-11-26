@@ -17,8 +17,7 @@ import NewWorkoutForm from './components/workouts/NewWorkoutForm';
 import MyFollowUpsPage from './components/coach/MyFollowUpsPage';
 import MyAthletes360Page from './components/coach/MyAthletes360Page';
 import ManagePlanningPage from './components/coach/ManagePlanningPage';
-
-const SprintyView = () => <div className="p-4 text-white">Sprinty Chat View</div>;
+import SprintyChatView from './components/chat/sprinty/SprintyChatView';
 
 type MainView = 'dashboard' | 'profile' | 'settings';
 type ActionView = null | 'new-workout' | 'new-record' | 'my-follow-ups' | 'my-athletes-360' | 'manage-planning';
@@ -73,6 +72,15 @@ function App() {
   if (loading) return <LoadingScreen />;
   if (!user) return <><Auth /><ToastContainer /></>;
 
+  if (activeTab === 'sprinty') {
+    return (
+      <SprintyProvider>
+        <SprintyChatView />
+        <ToastContainer position="bottom-center" autoClose={3000} theme="dark" />
+      </SprintyProvider>
+    );
+  }
+
   const renderDashboardView = () => {
     const userRole = profile?.role as 'athlete' | 'coach';
     switch (activeTab) {
@@ -83,8 +91,6 @@ function App() {
         return userRole === 'coach' 
           ? <CoachActionsCarousel onAction={handleAction} /> 
           : <ActionsCarousel onAction={handleAction} />;
-      case 'sprinty':
-        return <SprintyView />;
       default:
         return <Dashboard userRole={userRole} onViewChange={() => {}} isLoading={profileLoading} />;
     }
