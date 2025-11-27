@@ -1,172 +1,169 @@
-import React, { useState } from 'react';
-import { useAuth } from './hooks/useAuth';
-import TabBar, { Tab } from './components/TabBar';
-import Auth from './components/Auth';
-import LoadingScreen from './components/LoadingScreen';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { SprintyProvider } from './context/SprintyContext';
-import Header from './components/navigation/Header';
-import ProfilePage from './components/profile/ProfilePage';
-import SettingsPage from './components/profile/SettingsPage';
-import { AnimatePresence, motion } from 'framer-motion';
-import Dashboard from './components/Dashboard';
-import NewWorkoutForm from './components/workouts/NewWorkoutForm';
-import MyFollowUpsPage from './components/coach/MyFollowUpsPage';
-import MyAthletes360Page from './components/coach/MyAthletes360Page';
-import ManagePlanningPage from './components/coach/ManagePlanningPage';
-import { ActionType } from './data/actions';
-import HubView from './components/hub/HubView';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Sparkles, User, Bot } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSprinty } from '../../context/SprintyContext';
+import SprintyAvatar from './sprinty/SprintyAvatar';
 
-const SprintyView = () => <div className="p-4 text-white">Sprinty Chat View</div>;
+const ChatInterface: React.FC = () => {
+  const { messages, sendMessage, isTyping } = useSprinty();
+  const [inputValue, setInputValue] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-type MainView = 'dashboard' | 'profile' | 'settings';
-type ActionView = null | 'new-workout' | 'new-record' | 'my-follow-ups' | 'my-athletes-360' | 'manage-planning';
-
-function App() {
-  const { user, loading, profile, profileLoading } = useAuth();
-  
-  const [mainView, setMainView] = useState<MainView>('dashboard');
-  const [activeTab, setActiveTab] = useState<Tab>('accueil');
-  const [activeAction, setActiveAction] = useState<ActionView>(null);
-
-  const handleTabChange = (tab: Tab) => {
-    setActiveTab(tab);
+  // Scroll automatique vers le bas à chaque nouveau message
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleAction = (action: ActionView) => {
-    setActiveAction(action);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  const handleSend = async () => {
+    if (!inputValue.trim()) return;
+    const message = inputValue;
+    setInputValue('');
+    await sendMessage(message);
+    // On garde le focus sur l'input pour enchaîner
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  const handleNavigation = (target: 'profile' | 'settings' | 'back') => {
-    if (target === 'back') {
-      if (mainView === 'settings') setMainView('profile');
-      else if (mainView === 'profile') setMainView('dashboard');
-    } else {
-      setMainView(target);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
-
-  const pageVariants = {
-    initial: { opacity: 0, x: '100%' },
-    in: { opacity: 1, x: 0 },
-    out: { opacity: 0, x: '-50%' },
-  };
-  
-  const viewVariants = {
-    initial: { opacity: 0 },
-    in: { opacity: 1 },
-    out: { opacity: 0 },
-  };
-
-  const pageTransition = {
-    type: 'tween',
-    ease: 'anticipate',
-    duration: 0.4,
-  };
-  
-  const viewTransition = {
-    type: 'fade',
-    duration: 0.2,
-  };
-
-  if (loading) return <LoadingScreen />;
-  if (!user) return <><Auth /><ToastContainer /></>;
-
-  const renderDashboardView = () => {
-    const userRole = profile?.role as 'athlete' | 'coach';
-    switch (activeTab) {
-      case 'accueil':
-        return <Dashboard userRole={userRole} onViewChange={() => {}} isLoading={profileLoading} />;
-      case 'hub':
-        return (
-          <HubView 
-            onAction={(actionId: ActionType) => {
-              handleAction(actionId as ActionView);
-            }}
-          />
-        );
-      case 'sprinty':
-        return <SprintyView />;
-      default:
-        return <Dashboard userRole={userRole} onViewChange={() => {}} isLoading={profileLoading} />;
-    }
-  }
 
   return (
-    <SprintyProvider>
-      <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex flex-col overflow-hidden">
-        
-        <Header currentView={mainView} onNavigate={handleNavigation} isLoading={profileLoading} />
-
-        <main className="flex-1 pt-[60px] pb-[64px] overflow-y-auto">
-          <AnimatePresence mode="wait">
-            {mainView === 'dashboard' && !activeAction && (
-              // AJOUT DU CLASSNAME "h-full" ICI : C'EST LA CORRECTION PRINCIPALE
-              <motion.div 
-                key={activeTab} 
-                initial="initial" 
-                animate="in" 
-                exit="out" 
-                variants={viewVariants} 
-                transition={viewTransition}
-                className="h-full"
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-black/20 relative">
+      
+      {/* ZONE DES MESSAGES */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 pb-24">
+        {messages.length === 0 ? (
+          // État vide (Message de bienvenue)
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-70 mt-10">
+            <div className="w-24 h-24">
+              <SprintyAvatar scale={2} onClick={() => {}} />
+            </div>
+            <div className="max-w-xs mx-auto">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                Salut, je suis Sprinty !
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Ton coach IA personnel. Pose-moi une question sur ton entraînement, ta nutrition ou tes stats.
+              </p>
+            </div>
+          </div>
+        ) : (
+          // Liste des messages
+          messages.map((msg) => {
+            const isUser = msg.role === 'user';
+            return (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}
               >
-                {renderDashboardView()}
-              </motion.div>
-            )}
-            {mainView === 'profile' && (
-              // Correction: suppression de l'espace dans motion.div
-              <motion.div key="profile" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-                <ProfilePage />
-              </motion.div>
-            )}
-            {mainView === 'settings' && (
-              <motion.div key="settings" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-                <SettingsPage />
-              </motion.div>
-            )}
-             {mainView === 'dashboard' && activeAction === 'new-workout' && (
-              // Correction: suppression de l'espace dans motion.div
-              <motion.div key="new-workout" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-                <NewWorkoutForm onClose={() => handleAction(null)} />
-              </motion.div>
-            )}
-            {mainView === 'dashboard' && activeAction === 'my-follow-ups' && (
-              <motion.div key="my-follow-ups" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-                <MyFollowUpsPage onBack={() => handleAction(null)} />
-              </motion.div>
-            )}
-            {mainView === 'dashboard' && activeAction === 'my-athletes-360' && (
-              // Correction: suppression de l'espace dans motion.div
-              <motion.div key="my-athletes-360" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-                <MyAthletes360Page onBack={() => handleAction(null)} />
-              </motion.div>
-            )}
-            {mainView === 'dashboard' && activeAction === 'manage-planning' && (
-              <motion.div key="manage-planning" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-                <ManagePlanningPage onBack={() => handleAction(null)} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
-        
-        <AnimatePresence>
-          {mainView === 'dashboard' && (
-            <motion.div initial={{ opacity: 0}} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <TabBar
-                activeTab={activeTab}
-                onTabChange={handleTabChange}
-                userRole={profile?.role as 'athlete' | 'coach'}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        <ToastContainer position="bottom-center" autoClose={3000} theme="dark" />
-      </div>
-    </SprintyProvider>
-  );
-}
+                <div className={`flex max-w-[85%] md:max-w-[70%] gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                  
+                  {/* Avatar */}
+                  <div className="flex-shrink-0 mt-auto">
+                    {isUser ? (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <User size={16} className="text-gray-500 dark:text-gray-300" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8">
+                        <SprintyAvatar scale={0.7} onClick={() => {}} />
+                      </div>
+                    )}
+                  </div>
 
-export default App;
+                  {/* Bulle de message */}
+                  <div
+                    className={`p-4 rounded-2xl shadow-sm text-sm md:text-base leading-relaxed ${
+                      isUser
+                        ? 'bg-sprint-primary text-white rounded-br-none'
+                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-bl-none border border-gray-100 dark:border-gray-700'
+                    }`}
+                  >
+                    {msg.content}
+                    <div className={`text-[10px] mt-1 text-right opacity-70 ${isUser ? 'text-white/80' : 'text-gray-400'}`}>
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })
+        )}
+
+        {/* Indicateur de frappe (Typing...) */}
+        {isTyping && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-start w-full"
+          >
+             <div className="flex items-end gap-3">
+                <div className="w-8 h-8">
+                   <SprintyAvatar scale={0.7} onClick={() => {}} />
+                </div>
+                <div className="bg-white dark:bg-gray-800 px-4 py-3 rounded-2xl rounded-bl-none border border-gray-100 dark:border-gray-700 flex items-center space-x-1">
+                  <span className="w-2 h-2 bg-sprint-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 bg-sprint-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 bg-sprint-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+             </div>
+          </motion.div>
+        )}
+        
+        {/* Ancre invisible pour le scroll */}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* BARRE DE SAISIE FLOTTANTE */}
+      {/* calc(100vh) permet de s'assurer qu'elle est toujours accessible au dessus du clavier virtuel sur mobile */}
+      <div className="absolute bottom-4 left-0 right-0 px-4 z-20">
+        <div className="max-w-3xl mx-auto">
+          <div className="relative flex items-center gap-2 bg-white dark:bg-[#1a1f2e] p-2 rounded-full shadow-xl border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm">
+            
+            {/* Bouton IA (Décoratif) */}
+            <div className="pl-2 hidden md:block">
+              <div className="w-8 h-8 rounded-full bg-sprint-primary/10 flex items-center justify-center">
+                <Sparkles size={16} className="text-sprint-primary" />
+              </div>
+            </div>
+
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Demande un conseil à Sprinty..."
+              className="flex-1 bg-transparent border-none focus:ring-0 text-gray-800 dark:text-white placeholder-gray-400 px-4 py-3 h-12"
+            />
+
+            <button
+              onClick={handleSend}
+              disabled={!inputValue.trim() || isTyping}
+              className={`p-3 rounded-full transition-all duration-200 flex items-center justify-center w-12 h-12 flex-shrink-0 ${
+                inputValue.trim()
+                  ? 'bg-sprint-primary text-white shadow-lg shadow-sprint-primary/30 hover:scale-105 active:scale-95'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <Send size={20} className={inputValue.trim() ? 'ml-0.5' : ''} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+export default ChatInterface;
