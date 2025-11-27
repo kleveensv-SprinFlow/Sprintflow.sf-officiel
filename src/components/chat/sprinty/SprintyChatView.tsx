@@ -3,15 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { getSprintyAnswer, SprintyMode } from '../../../lib/sprintyEngine';
 import { useLanguage } from '../../../hooks/useLanguage';
-// CORRECTION : Import du bon hook
-import { useSprinty } from '../../../context/SprintyContext'; 
+import { useSprinty } from '../../../context/SprintyContext';
 import SprintyChatHeader from './SprintyChatHeader';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import ConversationMenu from './ConversationMenu';
 import ConversationActions from './ConversationActions';
-// Assurez-vous que ce fichier existe ou supprimez l'import si vous ne l'avez pas encore créé
-import CharacterSelectorModal from './CharacterSelectorModal'; 
+import CharacterSelectorModal from './CharacterSelectorModal';
 
 interface Message {
   id: string;
@@ -32,7 +30,6 @@ const SprintyChatView: React.FC = () => {
   const navigate = useNavigate();
   const { language, t } = useLanguage();
   
-  // État local
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [sprintyMode, setSprintyMode] = useState<SprintyMode>('simplified');
@@ -41,7 +38,6 @@ const SprintyChatView: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<ConversationRecord | null>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   
-  // Utilisation du contexte corrigé
   const { 
     setExpression, 
     isMenuOpen, 
@@ -55,15 +51,11 @@ const SprintyChatView: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const getWelcomeMessage = useCallback(() => {
-    // Message personnalisé selon le persona
     if (currentPersona.id === 'zoom') {
       return "Salut ! Je suis Zoom, prêt à analyser ta vitesse. On démarre ?";
     }
     return t('sprinty.welcome');
   }, [t, currentPersona.id]);
-
-  // ... (Le reste de la logique de chargement des messages reste identique) ...
-  // Je simplifie ici pour la lisibilité, gardez votre logique existante normalizeMessage, useEffect, etc.
 
   const normalizeMessage = useCallback((msg: any): Message | null => {
     if (!msg || typeof msg !== 'object') return null;
@@ -76,7 +68,6 @@ const SprintyChatView: React.FC = () => {
 
   useEffect(() => {
     const loadConversations = async () => {
-      // ... Votre code existant ...
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -88,14 +79,32 @@ const SprintyChatView: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Chargement initial ou changement de conv
     const loadMessages = async () => {
-       // ... Votre code existant pour charger les messages ...
-       // Utilisez getWelcomeMessage() si pas de messages
-       setMessages([{ id: 'welcome', text: getWelcomeMessage(), sender: 'sprinty' }]);
+      if (conversationId) {
+        setActiveConversationId(conversationId);
+        const { data, error } = await supabase
+          .from('sprinty_messages')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('timestamp', { ascending: true });
+
+        if (error) {
+          setMessages([{ id: 'error', text: t('sprinty.error'), sender: 'sprinty' }]);
+        } else {
+          const normalized = (data ?? []).map(normalizeMessage).filter((m): m is Message => m !== null);
+          setMessages(normalized.length > 0 ? normalized : [{ id: 'welcome', text: getWelcomeMessage(), sender: 'sprinty' }]);
+        }
+      } else {
+        setActiveConversationId(null);
+        setMessages([{ id: 'welcome', text: getWelcomeMessage(), sender: 'sprinty' }]);
+      }
     };
     loadMessages();
-  }, [conversationId, getWelcomeMessage]);
+  }, [conversationId, normalizeMessage, getWelcomeMessage, t]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
   const handleSendMessage = async (text: string) => {
     const sanitizedText = text.trim();
@@ -106,16 +115,13 @@ const SprintyChatView: React.FC = () => {
     setExpression('typing');
 
     try {
-      // Simulation de réponse pour l'instant (à remplacer par votre logique getSprintyAnswer)
-      // Vous pouvez passer currentPersona.id à getSprintyAnswer pour adapter la réponse
       const result = await getSprintyAnswer(sanitizedText, sprintyMode, language, []);
-      
       setMessages(prev => [...prev, { id: Date.now().toString(), text: result.text, sender: 'sprinty' }]);
       setExpression('success');
       setTimeout(() => setExpression('neutral'), 3000);
     } catch (err) {
       console.error(err);
-      setMessages(prev => [...prev, { id: Date.now().toString(), text: "Erreur de connexion...", sender: 'sprinty' }]);
+      setMessages(prev => [...prev, { id: Date.now().toString(), text: "Erreur...", sender: 'sprinty' }]);
       setExpression('perplexed');
     } finally {
       setIsTyping(false);
@@ -123,20 +129,23 @@ const SprintyChatView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-sprint-dark-background relative overflow-hidden">
+    // 1. Structure Flexbox Pleine Hauteur : Règle le problème de flottement
+    <div className="flex flex-col h-full w-full bg-sprint-dark-background relative overflow-hidden">
       
-      {/* Fond dégradé subtil */}
+      {/* Fond Dégradé */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#050B14] via-[#020617] to-[#020617] pointer-events-none" />
 
-      {/* HEADER CONNECTÉ AU CONTEXTE */}
-      <SprintyChatHeader
-        onOpenMenu={() => setMenuOpen(true)}
-        onOpenCharacterSelector={() => setCharacterSelectorOpen(true)}
-        currentCharacterName={currentPersona.name}
-      />
+      {/* HEADER (Fixe en haut de la flex column) */}
+      <div className="shrink-0 z-50">
+        <SprintyChatHeader
+          onOpenMenu={() => setMenuOpen(true)}
+          onOpenCharacterSelector={() => setCharacterSelectorOpen(true)}
+          currentCharacterName={currentPersona.name}
+        />
+      </div>
 
-      {/* Zone de Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 no-scrollbar relative z-10">
+      {/* ZONE DE MESSAGES (Prend tout l'espace disponible - Flex 1) */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 no-scrollbar relative z-10 scroll-smooth">
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <MessageBubble message={message} />
@@ -154,11 +163,13 @@ const SprintyChatView: React.FC = () => {
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      {/* Input Area */}
-      <div className="p-4 z-20 relative">
+      {/* INPUT AREA (Ancré en bas de la flex column) */}
+      {/* z-40 pour être au dessus des messages, shrink-0 pour ne pas s'écraser */}
+      {/* pb-[85px] crée l'espace exact pour la TabBar sans espace vide inutile */}
+      <div className="shrink-0 z-40 w-full bg-sprint-dark-background/95 backdrop-blur-md border-t border-white/5 pb-[85px] pt-2 px-4 transition-all duration-300">
         <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </div>
 
@@ -180,7 +191,6 @@ const SprintyChatView: React.FC = () => {
           onSelect={(persona) => {
             setPersona(persona);
             setCharacterSelectorOpen(false);
-            // Optionnel : Ajouter un petit message système dans le chat
             setMessages(prev => [...prev, { 
               id: Date.now().toString(), 
               text: `Conversation basculée sur ${persona.name}.`, 
