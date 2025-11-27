@@ -25,16 +25,12 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
   };
 
   return (
-    // CORRECTION MAJEURE ICI :
-    // Au lieu de compter sur le parent (h-full), on force la hauteur mathématiquement.
-    // calc(100vh - 140px) = Hauteur écran - Header (~60px) - TabBar (~64px) - Marges.
-    // Cela garantit l'effet immersif "GOWOD" quel que soit le reste du code.
     <div 
       className="flex flex-col w-full pt-4 pb-2"
       style={{ height: 'calc(100vh - 140px)' }}
     >
       
-      {/* CARROUSEL : flex-1 va maintenant s'étirer pour remplir tout l'espace calculé ci-dessus */}
+      {/* CARROUSEL */}
       <div className="flex-1 w-full overflow-hidden relative z-10">
         <motion.div
           className="flex h-full"
@@ -45,7 +41,6 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
           onDragEnd={handleDragEnd}
         >
           {actions.map((action, index) => (
-            // Chaque carte prend 100% de la largeur
             <div key={index} className="w-full h-full flex-shrink-0 px-4">
               <div className="h-full w-full py-2">
                 <HubCard 
@@ -58,17 +53,32 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
         </motion.div>
       </div>
 
-      {/* INDICATEURS (POINTS) : Placés tout en bas de notre zone calculée */}
+      {/* NOUVEAU STYLE INDICATEURS (PILULES) */}
       <div className="h-8 flex justify-center items-center mt-2 space-x-2 flex-shrink-0">
-        {actions.map((_, index) => (
-          <motion.div
-            key={index}
-            className={`w-2 h-2 rounded-full cursor-pointer ${currentIndex === index ? 'bg-sprint-light-text-primary dark:bg-sprint-dark-text-primary' : 'bg-gray-300 dark:bg-gray-700'}`}
-            animate={{ scale: currentIndex === index ? 1.2 : 1 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setCurrentIndex(index)}
-          />
-        ))}
+        {actions.map((_, index) => {
+          const isActive = currentIndex === index;
+          return (
+            <motion.div
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`h-2 rounded-full cursor-pointer transition-colors duration-300 ${
+                isActive 
+                  ? 'bg-sprint-light-text-primary dark:bg-sprint-dark-text-primary' 
+                  : 'bg-gray-300 dark:bg-gray-700/50'
+              }`}
+              // Animation de la largeur : 24px si actif (trait), 8px sinon (point)
+              animate={{ 
+                width: isActive ? 24 : 8,
+                opacity: isActive ? 1 : 0.5
+              }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 300, 
+                damping: 30 
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );
