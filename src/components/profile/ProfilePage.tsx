@@ -11,16 +11,20 @@ import {
   Save, 
   User, 
   ChevronRight,
-  Activity,
   Users,
   LogOut,
-  MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- COMPOSANTS UI MINIMALISTES ---
 
-const MinimalCard = ({ children, onClick, className = "" }: any) => (
+interface MinimalCardProps {
+    children: React.ReactNode;
+    onClick?: () => void;
+    className?: string;
+}
+
+const MinimalCard = ({ children, onClick, className = "" }: MinimalCardProps) => (
   <motion.div 
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -31,7 +35,15 @@ const MinimalCard = ({ children, onClick, className = "" }: any) => (
   </motion.div>
 );
 
-const ModalInput = ({ label, value, onChange, type = "text", disabled = false }: any) => (
+interface ModalInputProps {
+    label: string;
+    value: string | number | undefined;
+    onChange: (value: string) => void;
+    type?: string;
+    disabled?: boolean;
+}
+
+const ModalInput = ({ label, value, onChange, type = "text", disabled = false }: ModalInputProps) => (
   <div className="space-y-2">
     <label className="text-xs uppercase tracking-widest text-gray-500 font-bold">{label}</label>
     <input 
@@ -46,7 +58,14 @@ const ModalInput = ({ label, value, onChange, type = "text", disabled = false }:
 
 // --- MODALE D'ÉDITION COMPLÈTE ---
 
-const EditProfileModal = ({ isOpen, onClose, profile, onSave }: any) => {
+interface EditProfileModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    profile: Profile | null;
+    onSave: (formData: Partial<Profile>) => Promise<void>;
+}
+
+const EditProfileModal = ({ isOpen, onClose, profile, onSave }: EditProfileModalProps) => {
     const [formData, setFormData] = useState<Partial<Profile>>({});
     const [isSaving, setIsSaving] = useState(false);
 
@@ -54,7 +73,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSave }: any) => {
         if (profile) setFormData(profile);
     }, [profile, isOpen]);
 
-    const handleChange = (field: keyof Profile, value: any) => {
+    const handleChange = (field: keyof Profile, value: string | number) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
@@ -306,7 +325,7 @@ export default function ProfilePage() {
                         {profile.first_name} {profile.last_name}
                     </h2>
                     
-                    <p className="text-sm text-gray-400 font-mono mb-3">
+                    <p className="text-sm text-gray-400 mb-3">
                         {profile.license_number ? `Licence : ${profile.license_number}` : 'Licence : Non communiqué'}
                     </p>
 
