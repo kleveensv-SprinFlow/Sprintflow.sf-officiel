@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { athleteActions, coachActions, ActionType } from '../../data/actions';
 import HubCard from './HubCard';
@@ -14,6 +14,14 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
 
   const actions = profile?.role === 'coach' ? coachActions : athleteActions;
 
+  // 1. RETOUR HAPTIQUE (VIBRATION)
+  // Déclenche une vibration subtile à chaque changement de carte
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(15); // Vibration courte et nette
+    }
+  }, [currentIndex]);
+
   const handleDragEnd = (event: any, info: any) => {
     const swipePower = info.offset.x * info.velocity.x;
     
@@ -26,11 +34,33 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
 
   return (
     <div 
-      className="flex flex-col w-full pt-4 pb-2"
+      className="flex flex-col w-full pt-4 pb-2 relative overflow-hidden"
       style={{ height: 'calc(100vh - 140px)' }}
     >
       
-      {/* CARROUSEL */}
+      {/* 2. FOND D'AMBIANCE IMMERSIF */}
+      {/* Crée un arrière-plan flou qui change dynamiquement avec l'image active */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ 
+              backgroundImage: `url(${actions[currentIndex].image})`,
+            }}
+          />
+        </AnimatePresence>
+        {/* Filtres pour assombrir et flouter l'image de fond afin que le texte reste lisible */}
+        <div className="absolute inset-0 backdrop-blur-3xl bg-black/70 dark:bg-black/80" />
+        {/* Dégradé supplémentaire en bas pour fondre avec la TabBar */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent" />
+      </div>
+
+      {/* CARROUSEL (z-10 pour être au-dessus du fond) */}
       <div className="flex-1 w-full overflow-hidden relative z-10">
         <motion.div
           className="flex h-full"
@@ -40,21 +70,40 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
           dragConstraints={{ left: 0, right: 0 }}
           onDragEnd={handleDragEnd}
         >
-          {actions.map((action, index) => (
-            <div key={index} className="w-full h-full flex-shrink-0 px-4">
-              <div className="h-full w-full py-2">
-                <HubCard 
-                  action={action} 
-                  onClick={() => onAction(action.id)}
-                />
+          {actions.map((action, index) => {
+            const isActive = index === currentIndex;
+            return (
+              <div key={index} className="w-full h-full flex-shrink-0 px-4">
+                {/* 3. EFFET FOCUS (SCALE & OPACITY) */}
+                <motion.div
+                  className="h-full w-full py-2"
+                  animate={{
+                    // La carte active est à 100%, les autres légèrement réduites
+                    scale: isActive ? 1 : 0.92,
+                    // Les cartes inactives sont un peu transparentes
+                    opacity: isActive ? 1 : 0.4,
+                    // Petit flou sur les cartes inactives pour simuler la profondeur de champ
+                    filter: isActive ? 'blur(0px)' : 'blur(2px)'
+                  }}
+                  transition={{ 
+                    type: 'spring', 
+                    stiffness: 300, 
+                    damping: 30 
+                  }}
+                >
+                  <HubCard 
+                    action={action} 
+                    onClick={() => onAction(action.id)}
+                  />
+                </motion.div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </motion.div>
       </div>
 
-      {/* NOUVEAU STYLE INDICATEURS (PILULES) */}
-      <div className="h-8 flex justify-center items-center mt-2 space-x-2 flex-shrink-0">
+      {/* INDICATEURS (PILULES) */}
+      <div className="h-8 flex justify-center items-center mt-2 space-x-2 flex-shrink-0 relative z-10">
         {actions.map((_, index) => {
           const isActive = currentIndex === index;
           return (
@@ -63,18 +112,17 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
               onClick={() => setCurrentIndex(index)}
               className={`h-2 rounded-full cursor-pointer transition-colors duration-300 ${
                 isActive 
-                  ? 'bg-sprint-light-text-primary dark:bg-sprint-dark-text-primary' 
-                  : 'bg-gray-300 dark:bg-gray-700/50'
+                  ? 'bg-sprint-light-text-primary dark:bg-white' // Blanc pur pour le contraste max
+                  : 'bg-gray-500/50 hover:bg-gray-400'
               }`}
-              // Animation de la largeur : 24px si actif (trait), 8px sinon (point)
               animate={{ 
-                width: isActive ? 24 : 8,
+                width: isActive ? 32 : 8, // Plus large quand actif (32px)
                 opacity: isActive ? 1 : 0.5
               }}
               transition={{ 
                 type: "spring", 
-                stiffness: 300, 
-                damping: 30 
+                stiffness: 400, 
+                damping: 25 
               }}
             />
           );
