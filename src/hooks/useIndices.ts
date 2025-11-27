@@ -15,7 +15,9 @@ export interface IndicesData {
 }
 
 export const useIndices = () => {
-  const { user, session } = useAuth();
+  // On récupère 'profile' pour vérifier le rôle
+  const { user, session, profile } = useAuth();
+  
   const [data, setData] = useState<IndicesData>({
     formIndex: 0,
     performanceIndex: 0,
@@ -29,7 +31,11 @@ export const useIndices = () => {
   });
 
   const fetchIndices = useCallback(async () => {
-    if (!user || !session) return;
+    // CORRECTIF : On ne charge RIEN si c'est un coach ou si pas connecté
+    if (!user || !session || profile?.role !== 'athlete') {
+      setData(prev => ({ ...prev, loading: false }));
+      return;
+    }
     
     try {
       setData(prev => ({ ...prev, loading: true }));
@@ -48,8 +54,8 @@ export const useIndices = () => {
       });
 
       if (perfError) {
-          console.error("Edge Function Error", perfError);
-          // Don't throw, just allow partial data
+          // On log juste un warning au lieu de casser l'app
+          console.warn("Info: Données de performance non disponibles", perfError);
       }
 
       setData({
@@ -68,13 +74,11 @@ export const useIndices = () => {
       console.error('Error fetching indices:', err);
       setData(prev => ({ ...prev, loading: false, error: err as Error }));
     }
-  }, [user, session]);
+  }, [user, session, profile?.role]); // Ajout de la dépendance au rôle
 
   useEffect(() => {
-    if (user) {
-      fetchIndices();
-    }
-  }, [user, fetchIndices]);
+    fetchIndices();
+  }, [fetchIndices]);
 
   return { ...data, refresh: fetchIndices };
 };
