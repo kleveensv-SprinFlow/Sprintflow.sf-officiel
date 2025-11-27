@@ -17,9 +17,6 @@ import MyAthletes360Page from './components/coach/MyAthletes360Page';
 import ManagePlanningPage from './components/coach/ManagePlanningPage';
 import { ActionType } from './data/actions';
 import HubView from './components/hub/HubView';
-
-// --- CORRECTION FINALE DE L'IMPORT ---
-// D'après ta capture, le fichier est dans src/components/chat/sprinty/
 import SprintyChatView from './components/chat/sprinty/SprintyChatView';
 
 type MainView = 'dashboard' | 'profile' | 'settings';
@@ -70,6 +67,9 @@ function App() {
   if (loading) return <LoadingScreen />;
   if (!user) return <><Auth /><ToastContainer /></>;
 
+  // Condition pour cacher le header global : si on est sur le dashboard ET l'onglet sprinty
+  const showGlobalHeader = !(mainView === 'dashboard' && activeTab === 'sprinty');
+
   const renderDashboardView = () => {
     const userRole = profile?.role as 'athlete' | 'coach';
     switch (activeTab) {
@@ -85,7 +85,8 @@ function App() {
         );
       case 'sprinty':
         return (
-          <div className="h-full w-full relative" style={{ height: 'calc(100vh - 140px)' }}>
+          // Conteneur ajusté pour prendre toute la hauteur sans padding-top inutile
+          <div className="h-full w-full relative bg-sprint-dark-background">
              <SprintyChatView />
           </div>
         );
@@ -98,9 +99,15 @@ function App() {
     <SprintyProvider>
       <div className="min-h-screen bg-sprint-light-background dark:bg-sprint-dark-background text-sprint-light-text-primary dark:text-sprint-dark-text-primary flex flex-col overflow-hidden">
         
-        <Header currentView={mainView} onNavigate={handleNavigation} isLoading={profileLoading} />
+        {/* Affichage conditionnel du Header */}
+        {showGlobalHeader && (
+          <Header currentView={mainView} onNavigate={handleNavigation} isLoading={profileLoading} />
+        )}
 
-        <main className="flex-1 pt-[60px] pb-[64px] overflow-y-auto">
+        {/* Ajustement dynamique du padding-top : 60px si header présent, sinon 0 */}
+        <main 
+          className={`flex-1 ${showGlobalHeader ? 'pt-[60px]' : 'pt-0'} pb-[64px] overflow-y-auto scrollbar-hide`}
+        >
           <AnimatePresence mode="wait">
             {mainView === 'dashboard' && !activeAction && (
               <motion.div 
