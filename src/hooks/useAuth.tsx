@@ -169,12 +169,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = useCallback(async () => {
     try {
-      setAuthState(createEmptyAuthState());
+      // On met isInitialized à TRUE pour que l'App affiche l'écran de login (Auth) et non le LoadingScreen
+      setAuthState({
+        session: null,
+        user: null,
+        profile: null,
+        isInitialized: true,
+        isProfileLoading: false
+      });
+      
       await supabase.auth.signOut();
+      
+      // Nettoyage complet
       localStorage.removeItem(PROFILE_CACHE_KEY);
-      Object.keys(localStorage).forEach(key => { if (key.startsWith('sb-')) localStorage.removeItem(key); });
+      Object.keys(localStorage).forEach(key => { 
+        if (key.startsWith('sb-')) localStorage.removeItem(key); 
+      });
     } catch (error) {
       logger.error('[useAuth] Erreur signOut:', error);
+      // Même en cas d'erreur, on force la déconnexion locale
+      setAuthState({
+        session: null,
+        user: null,
+        profile: null,
+        isInitialized: true,
+        isProfileLoading: false
+      });
     }
   }, []);
 
