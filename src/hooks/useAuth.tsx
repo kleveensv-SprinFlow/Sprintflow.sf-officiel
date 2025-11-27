@@ -60,9 +60,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [authState.profile]);
 
   const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
-    // Si on a déjà le profil en cache RAM (dans le state) pour cet user, on évite un log inutile
-    // mais on laisse la requête se faire pour la fraîcheur des données (stale-while-revalidate)
-    
     try {
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
@@ -116,7 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthState(prev => {
         if (!prev.profile) return prev;
         const newProfile = { ...prev.profile, sprinty_mode: newMode };
-        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile)); // Update cache too
+        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile));
         return { ...prev, profile: newProfile };
       });
     } catch (error) {
@@ -128,7 +125,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setAuthState(prev => {
       if (!prev.profile) return prev;
       const newProfile = { ...prev.profile, ...updatedProfileData };
-      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile)); // Update cache too
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile));
       return { ...prev, profile: newProfile };
     });
   }, []);
@@ -140,7 +137,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData: Partial<Profile>) => {
-      // Ton code existant pour le signup...
        try {
       const roleMap: Record<string, string> = { 'athlète': 'athlete', 'athlete': 'athlete', 'encadrant': 'coach', 'coach': 'coach' };
       const mappedRole = roleMap[profileData.role?.toLowerCase() || 'athlete'] || 'athlete';
@@ -176,7 +172,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthState(createEmptyAuthState());
       await supabase.auth.signOut();
       localStorage.removeItem(PROFILE_CACHE_KEY);
-      // Nettoyage complet
       Object.keys(localStorage).forEach(key => { if (key.startsWith('sb-')) localStorage.removeItem(key); });
     } catch (error) {
       logger.error('[useAuth] Erreur signOut:', error);
@@ -189,7 +184,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initAuth = async () => {
       try {
-        // 1. Récupération de la session Supabase
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error && error.message !== 'Auth session missing!') logger.warn('[useAuth] Init warning:', error.message);
         
@@ -198,8 +192,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const currentUser = session?.user ?? null;
 
         if (currentUser) {
-          // 2. STRATÉGIE DE CACHE OPTIMISTE
-          // On regarde si on a déjà un profil en cache local pour cet ID
+          // CACHE CHECK
           let cachedProfile: Profile | null = null;
           try {
             const cachedStr = localStorage.getItem(PROFILE_CACHE_KEY);
@@ -212,22 +205,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } catch (e) { /* ignore */ }
 
           if (cachedProfile) {
-            // A. Si cache trouvé : On affiche immédiatement l'interface (isProfileLoading: false)
-            logger.info('[useAuth] ⚡ Init: Profil chargé depuis le cache');
             setAuthState(createAuthState(session, currentUser, cachedProfile, true, false));
-            
-            // On lance quand même une mise à jour silencieuse en arrière-plan
+            // Background refresh
             loadProfile(currentUser.id).then(freshProfile => {
                if (isMountedRef.current && freshProfile) {
-                 // On met à jour seulement si les données ont changé (comparaison simple ou juste set)
-                 // Ici on set pour être sûr d'avoir la dernière version
                  setAuthState(prev => createAuthState(session, currentUser, freshProfile, true, false));
                }
             });
 
           } else {
-            // B. Pas de cache : On met loading true et on attend le réseau
-            logger.info('[useAuth] Init: Pas de cache, chargement réseau...');
             setAuthState(createAuthState(session, currentUser, null, true, true));
             const freshProfile = await loadProfile(currentUser.id);
             if (isMountedRef.current) {
@@ -236,7 +222,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
 
         } else {
-          // Pas d'utilisateur
           setAuthState(createAuthState(null, null, null, true, false));
         }
 
@@ -248,41 +233,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initAuth();
 
-    // --- LISTENER SUPABASE ---
+    // --- LISTENER SUPABASE (Correction Flash) ---
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMountedRef.current) return;
       
       const currentUser = session?.user ?? null;
       
-      // CORRECTION DU BUG DE RECHARGEMENT ICI :
       setAuthState(prev => {
-        // Si c'est juste un refresh de token et qu'on a déjà tout, on ne touche à rien visuellement
-        if (event === 'TOKEN_REFRESHED' && prev.profile && prev.user?.id === currentUser?.id) {
-            return { ...prev, session, user: currentUser };
+        // BLINDAGE ANTI-FLASH :
+        // Si l'utilisateur est le même qu'avant (ID identique)
+        // ET qu'on a déjà un profil chargé...
+        if (currentUser?.id === prev.user?.id && prev.profile) {
+            // ...Alors on refuse catégoriquement de remettre isProfileLoading à true.
+            // On met juste à jour la session (token) et c'est tout.
+            return { 
+                ...prev, 
+                session, 
+                user: currentUser,
+                isProfileLoading: false // On force FALSE pour empêcher le skeleton d'apparaître
+            };
         }
 
-        // Si on a déjà le profil chargé pour cet utilisateur, on ne remet PAS le loading
+        // Cas normal (changement d'user, connexion initiale...)
         const alreadyHasData = prev.profile && prev.user?.id === currentUser?.id;
-        
-        // Si on a déjà les données, isProfileLoading reste false. Sinon, il devient true.
         const shouldShowLoading = !!currentUser && !alreadyHasData;
 
         return { 
           ...prev, 
           session, 
           user: currentUser, 
-          isProfileLoading: shouldShowLoading // C'est ici que la magie opère
+          isProfileLoading: shouldShowLoading
         };
       });
 
-      // Chargement / Mise à jour des données (toujours en arrière-plan si alreadyHasData est true)
+      // Rafraîchissement silencieux des données en arrière-plan
       if (currentUser) {
+        // On ne déclenche le chargement que si nécessaire ou pour rafraîchir silencieusement
         const loadedProfile = await loadProfile(currentUser.id);
         if (isMountedRef.current && loadedProfile) {
            setAuthState(prev => ({
              ...prev,
              profile: loadedProfile,
-             isProfileLoading: false // On s'assure que le loading s'arrête si c'était le premier chargement
+             isProfileLoading: false
            }));
         }
       }
@@ -298,8 +290,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session: authState.session,
     user: authState.user,
     profile: authState.profile,
-    loading: !authState.isInitialized, // Loading initial de l'app
-    profileLoading: authState.isProfileLoading, // Loading spécifique au profil
+    loading: !authState.isInitialized,
+    profileLoading: authState.isProfileLoading,
     refreshProfile,
     updateProfile,
     updateSprintyMode,
