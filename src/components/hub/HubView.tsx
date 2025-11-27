@@ -25,11 +25,16 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
   };
 
   return (
-    // STRUCTURE : Colonne qui prend toute la hauteur
-    // pb-2 : Petit espace en bas (car App.tsx gère déjà l'espace de la TabBar avec pb-[64px])
-    <div className="flex flex-col h-full w-full pt-4 pb-2">
+    // CORRECTION MAJEURE ICI :
+    // Au lieu de compter sur le parent (h-full), on force la hauteur mathématiquement.
+    // calc(100vh - 140px) = Hauteur écran - Header (~60px) - TabBar (~64px) - Marges.
+    // Cela garantit l'effet immersif "GOWOD" quel que soit le reste du code.
+    <div 
+      className="flex flex-col w-full pt-4 pb-2"
+      style={{ height: 'calc(100vh - 140px)' }}
+    >
       
-      {/* CARROUSEL : flex-1 force cette zone à prendre tout l'espace disponible */}
+      {/* CARROUSEL : flex-1 va maintenant s'étirer pour remplir tout l'espace calculé ci-dessus */}
       <div className="flex-1 w-full overflow-hidden relative z-10">
         <motion.div
           className="flex h-full"
@@ -53,7 +58,7 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
         </motion.div>
       </div>
 
-      {/* INDICATEURS (POINTS) : En dehors du carrousel, collés en bas */}
+      {/* INDICATEURS (POINTS) : Placés tout en bas de notre zone calculée */}
       <div className="h-8 flex justify-center items-center mt-2 space-x-2 flex-shrink-0">
         {actions.map((_, index) => (
           <motion.div
