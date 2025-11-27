@@ -15,7 +15,8 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
   const actions = profile?.role === 'coach' ? coachActions : athleteActions;
 
   const handleDragEnd = (event: any, info: any) => {
-    const swipePower = info. offset. x * info.velocity.x;
+    // Correction ici : suppression des espaces dans info.offset.x
+    const swipePower = info.offset.x * info.velocity.x;
     
     if (swipePower < -10000) {
       setCurrentIndex(i => Math.min(i + 1, actions.length - 1));
@@ -36,7 +37,8 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
           dragConstraints={{ left: 0, right: 0 }}
           onDragEnd={handleDragEnd}
         >
-          {actions. map((action, index) => (
+          {/* Correction ici : suppression de l'espace dans actions.map */}
+          {actions.map((action, index) => (
             <div key={index} className="w-full h-full flex-shrink-0 p-4">
               <HubCard 
                 action={action} 
@@ -50,10 +52,12 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
       {/* Dots Indicator */}
       <div className="absolute bottom-4 flex space-x-2">
         {actions.map((_, index) => (
-          <motion. div
+          /* Correction ici : suppression de l'espace dans motion.div */
+          <motion.div
             key={index}
             className={`w-2 h-2 rounded-full cursor-pointer ${currentIndex === index ? 'bg-sprint-light-text-primary dark:bg-sprint-dark-text-primary' : 'bg-gray-400 dark:bg-gray-600'}`}
-            animate={{ scale: currentIndex === index ?  1. 2 : 1 }}
+            /* Correction principale : 1.2 au lieu de 1. 2 */
+            animate={{ scale: currentIndex === index ? 1.2 : 1 }}
             transition={{ duration: 0.2 }}
             onClick={() => setCurrentIndex(index)}
           />
