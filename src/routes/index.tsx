@@ -7,7 +7,7 @@ import PlanningPage from '../pages/PlanningPage';
 import NutritionPage from '../pages/NutritionPage';
 import RecordsPage from '../components/records/RecordsPage';
 import ChatPage from '../pages/ChatPage';
-import SprintyPage from '../components/pages/SprintyPage'; // Updated import
+import SprintyPage from '../components/pages/SprintyPage';
 import ConversationHistoryView from '../components/chat/ConversationHistoryView';
 import AdvicePage from '../components/advice/AdvicePage';
 import SleepPage from '../pages/SleepPage';
@@ -20,6 +20,10 @@ import AddRecordPage from '../pages/AddRecordPage';
 import AddFoodPage from '../pages/AddFoodPage';
 import AddSleepPage from '../pages/AddSleepPage';
 import SharePerformancePage from '../components/sharing/SharePerformancePage';
+
+// Imports spécifiques Coach
+import MyFollowUpsPage from '../components/coach/MyFollowUpsPage';
+import ManagePlanningPage from '../components/coach/ManagePlanningPage';
 
 export const routes: RouteObject[] = [
   {
@@ -68,7 +72,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: '/sprinty/:id?',
-    element: <SprintyPage />, // Updated element
+    element: <SprintyPage />,
   },
   {
     path: '/sprinty/history',
@@ -105,5 +109,14 @@ export const routes: RouteObject[] = [
   {
     path: '/developer-panel',
     element: <DeveloperPanelPage />,
+  },
+  // Routes Coach ajoutées pour correspondre aux actions du Hub
+  {
+    path: '/my-follow-ups',
+    element: <MyFollowUpsPage />,
+  },
+  {
+    path: '/manage-planning',
+    element: <ManagePlanningPage />,
   },
 ];
