@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from './hooks/useAuth';
 import TabBar, { Tab } from './components/TabBar';
 import Auth from './components/Auth';
@@ -16,8 +16,8 @@ import MyFollowUpsPage from './components/coach/MyFollowUpsPage';
 import MyAthletes360Page from './components/coach/MyAthletes360Page';
 import ManagePlanningPage from './components/coach/ManagePlanningPage';
 import { ActionType } from './data/actions';
+import HubView from './components/hub/HubView';
 
-const HubView = lazy(() => import('./components/hub/HubView.tsx'));
 const SprintyView = () => <div className="p-4 text-white">Sprinty Chat View</div>;
 
 type MainView = 'dashboard' | 'profile' | 'settings';
@@ -29,14 +29,9 @@ function App() {
   const [mainView, setMainView] = useState<MainView>('dashboard');
   const [activeTab, setActiveTab] = useState<Tab>('accueil');
   const [activeAction, setActiveAction] = useState<ActionView>(null);
-  const [showHub, setShowHub] = useState(false);
 
   const handleTabChange = (tab: Tab) => {
-    if (tab === 'actions') {
-      setShowHub(true);
-    } else {
-      setActiveTab(tab);
-    }
+    setActiveTab(tab);
   };
 
   const handleAction = (action: ActionView) => {
@@ -76,13 +71,21 @@ function App() {
   };
 
   if (loading) return <LoadingScreen />;
-  if (!user) return <><Auth /><ToastContainer /></>;
+  if (! user) return <><Auth /><ToastContainer /></>;
 
   const renderDashboardView = () => {
     const userRole = profile?.role as 'athlete' | 'coach';
     switch (activeTab) {
       case 'accueil':
         return <Dashboard userRole={userRole} onViewChange={() => {}} isLoading={profileLoading} />;
+      case 'hub':
+        return (
+          <HubView 
+            onAction={(actionId: ActionType) => {
+              handleAction(actionId as ActionView);
+            }}
+          />
+        );
       case 'sprinty':
         return <SprintyView />;
       default:
@@ -98,15 +101,15 @@ function App() {
 
         <main className="flex-1 pt-[60px] pb-[64px] overflow-y-auto">
           <AnimatePresence mode="wait">
-            {mainView === 'dashboard' && !activeAction && (
+            {mainView === 'dashboard' && ! activeAction && (
               <motion.div key={activeTab} initial="initial" animate="in" exit="out" variants={viewVariants} transition={viewTransition}>
                 {renderDashboardView()}
               </motion.div>
             )}
             {mainView === 'profile' && (
-              <motion.div key="profile" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <motion. div key="profile" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
                 <ProfilePage />
-              </motion.div>
+              </motion. div>
             )}
             {mainView === 'settings' && (
               <motion.div key="settings" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
@@ -114,7 +117,7 @@ function App() {
               </motion.div>
             )}
              {mainView === 'dashboard' && activeAction === 'new-workout' && (
-              <motion.div key="new-workout" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <motion. div key="new-workout" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
                 <NewWorkoutForm onClose={() => handleAction(null)} />
               </motion.div>
             )}
@@ -126,7 +129,7 @@ function App() {
             {mainView === 'dashboard' && activeAction === 'my-athletes-360' && (
               <motion.div key="my-athletes-360" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
                 <MyAthletes360Page onBack={() => handleAction(null)} />
-              </motion.div>
+              </motion. div>
             )}
             {mainView === 'dashboard' && activeAction === 'manage-planning' && (
               <motion.div key="manage-planning" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
@@ -149,20 +152,6 @@ function App() {
         </AnimatePresence>
         
         <ToastContainer position="bottom-center" autoClose={3000} theme="dark" />
-        
-        <AnimatePresence>
-          {showHub && (
-            <Suspense fallback={<div className="fixed inset-0 bg-black/50 z-50" />}>
-              <HubView 
-                onAction={(actionId: ActionType) => {
-                  handleAction(actionId as ActionView);
-                  setShowHub(false);
-                }}
-                onClose={() => setShowHub(false)}
-              />
-            </Suspense>
-          )}
-        </AnimatePresence>
       </div>
     </SprintyProvider>
   );
