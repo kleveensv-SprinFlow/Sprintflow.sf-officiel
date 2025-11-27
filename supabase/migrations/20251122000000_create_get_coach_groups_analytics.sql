@@ -1,5 +1,5 @@
--- Fonction pour obtenir les stats des groupes du coach
--- Correction : Ajout des alias (g.max_members) pour éviter l'erreur d'ambiguïté
+-- Create a function to get the status of all groups for a coach
+-- FIXED: Ambiguous column reference 'max_members' resolved by aliasing internally
 
 CREATE OR REPLACE FUNCTION get_coach_groups_analytics(coach_uuid uuid)
 RETURNS TABLE (
@@ -18,13 +18,17 @@ AS $$
 BEGIN
   RETURN QUERY
   WITH 
-  -- 1. Récupération des groupes (Alias 'g' ajouté ici pour corriger le bug)
+  -- 1. Get groups for the coach
+  -- CRITICAL FIX: Alias 'max_members' to 'limit_members' internally to avoid conflict with output parameter
   coach_groups AS (
-    SELECT g.id, g.name, g.max_members
+    SELECT 
+        g.id, 
+        g.name, 
+        g.max_members AS limit_members 
     FROM groups g
     WHERE g.coach_id = coach_uuid
   ),
-  -- 2. Membres des groupes
+  -- 2. Get group members
   group_memberships AS (
     SELECT 
       gm.group_id,
@@ -32,7 +36,7 @@ BEGIN
     FROM group_members gm
     JOIN coach_groups cg ON gm.group_id = cg.id
   ),
-  -- 3. Logs du jour
+  -- 3. Get today's wellness logs
   today_logs AS (
     SELECT 
       wl.user_id,
@@ -45,7 +49,7 @@ BEGIN
     WHERE wl.date = CURRENT_DATE
     AND wl.user_id IN (SELECT athlete_id FROM group_memberships)
   ),
-  -- 4. Calcul des scores
+  -- 4. Calculate scores
   member_scores AS (
     SELECT 
       tl.user_id,
@@ -64,7 +68,7 @@ BEGIN
       ) THEN 1 ELSE 0 END as has_alert
     FROM today_logs tl
   ),
-  -- 5. Agrégation par groupe
+  -- 5. Aggregate stats
   group_stats AS (
     SELECT 
       gm.group_id,
@@ -76,7 +80,7 @@ BEGIN
     LEFT JOIN member_scores ms ON gm.athlete_id = ms.user_id
     GROUP BY gm.group_id
   ),
-  -- 6. Requêtes en attente
+  -- 6. Count pending requests
   pending_requests AS (
     SELECT 
       gjr.group_id,
@@ -95,7 +99,7 @@ BEGIN
     COALESCE(gs.checkins_today, 0) as checkin_count,
     COALESCE(gs.total_alerts, 0) as alerts_count,
     COALESCE(pr.pending_count, 0) as pending_requests_count,
-    cg.max_members
+    cg.limit_members -- Use the internal alias here
   FROM coach_groups cg
   LEFT JOIN group_stats gs ON cg.id = gs.group_id
   LEFT JOIN pending_requests pr ON cg.id = pr.group_id;
