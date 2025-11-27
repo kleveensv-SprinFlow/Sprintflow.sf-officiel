@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Home, LayoutGrid } from 'lucide-react';
 import SprintyAvatar from './chat/sprinty/SprintyAvatar';
@@ -16,64 +16,99 @@ const TabBar: React.FC<TabBarProps> = ({
   onTabChange,
 }) => {
 
-  const tabs = [
-    { id: 'accueil', label: 'Accueil', Icon: Home },
-    { id: 'hub', label: 'Hub', Icon: LayoutGrid },
-  ];
+  // Retour haptique discret (UX fonctionnelle, pas gadget)
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(5);
+    }
+  }, [activeTab]);
 
-  const renderTab = (tab: typeof tabs[0]) => {
-    // Correction ici : suppression de l'espace dans tab.id
-    const isActive = activeTab === tab.id;
-
-    return (
-      <button
-        key={tab.id}
-        onClick={() => onTabChange(tab.id as Tab)}
-        className="group flex h-full flex-1 flex-col items-center justify-center focus:outline-none"
-      >
-        <motion.div
-          animate={isActive ? { y: -2, scale: 1.05 } : { y: 0, scale: 1 }}
-          transition={{ duration: 0.2 }}
-          className="relative flex flex-col items-center gap-1"
-        >
-          <tab.Icon
-            className={`h-[28px] w-[28px] transition-colors duration-300 ${
-              isActive
-                ? 'text-sprint-primary dark:text-white'
-                : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'
-            }`}
-            // Correction ici : 1.5 au lieu de 1. 5
-            strokeWidth={1.5}
-          />
-        </motion.div>
-      </button>
-    );
-  };
-  
   const sprintyIsActive = activeTab === 'sprinty';
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 h-[64px] pb-1 bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-white/5">
-      <div className="flex h-full w-full items-center justify-around px-2 md:px-8 max-w-2xl mx-auto">
+    // CONTENEUR "TIMELESS" (Intemporel)
+    // fixed bottom-0 : Ancré solidement en bas (pas de flottement)
+    // w-full : Prend toute la largeur
+    // border-t : Une ligne fine de séparation, classique et élégant
+    // bg-white/95 : Fond quasi opaque, juste une touche de transparence pour la profondeur
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-[80px] pb-4 bg-white/95 dark:bg-[#050505]/95 backdrop-blur-md border-t border-gray-100 dark:border-white/10">
+      <div className="flex h-full w-full items-center justify-around max-w-lg mx-auto px-6">
         
-        {tabs.map(renderTab)}
-
+        {/* ONGLET 1 : ACCUEIL */}
         <button
-            key="sprinty"
-            onClick={() => onTabChange('sprinty')}
-            className="group flex h-full flex-1 flex-col items-center justify-center focus:outline-none"
+          onClick={() => onTabChange('accueil')}
+          className="flex-1 flex flex-col items-center justify-center h-full group outline-none pt-2"
         >
-             <motion.div
-                animate={sprintyIsActive ? { y: -10, scale: 1.1 } : { y: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="w-12 h-12 cursor-pointer"
-             >
-                <SprintyAvatar 
-                  onClick={() => {}}
-                  scale={1}
-                />
-             {/* Correction ici : suppression de l'espace dans la balise fermante */}
-             </motion.div>
+          <div className="relative p-2">
+            <Home
+              size={28}
+              // Trait plus fin pour l'élégance, un peu plus épais si actif
+              strokeWidth={activeTab === 'accueil' ? 2.5 : 1.5}
+              className={`transition-colors duration-200 ${
+                activeTab === 'accueil'
+                  ? 'text-black dark:text-white' // Contraste maximum (Noir ou Blanc pur)
+                  : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-600 dark:group-hover:text-gray-400'
+              }`}
+            />
+            {/* Indicateur minimaliste (point) - Optionnel, très "Apple" */}
+            {activeTab === 'accueil' && (
+               <motion.div 
+                 layoutId="tabIndicator"
+                 className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black dark:bg-white"
+               />
+            )}
+          </div>
+        </button>
+
+        {/* BOUTON CENTRAL : SPRINTY */}
+        {/* Intégré dans le flux, pas de dépassement exagéré */}
+        <div className="flex-1 flex justify-center items-center h-full pt-2">
+            <button
+                onClick={() => onTabChange('sprinty')}
+                className="group outline-none relative"
+            >
+                {/* Cercle de contour subtil qui apparait au survol ou si actif */}
+                <div className={`absolute inset-0 rounded-full border transition-all duration-300 ${
+                    sprintyIsActive 
+                        ? 'border-black/10 dark:border-white/20 scale-110' 
+                        : 'border-transparent scale-100'
+                }`} />
+
+                <motion.div
+                    animate={sprintyIsActive ? { scale: 1.05 } : { scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="relative w-12 h-12"
+                >
+                    <SprintyAvatar 
+                        onClick={() => {}}
+                        scale={1}
+                    />
+                </motion.div>
+            </button>
+        </div>
+
+        {/* ONGLET 2 : HUB */}
+        <button
+          onClick={() => onTabChange('hub')}
+          className="flex-1 flex flex-col items-center justify-center h-full group outline-none pt-2"
+        >
+          <div className="relative p-2">
+            <LayoutGrid
+              size={28}
+              strokeWidth={activeTab === 'hub' ? 2.5 : 1.5}
+              className={`transition-colors duration-200 ${
+                activeTab === 'hub'
+                  ? 'text-black dark:text-white'
+                  : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-600 dark:group-hover:text-gray-400'
+              }`}
+            />
+            {activeTab === 'hub' && (
+               <motion.div 
+                 layoutId="tabIndicator"
+                 className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black dark:bg-white"
+               />
+            )}
+          </div>
         </button>
 
       </div>
