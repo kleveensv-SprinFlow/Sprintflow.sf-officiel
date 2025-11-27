@@ -51,17 +51,18 @@ const createAuthState = (session: Session | null, user: User | null, profile: Pr
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authState, setAuthState] = useState<AuthState>(createEmptyAuthState());
   const isMountedRef = useRef(true);
+  
+  // Ref pour garder une trace du profil actuel sans dépendre du cycle de rendu dans les callbacks
   const profileRef = useRef<Profile | null>(null);
 
-  // Update ref whenever state changes to access the latest profile in closures
   useEffect(() => {
     profileRef.current = authState.profile;
   }, [authState.profile]);
 
   const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
-    logger.info('[useAuth] Début du chargement du profil pour:', userId);
-    logger.info('[useAuth] Colonnes demandées:', PROFILE_COLS);
-
+    // Si on a déjà le profil en cache RAM (dans le state) pour cet user, on évite un log inutile
+    // mais on laisse la requête se faire pour la fraîcheur des données (stale-while-revalidate)
+    
     try {
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
@@ -75,45 +76,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('id', userId)
         .maybeSingle();
 
-      const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]);
-
-      logger.info('[useAuth] Réponse Supabase reçue. Error:', error, 'Data:', profile);
+      const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: Profile | null, error: any };
 
       if (error) {
-        logger.error('[useAuth] Erreur Supabase lors du chargement du profil:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-          userId
-        });
+        logger.error('[useAuth] Erreur chargement profil:', error.message);
         return null;
       }
 
-      if (!profile) {
-        logger.error('[useAuth] Profil null retourné par Supabase pour l\'utilisateur:', userId);
-        logger.error('[useAuth] Cela peut indiquer un problème de permissions RLS ou un profil manquant.');
-        return null;
-      }
-
-      // Mise en cache du profil
-      try {
+      if (profile) {
+        // Mise à jour du cache local storage
         localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
-      } catch (e) {
-        logger.warn('[useAuth] Impossible de mettre en cache le profil:', e);
       }
 
-      logger.info('[useAuth] Profil chargé avec succès:', { id: profile.id, role: profile.role, name: profile.full_name });
       return profile;
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Timeout')) {
-        logger.error('[useAuth] TIMEOUT: La requête Supabase est bloquée. Cela peut être dû à:');
-        logger.error('[useAuth] - Cookies tiers bloqués (Third-party cookies)');
-        logger.error('[useAuth] - Problème de réseau ou de connectivité');
-        logger.error('[useAuth] - Configuration CORS incorrecte');
-      } else {
-        logger.error('[useAuth] Exception lors du chargement du profil:', error);
-      }
+      logger.error('[useAuth] Exception loadProfile:', error);
       return null;
     }
   }, []);
@@ -122,53 +99,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!authState.user) return;
     try {
       const profile = await loadProfile(authState.user.id);
-      if (isMountedRef.current) {
-        // If reload failed but we had a profile, we might want to keep it?
-        // But refreshProfile is explicit action. If it fails, we probably should let the user know or keep old one.
-        // Current behavior: update if we got something, or null if failed.
-        // Let's make it safer: if profile is null (error), keep old one?
-        // Standard behavior usually implies if refresh fails, you keep stale data.
-        
-        if (profile) {
-           setAuthState(prev => createAuthState(prev.session, prev.user, profile, prev.isInitialized, true));
-        } else {
-           logger.warn('[useAuth] Refresh failed, keeping existing profile.');
-        }
+      if (isMountedRef.current && profile) {
+           setAuthState(prev => createAuthState(prev.session, prev.user, profile, prev.isInitialized, false));
       }
     } catch (e) {
-      logger.error('[useAuth] Erreur lors du rafraîchissement:', e);
+      logger.error('[useAuth] Erreur refresh:', e);
     }
   }, [authState.user, loadProfile]);
 
   const updateSprintyMode = useCallback(async (newMode: 'simple' | 'expert') => {
     if (!authState.user) return;
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ sprinty_mode: newMode })
-        .eq('id', authState.user.id);
-
+      const { error } = await supabase.from('profiles').update({ sprinty_mode: newMode }).eq('id', authState.user.id);
       if (error) throw error;
 
       setAuthState(prev => {
         if (!prev.profile) return prev;
-        return {
-          ...prev,
-          profile: { ...prev.profile, sprinty_mode: newMode },
-        };
+        const newProfile = { ...prev.profile, sprinty_mode: newMode };
+        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile)); // Update cache too
+        return { ...prev, profile: newProfile };
       });
     } catch (error) {
-      logger.error('[useAuth] Erreur lors de la mise à jour du mode Sprinty:', error);
+      logger.error('[useAuth] Erreur updateSprintyMode:', error);
     }
   }, [authState.user]);
 
   const updateProfile = useCallback((updatedProfileData: Partial<Profile>) => {
     setAuthState(prev => {
       if (!prev.profile) return prev;
-      return {
-        ...prev,
-        profile: { ...prev.profile, ...updatedProfileData },
-      };
+      const newProfile = { ...prev.profile, ...updatedProfileData };
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile)); // Update cache too
+      return { ...prev, profile: newProfile };
     });
   }, []);
 
@@ -179,7 +140,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, profileData: Partial<Profile>) => {
-    try {
+      // Ton code existant pour le signup...
+       try {
       const roleMap: Record<string, string> = { 'athlète': 'athlete', 'athlete': 'athlete', 'encadrant': 'coach', 'coach': 'coach' };
       const mappedRole = roleMap[profileData.role?.toLowerCase() || 'athlete'] || 'athlete';
       const redirectUrl = window.location.hostname === 'localhost' ? `${window.location.origin}/` : 'https://sprintflow.one/';
@@ -195,7 +157,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
       if (!data.user) throw new Error('Aucun utilisateur créé');
-
       return data;
     } catch (error) {
       if (error instanceof Error && error.message?.includes('User already registered')) {
@@ -212,110 +173,119 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = useCallback(async () => {
     try {
-      logger.info('[useAuth] Déconnexion en cours...');
       setAuthState(createEmptyAuthState());
       await supabase.auth.signOut();
+      localStorage.removeItem(PROFILE_CACHE_KEY);
+      // Nettoyage complet
       Object.keys(localStorage).forEach(key => { if (key.startsWith('sb-')) localStorage.removeItem(key); });
-      logger.info('[useAuth] Déconnexion réussie');
     } catch (error) {
-      logger.error('[useAuth] Erreur critique signOut:', error);
+      logger.error('[useAuth] Erreur signOut:', error);
     }
   }, []);
 
+  // --- EFFET PRINCIPAL D'INITIALISATION ---
   useEffect(() => {
     isMountedRef.current = true;
 
     const initAuth = async () => {
       try {
-        logger.info('[useAuth] Initialisation de l\'authentification');
+        // 1. Récupération de la session Supabase
         const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error) logger.warn('[useAuth] Erreur lors de getSession:', error);
+        if (error && error.message !== 'Auth session missing!') logger.warn('[useAuth] Init warning:', error.message);
+        
         if (!isMountedRef.current) return;
 
         const currentUser = session?.user ?? null;
-        
-        // STRATÉGIE : On initialise l'UI dès qu'on a la session
-        setAuthState(createAuthState(session, currentUser, null, true, !!currentUser));
 
         if (currentUser) {
-          // Essayer de charger le profil depuis le cache local immédiatement
+          // 2. STRATÉGIE DE CACHE OPTIMISTE
+          // On regarde si on a déjà un profil en cache local pour cet ID
+          let cachedProfile: Profile | null = null;
           try {
-            const cachedProfileStr = localStorage.getItem(PROFILE_CACHE_KEY);
-            if (cachedProfileStr) {
-              const cachedProfile = JSON.parse(cachedProfileStr) as Profile;
-              if (cachedProfile.id === currentUser.id) {
-                logger.info('[useAuth] ⚡ Profil chargé depuis le cache !');
-                if (isMountedRef.current) {
-                  setAuthState(createAuthState(session, currentUser, cachedProfile, true, true));
-                }
+            const cachedStr = localStorage.getItem(PROFILE_CACHE_KEY);
+            if (cachedStr) {
+              const parsed = JSON.parse(cachedStr);
+              if (parsed && parsed.id === currentUser.id) {
+                cachedProfile = parsed;
               }
             }
-          } catch (e) {
-            logger.warn('[useAuth] Erreur lecture cache profil:', e);
-          }
-          
-          logger.info('[useAuth] Chargement frais du profil en arrière-plan...');
-          const currentProfile = await loadProfile(currentUser.id);
-          
-          if (isMountedRef.current) {
-            setAuthState(createAuthState(session, currentUser, currentProfile, true, false));
+          } catch (e) { /* ignore */ }
+
+          if (cachedProfile) {
+            // A. Si cache trouvé : On affiche immédiatement l'interface (isProfileLoading: false)
+            logger.info('[useAuth] ⚡ Init: Profil chargé depuis le cache');
+            setAuthState(createAuthState(session, currentUser, cachedProfile, true, false));
+            
+            // On lance quand même une mise à jour silencieuse en arrière-plan
+            loadProfile(currentUser.id).then(freshProfile => {
+               if (isMountedRef.current && freshProfile) {
+                 // On met à jour seulement si les données ont changé (comparaison simple ou juste set)
+                 // Ici on set pour être sûr d'avoir la dernière version
+                 setAuthState(prev => createAuthState(session, currentUser, freshProfile, true, false));
+               }
+            });
+
+          } else {
+            // B. Pas de cache : On met loading true et on attend le réseau
+            logger.info('[useAuth] Init: Pas de cache, chargement réseau...');
+            setAuthState(createAuthState(session, currentUser, null, true, true));
+            const freshProfile = await loadProfile(currentUser.id);
+            if (isMountedRef.current) {
+               setAuthState(createAuthState(session, currentUser, freshProfile, true, false));
+            }
           }
 
         } else {
-          logger.info('[useAuth] Aucun utilisateur authentifié trouvé.');
-          localStorage.removeItem(PROFILE_CACHE_KEY);
-          if (isMountedRef.current) {
-            setAuthState(createAuthState(null, null, null, true, false));
-          }
-        }
-        logger.info('[useAuth] Initialisation terminée.');
-
-      } catch (error) {
-        logger.error('[useAuth] Erreur critique lors de l\'initialisation:', error);
-        if (isMountedRef.current) {
+          // Pas d'utilisateur
           setAuthState(createAuthState(null, null, null, true, false));
         }
+
+      } catch (error) {
+        logger.error('[useAuth] Crash init:', error);
+        setAuthState(createAuthState(null, null, null, true, false));
       }
     };
 
     initAuth();
 
+    // --- LISTENER SUPABASE ---
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMountedRef.current) return;
-      logger.info('[useAuth] Événement auth:', event);
-
+      
       const currentUser = session?.user ?? null;
+      
+      // CORRECTION DU BUG DE RECHARGEMENT ICI :
+      setAuthState(prev => {
+        // Si c'est juste un refresh de token et qu'on a déjà tout, on ne touche à rien visuellement
+        if (event === 'TOKEN_REFRESHED' && prev.profile && prev.user?.id === currentUser?.id) {
+            return { ...prev, session, user: currentUser };
+        }
 
-      if (event === 'TOKEN_REFRESHED' && profileRef.current && currentUser && profileRef.current.id === currentUser.id) {
-        logger.info('[useAuth] TOKEN_REFRESHED: On met juste à jour la session.');
-        setAuthState(prev => ({ ...prev, session, user: currentUser }));
-        return;
-      }
+        // Si on a déjà le profil chargé pour cet utilisateur, on ne remet PAS le loading
+        const alreadyHasData = prev.profile && prev.user?.id === currentUser?.id;
+        
+        // Si on a déjà les données, isProfileLoading reste false. Sinon, il devient true.
+        const shouldShowLoading = !!currentUser && !alreadyHasData;
 
-      setAuthState(prev => ({ ...prev, session, user: currentUser, isProfileLoading: !!currentUser }));
+        return { 
+          ...prev, 
+          session, 
+          user: currentUser, 
+          isProfileLoading: shouldShowLoading // C'est ici que la magie opère
+        };
+      });
 
+      // Chargement / Mise à jour des données (toujours en arrière-plan si alreadyHasData est true)
       if (currentUser) {
         const loadedProfile = await loadProfile(currentUser.id);
-        if (isMountedRef.current) {
-          if (loadedProfile) {
-            setAuthState(createAuthState(session, currentUser, loadedProfile, true, false));
-          } else {
-            logger.warn('[useAuth] Le profil n\'a pas pu être chargé après l\'événement, conservation de l\'ancien si possible.');
-            setAuthState(prev => {
-              if (prev.profile && prev.user?.id === currentUser.id) {
-                return createAuthState(session, currentUser, prev.profile, true, false);
-              }
-              return createAuthState(session, currentUser, null, true, false);
-            });
-          }
-        }
-      } else {
-        if (isMountedRef.current) {
-          setAuthState(createAuthState(null, null, null, true, false));
+        if (isMountedRef.current && loadedProfile) {
+           setAuthState(prev => ({
+             ...prev,
+             profile: loadedProfile,
+             isProfileLoading: false // On s'assure que le loading s'arrête si c'était le premier chargement
+           }));
         }
       }
-      logger.info('[useAuth] État mis à jour après événement.');
     });
 
     return () => {
@@ -324,50 +294,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [loadProfile]);
 
-  const loading = !authState.isInitialized;
-  const profileLoading = authState.isProfileLoading;
+  const contextValue = React.useMemo(() => ({
+    session: authState.session,
+    user: authState.user,
+    profile: authState.profile,
+    loading: !authState.isInitialized, // Loading initial de l'app
+    profileLoading: authState.isProfileLoading, // Loading spécifique au profil
+    refreshProfile,
+    updateProfile,
+    updateSprintyMode,
+    signOut,
+    signIn,
+    signUp,
+    resendConfirmationEmail,
+  }), [authState, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail]);
 
-  const contextValue = React.useMemo(
-    () => ({
-      session: authState.session,
-      user: authState.user,
-      profile: authState.profile,
-      loading,
-      profileLoading,
-      refreshProfile,
-      updateProfile,
-      updateSprintyMode,
-      signOut,
-      signIn,
-      signUp,
-      resendConfirmationEmail,
-    }),
-    [authState, loading, profileLoading, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail]
-  );
-
-  return (<AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>);
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    logger.error('[useAuth] Context is undefined! This should never happen.');
-    logger.error('[useAuth] Make sure AuthProvider is mounted in main.tsx');
-    return {
-      session: null,
-      user: null,
-      profile: null,
-      loading: true,
-      profileLoading: true,
-      refreshProfile: async () => {},
-      updateProfile: () => {},
-      updateSprintyMode: async () => {},
-      signOut: async () => {},
-      signIn: async () => ({ user: null, session: null }),
-      signUp: async () => ({ user: null, session: null }),
-      resendConfirmationEmail: async () => {}
-    };
-  }
+  if (context === undefined) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
 
