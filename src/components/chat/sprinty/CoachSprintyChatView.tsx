@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { getSprintyAnswer, SprintyMode } from '../../../lib/sprintyEngine';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useSprinty } from '../../../context/SprintyContext';
+import { CHARACTERS } from '../../../data/characters';
 import SprintyChatHeader from './SprintyChatHeader';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
@@ -51,12 +52,15 @@ const CoachSprintyChatView: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // We rely on currentPersona.id to check if it's Zoom or not,
+  // but actually we should just rely on the currentPersona object which now comes from CHARACTERS data
   const getWelcomeMessage = useCallback(() => {
-    if (currentPersona.id === 'zoom') {
-      return "Salut ! Je suis Zoom, prêt à analyser ta vitesse. On démarre ?";
-    }
-    return t('sprinty.welcome');
-  }, [t, currentPersona.id]);
+    // If we have a specific welcome logic or just want to rely on the "Empty State" view,
+    // we can return null here or a placeholder.
+    // For now, let's just return a placeholder that we will filter out in the render
+    // if we want to show the custom view.
+    return "WELCOME_PLACEHOLDER";
+  }, [currentPersona]);
 
   const normalizeMessage = useCallback((msg: any): Message | null => {
     if (!msg || typeof msg !== 'object') return null;
@@ -93,15 +97,15 @@ const CoachSprintyChatView: React.FC = () => {
           setMessages([{ id: 'error', text: t('sprinty.error'), sender: 'sprinty' }]);
         } else {
           const normalized = (data ?? []).map(normalizeMessage).filter((m): m is Message => m !== null);
-          setMessages(normalized.length > 0 ? normalized : [{ id: 'welcome', text: getWelcomeMessage(), sender: 'sprinty' }]);
+          setMessages(normalized.length > 0 ? normalized : []);
         }
       } else {
         setActiveConversationId(null);
-        setMessages([{ id: 'welcome', text: getWelcomeMessage(), sender: 'sprinty' }]);
+        setMessages([]);
       }
     };
     loadMessages();
-  }, [conversationId, normalizeMessage, getWelcomeMessage, t]);
+  }, [conversationId, normalizeMessage, t]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,6 +133,9 @@ const CoachSprintyChatView: React.FC = () => {
     }
   };
 
+  // Determine if we should show the "Empty State" (Character Description + Pills)
+  const showEmptyState = messages.length === 0 && !conversationId;
+
   return (
     <div className="fixed inset-0 z-0 bg-sprint-dark-background flex flex-col">
       <div className="absolute inset-0 bg-gradient-to-b from-[#050B14] via-[#020617] to-[#020617] pointer-events-none" />
@@ -139,12 +146,42 @@ const CoachSprintyChatView: React.FC = () => {
           currentCharacterName={currentPersona.name}
         />
       </div>
+
       <div className="flex-1 overflow-y-auto pt-[70px] pb-[140px] px-4 space-y-6 no-scrollbar relative z-10">
-        {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <MessageBubble message={message} />
+        {showEmptyState ? (
+          <div className="h-full flex flex-col items-center justify-center min-h-[50vh] animate-fade-in px-4">
+             {/* Character Description View */}
+             <div className="text-center space-y-8 max-w-sm mx-auto">
+               <p className="text-gray-300 text-lg leading-relaxed font-medium">
+                 {currentPersona.description}
+               </p>
+
+               <div className="flex flex-wrap justify-center gap-3">
+                 {currentPersona.predefinedQuestions.map((question, index) => (
+                   <button
+                     key={index}
+                     onClick={() => handleSendMessage(question)}
+                     className="px-4 py-2 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white/90 text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm"
+                     style={{
+                       borderColor: `${currentPersona.color}30` // Subtle border color based on character
+                     }}
+                   >
+                     {question}
+                   </button>
+                 ))}
+               </div>
+             </div>
           </div>
-        ))}
+        ) : (
+          <>
+            {messages.map((message) => (
+              <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <MessageBubble message={message} />
+              </div>
+            ))}
+          </>
+        )}
+
         {isTyping && (
           <div className="flex justify-start animate-fade-in">
             <div className="bg-[#1E293B] border border-white/5 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2 shadow-sm">
@@ -158,6 +195,7 @@ const CoachSprintyChatView: React.FC = () => {
         )}
         <div ref={messagesEndRef} />
       </div>
+
       <div className="fixed bottom-[64px] left-0 right-0 z-40 px-4 py-2 bg-gradient-to-t from-sprint-dark-background via-sprint-dark-background/95 to-transparent backdrop-blur-sm">
         <div className="w-full max-w-3xl mx-auto">
            <ChatInput onSend={handleSendMessage} disabled={isTyping} />
@@ -175,16 +213,8 @@ const CoachSprintyChatView: React.FC = () => {
       {isCharacterSelectorOpen && (
         <CharacterSelectorModal 
           isOpen={isCharacterSelectorOpen}
-          onClose={() => setCharacterSelectorOpen(false)}
-          onSelect={(persona) => {
-            setPersona(persona);
-            setCharacterSelectorOpen(false);
-            setMessages(prev => [...prev, { 
-              id: Date.now().toString(), 
-              text: `Conversation basculée sur ${persona.name}.`, 
-              sender: 'sprinty' 
-            }]);
-          }}
+          // The modal typically manages the selection,
+          // but we can ensure it sets the context properly via the Context hook inside it.
         />
       )}
     </div>
