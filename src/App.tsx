@@ -71,7 +71,7 @@ function App() {
   };
 
   if (loading) return <LoadingScreen />;
-  if (! user) return <><Auth /><ToastContainer /></>;
+  if (!user) return <><Auth /><ToastContainer /></>;
 
   const renderDashboardView = () => {
     const userRole = profile?.role as 'athlete' | 'coach';
@@ -101,15 +101,25 @@ function App() {
 
         <main className="flex-1 pt-[60px] pb-[64px] overflow-y-auto">
           <AnimatePresence mode="wait">
-            {mainView === 'dashboard' && ! activeAction && (
-              <motion.div key={activeTab} initial="initial" animate="in" exit="out" variants={viewVariants} transition={viewTransition}>
+            {mainView === 'dashboard' && !activeAction && (
+              // AJOUT DU CLASSNAME "h-full" ICI : C'EST LA CORRECTION PRINCIPALE
+              <motion.div 
+                key={activeTab} 
+                initial="initial" 
+                animate="in" 
+                exit="out" 
+                variants={viewVariants} 
+                transition={viewTransition}
+                className="h-full"
+              >
                 {renderDashboardView()}
               </motion.div>
             )}
             {mainView === 'profile' && (
-              <motion. div key="profile" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              // Correction: suppression de l'espace dans motion.div
+              <motion.div key="profile" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
                 <ProfilePage />
-              </motion. div>
+              </motion.div>
             )}
             {mainView === 'settings' && (
               <motion.div key="settings" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
@@ -117,7 +127,8 @@ function App() {
               </motion.div>
             )}
              {mainView === 'dashboard' && activeAction === 'new-workout' && (
-              <motion. div key="new-workout" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              // Correction: suppression de l'espace dans motion.div
+              <motion.div key="new-workout" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
                 <NewWorkoutForm onClose={() => handleAction(null)} />
               </motion.div>
             )}
@@ -127,9 +138,10 @@ function App() {
               </motion.div>
             )}
             {mainView === 'dashboard' && activeAction === 'my-athletes-360' && (
+              // Correction: suppression de l'espace dans motion.div
               <motion.div key="my-athletes-360" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
                 <MyAthletes360Page onBack={() => handleAction(null)} />
-              </motion. div>
+              </motion.div>
             )}
             {mainView === 'dashboard' && activeAction === 'manage-planning' && (
               <motion.div key="manage-planning" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
