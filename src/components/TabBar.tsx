@@ -22,7 +22,8 @@ const TabBar: React.FC<TabBarProps> = ({
   ];
 
   const renderTab = (tab: typeof tabs[0]) => {
-    const isActive = activeTab === tab. id;
+    // Correction ici : suppression de l'espace dans tab.id
+    const isActive = activeTab === tab.id;
 
     return (
       <button
@@ -41,7 +42,8 @@ const TabBar: React.FC<TabBarProps> = ({
                 ? 'text-sprint-primary dark:text-white'
                 : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'
             }`}
-            strokeWidth={1. 5}
+            // Correction ici : 1.5 au lieu de 1. 5
+            strokeWidth={1.5}
           />
         </motion.div>
       </button>
@@ -70,7 +72,8 @@ const TabBar: React.FC<TabBarProps> = ({
                   onClick={() => {}}
                   scale={1}
                 />
-             </motion. div>
+             {/* Correction ici : suppression de l'espace dans la balise fermante */}
+             </motion.div>
         </button>
 
       </div>
