@@ -1,14 +1,18 @@
-import { Plus, Zap, Trophy, Bot, Video, Users, Search, Calendar } from 'lucide-react';
+import { Plus, Zap, Trophy, Bot, Video, Users, Calendar } from 'lucide-react';
 
-// --- IMPORTS DES IMAGES LOCALES (.PNG) ---
+// --- IMPORTS IMAGES ATHLETE (Existants - PNG) ---
 import imgWorkout from '../assets/hub/ajouter-un-entrainement.png';
 import imgRecord from '../assets/hub/Record.png';
 import imgVideo from '../assets/hub/analyse-video.png';
 import imgLive from '../assets/hub/live.png';
 import imgNutrition from '../assets/hub/nutrition.png';
 
+// --- IMPORTS IMAGES COACH (Nouveaux - JPG) ---
+import imgPlanningCoach from '../assets/hub/planning.jpg';
+import imgMesSuivis from '../assets/hub/mes-suivie.jpg';
+
 export type AthleteActionType = 'new-workout' | 'live-workout' | 'new-record' | 'nutrition' | 'video-analysis';
-export type CoachActionType = 'my-follow-ups' | 'my-athletes-360' | 'manage-planning';
+export type CoachActionType = 'my-follow-ups' | 'manage-planning';
 export type ActionType = AthleteActionType | CoachActionType;
 
 export interface Action {
@@ -61,22 +65,15 @@ export const coachActions: Action[] = [
   { 
     id: 'my-follow-ups', 
     title: "Mes suivis", 
-    subtitle: "Consultez le progrès de vos athlètes.",
+    subtitle: "Suivez la progression de vos athlètes.",
     Icon: Users, 
-    image: imgVideo // Réutilisation logique de l'image d'analyse
-  },
-  { 
-    id: 'my-athletes-360', 
-    title: "Mes athlètes 360", 
-    subtitle: "Vue d'ensemble de vos athlètes.",
-    Icon: Search, 
-    image: imgLive // Réutilisation logique pour la vue d'ensemble
+    image: imgMesSuivis
   },
   { 
     id: 'manage-planning', 
     title: "Gestion de planning", 
-    subtitle: "Organisez les entraînements.",
+    subtitle: "Gérez les programmes d'entraînement.",
     Icon: Calendar, 
-    image: imgWorkout // Réutilisation logique de l'image d'entraînement
+    image: imgPlanningCoach
   },
 ];
