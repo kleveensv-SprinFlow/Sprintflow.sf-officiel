@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Dumbbell, Navigation, MessageSquarePlus, Bookmark } from 'lucide-react';
+import { X, Dumbbell, Navigation, MessageSquarePlus, Bookmark, Clock, Activity } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import WorkoutTypeSelector from './WorkoutTypeSelector';
 import AddCustomWorkoutTypeModal from './AddCustomWorkoutTypeModal';
@@ -9,6 +9,7 @@ import { MuscuBlockForm } from './MuscuBlockForm';
 import { WorkoutBuilder } from './WorkoutBuilder';
 import { SaveTemplateModal } from './SaveTemplateModal';
 import { TemplateSelectionModal } from './TemplateSelectionModal';
+import { SemanticSlider } from '../common/SemanticSlider';
 
 interface NewWorkoutFormProps {
   userRole: 'coach' | 'athlete';
@@ -19,6 +20,8 @@ interface NewWorkoutFormProps {
     notes?: string;
     templateName?: string;
     workoutId?: string;
+    duration?: number;
+    rpe_target?: number;
   }) => Promise<void>;
   onCancel: () => void;
   initialData?: {
@@ -27,6 +30,10 @@ interface NewWorkoutFormProps {
     blocs: WorkoutBlock[];
     type?: 'guidé' | 'manuscrit' | 'modèle';
     notes?: string;
+    duration_minutes?: number;
+    planned_data?: {
+      rpe_target?: number;
+    };
   };
 }
 
@@ -37,14 +44,28 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
   const [blocks, setBlocks] = useState<WorkoutBlock[]>(initialData?.blocs || []);
   const [workoutType, setWorkoutType] = useState<'guidé' | 'manuscrit' | 'modèle'>(initialData?.type || (isAthlete ? 'guidé' : 'modèle'));
   const [notes, setNotes] = useState(initialData?.notes || '');
+
+  // New State for Duration & RPE
+  const [duration, setDuration] = useState<number>(initialData?.duration_minutes || 60);
+  const [rpeTarget, setRpeTarget] = useState<number>(initialData?.planned_data?.rpe_target || 5);
+
   const [saving, setSaving] = useState(false);
   const [isCustomModalOpen, setCustomModalOpen] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
+  const [showNotes, setShowNotes] = useState(!!initialData?.notes);
   const [isSaveTemplateModalOpen, setSaveTemplateModalOpen] = useState(false);
   const [isTemplateSelectionOpen, setTemplateSelectionOpen] = useState(false);
 
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [addingBlockType, setAddingBlockType] = useState<'course' | 'musculation' | null>(null);
+
+  const durationOptions = [
+    { value: 30, label: '30 min' },
+    { value: 45, label: '45 min' },
+    { value: 60, label: '1 h' },
+    { value: 90, label: '1 h 30' },
+    { value: 120, label: '2 h' },
+    { value: 150, label: '2 h 30' },
+  ];
 
   const handleUpsertBlock = (blockData: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => {
     if ('id' in blockData && blockData.id) {
@@ -84,7 +105,7 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
   };
 
   const handleSaveTemplate = (templateName: string) => {
-    console.log("Sauvegarde du modèle:", templateName, { tagSeance, blocks, notes });
+    // console.log("Sauvegarde du modèle:", templateName, { tagSeance, blocks, notes });
     setSaveTemplateModalOpen(false);
   };
 
@@ -115,7 +136,9 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
         type: workoutType,
         notes,
         blocs: blocks,
-        workoutId: initialData?.id
+        workoutId: initialData?.id,
+        duration,
+        rpe_target: rpeTarget
       });
     } finally {
       setSaving(false);
@@ -172,6 +195,54 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar pb-24 bg-gray-50 dark:bg-gray-900">
           <WorkoutTypeSelector selectedType={tagSeance} onSelectType={setTagSeance} onOpenCustomModal={() => setCustomModalOpen(true)} disabled={isCompletingWorkout} />
           
+          {/* Metadata Section (Duration & RPE Target) - Only for Coach or if editing */}
+          {!isCompletingWorkout && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+
+              {/* Duration Selector */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                   <Clock size={16} className="text-sprint-primary" />
+                   Durée estimée
+                </label>
+                <div className="flex flex-wrap gap-2">
+                   {durationOptions.map(opt => (
+                     <button
+                       key={opt.value}
+                       type="button"
+                       onClick={() => setDuration(opt.value)}
+                       className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border ${
+                         duration === opt.value
+                           ? 'bg-sprint-primary text-white border-sprint-primary shadow-sm'
+                           : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
+                       }`}
+                     >
+                       {opt.label}
+                     </button>
+                   ))}
+                </div>
+              </div>
+
+              {/* RPE Target Slider */}
+              <div className="space-y-2">
+                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                   <Activity size={16} className="text-sprint-primary" />
+                   Intensité Cible (RPE {rpeTarget})
+                </label>
+                <div className="px-2">
+                  <SemanticSlider
+                    value={rpeTarget}
+                    onChange={setRpeTarget}
+                    min={1}
+                    max={10}
+                    step={1}
+                  />
+                </div>
+              </div>
+
+            </div>
+          )}
+
           {isAthlete && !isCompletingWorkout && (
             <button type="button" onClick={() => setTemplateSelectionOpen(true)} className="w-full py-3 px-3 rounded-xl text-md bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors shadow-md">Charger un modèle</button>
           )}
