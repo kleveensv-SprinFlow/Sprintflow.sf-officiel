@@ -3,6 +3,14 @@ import { supabase } from '../lib/supabase';
 
 export type SprintyExpression = 'neutral' | 'happy' | 'success' | 'thinking' | 'perplexed' | 'caution' | 'frustrated' | 'sleep' | 'typing';
 
+// Définition du type pour un Personnage
+export interface Persona {
+  id: string;
+  name: string;
+  role: string;
+  themeColor: string;
+}
+
 interface SprintyContextType {
   expression: SprintyExpression;
   setExpression: (expr: SprintyExpression) => void;
@@ -12,19 +20,32 @@ interface SprintyContextType {
   isThinking: boolean;
   sendMessageToSprinty: (message: string) => Promise<void>;
   
-  // New Feature: Character Selector Overlay
+  // Gestion du sélecteur de personnage
   isCharacterSelectorOpen: boolean;
   setCharacterSelectorOpen: (isOpen: boolean) => void;
   toggleCharacterSelector: () => void;
+
+  // Gestion du personnage actif
+  currentPersona: Persona;
+  setPersona: (persona: Persona) => void;
 }
 
 const SprintyContext = createContext<SprintyContextType | undefined>(undefined);
+
+// Personnage par défaut
+const DEFAULT_PERSONA: Persona = {
+  id: 'sprinty',
+  name: 'Sprinty',
+  role: 'Assistant Coach IA',
+  themeColor: '#4F46E5' // Indigo
+};
 
 export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [expression, setExpression] = useState<SprintyExpression>('neutral');
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isCharacterSelectorOpen, setCharacterSelectorOpen] = useState(false);
+  const [currentPersona, setPersona] = useState<Persona>(DEFAULT_PERSONA);
 
   const toggleMenu = () => setMenuOpen(prev => !prev);
   const toggleCharacterSelector = () => setCharacterSelectorOpen(prev => !prev);
@@ -35,9 +56,9 @@ export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (!user) return;
 
       setIsThinking(true);
-      setExpression('perplexed'); // Use perplexed as "thinking" face
+      setExpression('perplexed'); 
 
-      // 1. Save user message immediately (optimistic UI handled by caller usually, but good to ensure DB sync)
+      // On sauvegarde le message
       const { error: msgError } = await supabase
         .from('individual_chat_messages')
         .insert({
@@ -48,20 +69,23 @@ export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       if (msgError) throw msgError;
 
-      // 2. Call the AI Edge Function
+      // On appelle l'IA avec le contexte du personnage actuel
       const { error: fnError } = await supabase.functions.invoke('sprinty-brain', {
-        body: { user_id: user.id, message }
+        body: { 
+          user_id: user.id, 
+          message,
+          persona: currentPersona.id // On envoie l'ID du personnage à l'IA
+        }
       });
 
       if (fnError) throw fnError;
 
     } catch (error) {
       console.error("Error talking to Sprinty:", error);
-      setExpression('frustrated'); // Show error face
-      // Optionally insert an error message from system?
+      setExpression('frustrated');
     } finally {
       setIsThinking(false);
-      setExpression('neutral'); // Reset face
+      setExpression('neutral');
     }
   };
 
@@ -76,7 +100,9 @@ export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children })
       sendMessageToSprinty,
       isCharacterSelectorOpen,
       setCharacterSelectorOpen,
-      toggleCharacterSelector
+      toggleCharacterSelector,
+      currentPersona,
+      setPersona
     }}>
       {children}
     </SprintyContext.Provider>
