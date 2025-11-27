@@ -26,7 +26,11 @@ const TabBar: React.FC<TabBarProps> = ({
   const sprintyIsActive = activeTab === 'sprinty';
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 h-[80px] pb-4 bg-white/95 dark:bg-[#050505]/95 backdrop-blur-md border-t border-gray-100 dark:border-white/10">
+    // MODIFICATIONS ICI :
+    // 1. Suppression de 'border-t' (plus de ligne de séparation)
+    // 2. Remplacement de la couleur noire fixe par la couleur du thème : 'dark:bg-sprint-dark-background'
+    // 3. Ajout de transparence (/90) et de flou (backdrop-blur-lg) pour que ça se fonde mais reste lisible
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-[80px] pb-4 bg-sprint-light-background/90 dark:bg-sprint-dark-background/90 backdrop-blur-lg transition-colors duration-300">
       <div className="flex h-full w-full items-center justify-around max-w-lg mx-auto px-6">
         
         {/* 1. GAUCHE : ACCUEIL */}
@@ -40,14 +44,14 @@ const TabBar: React.FC<TabBarProps> = ({
               strokeWidth={activeTab === 'accueil' ? 2.5 : 1.5}
               className={`transition-colors duration-200 ${
                 activeTab === 'accueil'
-                  ? 'text-black dark:text-white'
+                  ? 'text-sprint-light-text-primary dark:text-white' // Utilisation des couleurs du thème
                   : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-600 dark:group-hover:text-gray-400'
               }`}
             />
             {activeTab === 'accueil' && (
                <motion.div 
                  layoutId="tabIndicator"
-                 className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black dark:bg-white"
+                 className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sprint-light-text-primary dark:bg-white"
                />
             )}
           </div>
@@ -64,14 +68,14 @@ const TabBar: React.FC<TabBarProps> = ({
               strokeWidth={activeTab === 'hub' ? 2.5 : 1.5}
               className={`transition-colors duration-200 ${
                 activeTab === 'hub'
-                  ? 'text-black dark:text-white'
+                  ? 'text-sprint-light-text-primary dark:text-white'
                   : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-600 dark:group-hover:text-gray-400'
               }`}
             />
             {activeTab === 'hub' && (
                <motion.div 
                  layoutId="tabIndicator"
-                 className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-black dark:bg-white"
+                 className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sprint-light-text-primary dark:bg-white"
                />
             )}
           </div>
@@ -83,10 +87,9 @@ const TabBar: React.FC<TabBarProps> = ({
                 onClick={() => onTabChange('sprinty')}
                 className="group outline-none relative"
             >
-                {/* Cercle de contour subtil qui apparait au survol ou si actif */}
                 <div className={`absolute inset-0 rounded-full border transition-all duration-300 ${
                     sprintyIsActive 
-                        ? 'border-black/10 dark:border-white/20 scale-110' 
+                        ? 'border-sprint-primary/20 scale-110' 
                         : 'border-transparent scale-100'
                 }`} />
 
