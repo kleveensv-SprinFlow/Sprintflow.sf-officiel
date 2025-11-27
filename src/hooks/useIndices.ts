@@ -31,8 +31,10 @@ export const useIndices = () => {
   });
 
   const fetchIndices = useCallback(async () => {
-    // CORRECTIF : On ne charge RIEN si c'est un coach ou si pas connecté
-    if (!user || !session || profile?.role !== 'athlete') {
+    // SÉCURITÉ RENFORCÉE : 
+    // On ne lance PAS la requête si le profil n'est pas chargé (undefined) 
+    // OU si le rôle n'est pas 'athlete'.
+    if (!user || !session || !profile || profile.role !== 'athlete') {
       setData(prev => ({ ...prev, loading: false }));
       return;
     }
@@ -54,7 +56,6 @@ export const useIndices = () => {
       });
 
       if (perfError) {
-          // On log juste un warning au lieu de casser l'app
           console.warn("Info: Données de performance non disponibles", perfError);
       }
 
@@ -74,7 +75,7 @@ export const useIndices = () => {
       console.error('Error fetching indices:', err);
       setData(prev => ({ ...prev, loading: false, error: err as Error }));
     }
-  }, [user, session, profile?.role]); // Ajout de la dépendance au rôle
+  }, [user, session, profile]); // Dépendance complète à profile
 
   useEffect(() => {
     fetchIndices();
