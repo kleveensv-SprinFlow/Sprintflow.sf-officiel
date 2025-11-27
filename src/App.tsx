@@ -18,11 +18,9 @@ import ManagePlanningPage from './components/coach/ManagePlanningPage';
 import { ActionType } from './data/actions';
 import HubView from './components/hub/HubView';
 
-// --- IMPORT DU CHAT EXISTANT ---
-// On importe le fichier qui existe déjà dans ton dossier sprinty.
-// Si ton dossier "sprinty" est directement dans "src", enlève "components/" du chemin ci-dessous.
-// Exemple : import SprintyChatView from './sprinty/SprintyChatView';
-import SprintyChatView from './components/sprinty/SprintyChatView';
+// --- CORRECTION FINALE DE L'IMPORT ---
+// D'après ta capture, le fichier est dans src/components/chat/sprinty/
+import SprintyChatView from './components/chat/sprinty/SprintyChatView';
 
 type MainView = 'dashboard' | 'profile' | 'settings';
 type ActionView = null | 'new-workout' | 'new-record' | 'my-follow-ups' | 'my-athletes-360' | 'manage-planning';
@@ -86,7 +84,6 @@ function App() {
           />
         );
       case 'sprinty':
-        // C'est ici qu'on appelle ton composant existant
         return (
           <div className="h-full w-full relative" style={{ height: 'calc(100vh - 140px)' }}>
              <SprintyChatView />
