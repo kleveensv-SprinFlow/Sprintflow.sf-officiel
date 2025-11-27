@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useAuth from '../../hooks/useAuth';
 import { Profile } from '../../types';
 import { useGroups } from '../../hooks/useGroups';
@@ -18,19 +18,21 @@ import {
   LogOut,
   Calendar,
   MapPin,
-  Activity
+  Activity,
+  ChevronRight,
+  Mail
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- COMPOSANTS UI BENTO ---
 
-// Une "Tuile" Bento générique
-const BentoCard = ({ children, className = "", title, icon: Icon, delay = 0 }: any) => (
+const BentoCard = ({ children, className = "", title, icon: Icon, delay = 0, onClick }: any) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, delay }}
-    className={`bg-gray-900/60 backdrop-blur-md border border-white/5 rounded-3xl p-6 flex flex-col ${className}`}
+    onClick={onClick}
+    className={`bg-gray-900/60 backdrop-blur-md border border-white/5 rounded-3xl p-6 flex flex-col ${onClick ? 'cursor-pointer hover:bg-gray-800/60 transition-colors group' : ''} ${className}`}
   >
     {title && (
       <div className="flex items-center gap-2 mb-4 text-gray-400 uppercase text-xs font-bold tracking-wider">
@@ -42,28 +44,145 @@ const BentoCard = ({ children, className = "", title, icon: Icon, delay = 0 }: a
   </motion.div>
 );
 
-// Champ de saisie stylisé pour le mode sombre
-const BentoInput = ({ value, onChange, type = "text", className = "" }: any) => (
-  <input 
-    type={type} 
-    value={value || ''} 
-    onChange={(e) => onChange(e.target.value)} 
-    className={`bg-gray-800 text-white rounded-xl px-3 py-1.5 w-full border border-gray-700 focus:border-sprint-primary focus:ring-1 focus:ring-sprint-primary outline-none transition-all ${className}`}
-  />
+const BentoInput = ({ label, value, onChange, type = "text", className = "", placeholder }: any) => (
+  <div className="space-y-1">
+    {label && <label className="text-xs text-gray-400 font-medium ml-1">{label}</label>}
+    <input 
+        type={type} 
+        value={value || ''} 
+        onChange={(e) => onChange(e.target.value)} 
+        placeholder={placeholder}
+        className={`bg-gray-800 text-white rounded-xl px-4 py-2.5 w-full border border-gray-700 focus:border-sprint-primary focus:ring-1 focus:ring-sprint-primary outline-none transition-all ${className}`}
+    />
+  </div>
 );
 
-// Sélecteur stylisé
-const BentoSelect = ({ value, onChange, options }: any) => (
-  <select 
-    value={value || ''} 
-    onChange={(e) => onChange(e.target.value)}
-    className="bg-gray-800 text-white rounded-xl px-3 py-1.5 w-full border border-gray-700 focus:border-sprint-primary focus:ring-1 focus:ring-sprint-primary outline-none appearance-none"
-  >
-    {options.map((opt: any) => (
-      <option key={opt.value} value={opt.value}>{opt.label}</option>
-    ))}
-  </select>
+const BentoSelect = ({ label, value, onChange, options }: any) => (
+  <div className="space-y-1">
+    {label && <label className="text-xs text-gray-400 font-medium ml-1">{label}</label>}
+    <div className="relative">
+        <select 
+            value={value || ''} 
+            onChange={(e) => onChange(e.target.value)}
+            className="bg-gray-800 text-white rounded-xl px-4 py-2.5 w-full border border-gray-700 focus:border-sprint-primary focus:ring-1 focus:ring-sprint-primary outline-none appearance-none"
+        >
+            {options.map((opt: any) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+        </select>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+            <ChevronRight size={16} className="rotate-90" />
+        </div>
+    </div>
+  </div>
 );
+
+// --- MODALE D'ÉDITION COMPLÈTE ---
+
+const EditProfileModal = ({ isOpen, onClose, profile, onSave }: any) => {
+    const [formData, setFormData] = useState<Partial<Profile>>({});
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (profile) setFormData(profile);
+    }, [profile, isOpen]);
+
+    const handleChange = (field: keyof Profile, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSubmit = async () => {
+        setIsSaving(true);
+        await onSave(formData);
+        setIsSaving(false);
+        onClose();
+    };
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    {/* Backdrop */}
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+                    />
+                    
+                    {/* Modal Panel */}
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+                        animate={{ opacity: 1, scale: 1, y: 0 }} 
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        className="fixed inset-0 m-auto z-50 max-w-lg w-[90%] h-fit max-h-[85vh] bg-[#0f141e] border border-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+                    >
+                        {/* Header */}
+                        <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-[#0f141e] sticky top-0 z-10">
+                            <h2 className="text-xl font-bold text-white">Modifier le profil</h2>
+                            <button onClick={onClose} className="p-2 bg-gray-800 rounded-full hover:bg-gray-700 text-gray-400 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Scrollable Content */}
+                        <div className="overflow-y-auto p-6 space-y-8">
+                            
+                            {/* Section Identité */}
+                            <section className="space-y-4">
+                                <h3 className="text-sprint-primary text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                                    <User size={16} /> Identité
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <BentoInput label="Prénom" value={formData.first_name} onChange={(v: string) => handleChange('first_name', v)} />
+                                    <BentoInput label="Nom" value={formData.last_name} onChange={(v: string) => handleChange('last_name', v)} />
+                                </div>
+                                <BentoInput label="Date de naissance" type="date" value={formData.date_de_naissance} onChange={(v: string) => handleChange('date_de_naissance', v)} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <BentoSelect 
+                                        label="Genre"
+                                        value={formData.sexe} 
+                                        onChange={(v: string) => handleChange('sexe', v)} 
+                                        options={[{value: 'homme', label: 'Homme'}, {value: 'femme', label: 'Femme'}]}
+                                    />
+                                    <div className="opacity-50 pointer-events-none">
+                                         <BentoInput label="Pays" value="France" onChange={() => {}} disabled />
+                                    </div>
+                                </div>
+                            </section>
+
+                            <div className="w-full h-px bg-gray-800" />
+
+                            {/* Section Athlète */}
+                            <section className="space-y-4">
+                                <h3 className="text-sprint-secondary text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                                    <Activity size={16} /> Athlète
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <BentoInput label="Taille (cm)" type="number" value={formData.height} onChange={(v: string) => handleChange('height', Number(v))} />
+                                    <BentoInput label="Poids (kg)" type="number" value={formData.weight} onChange={(v: string) => handleChange('weight', Number(v))} />
+                                </div>
+                                <BentoInput label="Numéro de licence FFA" value={formData.license_number} onChange={(v: string) => handleChange('license_number', v)} placeholder="Ex: 123456" />
+                            </section>
+
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 border-t border-gray-800 bg-[#0f141e] sticky bottom-0 z-10">
+                            <button 
+                                onClick={handleSubmit} 
+                                disabled={isSaving}
+                                className="w-full py-3 bg-sprint-primary hover:bg-sprint-primary/90 text-white rounded-xl font-bold shadow-lg shadow-sprint-primary/20 flex justify-center items-center gap-2 transition-all"
+                            >
+                                {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+                                <span>Enregistrer les modifications</span>
+                            </button>
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
+    );
+};
 
 // --- SOUS-COMPOSANTS LOGIQUES ---
 
@@ -99,7 +218,7 @@ const GroupWidget = () => {
             <form onSubmit={handleJoin} className="flex flex-col gap-2 h-full justify-center">
                 <p className="text-sm text-gray-400 mb-1">Rejoindre une team</p>
                 <div className="flex gap-2">
-                    <BentoInput value={code} onChange={setCode} placeholder="CODE..." className="text-center tracking-widest uppercase font-mono" />
+                    <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="CODE..." className="bg-gray-800 text-white rounded-xl px-3 py-1.5 w-full border border-gray-700 text-center tracking-widest uppercase font-mono" />
                     <button disabled={isActing} className="bg-sprint-primary p-2 rounded-xl text-white hover:bg-sprint-primary/80 transition-colors">
                         {isActing ? <Loader2 size={18} className="animate-spin"/> : <Users size={18} />}
                     </button>
@@ -152,7 +271,7 @@ const CoachWidget = () => {
             <form onSubmit={handleJoin} className="flex flex-col gap-2 h-full justify-center">
                 <p className="text-sm text-gray-400 mb-1">Ajouter un coach</p>
                 <div className="flex gap-2">
-                    <BentoInput value={code} onChange={setCode} placeholder="CODE..." className="text-center tracking-widest uppercase font-mono" />
+                    <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="CODE..." className="bg-gray-800 text-white rounded-xl px-3 py-1.5 w-full border border-gray-700 text-center tracking-widest uppercase font-mono" />
                     <button disabled={isActing} className="bg-sprint-secondary p-2 rounded-xl text-white hover:bg-sprint-secondary/80 transition-colors">
                         {isActing ? <Loader2 size={18} className="animate-spin"/> : <User size={18} />}
                     </button>
@@ -181,28 +300,13 @@ const CoachWidget = () => {
 
 export default function ProfilePage() {
   const { profile, updateProfile } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Partial<Profile>>({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Initialisation du formulaire quand on passe en mode édition
-  const startEditing = () => {
-    if (profile) {
-      setFormData(profile);
-      setIsEditing(true);
-    }
-  };
-
-  const cancelEditing = () => {
-    setIsEditing(false);
-    setFormData({});
-  };
-
-  const saveChanges = async () => {
-    if (!profile || !formData) return;
+  const handleSaveProfile = async (formData: Partial<Profile>) => {
+    if (!profile) return;
     
     // Optimistic update
     updateProfile({ ...profile, ...formData });
-    setIsEditing(false);
     toast.success("Profil mis à jour");
 
     // Server update
@@ -213,15 +317,18 @@ export default function ProfilePage() {
     }
   };
 
-  const updateField = (field: keyof Profile, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
   if (!profile) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-sprint-primary" size={32}/></div>;
 
   return (
     <div className="min-h-screen bg-sprint-dark-background text-white p-4 pt-24 pb-32">
       
+      <EditProfileModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        profile={profile}
+        onSave={handleSaveProfile}
+      />
+
       {/* HEADER D'ACTION */}
       <div className="flex justify-between items-end mb-6 px-1">
         <div>
@@ -229,29 +336,21 @@ export default function ProfilePage() {
            <p className="text-gray-400 text-sm">Gère tes informations et ton équipe</p>
         </div>
         
-        {isEditing ? (
-            <div className="flex gap-2">
-                <button onClick={cancelEditing} className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 transition-colors">
-                    <X size={20} />
-                </button>
-                <button onClick={saveChanges} className="flex items-center gap-2 px-4 py-2 rounded-full bg-sprint-primary text-white font-medium hover:bg-sprint-primary/90 transition-all shadow-lg shadow-sprint-primary/20">
-                    <Save size={18} />
-                    <span>Enregistrer</span>
-                </button>
-            </div>
-        ) : (
-            <button onClick={startEditing} className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-all text-sm font-medium">
-                <Edit2 size={16} />
-                <span>Modifier</span>
-            </button>
-        )}
+        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-all text-sm font-medium">
+            <Edit2 size={16} />
+            <span>Modifier</span>
+        </button>
       </div>
 
       {/* GRILLE BENTO */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
 
-        {/* 1. CARTE IDENTITÉ (Large) */}
-        <BentoCard className="md:col-span-2 relative overflow-hidden min-h-[180px] justify-center" delay={0.1}>
+        {/* 1. CARTE IDENTITÉ (Large & Interactive) */}
+        <BentoCard 
+            className="md:col-span-2 relative overflow-hidden min-h-[180px] justify-center" 
+            delay={0.1}
+            onClick={() => setIsModalOpen(true)}
+        >
             {/* Background décoratif */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-sprint-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             
@@ -267,47 +366,42 @@ export default function ProfilePage() {
                 </div>
                 
                 <div className="flex-1">
-                    {isEditing ? (
-                        <div className="space-y-2">
-                            <BentoInput value={formData.first_name} onChange={(v: string) => updateField('first_name', v)} placeholder="Prénom" />
-                            <BentoInput value={formData.last_name} onChange={(v: string) => updateField('last_name', v)} placeholder="Nom" />
-                        </div>
-                    ) : (
-                        <>
-                            <h2 className="text-2xl font-bold truncate">{profile.first_name} {profile.last_name}</h2>
-                            <p className="text-gray-400 text-sm mb-2">{profile.email}</p>
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/5 text-xs font-medium text-gray-300">
-                                <Award size={12} className="text-yellow-500" />
-                                <span>{profile.discipline || 'Sprinter 100m'}</span>
-                            </div>
-                        </>
-                    )}
+                    <h2 className="text-2xl font-bold truncate group-hover:text-sprint-primary transition-colors">{profile.first_name} {profile.last_name}</h2>
+                    
+                    {/* MODIFICATION ICI : Remplacement Email par Licence */}
+                    <div className="flex items-center gap-2 mb-2">
+                        <Award size={14} className="text-gray-500" />
+                        <p className={`text-sm font-mono tracking-wide ${profile.license_number ? 'text-gray-300' : 'text-gray-500 italic'}`}>
+                            {profile.license_number || 'Licence : Non communiqué'}
+                        </p>
+                    </div>
+
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/5 text-xs font-medium text-gray-300">
+                        <Award size={12} className="text-yellow-500" />
+                        <span>{profile.discipline || 'Sprinter 100m'}</span>
+                    </div>
+                    
+                    <div className="mt-3 text-[10px] text-sprint-primary font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                        Modifier le profil <ChevronRight size={12} />
+                    </div>
                 </div>
             </div>
         </BentoCard>
 
-        {/* 2. STATS PHYSIQUES (Vertical Stack) */}
+        {/* 2. STATS PHYSIQUES (Lecture seule) */}
         <BentoCard title="Physique" icon={Activity} className="md:col-span-1 space-y-4" delay={0.2}>
             <div className="grid grid-cols-2 gap-4 h-full">
                 {/* Taille */}
-                <div className="bg-gray-800/50 p-3 rounded-2xl flex flex-col justify-center items-center relative group">
+                <div className="bg-gray-800/50 p-3 rounded-2xl flex flex-col justify-center items-center relative">
                     <Ruler size={16} className="text-gray-500 mb-1 absolute top-3 left-3" />
-                    {isEditing ? (
-                        <BentoInput type="number" value={formData.height} onChange={(v: string) => updateField('height', Number(v))} className="text-center font-bold" />
-                    ) : (
-                        <span className="text-2xl font-bold font-mono">{profile.height || '--'}</span>
-                    )}
+                    <span className="text-2xl font-bold font-mono">{profile.height || '--'}</span>
                     <span className="text-xs text-gray-400">cm</span>
                 </div>
                 
                 {/* Poids */}
-                <div className="bg-gray-800/50 p-3 rounded-2xl flex flex-col justify-center items-center relative group">
+                <div className="bg-gray-800/50 p-3 rounded-2xl flex flex-col justify-center items-center relative">
                     <Weight size={16} className="text-gray-500 mb-1 absolute top-3 left-3" />
-                    {isEditing ? (
-                        <BentoInput type="number" value={formData.weight} onChange={(v: string) => updateField('weight', Number(v))} className="text-center font-bold" />
-                    ) : (
-                        <span className="text-2xl font-bold font-mono">{profile.weight || '--'}</span>
-                    )}
+                    <span className="text-2xl font-bold font-mono">{profile.weight || '--'}</span>
                     <span className="text-xs text-gray-400">kg</span>
                 </div>
 
@@ -317,32 +411,23 @@ export default function ProfilePage() {
                         <Calendar size={16} />
                         <span className="text-xs">Né(e) le</span>
                     </div>
-                    {isEditing ? (
-                        <BentoInput type="date" value={formData.date_de_naissance} onChange={(v: string) => updateField('date_de_naissance', v)} className="w-auto text-sm" />
-                    ) : (
-                        <span className="font-medium text-sm">{new Date(profile.date_de_naissance || Date.now()).toLocaleDateString()}</span>
-                    )}
+                    <span className="font-medium text-sm">{profile.date_de_naissance ? new Date(profile.date_de_naissance).toLocaleDateString() : 'N/A'}</span>
                 </div>
             </div>
         </BentoCard>
 
-        {/* 3. ADMINISTRATIF & PERFORMANCE (Full Width) */}
+        {/* 3. INFOS COMPLÉMENTAIRES */}
         <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Licence */}
-            <BentoCard title="Licence FFA" icon={Award} delay={0.3}>
-                <div className="flex items-center gap-3 mt-1">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-                        <Award size={20} />
+            
+            {/* Email (Relégué ici car moins prioritaire visuellement que la licence pour un athlète) */}
+            <BentoCard title="Contact" icon={Mail} delay={0.3}>
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
+                        <Mail size={20} />
                     </div>
-                    <div className="flex-1">
-                        {isEditing ? (
-                            <BentoInput value={formData.license_number} onChange={(v: string) => updateField('license_number', v)} placeholder="Numéro de licence" />
-                        ) : (
-                            <>
-                                <p className="text-lg font-mono tracking-wide">{profile.license_number || 'Aucune licence'}</p>
-                                <p className="text-xs text-gray-500">Saison 2024-2025</p>
-                            </>
-                        )}
+                    <div>
+                        <p className="text-sm font-medium text-white">{profile.email}</p>
+                        <p className="text-xs text-gray-500">Email de connexion</p>
                     </div>
                 </div>
             </BentoCard>
@@ -352,15 +437,7 @@ export default function ProfilePage() {
                  <div className="flex gap-4">
                     <div className="flex-1">
                         <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Genre</label>
-                        {isEditing ? (
-                            <BentoSelect 
-                                value={formData.sexe} 
-                                onChange={(v: string) => updateField('sexe', v)} 
-                                options={[{value: 'homme', label: 'Homme'}, {value: 'femme', label: 'Femme'}]}
-                            />
-                        ) : (
-                            <p className="capitalize text-sm">{profile.sexe || 'Non défini'}</p>
-                        )}
+                        <p className="capitalize text-sm font-medium">{profile.sexe || 'Non défini'}</p>
                     </div>
                     <div className="flex-1">
                         <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Pays</label>
