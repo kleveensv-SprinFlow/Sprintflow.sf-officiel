@@ -13,6 +13,10 @@ import {
   ChevronRight,
   Users,
   LogOut,
+  UserPlus,
+  Plus,
+  Copy,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -68,6 +72,8 @@ interface EditProfileModalProps {
 const EditProfileModal = ({ isOpen, onClose, profile, onSave }: EditProfileModalProps) => {
     const [formData, setFormData] = useState<Partial<Profile>>({});
     const [isSaving, setIsSaving] = useState(false);
+
+    const isCoach = profile?.role === 'coach';
 
     useEffect(() => {
         if (profile) setFormData(profile);
@@ -126,26 +132,35 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSave }: EditProfileModal
                                             onChange={(e) => handleChange('sexe', e.target.value)}
                                             className="bg-[#0a0b10] text-white text-lg rounded-xl px-4 py-3 w-full border border-gray-800 outline-none appearance-none"
                                         >
+                                            <option value="">Sélectionner</option>
                                             <option value="homme">Homme</option>
                                             <option value="femme">Femme</option>
                                         </select>
                                     </div>
                                     <ModalInput label="Pays" value="France" disabled />
                                 </div>
+                                <ModalInput label="Date de naissance" type="date" value={formData.date_de_naissance} onChange={(v: string) => handleChange('date_de_naissance', v)} />
                             </section>
 
                             <div className="w-full h-px bg-white/5" />
 
-                            {/* Physique & Athlète */}
-                            <section className="space-y-4">
-                                <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Données Athlète</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <ModalInput label="Taille (cm)" type="number" value={formData.height} onChange={(v: string) => handleChange('height', Number(v))} />
-                                    <ModalInput label="Poids (kg)" type="number" value={formData.weight} onChange={(v: string) => handleChange('weight', Number(v))} />
+                            {/* Physique & Athlète (Conditionnel) */}
+                            {!isCoach ? (
+                                <section className="space-y-4">
+                                    <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest mb-4">Données Athlète</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <ModalInput label="Taille (cm)" type="number" value={formData.height} onChange={(v: string) => handleChange('height', Number(v))} />
+                                        <ModalInput label="Poids (kg)" type="number" value={formData.weight} onChange={(v: string) => handleChange('weight', Number(v))} />
+                                    </div>
+                                    <ModalInput label="Licence FFA" value={formData.license_number} onChange={(v: string) => handleChange('license_number', v)} />
+                                </section>
+                            ) : (
+                                <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                                    <p className="text-sm text-gray-400 text-center">
+                                        Les données physiques sont réservées aux profils athlètes.
+                                    </p>
                                 </div>
-                                <ModalInput label="Date de naissance" type="date" value={formData.date_de_naissance} onChange={(v: string) => handleChange('date_de_naissance', v)} />
-                                <ModalInput label="Licence FFA" value={formData.license_number} onChange={(v: string) => handleChange('license_number', v)} />
-                            </section>
+                            )}
                         </div>
 
                         {/* Footer */}
@@ -166,7 +181,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSave }: EditProfileModal
     );
 };
 
-// --- WIDGETS GROUPES / COACH (Épurés) ---
+// --- WIDGETS GROUPES / COACH (Épurés pour Athlète) ---
 
 const GroupWidget = () => {
     const { groups, isLoading } = useGroups();
@@ -277,6 +292,151 @@ const CoachWidget = () => {
     );
 };
 
+// --- WIDGETS GESTION ÉQUIPE (Coach) ---
+
+const CoachTeamManagement = () => {
+    const { groups, createGroup, loading } = useGroups();
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [newGroupName, setNewGroupName] = useState('');
+    const [newGroupType, setNewGroupType] = useState<'groupe' | 'athlete'>('groupe');
+    const [isCreating, setIsCreating] = useState(false);
+    const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+    const handleCreateGroup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newGroupName) return;
+        setIsCreating(true);
+        try {
+            await createGroup(newGroupName, newGroupType, null); // max_members null by default
+            toast.success(newGroupType === 'groupe' ? 'Groupe créé avec succès' : 'Espace athlète créé avec succès');
+            setIsCreateModalOpen(false);
+            setNewGroupName('');
+        } catch (error: any) {
+            toast.error(error.message || 'Erreur lors de la création');
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    const copyToClipboard = (code: string) => {
+        navigator.clipboard.writeText(code);
+        setCopiedCode(code);
+        toast.success("Code copié !");
+        setTimeout(() => setCopiedCode(null), 3000);
+    };
+
+    return (
+        <div className="space-y-4">
+             {/* MODALE DE CRÉATION */}
+            <AnimatePresence>
+                {isCreateModalOpen && (
+                    <>
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" onClick={() => setIsCreateModalOpen(false)} />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="fixed inset-0 m-auto w-[90%] max-w-sm h-fit bg-[#12141a] rounded-2xl p-6 border border-white/10 z-50"
+                        >
+                            <h3 className="text-lg font-bold text-white mb-4">
+                                {newGroupType === 'groupe' ? 'Nouveau Groupe' : 'Nouvel Athlète'}
+                            </h3>
+                            <form onSubmit={handleCreateGroup} className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs uppercase tracking-widest text-gray-500 font-bold">Nom</label>
+                                    <input
+                                        autoFocus
+                                        value={newGroupName}
+                                        onChange={(e) => setNewGroupName(e.target.value)}
+                                        placeholder={newGroupType === 'groupe' ? "Ex: Sprinters Elite" : "Ex: Suivi Thomas"}
+                                        className="w-full bg-[#0a0b10] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-sprint-primary outline-none"
+                                    />
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCreateModalOpen(false)}
+                                        className="flex-1 py-3 bg-white/5 text-white hover:bg-white/10 rounded-xl font-bold transition-colors"
+                                    >
+                                        Annuler
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isCreating || !newGroupName}
+                                        className="flex-1 py-3 bg-white text-black hover:bg-gray-200 rounded-xl font-bold transition-colors disabled:opacity-50 flex justify-center items-center"
+                                    >
+                                        {isCreating ? <Loader2 className="animate-spin" size={20}/> : 'Créer'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* LISTE DES GROUPES / CODES */}
+            <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest pl-1">Mes Codes d'invitation</h3>
+
+            {loading ? (
+                <div className="flex justify-center py-4"><Loader2 className="animate-spin text-gray-500"/></div>
+            ) : (
+                <div className="grid gap-3">
+                    {groups.map((group) => (
+                        <div key={group.id} className="bg-[#1a1d26] rounded-xl p-4 flex items-center justify-between border border-white/5">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${group.type === 'groupe' ? 'bg-blue-500/20 text-blue-500' : 'bg-green-500/20 text-green-500'}`}>
+                                    {group.type === 'groupe' ? <Users size={18} /> : <User size={18} />}
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-white">{group.name}</h4>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">{group.type === 'groupe' ? 'Groupe' : 'Individuel'}</p>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => copyToClipboard(group.invitation_code)}
+                                className="flex items-center gap-2 px-3 py-2 bg-black/40 rounded-lg hover:bg-black/60 transition-colors group"
+                            >
+                                <span className="text-lg font-mono font-bold text-sprint-primary tracking-widest">{group.invitation_code}</span>
+                                {copiedCode === group.invitation_code ? <Check size={14} className="text-green-500"/> : <Copy size={14} className="text-gray-500 group-hover:text-white"/>}
+                            </button>
+                        </div>
+                    ))}
+
+                    {groups.length === 0 && (
+                        <div className="text-center py-8 text-gray-500 text-sm italic">
+                            Aucun groupe ou athlète créé. Commencez par créer un code.
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* BOUTONS D'ACTION */}
+            <div className="grid grid-cols-2 gap-3 mt-4">
+                <button
+                    onClick={() => { setNewGroupType('groupe'); setIsCreateModalOpen(true); }}
+                    className="flex flex-col items-center justify-center gap-2 bg-[#1a1d26] border border-white/5 p-4 rounded-xl hover:bg-[#252a36] transition-all active:scale-95"
+                >
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                        <Users size={20} />
+                    </div>
+                    <span className="text-xs font-bold text-white">Créer Groupe</span>
+                </button>
+
+                <button
+                    onClick={() => { setNewGroupType('athlete'); setIsCreateModalOpen(true); }}
+                    className="flex flex-col items-center justify-center gap-2 bg-[#1a1d26] border border-white/5 p-4 rounded-xl hover:bg-[#252a36] transition-all active:scale-95"
+                >
+                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
+                        <UserPlus size={20} />
+                    </div>
+                    <span className="text-xs font-bold text-white">Code Athlète</span>
+                </button>
+            </div>
+        </div>
+    );
+};
+
 // --- PAGE PRINCIPALE ---
 
 export default function ProfilePage() {
@@ -292,6 +452,8 @@ export default function ProfilePage() {
   };
 
   if (!profile) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-white" size={32}/></div>;
+
+  const isCoach = profile.role === 'coach';
 
   return (
     <div className="min-h-screen bg-black text-white p-6 pt-24 pb-32">
@@ -311,7 +473,7 @@ export default function ProfilePage() {
            <p className="text-gray-500 text-sm">Vos informations personnelles</p>
         </div>
 
-        {/* 1. CARTE PRINCIPALE "HERO" (GOWOD Style) */}
+        {/* 1. CARTE PRINCIPALE "HERO" */}
         <MinimalCard onClick={() => setIsModalOpen(true)} className="group relative overflow-hidden">
             <div className="flex items-center gap-6">
                 {/* Photo Ronde */}
@@ -325,34 +487,57 @@ export default function ProfilePage() {
                         {profile.first_name} {profile.last_name}
                     </h2>
                     
-                    <p className="text-sm text-gray-400 mb-3">
-                        {profile.license_number ? `Licence : ${profile.license_number}` : 'Licence : Non communiqué'}
-                    </p>
+                    {/* Badge/Info conditionnel */}
+                    {isCoach ? (
+                        <div className="mt-2">
+                             <span className="bg-sprint-primary text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg shadow-sprint-primary/20">
+                                Coach
+                             </span>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-400 mb-3">
+                            {profile.license_number ? `Licence : ${profile.license_number}` : 'Licence : Non communiqué'}
+                        </p>
+                    )}
 
-                    <div className="flex items-center gap-2">
-                         <span className="bg-white/10 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-                            {profile.discipline || 'Sprint'}
-                         </span>
-                         <span className="text-[10px] text-sprint-primary font-bold uppercase tracking-wider flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            Modifier <ChevronRight size={10} />
+                    {!isCoach && (
+                        <div className="flex items-center gap-2 mt-2">
+                             <span className="bg-white/10 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+                                {profile.discipline || 'Sprint'}
+                             </span>
+                        </div>
+                    )}
+
+                    {/* Indicateur d'édition */}
+                    <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <span className="text-[10px] text-sprint-primary font-bold uppercase tracking-wider flex items-center gap-1">
+                            Modifier <ChevronRight size={12} />
                          </span>
                     </div>
                 </div>
             </div>
         </MinimalCard>
 
-        {/* 2. SECTION ÉQUIPE (Minimaliste) */}
-        <div className="space-y-4">
-            <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest pl-1">Mon Équipe</h3>
-            
+        {/* 2. SECTION ÉQUIPE */}
+        {isCoach ? (
+            // VUE COACH : GESTION DES GROUPES
             <MinimalCard>
-                <GroupWidget />
+                <CoachTeamManagement />
             </MinimalCard>
+        ) : (
+            // VUE ATHLÈTE : REJOINDRE DES GROUPES
+            <div className="space-y-4">
+                <h3 className="text-white/40 text-xs font-bold uppercase tracking-widest pl-1">Mon Équipe</h3>
 
-            <MinimalCard>
-                <CoachWidget />
-            </MinimalCard>
-        </div>
+                <MinimalCard>
+                    <GroupWidget />
+                </MinimalCard>
+
+                <MinimalCard>
+                    <CoachWidget />
+                </MinimalCard>
+            </div>
+        )}
 
       </div>
     </div>
