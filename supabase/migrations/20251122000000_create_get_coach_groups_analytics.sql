@@ -1,5 +1,5 @@
--- Create a function to get the status of all groups for a coach
--- Returns group details, member count, average wellness score, alert count, and pending request count.
+-- Fonction pour obtenir les stats des groupes du coach
+-- Correction : Ajout des alias (g.max_members) pour éviter l'erreur d'ambiguïté
 
 CREATE OR REPLACE FUNCTION get_coach_groups_analytics(coach_uuid uuid)
 RETURNS TABLE (
@@ -18,13 +18,13 @@ AS $$
 BEGIN
   RETURN QUERY
   WITH 
-  -- 1. Get groups for the coach
+  -- 1. Récupération des groupes (Alias 'g' ajouté ici pour corriger le bug)
   coach_groups AS (
-    SELECT id, name, max_members
-    FROM groups
-    WHERE coach_id = coach_uuid
+    SELECT g.id, g.name, g.max_members
+    FROM groups g
+    WHERE g.coach_id = coach_uuid
   ),
-  -- 2. Get group members and their profiles
+  -- 2. Membres des groupes
   group_memberships AS (
     SELECT 
       gm.group_id,
@@ -32,7 +32,7 @@ BEGIN
     FROM group_members gm
     JOIN coach_groups cg ON gm.group_id = cg.id
   ),
-  -- 3. Get today's wellness logs for these members
+  -- 3. Logs du jour
   today_logs AS (
     SELECT 
       wl.user_id,
@@ -45,11 +45,10 @@ BEGIN
     WHERE wl.date = CURRENT_DATE
     AND wl.user_id IN (SELECT athlete_id FROM group_memberships)
   ),
-  -- 4. Calculate scores and alerts per member
+  -- 4. Calcul des scores
   member_scores AS (
     SELECT 
       tl.user_id,
-      -- Score formula: (Sleep + Energy + Mood + (100 - Stress) + (100 - Fatigue)) / 5
       (
         COALESCE(tl.ressenti_sommeil, 50) + 
         COALESCE(tl.energie_subjective, 50) + 
@@ -57,7 +56,6 @@ BEGIN
         (100 - COALESCE(tl.stress_level, 50)) + 
         (100 - COALESCE(tl.muscle_fatigue, 50))
       ) / 5.0 as calculated_score,
-      -- Alert condition: Stress > 75 OR Fatigue > 75 OR Sleep < 30 OR Mood < 30
       CASE WHEN (
         COALESCE(tl.stress_level, 0) > 75 OR 
         COALESCE(tl.muscle_fatigue, 0) > 75 OR 
@@ -66,7 +64,7 @@ BEGIN
       ) THEN 1 ELSE 0 END as has_alert
     FROM today_logs tl
   ),
-  -- 5. Aggregate stats per group
+  -- 5. Agrégation par groupe
   group_stats AS (
     SELECT 
       gm.group_id,
@@ -78,7 +76,7 @@ BEGIN
     LEFT JOIN member_scores ms ON gm.athlete_id = ms.user_id
     GROUP BY gm.group_id
   ),
-  -- 6. Count pending requests
+  -- 6. Requêtes en attente
   pending_requests AS (
     SELECT 
       gjr.group_id,
