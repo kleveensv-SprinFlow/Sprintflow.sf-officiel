@@ -129,14 +129,14 @@ const SprintyChatView: React.FC = () => {
   };
 
   return (
-    // 1. Structure Flexbox Pleine Hauteur : Règle le problème de flottement
-    <div className="flex flex-col h-full w-full bg-sprint-dark-background relative overflow-hidden">
+    // Conteneur Principal Fixe
+    <div className="fixed inset-0 z-0 bg-sprint-dark-background flex flex-col">
       
       {/* Fond Dégradé */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#050B14] via-[#020617] to-[#020617] pointer-events-none" />
 
-      {/* HEADER (Fixe en haut de la flex column) */}
-      <div className="shrink-0 z-50">
+      {/* HEADER (Fixe en haut) */}
+      <div className="absolute top-0 left-0 right-0 z-50">
         <SprintyChatHeader
           onOpenMenu={() => setMenuOpen(true)}
           onOpenCharacterSelector={() => setCharacterSelectorOpen(true)}
@@ -144,8 +144,10 @@ const SprintyChatView: React.FC = () => {
         />
       </div>
 
-      {/* ZONE DE MESSAGES (Prend tout l'espace disponible - Flex 1) */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 no-scrollbar relative z-10 scroll-smooth">
+      {/* ZONE DE MESSAGES SCROLLABLE */}
+      {/* pt-[70px] pour passer sous le header */}
+      {/* pb-[140px] IMPORTANT : Donne l'espace pour que le dernier message ne soit pas caché par l'input bar */}
+      <div className="flex-1 overflow-y-auto pt-[70px] pb-[140px] px-4 space-y-6 no-scrollbar relative z-10">
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             <MessageBubble message={message} />
@@ -163,14 +165,17 @@ const SprintyChatView: React.FC = () => {
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} className="h-4" />
+        {/* Ancre de scroll */}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* INPUT AREA (Ancré en bas de la flex column) */}
-      {/* z-40 pour être au dessus des messages, shrink-0 pour ne pas s'écraser */}
-      {/* pb-[85px] crée l'espace exact pour la TabBar sans espace vide inutile */}
-      <div className="shrink-0 z-40 w-full bg-sprint-dark-background/95 backdrop-blur-md border-t border-white/5 pb-[85px] pt-2 px-4 transition-all duration-300">
-        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+      {/* BARRE DE SAISIE FIXE (PREMIUM ANCHORING) */}
+      {/* fixed bottom-[64px] : Colle exactement au dessus de la TabBar (qui fait ~60-64px) */}
+      {/* z-40 : Reste au dessus des messages */}
+      <div className="fixed bottom-[64px] left-0 right-0 z-40 px-4 py-2 bg-gradient-to-t from-sprint-dark-background via-sprint-dark-background/95 to-transparent backdrop-blur-sm">
+        <div className="w-full max-w-3xl mx-auto">
+           <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+        </div>
       </div>
 
       {/* MODALES */}
