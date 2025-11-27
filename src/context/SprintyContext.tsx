@@ -1,15 +1,11 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { CHARACTERS, Character } from '../data/characters';
 
 export type SprintyExpression = 'neutral' | 'happy' | 'success' | 'thinking' | 'perplexed' | 'caution' | 'frustrated' | 'sleep' | 'typing';
 
 // Définition du type pour un Personnage
-export interface Persona {
-  id: string;
-  name: string;
-  role: string;
-  themeColor: string;
-}
+export type Persona = Character;
 
 interface SprintyContextType {
   expression: SprintyExpression;
@@ -32,20 +28,13 @@ interface SprintyContextType {
 
 const SprintyContext = createContext<SprintyContextType | undefined>(undefined);
 
-// Personnage par défaut
-const DEFAULT_PERSONA: Persona = {
-  id: 'sprinty',
-  name: 'Sprinty',
-  role: 'Assistant Coach IA',
-  themeColor: '#4F46E5' // Indigo
-};
-
 export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [expression, setExpression] = useState<SprintyExpression>('neutral');
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isCharacterSelectorOpen, setCharacterSelectorOpen] = useState(false);
-  const [currentPersona, setPersona] = useState<Persona>(DEFAULT_PERSONA);
+  // Default to the first character in the list
+  const [currentPersona, setPersona] = useState<Persona>(CHARACTERS[0]);
 
   const toggleMenu = () => setMenuOpen(prev => !prev);
   const toggleCharacterSelector = () => setCharacterSelectorOpen(prev => !prev);
