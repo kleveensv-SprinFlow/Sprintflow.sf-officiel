@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { Home, LayoutGrid } from 'lucide-react';
 import SprintyAvatar from './chat/sprinty/SprintyAvatar';
 
-// New simplified Tab type
-export type Tab = 'accueil' | 'actions' | 'sprinty';
+// Ajouter 'hub' comme un onglet normal
+export type Tab = 'accueil' | 'hub' | 'sprinty';
 
 interface TabBarProps {
   activeTab: Tab;
@@ -12,18 +12,18 @@ interface TabBarProps {
   userRole?: 'athlete' | 'coach';
 }
 
-const TabBar: React.FC<TabBarProps> = ({
+const TabBar: React. FC<TabBarProps> = ({
   activeTab,
   onTabChange,
 }) => {
 
   const tabs = [
     { id: 'accueil', label: 'Accueil', Icon: Home },
-    { id: 'actions', label: 'Actions', Icon: LayoutGrid },
+    { id: 'hub', label: 'Hub', Icon: LayoutGrid }, // Renommé de 'actions' à 'hub'
   ];
 
   const renderTab = (tab: typeof tabs[0]) => {
-    const isActive = activeTab === tab.id;
+    const isActive = activeTab === tab. id;
 
     return (
       <button
@@ -42,7 +42,7 @@ const TabBar: React.FC<TabBarProps> = ({
                 ? 'text-sprint-primary dark:text-white'
                 : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'
             }`}
-            strokeWidth={1.5}
+            strokeWidth={1. 5}
           />
         </motion.div>
       </button>
@@ -68,10 +68,10 @@ const TabBar: React.FC<TabBarProps> = ({
                 className="w-12 h-12 cursor-pointer"
              >
                 <SprintyAvatar 
-                  onClick={() => {}} // The parent button handles the click
+                  onClick={() => {}}
                   scale={1}
                 />
-             </motion.div>
+             </motion. div>
         </button>
 
       </div>
