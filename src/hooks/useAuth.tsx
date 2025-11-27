@@ -32,294 +32,39 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const createEmptyAuthState = (): AuthState => ({
-  session: null,
-  user: null,
-  profile: null,
-  isInitialized: false,
-  isProfileLoading: false,
-});
-
-const createAuthState = (session: Session | null, user: User | null, profile: Profile | null, isInitialized: boolean, isProfileLoading: boolean = false): AuthState => ({
-  session,
-  user,
-  profile,
-  isInitialized,
-  isProfileLoading,
-});
+// MOCK DATA FOR COACH
+const MOCK_COACH_PROFILE: Profile = {
+    id: 'coach-123',
+    role: 'coach',
+    first_name: 'Jean',
+    last_name: 'Dupont',
+    full_name: 'Jean Dupont',
+    email: 'jean.dupont@coach.com',
+    photo_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+    created_at: new Date().toISOString(),
+    sexe: 'homme',
+    date_de_naissance: '1985-05-15',
+    license_number: null, // Should be ignored
+    height: null,
+    weight: null
+};
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [authState, setAuthState] = useState<AuthState>(createEmptyAuthState());
-  const isMountedRef = useRef(true);
-  
-  // Ref pour garder une trace du profil actuel sans dépendre du cycle de rendu dans les callbacks
-  const profileRef = useRef<Profile | null>(null);
-
-  useEffect(() => {
-    profileRef.current = authState.profile;
-  }, [authState.profile]);
-
-  const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
-    try {
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Timeout: La requête Supabase n\'a pas répondu dans les 15 secondes'));
-        }, 15000);
-      });
-
-      const queryPromise = supabase
-        .from('profiles')
-        .select(PROFILE_COLS)
-        .eq('id', userId)
-        .maybeSingle();
-
-      const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]) as { data: Profile | null, error: any };
-
-      if (error) {
-        logger.error('[useAuth] Erreur chargement profil:', error.message);
-        return null;
-      }
-
-      if (profile) {
-        // Mise à jour du cache local storage
-        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
-      }
-
-      return profile;
-    } catch (error) {
-      logger.error('[useAuth] Exception loadProfile:', error);
-      return null;
-    }
-  }, []);
-
-  const refreshProfile = useCallback(async () => {
-    if (!authState.user) return;
-    try {
-      const profile = await loadProfile(authState.user.id);
-      if (isMountedRef.current && profile) {
-           setAuthState(prev => createAuthState(prev.session, prev.user, profile, prev.isInitialized, false));
-      }
-    } catch (e) {
-      logger.error('[useAuth] Erreur refresh:', e);
-    }
-  }, [authState.user, loadProfile]);
-
-  const updateSprintyMode = useCallback(async (newMode: 'simple' | 'expert') => {
-    if (!authState.user) return;
-    try {
-      const { error } = await supabase.from('profiles').update({ sprinty_mode: newMode }).eq('id', authState.user.id);
-      if (error) throw error;
-
-      setAuthState(prev => {
-        if (!prev.profile) return prev;
-        const newProfile = { ...prev.profile, sprinty_mode: newMode };
-        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile));
-        return { ...prev, profile: newProfile };
-      });
-    } catch (error) {
-      logger.error('[useAuth] Erreur updateSprintyMode:', error);
-    }
-  }, [authState.user]);
-
-  const updateProfile = useCallback((updatedProfileData: Partial<Profile>) => {
-    setAuthState(prev => {
-      if (!prev.profile) return prev;
-      const newProfile = { ...prev.profile, ...updatedProfileData };
-      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(newProfile));
-      return { ...prev, profile: newProfile };
-    });
-  }, []);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
-  }, []);
-
-  const signUp = useCallback(async (email: string, password: string, profileData: Partial<Profile>) => {
-       try {
-      const roleMap: Record<string, string> = { 'athlète': 'athlete', 'athlete': 'athlete', 'encadrant': 'coach', 'coach': 'coach' };
-      const mappedRole = roleMap[profileData.role?.toLowerCase() || 'athlete'] || 'athlete';
-      const redirectUrl = window.location.hostname === 'localhost' ? `${window.location.origin}/` : 'https://sprintflow.one/';
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: { ...profileData, role: mappedRole }
-        }
-      });
-
-      if (error) throw error;
-      if (!data.user) throw new Error('Aucun utilisateur créé');
-      return data;
-    } catch (error) {
-      if (error instanceof Error && error.message?.includes('User already registered')) {
-        throw new Error('Cet email est déjà utilisé.');
-      }
-      throw error;
-    }
-  }, []);
-
-  const resendConfirmationEmail = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
-    if (error) throw error;
-  }, []);
-
-  const signOut = useCallback(async () => {
-    try {
-      // On met isInitialized à TRUE pour que l'App affiche l'écran de login (Auth) et non le LoadingScreen
-      setAuthState({
-        session: null,
-        user: null,
-        profile: null,
-        isInitialized: true,
-        isProfileLoading: false
-      });
-      
-      await supabase.auth.signOut();
-      
-      // Nettoyage complet
-      localStorage.removeItem(PROFILE_CACHE_KEY);
-      Object.keys(localStorage).forEach(key => { 
-        if (key.startsWith('sb-')) localStorage.removeItem(key); 
-      });
-    } catch (error) {
-      logger.error('[useAuth] Erreur signOut:', error);
-      // Même en cas d'erreur, on force la déconnexion locale
-      setAuthState({
-        session: null,
-        user: null,
-        profile: null,
-        isInitialized: true,
-        isProfileLoading: false
-      });
-    }
-  }, []);
-
-  // --- EFFET PRINCIPAL D'INITIALISATION ---
-  useEffect(() => {
-    isMountedRef.current = true;
-
-    const initAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error && error.message !== 'Auth session missing!') logger.warn('[useAuth] Init warning:', error.message);
-        
-        if (!isMountedRef.current) return;
-
-        const currentUser = session?.user ?? null;
-
-        if (currentUser) {
-          // CACHE CHECK
-          let cachedProfile: Profile | null = null;
-          try {
-            const cachedStr = localStorage.getItem(PROFILE_CACHE_KEY);
-            if (cachedStr) {
-              const parsed = JSON.parse(cachedStr);
-              if (parsed && parsed.id === currentUser.id) {
-                cachedProfile = parsed;
-              }
-            }
-          } catch (e) { /* ignore */ }
-
-          if (cachedProfile) {
-            setAuthState(createAuthState(session, currentUser, cachedProfile, true, false));
-            // Background refresh
-            loadProfile(currentUser.id).then(freshProfile => {
-               if (isMountedRef.current && freshProfile) {
-                 setAuthState(prev => createAuthState(session, currentUser, freshProfile, true, false));
-               }
-            });
-
-          } else {
-            setAuthState(createAuthState(session, currentUser, null, true, true));
-            const freshProfile = await loadProfile(currentUser.id);
-            if (isMountedRef.current) {
-               setAuthState(createAuthState(session, currentUser, freshProfile, true, false));
-            }
-          }
-
-        } else {
-          setAuthState(createAuthState(null, null, null, true, false));
-        }
-
-      } catch (error) {
-        logger.error('[useAuth] Crash init:', error);
-        setAuthState(createAuthState(null, null, null, true, false));
-      }
-    };
-
-    initAuth();
-
-    // --- LISTENER SUPABASE (Correction Flash) ---
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMountedRef.current) return;
-      
-      const currentUser = session?.user ?? null;
-      
-      setAuthState(prev => {
-        // BLINDAGE ANTI-FLASH :
-        // Si l'utilisateur est le même qu'avant (ID identique)
-        // ET qu'on a déjà un profil chargé...
-        if (currentUser?.id === prev.user?.id && prev.profile) {
-            // ...Alors on refuse catégoriquement de remettre isProfileLoading à true.
-            // On met juste à jour la session (token) et c'est tout.
-            return { 
-                ...prev, 
-                session, 
-                user: currentUser,
-                isProfileLoading: false // On force FALSE pour empêcher le skeleton d'apparaître
-            };
-        }
-
-        // Cas normal (changement d'user, connexion initiale...)
-        const alreadyHasData = prev.profile && prev.user?.id === currentUser?.id;
-        const shouldShowLoading = !!currentUser && !alreadyHasData;
-
-        return { 
-          ...prev, 
-          session, 
-          user: currentUser, 
-          isProfileLoading: shouldShowLoading
-        };
-      });
-
-      // Rafraîchissement silencieux des données en arrière-plan
-      if (currentUser) {
-        // On ne déclenche le chargement que si nécessaire ou pour rafraîchir silencieusement
-        const loadedProfile = await loadProfile(currentUser.id);
-        if (isMountedRef.current && loadedProfile) {
-           setAuthState(prev => ({
-             ...prev,
-             profile: loadedProfile,
-             isProfileLoading: false
-           }));
-        }
-      }
-    });
-
-    return () => {
-      isMountedRef.current = false;
-      subscription.unsubscribe();
-    };
-  }, [loadProfile]);
-
-  const contextValue = React.useMemo(() => ({
-    session: authState.session,
-    user: authState.user,
-    profile: authState.profile,
-    loading: !authState.isInitialized,
-    profileLoading: authState.isProfileLoading,
-    refreshProfile,
-    updateProfile,
-    updateSprintyMode,
-    signOut,
-    signIn,
-    signUp,
-    resendConfirmationEmail,
-  }), [authState, refreshProfile, updateProfile, signOut, signIn, signUp, resendConfirmationEmail]);
+  // MOCKED PROVIDER
+  const contextValue = {
+    session: { access_token: 'mock', user: { id: 'coach-123', email: 'coach@test.com' } } as any,
+    user: { id: 'coach-123', email: 'coach@test.com' } as any,
+    profile: MOCK_COACH_PROFILE,
+    loading: false,
+    profileLoading: false,
+    refreshProfile: async () => {},
+    updateProfile: () => {},
+    updateSprintyMode: async () => {},
+    signOut: async () => {},
+    signIn: async () => ({ user: { id: 'coach-123' }, session: {} }),
+    signUp: async () => {},
+    resendConfirmationEmail: async () => {},
+  };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
