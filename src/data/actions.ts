@@ -1,15 +1,16 @@
 import { Plus, Zap, Trophy, Bot, Video, Users, Calendar } from 'lucide-react';
 
-// --- IMPORTS IMAGES ATHLETE (Existants - PNG) ---
+// --- IMPORTS IMAGES ATHLETE (PNG) ---
 import imgWorkout from '../assets/hub/ajouter-un-entrainement.png';
 import imgRecord from '../assets/hub/Record.png';
 import imgVideo from '../assets/hub/analyse-video.png';
 import imgLive from '../assets/hub/live.png';
 import imgNutrition from '../assets/hub/nutrition.png';
 
-// --- IMPORTS IMAGES COACH (Nouveaux - JPG) ---
-import imgPlanningCoach from '../assets/hub/planning.jpg';
-import imgMesSuivis from '../assets/hub/mes-suivie.jpg';
+// --- IMPORTS IMAGES COACH (CORRECTION EXTENSION .PNG) ---
+// Le système voit des .png, on s'adapte pour éliminer l'erreur
+import imgPlanningCoach from '../assets/hub/planning.png';
+import imgMesSuivis from '../assets/hub/mes-suivie.png';
 
 export type AthleteActionType = 'new-workout' | 'live-workout' | 'new-record' | 'nutrition' | 'video-analysis';
 export type CoachActionType = 'my-follow-ups' | 'manage-planning';
