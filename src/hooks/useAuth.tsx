@@ -59,15 +59,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!mounted.current) return;
     setProfileLoading(true);
     try {
-      const { data, error } = await supabase
+      // Timeout de sécurité pour le chargement du profil (10s)
+      let timeoutId: ReturnType<typeof setTimeout>;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Profile fetch timeout')), 10000);
+      });
+
+      const fetchPromise = supabase
         .from('profiles')
         .select(PROFILE_COLS)
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) throw error;
+      try {
+        // Race between fetch and timeout
+        const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
+        clearTimeout(timeoutId!);
+        
+        const { data, error } = result;
 
-      if (data && mounted.current) {
+        if (error) throw error;
+
+        if (data && mounted.current) {
+          setProfile(data as Profile);
+          localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
+        } else if (!data && mounted.current) {
+          // Fallback: if no profile found, keep cache if valid or null
+          console.warn('Profile not found for user', userId);
+        }
+      } catch (error: any) {
+        clearTimeout(timeoutId!);
+        throw error;
+      }
         setProfile(data as Profile);
         localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
       } else if (!data && mounted.current) {
@@ -120,7 +143,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     // Initial load
     const initAuth = async () => {
-      try {
+      // Timeout global de sécurité pour l'initialisation (7s)
+      // Cela évite de rester bloqué sur l'écran "Chronométrage en cours..."
+      let timeoutId: ReturnType<typeof setTimeout>;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Auth initialization timeout')), 7000);
+      });
+
+      const authLogic = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (mounted.current) {
@@ -137,10 +167,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
              localStorage.removeItem(PROFILE_CACHE_KEY);
           }
         }
+      };
+
+      try {
+        await Promise.race([authLogic(), timeoutPromise]);
+        clearTimeout(timeoutId!);
       } catch (error) {
+        clearTimeout(timeoutId!);
         logger.error('Error initializing auth:', error);
       } finally {
-        if (mounted.current) setLoading(false);
+        if (mounted.current) {
+          setLoading(false);
+          // Force l'arrêt du chargement profil pour débloquer l'UI en cas de timeout
+          setProfileLoading(false);
+        }
       }
     };
 
