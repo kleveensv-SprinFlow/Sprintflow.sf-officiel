@@ -25,11 +25,11 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
   };
 
   return (
-    // CONTENEUR PRINCIPAL : Prend toute la hauteur
-    // pb-20 laisse de la place pour la TabBar en bas pour ne pas que les points soient cachés
-    <div className="flex flex-col h-full w-full pt-4 pb-24">
+    // STRUCTURE : Colonne qui prend toute la hauteur
+    // pb-2 : Petit espace en bas (car App.tsx gère déjà l'espace de la TabBar avec pb-[64px])
+    <div className="flex flex-col h-full w-full pt-4 pb-2">
       
-      {/* ZONE CARROUSEL : flex-1 force cette zone à prendre tout l'espace vertical disponible */}
+      {/* CARROUSEL : flex-1 force cette zone à prendre tout l'espace disponible */}
       <div className="flex-1 w-full overflow-hidden relative z-10">
         <motion.div
           className="flex h-full"
@@ -40,10 +40,8 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
           onDragEnd={handleDragEnd}
         >
           {actions.map((action, index) => (
-            // Chaque slide prend 100% de la largeur
-            // px-4 ajoute une petite marge sur les côtés pour l'esthétique
+            // Chaque carte prend 100% de la largeur
             <div key={index} className="w-full h-full flex-shrink-0 px-4">
-              {/* Le wrapper interne force la HubCard à prendre 100% de la hauteur du parent */}
               <div className="h-full w-full py-2">
                 <HubCard 
                   action={action} 
@@ -55,8 +53,8 @@ const HubView: React.FC<HubViewProps> = ({ onAction }) => {
         </motion.div>
       </div>
 
-      {/* ZONE INDICATEURS (POINTS) : Sortie du carrousel, placée en bas */}
-      <div className="h-8 flex justify-center items-center mt-4 space-x-2 flex-shrink-0">
+      {/* INDICATEURS (POINTS) : En dehors du carrousel, collés en bas */}
+      <div className="h-8 flex justify-center items-center mt-2 space-x-2 flex-shrink-0">
         {actions.map((_, index) => (
           <motion.div
             key={index}
