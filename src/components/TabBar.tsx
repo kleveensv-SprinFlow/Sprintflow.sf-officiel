@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Home, LayoutGrid } from 'lucide-react';
 import SprintyAvatar from './chat/sprinty/SprintyAvatar';
 
-// Ajouter 'hub' comme un onglet normal
 export type Tab = 'accueil' | 'hub' | 'sprinty';
 
 interface TabBarProps {
@@ -12,14 +11,14 @@ interface TabBarProps {
   userRole?: 'athlete' | 'coach';
 }
 
-const TabBar: React. FC<TabBarProps> = ({
+const TabBar: React.FC<TabBarProps> = ({
   activeTab,
   onTabChange,
 }) => {
 
   const tabs = [
     { id: 'accueil', label: 'Accueil', Icon: Home },
-    { id: 'hub', label: 'Hub', Icon: LayoutGrid }, // Renommé de 'actions' à 'hub'
+    { id: 'hub', label: 'Hub', Icon: LayoutGrid },
   ];
 
   const renderTab = (tab: typeof tabs[0]) => {
