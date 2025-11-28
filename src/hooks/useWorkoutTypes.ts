@@ -16,6 +16,13 @@ export const useWorkoutTypes = () => {
       return;
     }
 
+    // MOCK DATA FOR VERIFICATION
+    if (user.id === 'mock-coach-id' || user.id === 'mock-athlete-id') {
+        setCustomTypes([]);
+        setLoading(false);
+        return;
+    }
+
     try {
       setLoading(true);
       const { data, error } = await supabase
