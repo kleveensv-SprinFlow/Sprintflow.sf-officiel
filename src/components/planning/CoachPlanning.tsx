@@ -25,7 +25,12 @@ type ActiveFilter = {
 
 type SelectionType = 'group' | 'athlete';
 
-export const CoachPlanning: React.FC = () => {
+interface CoachPlanningProps {
+  initialSelection?: { type: 'athlete' | 'group'; id: string };
+  onBack?: () => void;
+}
+
+export const CoachPlanning: React.FC<CoachPlanningProps> = ({ initialSelection, onBack }) => {
   const { user } = useAuth();
   // Pass the active filter to useWorkouts to fetch relevant data
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
@@ -48,7 +53,7 @@ export const CoachPlanning: React.FC = () => {
   }, [workoutTypes]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectionType, setSelectionType] = useState<SelectionType>('athlete'); // Default to athlete
+  const [selectionType, setSelectionType] = useState<SelectionType>(initialSelection?.type || 'athlete');
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
@@ -59,9 +64,22 @@ export const CoachPlanning: React.FC = () => {
   // Clipboard state for Copy/Paste Week
   const [weekClipboard, setWeekClipboard] = useState<Workout[] | null>(null);
 
+  // Initialize activeFilter from initialSelection if provided
   useEffect(() => {
-    // Logic to select the first available item if nothing is selected
-    if (!activeFilter) {
+    if (initialSelection && !activeFilter) {
+      if (initialSelection.type === 'athlete' && !loadingAthletes) {
+        const a = linkedAthletes.find(l => l.id === initialSelection.id);
+        if (a) setActiveFilter({ type: 'athlete', id: a.id, name: `${a.first_name} ${a.last_name}` });
+      } else if (initialSelection.type === 'group' && !loadingGroups) {
+        const g = groups.find(gr => gr.id === initialSelection.id);
+        if (g) setActiveFilter({ type: 'group', id: g.id, name: g.name });
+      }
+    }
+  }, [initialSelection, loadingAthletes, linkedAthletes, loadingGroups, groups, activeFilter]);
+
+  useEffect(() => {
+    // Logic to select the first available item if nothing is selected and no initialSelection
+    if (!activeFilter && !initialSelection) {
       if (selectionType === 'athlete' && !loadingAthletes && linkedAthletes.length > 0) {
         const firstAthlete = linkedAthletes[0];
         setActiveFilter({ type: 'athlete', id: firstAthlete.id, name: `${firstAthlete.first_name} ${firstAthlete.last_name}` });
@@ -70,7 +88,7 @@ export const CoachPlanning: React.FC = () => {
         setActiveFilter({ type: 'group', id: firstGroup.id, name: firstGroup.name });
       }
     }
-  }, [activeFilter, selectionType, loadingAthletes, linkedAthletes, loadingGroups, groups]);
+  }, [activeFilter, selectionType, loadingAthletes, linkedAthletes, loadingGroups, groups, initialSelection]);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -208,7 +226,22 @@ export const CoachPlanning: React.FC = () => {
       {/* --- HEADER --- */}
       <header className="mb-6 space-y-4">
         
-        {/* Context Selector (Athlete/Group) */}
+        {/* Back Button if requested */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-semibold mb-2 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <ChevronLeft size={20} /> Retour au choix
+          </button>
+        )}
+
+        {/* Context Selector (Athlete/Group) - Hide if locked to initial selection? Or keep to allow switching?
+            Let's keep it but maybe minimize it or just keep it as is.
+            User said "Une fois la cible choisie, on bascule sur la vue calendrier correspondante".
+            If we are in a deep focus mode, maybe we don't need the big switcher.
+            But for now, I'll keep it visible so it's not a breaking change.
+        */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-sm border border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row gap-2">
            {/* Type Toggles */}
            <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl shrink-0">
