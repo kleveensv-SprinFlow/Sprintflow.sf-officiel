@@ -285,6 +285,7 @@ export function useWorkouts(selection?: Selection) {
     return data;
   };
 
+  // Simplified updateWorkout which can be used for generic updates including validation
   const updateWorkout = async (workoutId: string, updates: Partial<Workout>) => {
     const { data, error } = await supabase
       .from('workouts')
@@ -302,6 +303,15 @@ export function useWorkouts(selection?: Selection) {
     }
 
     return data;
+  };
+
+  const validateWorkout = async (workoutId: string, plannedData: any[], actualData: any[]) => {
+      // This is a specialized wrapper around updateWorkout
+      const updates: Partial<Workout> = {
+          status: 'completed',
+          workout_data: actualData,
+      };
+      return updateWorkout(workoutId, updates);
   };
 
   const deleteWorkout = async (workoutId: string) => {
@@ -360,6 +370,7 @@ export function useWorkouts(selection?: Selection) {
     completeWorkout,
     createCompletedWorkout,
     updateWorkout,
+    validateWorkout, // Exported for use in AthleteValidationModal
     deleteWorkout,
     refresh: fetchWorkouts,
     batchPlanWorkouts,
