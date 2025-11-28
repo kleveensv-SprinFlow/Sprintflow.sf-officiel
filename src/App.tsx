@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import TabBar, { Tab } from './components/TabBar';
 import Auth from './components/Auth';
@@ -25,6 +25,17 @@ type ActionView = null | 'new-workout' | 'new-record' | 'my-follow-ups' | 'my-at
 function App() {
   const { user, loading, profile, profileLoading } = useAuth();
   
+  // État pour garantir le temps minimum d'affichage du splash screen
+  const [minLoadTimePassed, setMinLoadTimePassed] = useState(false);
+
+  // Timer de 2.5 secondes au montage du composant
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinLoadTimePassed(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [mainView, setMainView] = useState<MainView>('dashboard');
   const [activeTab, setActiveTab] = useState<Tab>('accueil');
   const [activeAction, setActiveAction] = useState<ActionView>(null);
@@ -64,7 +75,12 @@ function App() {
     duration: 0.4,
   };
 
-  if (loading) return <LoadingScreen />;
+  const showLoadingScreen = loading || profileLoading || !minLoadTimePassed;
+
+  if (showLoadingScreen) {
+    return <LoadingScreen />;
+  }
+
   if (!user) return <><Auth /><ToastContainer /></>;
 
   // Condition pour cacher le header global : si on est sur le dashboard ET l'onglet sprinty
