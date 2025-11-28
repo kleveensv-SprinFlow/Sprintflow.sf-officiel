@@ -75,7 +75,7 @@ export function SleepTracker() {
     const [cH, cM] = coucher.split(':').map(Number);
     const [rH, rM] = reveil.split(':').map(Number);
 
-    let coucherMinutes = cH * 60 + cM;
+    const coucherMinutes = cH * 60 + cM;
     let reveilMinutes = rH * 60 + rM;
 
     if (reveilMinutes <= coucherMinutes) {
