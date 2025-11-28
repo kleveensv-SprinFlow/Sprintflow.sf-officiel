@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { X, Dumbbell, Navigation, MessageSquarePlus, Bookmark } from 'lucide-react';
+import { X, MessageSquarePlus, Bookmark, Plus } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import WorkoutTypeSelector from './WorkoutTypeSelector';
 import AddCustomWorkoutTypeModal from './AddCustomWorkoutTypeModal';
-import { WorkoutBlock, CourseBlock, MuscuBlock, WorkoutTemplate } from '../../types/workout';
-import { CourseBlockForm } from './CourseBlockForm';
-import { MuscuBlockForm } from './MuscuBlockForm';
-import { WorkoutBuilder } from './WorkoutBuilder';
+import { WorkoutBlock, WorkoutTemplate } from '../../types/workout';
+import { WorkoutBuilderCanvas } from './builder/WorkoutBuilderCanvas';
 import { SaveTemplateModal } from './SaveTemplateModal';
 import { TemplateSelectionModal } from './TemplateSelectionModal';
+import { BlockCockpit } from './cockpit/BlockCockpit';
+import { BlockContentSwitch } from './cockpit/BlockForms';
+import { SmartLibrary } from './builder/SmartLibrary';
 
 interface NewWorkoutFormProps {
   userRole: 'coach' | 'athlete';
@@ -44,43 +45,31 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
   const [isTemplateSelectionOpen, setTemplateSelectionOpen] = useState(false);
 
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
-  const [addingBlockType, setAddingBlockType] = useState<'course' | 'musculation' | null>(null);
+  const [isLibraryOpen, setLibraryOpen] = useState(false);
 
-  const handleUpsertBlock = (blockData: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => {
-    if ('id' in blockData && blockData.id) {
-      setBlocks(prev => prev.map(b => (b.id === blockData.id ? { ...b, ...blockData } : b)));
-    } else {
-      const newBlockWithId: WorkoutBlock = { ...blockData, id: `block_${Date.now()}` };
-      setBlocks(prev => [...prev, newBlockWithId]);
-    }
-    setAddingBlockType(null);
-    setEditingBlockId(null);
-  };
-
-  const handleEditBlock = (id: string) => {
-    const blockToEdit = blocks.find(b => b.id === id);
-    if (blockToEdit) {
-      setEditingBlockId(id);
-      if (isAthlete) {
-        setAddingBlockType(null);
+  const handleUpsertBlock = (blockData: WorkoutBlock) => {
+      // If block exists, update it
+      const existingIndex = blocks.findIndex(b => b.id === blockData.id);
+      if (existingIndex >= 0) {
+          const newBlocks = [...blocks];
+          newBlocks[existingIndex] = blockData;
+          setBlocks(newBlocks);
       } else {
-        setAddingBlockType(blockToEdit.type as 'course' | 'musculation');
+          // It's a new block (should not happen via this callback usually, but for safety)
+          setBlocks(prev => [...prev, blockData]);
       }
-    }
+  };
+  
+  const handleAddBlock = (newBlock: WorkoutBlock) => {
+      setBlocks(prev => [...prev, newBlock]);
   };
 
-  const handleCancelForm = () => {
-    setAddingBlockType(null);
+  const handleEditBlock = (block: WorkoutBlock) => {
+    setEditingBlockId(block.id);
+  };
+
+  const handleCloseCockpit = () => {
     setEditingBlockId(null);
-  };
-
-  const handleRemoveBlock = (id: string) => {
-    if (isCompletingWorkout) return;
-    setBlocks(prev => prev.filter(block => block.id !== id));
-  };
-
-  const handleUpdateBlocks = (newBlocks: WorkoutBlock[]) => {
-    setBlocks(newBlocks);
   };
 
   const handleSaveTemplate = (templateName: string) => {
@@ -122,8 +111,7 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
     }
   };
 
-  const isFormActive = !!addingBlockType || !!editingBlockId;
-  const editingBlockData = useMemo(() => editingBlockId ? blocks.find(b => b.id === editingBlockId) : undefined, [editingBlockId, blocks]);
+  const editingBlock = useMemo(() => editingBlockId ? blocks.find(b => b.id === editingBlockId) : null, [editingBlockId, blocks]);
   const modalTitle = isCompletingWorkout ? 'Entrer mes performances' : (initialData?.id ? 'Modifier la séance' : 'Nouvelle séance');
 
   const backdropVariants = {
@@ -178,20 +166,34 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
 
           {workoutType !== 'manuscrit' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contenu de la séance *</label>
-              {!isCompletingWorkout && (
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <button type="button" onClick={() => setAddingBlockType('course')} className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600/90 text-white rounded-xl hover:bg-blue-600 shadow-sm transition-colors font-medium"><Navigation size={16}/>Course</button>
-                  <button type="button" onClick={() => setAddingBlockType('musculation')} className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600/90 text-white rounded-xl hover:bg-green-600 shadow-sm transition-colors font-medium"><Dumbbell size={16}/>Muscu</button>
-                </div>
+              <div className="flex items-center justify-between mb-2">
+                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Contenu de la séance *</label>
+                 {!isCompletingWorkout && (
+                     <button 
+                       type="button" 
+                       onClick={() => setLibraryOpen(true)}
+                       className="text-sm text-blue-600 font-bold flex items-center gap-1"
+                     >
+                         <Plus size={16} /> Bibliothèque
+                     </button>
+                 )}
+              </div>
+              
+              {!isCompletingWorkout && blocks.length === 0 && (
+                  <button 
+                    type="button"
+                    onClick={() => setLibraryOpen(true)}
+                    className="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-500 gap-2 mb-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                      <Plus className="opacity-50" size={32} />
+                      <span className="font-semibold">Ajouter des blocs</span>
+                  </button>
               )}
-              <WorkoutBuilder
+
+              <WorkoutBuilderCanvas
                 blocks={blocks}
-                onChange={handleUpdateBlocks}
-                onRemoveBlock={handleRemoveBlock}
+                onChange={setBlocks}
                 onEditBlock={handleEditBlock}
-                isAddingOrEditing={isFormActive}
-                isReadOnly={isCompletingWorkout}
                 userRole={userRole}
               />
             </div>
@@ -230,20 +232,21 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
         </form>
       </motion.div>
       
-      {/* Les modales pour les blocs et autres s'ouvrent par-dessus */}
-      <CourseBlockForm 
-        isOpen={addingBlockType === 'course' || (!!editingBlockId && editingBlockData?.type === 'course')}
-        onSave={handleUpsertBlock}
-        onCancel={handleCancelForm}
-        initialData={editingBlockData?.type === 'course' ? editingBlockData as CourseBlock : undefined}
-        userRole={userRole}
-      />
-      <MuscuBlockForm
-        isOpen={addingBlockType === 'musculation' || (!!editingBlockId && editingBlockData?.type === 'musculation')}
-        onSave={handleUpsertBlock}
-        onCancel={handleCancelForm}
-        initialData={editingBlockData?.type === 'musculation' ? editingBlockData as MuscuBlock : undefined}
-        userRole={userRole}
+      {/* Cockpit for editing blocks */}
+      <BlockCockpit
+        isOpen={!!editingBlockId}
+        block={editingBlock}
+        onUpdate={handleUpsertBlock}
+        onClose={handleCloseCockpit}
+      >
+          {editingBlock && <BlockContentSwitch block={editingBlock} onUpdate={handleUpsertBlock} />}
+      </BlockCockpit>
+
+      {/* Smart Library for adding blocks */}
+      <SmartLibrary 
+        isOpen={isLibraryOpen} 
+        onClose={() => setLibraryOpen(false)} 
+        onAddBlock={handleAddBlock}
       />
       
       <AnimatePresence>
