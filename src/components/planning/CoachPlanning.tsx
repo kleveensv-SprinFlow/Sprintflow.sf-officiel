@@ -105,7 +105,7 @@ export const CoachPlanning: React.FC = () => {
       return;
     }
     setSelectedDate(date);
-    setTemplateModalOpen(true);
+    handleCreateNewWorkout();
   };
 
   const handleCreateNewWorkout = () => {
