@@ -11,7 +11,7 @@ export interface Group {
   invitation_code: string;
   type: 'groupe' | 'athlete';
   max_members: number | null;
-  color?: string; // New field for group theme color
+  color?: string;
   group_members: { athlete_id: string; profiles: Profile | null }[];
 }
 
@@ -23,7 +23,7 @@ export interface GroupAnalytics {
   checkin_count: number;
   alerts_count: number;
   pending_requests_count: number;
-  group_limit: number | null;
+  group_limit: number | null; // Renommé pour correspondre au SQL
   color?: string;
 }
 
@@ -36,9 +36,6 @@ export interface JoinRequest {
   profiles: Pick<Profile, 'id' | 'first_name' | 'last_name' | 'photo_url'> | null;
 }
 
-/**
- * Hook pour gérer la logique des groupes et des suivis.
- */
 export const useGroups = () => {
   const { user, profile } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -49,13 +46,15 @@ export const useGroups = () => {
   // Charge les groupes complets (structure)
   const fetchGroups = useCallback(async () => {
     if (!user || !profile) return;
-    setLoading(true);
+    // Note: On garde setLoading(true) seulement si groups est vide pour éviter le clignotement lors des rafraîchissements
+    if (groups.length === 0) setLoading(true);
     setError(null);
 
     try {
       let rawData;
+      // Timeout augmenté à 15s pour la résilience réseau
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout chargement groupes après 10s')), 10000)
+        setTimeout(() => reject(new Error('Timeout chargement groupes après 15s')), 15000)
       );
 
       if (profile.role === 'coach') {
@@ -112,42 +111,58 @@ export const useGroups = () => {
         setGroups([]);
       }
     } catch (e: any) {
-      console.error('[useGroups] Erreur lors de la récupération des groupes :', e);
+      console.error('[useGroups] Erreur lors de la récupération des groupes :', e);
       setError(e);
-      setGroups([]);
+      // Ne pas vider les groupes en cas d'erreur transitoire si on a déjà des données
+      if (groups.length === 0) setGroups([]);
     } finally {
       setLoading(false);
     }
-  }, [user, profile]);
+  }, [user, profile]); // Retrait de groups.length des dépendances pour éviter les boucles
 
   // Charge les analytics des groupes (pour le coach uniquement)
   const fetchGroupsAnalytics = useCallback(async () => {
     if (!user || profile?.role !== 'coach') return;
     
     try {
-      // Calculate local date to ensure we match the user's perception of "today"
+      // Calcul de la date locale (YYYY-MM-DD) pour que le SQL filtre correctement
       const d = new Date();
       const offset = d.getTimezoneOffset() * 60000;
       const today = new Date(d.getTime() - offset).toISOString().split('T')[0];
 
       const { data, error } = await supabase.rpc('get_coach_groups_analytics', {
         coach_uuid: user.id,
-        query_date: today // Pass local date
+        query_date: today
       });
 
       if (error) throw error;
+
+      // Le type de retour correspond maintenant à l'interface mise à jour (group_limit)
       setGroupsAnalytics(data as GroupAnalytics[] || []);
     } catch (e) {
       console.error('[useGroups] Erreur analytics:', e);
+      // Pas de setError ici pour ne pas bloquer l'UI principale si juste les stats échouent
     }
   }, [user, profile]);
 
   useEffect(() => {
-    fetchGroups();
-    if (profile?.role === 'coach') {
-      fetchGroupsAnalytics();
-    }
-  }, [fetchGroups, fetchGroupsAnalytics, profile?.role]);
+    let mounted = true;
+
+    const loadData = async () => {
+      if (user && profile) {
+        await fetchGroups();
+        if (profile.role === 'coach') {
+          await fetchGroupsAnalytics();
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, profile?.role]); // Dépendances minimales pour éviter la boucle infinie
 
   // Regroupe tous les athlètes d’un coach sans doublons
   const coachAthletes = useMemo(() => {
@@ -165,7 +180,7 @@ export const useGroups = () => {
       });
       return Array.from(allAthletes.values());
     } catch (e) {
-      console.error('Erreur critique lors du calcul de coachAthletes :', e);
+      console.error('Erreur critique lors du calcul de coachAthletes :', e);
       return [];
     }
   }, [groups]);
