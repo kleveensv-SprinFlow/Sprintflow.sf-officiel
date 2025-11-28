@@ -1,6 +1,11 @@
-export interface CourseBlock {
-  type: 'course';
+export interface BaseBlock {
   id: string;
+  duration_estimated?: number; // en secondes
+  intensity_score?: number; // 1-10
+}
+
+export interface CourseBlock extends BaseBlock {
+  type: 'course';
   series: number;
   reps: number;
   distance: number;
@@ -9,9 +14,8 @@ export interface CourseBlock {
   chronos?: (number | null)[][];
 }
 
-export interface MuscuBlock {
+export interface MuscuBlock extends BaseBlock {
   type: 'musculation';
-  id: string;
   exerciceId: string;
   exerciceNom: string;
   series: number;
@@ -21,10 +25,23 @@ export interface MuscuBlock {
   charges?: (number | null)[][];
 }
 
-export type WorkoutBlock = CourseBlock | MuscuBlock;
+export interface RestBlock extends BaseBlock {
+  type: 'repos';
+  duration: number; // en secondes
+  label?: string; // ex: "Récupération passive"
+}
+
+export interface TechniqueBlock extends BaseBlock {
+  type: 'technique';
+  name: string; // ex: "Gammes", "Drills"
+  description?: string;
+  duration: number; // en secondes
+}
+
+export type WorkoutBlock = CourseBlock | MuscuBlock | RestBlock | TechniqueBlock;
 
 export interface WorkoutTemplate {
   id: string;
   name: string;
-  workout_data: any; // Vous pouvez affiner ce type plus tard
+  workout_data: any;
 }

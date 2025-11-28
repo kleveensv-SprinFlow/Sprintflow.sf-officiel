@@ -4,6 +4,7 @@ import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Workout } from '../../types';
+import { TrainingPhase } from '../../hooks/useTrainingPhases';
 
 interface PlanningDayCardProps {
   date: Date;
@@ -11,6 +12,7 @@ interface PlanningDayCardProps {
   onAdd: () => void;
   onEdit: (workout: Workout) => void;
   workoutTypeMap: Map<string, { name: string; color: string }>;
+  currentPhase?: TrainingPhase;
 }
 
 export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
@@ -19,10 +21,18 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
   onAdd,
   onEdit,
   workoutTypeMap,
+  currentPhase,
 }) => {
   const isCurrentDay = isToday(date);
   const formattedDay = format(date, 'EEEE', { locale: fr });
   const formattedDate = format(date, 'd MMMM', { locale: fr });
+
+  // Phase color inheritance
+  const phaseColor = currentPhase?.color;
+  const phaseBgStyle = phaseColor ? {
+      background: `linear-gradient(to right, ${phaseColor}15, transparent)`,
+      borderLeft: `4px solid ${phaseColor}`
+  } : {};
 
   return (
     <div className="relative group">
@@ -36,7 +46,15 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
           }
           backdrop-blur-md min-h-[100px] flex flex-col md:flex-row md:items-center md:gap-4 p-4
         `}
+        style={!isCurrentDay ? phaseBgStyle : { ...phaseBgStyle, borderLeft: `4px solid ${phaseColor || '#3B82F6'}` }}
       >
+        {/* Phase Indicator Pill (Mobile only, effectively replaced by border-left but good to have explicit) */}
+        {currentPhase && (
+            <div className="absolute top-0 right-0 px-2 py-1 bg-white/50 dark:bg-black/20 rounded-bl-lg text-[10px] font-bold uppercase tracking-wider text-gray-500" style={{ color: phaseColor }}>
+                {currentPhase.name}
+            </div>
+        )}
+
         {/* Date Section */}
         <div className="flex items-baseline justify-between md:flex-col md:justify-center md:w-32 md:flex-shrink-0 mb-3 md:mb-0">
             <div>

@@ -6,7 +6,8 @@ import AddCustomWorkoutTypeModal from './AddCustomWorkoutTypeModal';
 import { WorkoutBlock, CourseBlock, MuscuBlock, WorkoutTemplate } from '../../types/workout';
 import { CourseBlockForm } from './CourseBlockForm';
 import { MuscuBlockForm } from './MuscuBlockForm';
-import { WorkoutBuilder } from './WorkoutBuilder';
+// import { WorkoutBuilder } from './WorkoutBuilder'; // REMOVED in favor of Canvas
+import { WorkoutBuilderCanvas } from './builder/WorkoutBuilderCanvas';
 import { SaveTemplateModal } from './SaveTemplateModal';
 import { TemplateSelectionModal } from './TemplateSelectionModal';
 
@@ -42,42 +43,6 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
   const [showNotes, setShowNotes] = useState(false);
   const [isSaveTemplateModalOpen, setSaveTemplateModalOpen] = useState(false);
   const [isTemplateSelectionOpen, setTemplateSelectionOpen] = useState(false);
-
-  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
-  const [addingBlockType, setAddingBlockType] = useState<'course' | 'musculation' | null>(null);
-
-  const handleUpsertBlock = (blockData: Omit<WorkoutBlock, 'id'> | WorkoutBlock) => {
-    if ('id' in blockData && blockData.id) {
-      setBlocks(prev => prev.map(b => (b.id === blockData.id ? { ...b, ...blockData } : b)));
-    } else {
-      const newBlockWithId: WorkoutBlock = { ...blockData, id: `block_${Date.now()}` };
-      setBlocks(prev => [...prev, newBlockWithId]);
-    }
-    setAddingBlockType(null);
-    setEditingBlockId(null);
-  };
-
-  const handleEditBlock = (id: string) => {
-    const blockToEdit = blocks.find(b => b.id === id);
-    if (blockToEdit) {
-      setEditingBlockId(id);
-      if (isAthlete) {
-        setAddingBlockType(null);
-      } else {
-        setAddingBlockType(blockToEdit.type as 'course' | 'musculation');
-      }
-    }
-  };
-
-  const handleCancelForm = () => {
-    setAddingBlockType(null);
-    setEditingBlockId(null);
-  };
-
-  const handleRemoveBlock = (id: string) => {
-    if (isCompletingWorkout) return;
-    setBlocks(prev => prev.filter(block => block.id !== id));
-  };
 
   const handleUpdateBlocks = (newBlocks: WorkoutBlock[]) => {
     setBlocks(newBlocks);
@@ -178,21 +143,12 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
 
           {workoutType !== 'manuscrit' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contenu de la séance *</label>
-              {!isCompletingWorkout && (
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <button type="button" onClick={() => setAddingBlockType('course')} className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600/90 text-white rounded-xl hover:bg-blue-600 shadow-sm transition-colors font-medium"><Navigation size={16}/>Course</button>
-                  <button type="button" onClick={() => setAddingBlockType('musculation')} className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600/90 text-white rounded-xl hover:bg-green-600 shadow-sm transition-colors font-medium"><Dumbbell size={16}/>Muscu</button>
-                </div>
-              )}
-              <WorkoutBuilder
+              <label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Structure de la séance</label>
+
+              <WorkoutBuilderCanvas
                 blocks={blocks}
                 onChange={handleUpdateBlocks}
-                onRemoveBlock={handleRemoveBlock}
-                onEditBlock={handleEditBlock}
-                isAddingOrEditing={isFormActive}
-                isReadOnly={isCompletingWorkout}
-                userRole={userRole}
+                readOnly={isCompletingWorkout}
               />
             </div>
           )}
@@ -231,20 +187,16 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
       </motion.div>
       
       {/* Les modales pour les blocs et autres s'ouvrent par-dessus */}
-      <CourseBlockForm 
-        isOpen={addingBlockType === 'course' || (!!editingBlockId && editingBlockData?.type === 'course')}
-        onSave={handleUpsertBlock}
-        onCancel={handleCancelForm}
-        initialData={editingBlockData?.type === 'course' ? editingBlockData as CourseBlock : undefined}
-        userRole={userRole}
-      />
-      <MuscuBlockForm
-        isOpen={addingBlockType === 'musculation' || (!!editingBlockId && editingBlockData?.type === 'musculation')}
-        onSave={handleUpsertBlock}
-        onCancel={handleCancelForm}
-        initialData={editingBlockData?.type === 'musculation' ? editingBlockData as MuscuBlock : undefined}
-        userRole={userRole}
-      />
+      {/* Old Forms removed/commented because we use Smart Builder Cockpit now.
+          But wait, for ATHLETES logging performance, we might still need the old detailed forms
+          if the Cockpit doesn't support entering 'chronos' or 'charges' yet.
+          The brief says: "Nous allons transformer l'actuel NewWorkoutForm et WorkoutBuilder en une interface de type LEGO."
+          However, for the ATHLETE execution phase ("Ghost vs Solid"), we might need different UI later.
+          For this task "Phase 3 Smart Builder", we focus on CREATION (Coach).
+
+          I will keep the old forms code commented out or remove unused props to avoid errors.
+          Actually, I removed the state variables for them, so I must remove these components from render.
+      */}
       
       <AnimatePresence>
         {isCustomModalOpen && <AddCustomWorkoutTypeModal onClose={() => setCustomModalOpen(false)} onSuccess={(newType) => setTagSeance(newType.id)} />}
