@@ -15,6 +15,9 @@ import { TemplateSelectionModal } from '../workouts/TemplateSelectionModal';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal';
 import { PlanningDayCard } from './PlanningDayCard';
+import { RhythmBar } from './RhythmBar';
+import { PhaseCreationModal } from './PhaseCreationModal';
+import { useTrainingPhases, TrainingPhasePayload } from '../../hooks/useTrainingPhases';
 import { Workout } from '../../types';
 
 type ActiveFilter = {
@@ -25,7 +28,12 @@ type ActiveFilter = {
 
 type SelectionType = 'group' | 'athlete';
 
-export const CoachPlanning: React.FC = () => {
+interface CoachPlanningProps {
+  initialSelection?: { type: 'athlete' | 'group'; id: string };
+  onBack?: () => void;
+}
+
+export const CoachPlanning: React.FC<CoachPlanningProps> = ({ initialSelection, onBack }) => {
   const { user } = useAuth();
   // Pass the active filter to useWorkouts to fetch relevant data
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
@@ -38,6 +46,8 @@ export const CoachPlanning: React.FC = () => {
   const { groups, loading: loadingGroups } = useGroups();
   const { linkedAthletes, loading: loadingAthletes } = useCoachLinks(user?.id);
   const { allTypes: workoutTypes } = useWorkoutTypes();
+  // Ensure selectionForHook is defined before this line. In this component, it is defined above.
+  const { phases, createPhase, refreshPhases } = useTrainingPhases(selectionForHook || null);
 
   const workoutTypeMap = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -48,10 +58,11 @@ export const CoachPlanning: React.FC = () => {
   }, [workoutTypes]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectionType, setSelectionType] = useState<SelectionType>('athlete'); // Default to athlete
+  const [selectionType, setSelectionType] = useState<SelectionType>(initialSelection?.type || 'athlete');
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
+  const [isPhaseModalOpen, setPhaseModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [initialWorkoutData, setInitialWorkoutData] = useState<any>(null);
   const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
@@ -59,9 +70,22 @@ export const CoachPlanning: React.FC = () => {
   // Clipboard state for Copy/Paste Week
   const [weekClipboard, setWeekClipboard] = useState<Workout[] | null>(null);
 
+  // Initialize activeFilter from initialSelection if provided
   useEffect(() => {
-    // Logic to select the first available item if nothing is selected
-    if (!activeFilter) {
+    if (initialSelection && !activeFilter) {
+      if (initialSelection.type === 'athlete' && !loadingAthletes) {
+        const a = linkedAthletes.find(l => l.id === initialSelection.id);
+        if (a) setActiveFilter({ type: 'athlete', id: a.id, name: `${a.first_name} ${a.last_name}` });
+      } else if (initialSelection.type === 'group' && !loadingGroups) {
+        const g = groups.find(gr => gr.id === initialSelection.id);
+        if (g) setActiveFilter({ type: 'group', id: g.id, name: g.name });
+      }
+    }
+  }, [initialSelection, loadingAthletes, linkedAthletes, loadingGroups, groups, activeFilter]);
+
+  useEffect(() => {
+    // Logic to select the first available item if nothing is selected and no initialSelection
+    if (!activeFilter && !initialSelection) {
       if (selectionType === 'athlete' && !loadingAthletes && linkedAthletes.length > 0) {
         const firstAthlete = linkedAthletes[0];
         setActiveFilter({ type: 'athlete', id: firstAthlete.id, name: `${firstAthlete.first_name} ${firstAthlete.last_name}` });
@@ -70,7 +94,7 @@ export const CoachPlanning: React.FC = () => {
         setActiveFilter({ type: 'group', id: firstGroup.id, name: firstGroup.name });
       }
     }
-  }, [activeFilter, selectionType, loadingAthletes, linkedAthletes, loadingGroups, groups]);
+  }, [activeFilter, selectionType, loadingAthletes, linkedAthletes, loadingGroups, groups, initialSelection]);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -138,6 +162,17 @@ export const CoachPlanning: React.FC = () => {
         toast.error("Erreur lors de la planification");
         console.error(e);
     }
+  };
+
+  const handleSavePhase = async (phasePayload: TrainingPhasePayload) => {
+      try {
+          await createPhase(phasePayload);
+          toast.success("Phase créée avec succès");
+          setPhaseModalOpen(false);
+      } catch (e) {
+          toast.error("Erreur lors de la création de la phase");
+          console.error(e);
+      }
   };
 
   const copyWeek = () => {
@@ -208,7 +243,22 @@ export const CoachPlanning: React.FC = () => {
       {/* --- HEADER --- */}
       <header className="mb-6 space-y-4">
         
-        {/* Context Selector (Athlete/Group) */}
+        {/* Back Button if requested */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-semibold mb-2 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <ChevronLeft size={20} /> Retour au choix
+          </button>
+        )}
+
+        {/* Context Selector (Athlete/Group) - Hide if locked to initial selection? Or keep to allow switching?
+            Let's keep it but maybe minimize it or just keep it as is.
+            User said "Une fois la cible choisie, on bascule sur la vue calendrier correspondante".
+            If we are in a deep focus mode, maybe we don't need the big switcher.
+            But for now, I'll keep it visible so it's not a breaking change.
+        */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-sm border border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row gap-2">
            {/* Type Toggles */}
            <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl shrink-0">
@@ -316,10 +366,35 @@ export const CoachPlanning: React.FC = () => {
 
       </header>
 
+      {/* --- RHYTHM BAR --- */}
+      <RhythmBar
+          currentDate={currentDate}
+          phases={phases}
+          onAddPhase={() => {
+              if(!activeFilter) {
+                  toast.error("Sélectionnez d'abord un athlète ou un groupe");
+                  return;
+              }
+              setPhaseModalOpen(true);
+          }}
+      />
+
       {/* --- BODY (Daily List) --- */}
       <div className="space-y-3">
         {days.map(day => {
             const dayWorkouts = filteredWorkouts.filter(w => isSameDay(parseISO(w.date), day));
+            // Find active phase for this day
+            const currentPhase = phases.find(p => {
+                const s = parseISO(p.start_date);
+                const e = parseISO(p.end_date);
+                // Reset time part for comparison
+                const d = new Date(day);
+                d.setHours(0,0,0,0);
+                s.setHours(0,0,0,0);
+                e.setHours(23,59,59,999);
+                return d >= s && d <= e;
+            });
+
             return (
                 <PlanningDayCard
                     key={day.toISOString()}
@@ -328,6 +403,7 @@ export const CoachPlanning: React.FC = () => {
                     onAdd={() => handleAddWorkout(day)}
                     onEdit={(w) => setViewingWorkout(w)}
                     workoutTypeMap={workoutTypeMap}
+                    currentPhase={currentPhase}
                 />
             );
         })}
@@ -356,6 +432,15 @@ export const CoachPlanning: React.FC = () => {
         onClose={() => setViewingWorkout(null)}
         workout={viewingWorkout}
         canEdit={true} 
+      />
+
+      {/* Phase Creation Modal */}
+      <PhaseCreationModal
+        isOpen={isPhaseModalOpen}
+        onClose={() => setPhaseModalOpen(false)}
+        onSave={handleSavePhase}
+        startDate={format(weekStart, 'yyyy-MM-dd')}
+        endDate={format(weekEnd, 'yyyy-MM-dd')}
       />
     </div>
   );
