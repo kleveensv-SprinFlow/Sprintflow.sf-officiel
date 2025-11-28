@@ -3,6 +3,7 @@ import { useWorkouts } from '../../hooks/useWorkouts';
 import useAuth from '../../hooks/useAuth';
 import { Workout } from '../../types/workout';
 import { Loader2, ChevronDown } from 'lucide-react';
+import { WorkoutBlock } from '../../types/workout';
 
 const TodaysWorkoutCard: React.FC = () => {
   const { user } = useAuth();
@@ -29,6 +30,18 @@ const TodaysWorkoutCard: React.FC = () => {
     );
   }
 
+  // FIX: Accessing .blocks (which might be 'blocs' or a different structure)
+  // Assuming Workout structure based on previous interactions, it's usually planned_data as WorkoutBlock[] or { blocs: ... }
+  // The MOCK in AthletePlanning used array for planned_data.
+  // The CoachDashboard uses 'blocs'.
+  // Let's safe check.
+
+  const getBlocks = (w: Workout): WorkoutBlock[] => {
+      if (Array.isArray(w.planned_data)) return w.planned_data as any;
+      if (w.planned_data && 'blocs' in w.planned_data) return (w.planned_data as any).blocs;
+      return [];
+  };
+
   if (!todaysWorkout) {
     return (
       <div className="mx-4 p-5 bg-white dark:bg-gray-800 rounded-2xl shadow-md">
@@ -38,21 +51,22 @@ const TodaysWorkoutCard: React.FC = () => {
     );
   }
 
+  const blocks = getBlocks(todaysWorkout);
+
   const renderWorkoutContent = (workout: Workout) => {
-    const blocksToShow = isExpanded ? workout.planned_data?.blocks : workout.planned_data?.blocks.slice(0, 3);
+    const blocksToShow = isExpanded ? blocks : blocks.slice(0, 3);
     return (
       <div className="space-y-3 mt-4">
-        {blocksToShow?.map((block, index) => (
+        {blocksToShow?.map((block: any, index: number) => (
           <div key={index} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600/50">
             <p className="font-bold text-md text-gray-800 dark:text-gray-100">
-              <span className="text-sprint-primary">{index + 1}.</span> {block.name}
+              <span className="text-sprint-primary">{index + 1}.</span> {block.name || `Bloc ${index+1}`}
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-300 mt-1 pl-4">
               {block.type === 'course' && (
                 <>
                   <span><span className="font-semibold">{block.series}</span> séries</span>
                   <span><span className="font-semibold">{block.reps}</span> x <span className="font-semibold">{block.distance}</span>m</span>
-                  {block.rest_inter_series && <span><span className="font-semibold">{block.rest_inter_series}</span> repos</span>}
                 </>
               )}
               {block.type === 'muscu' && (
@@ -60,7 +74,6 @@ const TodaysWorkoutCard: React.FC = () => {
                   <span><span className="font-semibold">{block.series}</span> séries</span>
                   <span><span className="font-semibold">{block.reps}</span> reps</span>
                   {block.poids && <span>@ <span className="font-semibold">{block.poids}</span>kg</span>}
-                  {block.rest && <span><span className="font-semibold">{block.rest}</span> repos</span>}
                 </>
               )}
             </div>
@@ -70,7 +83,7 @@ const TodaysWorkoutCard: React.FC = () => {
     );
   };
   
-  const blockCount = todaysWorkout.planned_data?.blocks.length || 0;
+  const blockCount = blocks.length || 0;
   const canExpand = blockCount > 3;
 
   return (
