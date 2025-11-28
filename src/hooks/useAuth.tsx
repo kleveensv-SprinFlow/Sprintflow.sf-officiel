@@ -48,6 +48,35 @@ const createAuthState = (session: Session | null, user: User | null, profile: Pr
   isProfileLoading,
 });
 
+// Mock Data for Frontend Verification
+const MOCK_ATHLETE: User = {
+    id: 'mock-athlete-id',
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+} as User;
+
+const MOCK_PROFILE: Profile = {
+    id: 'mock-athlete-id',
+    full_name: 'Athlete Test',
+    first_name: 'Athlete',
+    last_name: 'Test',
+    email: 'test.athlete@sprintflow.run',
+    role: 'athlete',
+    photo_url: null,
+    sprinty_mode: 'expert',
+    discipline: 'Sprint',
+    sexe: 'M',
+    date_de_naissance: '2000-01-01',
+    license_number: '12345',
+    onboarding_completed: true,
+    preferred_language: 'fr',
+};
+
+// Global Flag to enable verification mode
+const ENABLE_VERIFICATION_MODE = false; 
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authState, setAuthState] = useState<AuthState>(createEmptyAuthState());
   const isMountedRef = useRef(true);
@@ -60,6 +89,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [authState.profile]);
 
   const loadProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+    if (ENABLE_VERIFICATION_MODE && userId === MOCK_ATHLETE.id) {
+        return MOCK_PROFILE;
+    }
+
     if (!userId) return null;
 
     try {
@@ -134,6 +167,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    if (ENABLE_VERIFICATION_MODE) {
+        setAuthState(createAuthState({ user: MOCK_ATHLETE } as Session, MOCK_ATHLETE, MOCK_PROFILE, true, false));
+        return { user: MOCK_ATHLETE, session: { user: MOCK_ATHLETE } };
+    }
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
@@ -191,7 +228,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       // 3. Appel Supabase
-      await supabase.auth.signOut();
+      if (!ENABLE_VERIFICATION_MODE) {
+        await supabase.auth.signOut();
+      }
       
     } catch (error) {
       logger.error('[useAuth] Erreur signOut:', error);
@@ -209,6 +248,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // --- EFFET PRINCIPAL D'INITIALISATION ---
   useEffect(() => {
     isMountedRef.current = true;
+
+    if (ENABLE_VERIFICATION_MODE) {
+        setAuthState(createAuthState({ user: MOCK_ATHLETE } as Session, MOCK_ATHLETE, MOCK_PROFILE, true, false));
+        return;
+    }
 
     const initAuth = async () => {
       try {
