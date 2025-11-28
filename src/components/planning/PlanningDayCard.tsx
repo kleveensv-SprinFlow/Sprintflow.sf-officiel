@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Edit2, CheckCircle, Circle } from 'lucide-react';
+import { Plus, Edit2, CheckCircle, Clock } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +13,7 @@ interface PlanningDayCardProps {
   onEdit: (workout: Workout) => void;
   workoutTypeMap: Map<string, { name: string; color: string }>;
   currentPhase?: PlanningPhase;
+  isAthleteView?: boolean;
 }
 
 export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
@@ -22,6 +23,7 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
   onEdit,
   workoutTypeMap,
   currentPhase,
+  isAthleteView = false,
 }) => {
   const isCurrentDay = isToday(date);
   const formattedDay = format(date, 'EEEE', { locale: fr });
@@ -67,7 +69,7 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
                 </span>
             </div>
              {/* Mobile Add Button (visible if no workouts) */}
-            {workouts.length === 0 && (
+            {workouts.length === 0 && !isAthleteView && (
                 <button 
                     onClick={onAdd}
                     className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-sprint-primary/10 text-sprint-primary active:scale-95 transition-transform"
@@ -85,6 +87,16 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
                 const typeInfo = workout.tag_seance ? workoutTypeMap.get(workout.tag_seance) : null;
                 const workoutName = typeInfo ? typeInfo.name : workout.title;
                 const workoutColor = typeInfo ? typeInfo.color : '#6b7280';
+                const isPlanned = workout.status === 'planned';
+                
+                // Ghost vs Solid Styles
+                const cardStyle = isAthleteView 
+                  ? isPlanned
+                    ? "bg-transparent border-2 border-dashed opacity-60 hover:opacity-100" // Ghost
+                    : "bg-white dark:bg-gray-800 shadow-md border-none opacity-100" // Solid
+                  : "bg-white dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 shadow-sm"; // Coach Default
+
+                const ghostBorderColor = isPlanned && isAthleteView ? workoutColor : 'transparent';
                 
                 return (
                   <motion.div
@@ -93,24 +105,43 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     onClick={() => onEdit(workout)}
-                    className="
-                      relative overflow-hidden rounded-xl bg-white dark:bg-gray-900/50 
-                      border border-gray-100 dark:border-gray-700/50
-                      p-3 cursor-pointer hover:shadow-lg transition-shadow group/card
-                    "
+                    className={`
+                      relative overflow-hidden rounded-xl p-3 cursor-pointer transition-all duration-300 group/card
+                      ${cardStyle}
+                    `}
+                    style={{ 
+                        borderColor: isPlanned && isAthleteView ? ghostBorderColor : undefined 
+                    }}
                   >
-                    <div 
-                        className="absolute left-0 top-0 bottom-0 w-1.5" 
-                        style={{ backgroundColor: workoutColor }}
-                    />
+                    {!isAthleteView && (
+                        <div 
+                            className="absolute left-0 top-0 bottom-0 w-1.5" 
+                            style={{ backgroundColor: workoutColor }}
+                        />
+                    )}
                     
-                    <div className="flex items-center justify-between pl-3">
+                    {/* Athlete View: Solid has colored left border or similar indicator? 
+                        Requirement says: "Solid: Fond plein, couleurs vibrantes (basées sur la Phase ou le type)"
+                        Let's use a subtle gradient background or just a colored bar for Solid too.
+                    */}
+                    {isAthleteView && !isPlanned && (
+                         <div 
+                            className="absolute left-0 top-0 bottom-0 w-2" 
+                            style={{ backgroundColor: workoutColor }}
+                        />
+                    )}
+                    
+                    <div className={`flex items-center justify-between ${!isAthleteView || !isPlanned ? 'pl-3' : ''}`}>
                         <div className="flex flex-col">
-                             <h4 className="font-bold text-gray-900 dark:text-white text-sm md:text-base truncate pr-2">
+                             <h4 className={`font-bold text-sm md:text-base truncate pr-2 ${isPlanned ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
                                 {workoutName}
                             </h4>
                             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                <span className={`px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 capitalize`}>
+                                <span 
+                                    className={`px-1.5 py-0.5 rounded-md border capitalize ${
+                                        isPlanned ? 'bg-transparent border-current opacity-70' : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                                    }`}
+                                >
                                     {workout.type}
                                 </span>
                                 {workout.status === 'completed' && (
@@ -121,16 +152,24 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
                                 )}
                                 {workout.status === 'planned' && (
                                     <span className="flex items-center text-gray-400">
-                                        <Circle size={12} className="mr-1" />
+                                        <Clock size={12} className="mr-1" />
                                         Prévu
                                     </span>
                                 )}
                             </div>
                         </div>
 
-                        <div className="opacity-0 group-hover/card:opacity-100 transition-opacity text-gray-400 hover:text-sprint-primary">
-                            <Edit2 size={16} />
-                        </div>
+                        {!isAthleteView && (
+                            <div className="opacity-0 group-hover/card:opacity-100 transition-opacity text-gray-400 hover:text-sprint-primary">
+                                <Edit2 size={16} />
+                            </div>
+                        )}
+                        
+                        {isAthleteView && isPlanned && (
+                            <div className="text-gray-300 group-hover/card:text-sprint-primary transition-colors">
+                                <Edit2 size={16} />
+                            </div>
+                        )}
                     </div>
                   </motion.div>
                 );
@@ -143,22 +182,24 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* Desktop Add Button (Always visible on hover or if empty) */}
-        <div className="hidden md:flex items-center justify-end w-16">
-             <button
-                onClick={onAdd}
-                className={`
-                    w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
-                    ${workouts.length === 0 
-                        ? 'bg-sprint-primary/10 text-sprint-primary hover:bg-sprint-primary hover:text-white' 
-                        : 'opacity-0 group-hover:opacity-100 bg-gray-100 dark:bg-gray-700 text-gray-500 hover:text-sprint-primary'
-                    }
-                `}
-                title="Ajouter une séance"
-             >
-                 <Plus size={20} />
-             </button>
-        </div>
+        {/* Desktop Add Button (Always visible on hover or if empty) - Hide for Athlete */}
+        {!isAthleteView && (
+            <div className="hidden md:flex items-center justify-end w-16">
+                <button
+                    onClick={onAdd}
+                    className={`
+                        w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
+                        ${workouts.length === 0 
+                            ? 'bg-sprint-primary/10 text-sprint-primary hover:bg-sprint-primary hover:text-white' 
+                            : 'opacity-0 group-hover:opacity-100 bg-gray-100 dark:bg-gray-700 text-gray-500 hover:text-sprint-primary'
+                        }
+                    `}
+                    title="Ajouter une séance"
+                >
+                    <Plus size={20} />
+                </button>
+            </div>
+        )}
 
       </div>
     </div>
