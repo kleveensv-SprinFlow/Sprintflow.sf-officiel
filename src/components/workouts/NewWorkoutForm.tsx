@@ -10,6 +10,8 @@ import { TemplateSelectionModal } from './TemplateSelectionModal';
 import { BlockCockpit } from './cockpit/BlockCockpit';
 import { BlockContentSwitch } from './cockpit/BlockForms';
 import { SmartLibrary } from './builder/SmartLibrary';
+import { useWorkoutTemplates } from '../../hooks/useWorkoutTemplates';
+import { toast } from 'react-toastify';
 
 interface NewWorkoutFormProps {
   userRole: 'coach' | 'athlete';
@@ -46,6 +48,7 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
 
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [isLibraryOpen, setLibraryOpen] = useState(false);
+  const { createTemplate } = useWorkoutTemplates();
 
   const handleUpsertBlock = (blockData: WorkoutBlock) => {
       // If block exists, update it
@@ -72,9 +75,26 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
     setEditingBlockId(null);
   };
 
-  const handleSaveTemplate = (templateName: string) => {
-    console.log("Sauvegarde du modèle:", templateName, { tagSeance, blocks, notes });
-    setSaveTemplateModalOpen(false);
+  const handleSaveTemplate = async (templateName: string) => {
+    try {
+      if (!tagSeance) {
+        toast.error("Veuillez choisir un type de séance avant de sauvegarder le modèle.");
+        return;
+      }
+      
+      await createTemplate(templateName, {
+        tag_seance: tagSeance,
+        blocs: blocks,
+        notes: notes,
+        type: workoutType as any // Cast safely as we know the type structure
+      });
+      
+      toast.success(`Modèle "${templateName}" sauvegardé !`);
+      setSaveTemplateModalOpen(false);
+    } catch (error) {
+      console.error("Erreur sauvegarde modèle:", error);
+      toast.error("Erreur lors de la sauvegarde du modèle.");
+    }
   };
 
   const handleSelectTemplate = (template: WorkoutTemplate) => {
@@ -160,7 +180,7 @@ export function NewWorkoutForm({ userRole, onSave, onCancel, initialData }: NewW
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar pb-24 bg-gray-50 dark:bg-gray-900">
           <WorkoutTypeSelector selectedType={tagSeance} onSelectType={setTagSeance} onOpenCustomModal={() => setCustomModalOpen(true)} disabled={isCompletingWorkout} />
           
-          {isAthlete && !isCompletingWorkout && (
+          {!isCompletingWorkout && (
             <button type="button" onClick={() => setTemplateSelectionOpen(true)} className="w-full py-3 px-3 rounded-xl text-md bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors shadow-md">Charger un modèle</button>
           )}
 
