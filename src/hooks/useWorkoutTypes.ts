@@ -15,6 +15,13 @@ export const useWorkoutTypes = () => {
       setLoading(false);
       return;
     }
+    
+    // MOCK DATA FOR VERIFICATION
+    if (user.id === 'mock-coach-id' || user.id === 'mock-athlete-id') {
+        setCustomTypes([]);
+        setLoading(false);
+        return;
+    }
 
     try {
       setLoading(true);
