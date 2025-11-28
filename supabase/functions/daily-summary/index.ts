@@ -25,7 +25,7 @@ serve(async (req) => {
     for (const user of users) {
       const userId = user.id;
       const userName = user.first_name || 'Athlète';
-      let summaryParts = [`Bonjour ${userName} ! Voici votre bilan du jour :`];
+      const summaryParts = [`Bonjour ${userName} ! Voici votre bilan du jour :`];
 
       // 1. Check today's workout
       const today = new Date().toISOString().split('T')[0];
