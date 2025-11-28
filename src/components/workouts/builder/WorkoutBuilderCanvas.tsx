@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { WorkoutBlock, SeriesBlock } from '../../../types/workout';
 import { GripVertical, Repeat, Dumbbell } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BlockCardContent } from '../common/BlockCardContent';
 
 // --- Card Components for the Canvas ---

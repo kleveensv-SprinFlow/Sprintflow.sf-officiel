@@ -23,7 +23,7 @@ export interface GroupAnalytics {
   checkin_count: number;
   alerts_count: number;
   pending_requests_count: number;
-  max_members: number | null;
+  group_limit: number | null;
   color?: string;
 }
 
