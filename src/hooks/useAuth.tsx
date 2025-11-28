@@ -99,8 +99,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // On réduit le timeout à 10s pour être plus réactif en cas d'erreur réseau
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Timeout: La requête Supabase n\'a pas répondu dans les 10 secondes'));
-        }, 10000);
+          reject(new Error('Timeout: La requête Supabase n\'a pas répondu dans les 20 secondes'));
+        }, 20000);
       });
 
       const queryPromise = supabase
