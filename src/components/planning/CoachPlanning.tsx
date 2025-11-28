@@ -15,6 +15,9 @@ import { TemplateSelectionModal } from '../workouts/TemplateSelectionModal';
 import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
 import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal';
 import { PlanningDayCard } from './PlanningDayCard';
+import { RhythmBar } from './RhythmBar';
+import { PhaseCreationModal } from './PhaseCreationModal';
+import { useTrainingPhases } from '../../hooks/useTrainingPhases';
 import { Workout } from '../../types';
 
 type ActiveFilter = {
@@ -35,6 +38,13 @@ export const CoachPlanning: React.FC = () => {
   }, [activeFilter]);
 
   const { workouts, planWorkout, batchPlanWorkouts } = useWorkouts(selectionForHook);
+  const {
+    phases,
+    createPhase,
+    deletePhase,
+    getPhaseForDate
+  } = useTrainingPhases(selectionForHook || null);
+
   const { groups, loading: loadingGroups } = useGroups();
   const { linkedAthletes, loading: loadingAthletes } = useCoachLinks(user?.id);
   const { allTypes: workoutTypes } = useWorkoutTypes();
@@ -52,6 +62,9 @@ export const CoachPlanning: React.FC = () => {
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
+  const [isPhaseModalOpen, setPhaseModalOpen] = useState(false);
+  const [phaseStartDate, setPhaseStartDate] = useState<Date>(new Date());
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [initialWorkoutData, setInitialWorkoutData] = useState<any>(null);
   const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
@@ -264,6 +277,20 @@ export const CoachPlanning: React.FC = () => {
            </div>
         </div>
 
+        {/* Rhythm Bar (Timeline) */}
+        {activeFilter && (
+            <RhythmBar
+                currentDate={currentDate}
+                phases={phases}
+                onAddPhase={(date) => {
+                    setPhaseStartDate(date);
+                    setPhaseModalOpen(true);
+                }}
+                onDeletePhase={deletePhase}
+                contextType={activeFilter.type}
+            />
+        )}
+
         {/* Week Navigator & Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl p-4 border border-white/20">
             {/* Arrows & Date */}
@@ -320,6 +347,8 @@ export const CoachPlanning: React.FC = () => {
       <div className="space-y-3">
         {days.map(day => {
             const dayWorkouts = filteredWorkouts.filter(w => isSameDay(parseISO(w.date), day));
+            const currentPhase = getPhaseForDate(day);
+
             return (
                 <PlanningDayCard
                     key={day.toISOString()}
@@ -328,6 +357,7 @@ export const CoachPlanning: React.FC = () => {
                     onAdd={() => handleAddWorkout(day)}
                     onEdit={(w) => setViewingWorkout(w)}
                     workoutTypeMap={workoutTypeMap}
+                    currentPhase={currentPhase || undefined}
                 />
             );
         })}
@@ -348,6 +378,18 @@ export const CoachPlanning: React.FC = () => {
           onCancel={() => setWorkoutFormOpen(false)}
           onSave={handleSaveWorkout}
           initialData={initialWorkoutData}
+        />
+      )}
+
+      {isPhaseModalOpen && activeFilter && user && (
+        <PhaseCreationModal
+            isOpen={isPhaseModalOpen}
+            onClose={() => setPhaseModalOpen(false)}
+            onSave={createPhase}
+            defaultStartDate={phaseStartDate}
+            context={activeFilter}
+            userRole="coach"
+            userId={user.id}
         />
       )}
 

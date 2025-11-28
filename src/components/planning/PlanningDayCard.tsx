@@ -4,6 +4,7 @@ import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Workout } from '../../types';
+import { PlanningPhase } from '../../types/planning';
 
 interface PlanningDayCardProps {
   date: Date;
@@ -11,6 +12,7 @@ interface PlanningDayCardProps {
   onAdd: () => void;
   onEdit: (workout: Workout) => void;
   workoutTypeMap: Map<string, { name: string; color: string }>;
+  currentPhase?: PlanningPhase;
 }
 
 export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
@@ -19,10 +21,18 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
   onAdd,
   onEdit,
   workoutTypeMap,
+  currentPhase,
 }) => {
   const isCurrentDay = isToday(date);
   const formattedDay = format(date, 'EEEE', { locale: fr });
   const formattedDate = format(date, 'd MMMM', { locale: fr });
+
+  // Phase Styling
+  const phaseBorderColor = currentPhase ? currentPhase.color_hex : 'transparent';
+  // Use a very light opacity for the background tint to be subtle
+  const phaseBgStyle = currentPhase
+    ? { backgroundColor: `${currentPhase.color_hex}15` } // Hex alpha ~8%
+    : {};
 
   return (
     <div className="relative group">
@@ -36,7 +46,16 @@ export const PlanningDayCard: React.FC<PlanningDayCardProps> = ({
           }
           backdrop-blur-md min-h-[100px] flex flex-col md:flex-row md:items-center md:gap-4 p-4
         `}
+        style={!isCurrentDay ? phaseBgStyle : {}}
       >
+        {/* Phase Indicator Border */}
+        {currentPhase && (
+            <div
+                className="absolute left-0 top-0 bottom-0 w-1.5 z-10"
+                style={{ backgroundColor: phaseBorderColor }}
+            />
+        )}
+
         {/* Date Section */}
         <div className="flex items-baseline justify-between md:flex-col md:justify-center md:w-32 md:flex-shrink-0 mb-3 md:mb-0">
             <div>
