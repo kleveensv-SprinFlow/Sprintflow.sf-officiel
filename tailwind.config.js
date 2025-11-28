@@ -49,6 +49,9 @@ export default {
         'sprint-primary': '#4F46E5',          // indigo-600
         'sprint-primary-hover': '#4338CA',    // indigo-700
 
+        // accent / highlight
+        'sprint-gold': '#FFC107',             // or sportif dynamique
+
         // fond léger clair (badges, pills, tags)
         'sprint-primary-soft': '#EEF2FF',     // indigo-50
 
