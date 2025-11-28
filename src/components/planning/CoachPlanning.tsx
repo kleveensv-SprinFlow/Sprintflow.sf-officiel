@@ -25,7 +25,12 @@ type ActiveFilter = {
 
 type SelectionType = 'group' | 'athlete';
 
-export const CoachPlanning: React.FC = () => {
+interface CoachPlanningProps {
+  initialSelectionType?: SelectionType;
+  onBackToSelection?: () => void;
+}
+
+export const CoachPlanning: React.FC<CoachPlanningProps> = ({ initialSelectionType, onBackToSelection }) => {
   const { user } = useAuth();
   // Pass the active filter to useWorkouts to fetch relevant data
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
@@ -48,7 +53,7 @@ export const CoachPlanning: React.FC = () => {
   }, [workoutTypes]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectionType, setSelectionType] = useState<SelectionType>('athlete'); // Default to athlete
+  const [selectionType, setSelectionType] = useState<SelectionType>(initialSelectionType || 'athlete'); // Default to athlete
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
@@ -210,6 +215,18 @@ export const CoachPlanning: React.FC = () => {
         
         {/* Context Selector (Athlete/Group) */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-sm border border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row gap-2">
+
+           {/* Back Button (if navigation allows) */}
+           {onBackToSelection && (
+             <button
+               onClick={onBackToSelection}
+               className="flex items-center justify-center w-12 shrink-0 rounded-xl bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 hover:text-sprint-primary dark:hover:text-sprint-primary transition-colors"
+               title="Retour au choix du mode"
+             >
+               <ChevronLeft size={20} />
+             </button>
+           )}
+
            {/* Type Toggles */}
            <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl shrink-0">
                <button
