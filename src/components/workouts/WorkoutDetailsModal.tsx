@@ -1,9 +1,10 @@
 // src/components/workouts/WorkoutDetailsModal.tsx
 import React from 'react';
-import { Workout, CourseBlock, MuscuBlock } from '../../types';
+import { Workout, CourseBlock, MuscuBlock, WorkoutBlock } from '../../types';
 import { X, Calendar, Dumbbell, Navigation, Type, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { SmartWorkoutBuilder } from './builder/SmartWorkoutBuilder';
 
 interface WorkoutDetailsModalProps {
   isOpen: boolean;
@@ -12,6 +13,18 @@ interface WorkoutDetailsModalProps {
 }
 
 const BlocDetail: React.FC<{ bloc: any, index: number }> = ({ bloc, index }) => {
+  // --- NOUVEAU : DÉTECTION MODE SMART ---
+  // Si le bloc possède des rounds (et une config), on utilise le SmartWorkoutBuilder en lecture seule
+  if (bloc.rounds && Array.isArray(bloc.rounds)) {
+    return (
+      <div className="mb-4">
+        <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{`Bloc ${index + 1}`}</p>
+        <SmartWorkoutBuilder initialBlock={bloc as WorkoutBlock} readOnly={true} />
+      </div>
+    );
+  }
+
+  // --- ANCIEN : FALLBACK ---
   if (bloc.type === 'course') {
     const b = bloc as CourseBlock;
     return (
@@ -56,10 +69,10 @@ export const WorkoutDetailsModal: React.FC<WorkoutDetailsModalProps> = ({ isOpen
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex justify-center items-center" onClick={onClose}>
-      <div className="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg m-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <header className="p-4 border-b border-gray-700 flex justify-between items-center shrink-0">
-          <h2 className="text-xl font-bold">{workout.tag_seance}</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700">
+      <div className="bg-gray-800 dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg m-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <header className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{workout.tag_seance}</h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
             <X size={24} />
           </button>
         </header>

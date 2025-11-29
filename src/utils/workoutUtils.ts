@@ -1,8 +1,7 @@
-import { v4 as uuidv4 } from 'uuid';
 import { WorkoutBlock, WorkoutBlockConfig, WorkoutRound } from '../types/workout';
 
 export const createEmptyRound = (): WorkoutRound => ({
-  id: uuidv4(),
+  id: crypto.randomUUID(),
   intensity_type: 'percent', // Default intensity type
 });
 
@@ -47,7 +46,7 @@ export const getDefaultConfig = (type: WorkoutBlock['type']): WorkoutBlockConfig
 
 export const createEmptyBlock = (type: WorkoutBlock['type']): WorkoutBlock => {
   const common = {
-    id: uuidv4(),
+    id: crypto.randomUUID(),
     rounds: [createEmptyRound()],
     config: getDefaultConfig(type),
   };
