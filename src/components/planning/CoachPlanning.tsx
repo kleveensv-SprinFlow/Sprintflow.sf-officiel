@@ -17,6 +17,7 @@ import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal';
 import { PlanningDayCard } from './PlanningDayCard';
 import { RhythmBar } from './RhythmBar';
 import { PhaseCreationModal } from './PhaseCreationModal';
+import { SmartPlanningModal, SmartPlanningPayload } from './SmartPlanningModal';
 import { useTrainingPhases } from '../../hooks/useTrainingPhases';
 import { Workout } from '../../types';
 
@@ -62,6 +63,7 @@ export const CoachPlanning: React.FC = () => {
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
+  const [isSmartPlanningOpen, setSmartPlanningOpen] = useState(false);
   const [isPhaseModalOpen, setPhaseModalOpen] = useState(false);
   const [phaseStartDate, setPhaseStartDate] = useState<Date>(new Date());
   
@@ -111,18 +113,49 @@ export const CoachPlanning: React.FC = () => {
   const handleCreateNewWorkout = () => {
     setTemplateModalOpen(false);
     setInitialWorkoutData(null);
-    setWorkoutFormOpen(true);
+    setSmartPlanningOpen(true);
   };
 
   const handleSelectTemplate = (template: WorkoutTemplate) => {
     setTemplateModalOpen(false);
     setInitialWorkoutData({
       title: template.template_name,
-      blocs: template.workout_data.blocs
+      blocks: template.workout_data.blocs,
+      notes: template.description || '',
+      tag_seance: template.workout_data.tag_seance, // Pass tag_seance if available in template
     });
-    setWorkoutFormOpen(true);
+    setSmartPlanningOpen(true);
   };
 
+  const handleSaveSmartPlanning = async (payload: SmartPlanningPayload) => {
+    if (!selectedDate || !activeFilter) return;
+
+    const planningPayload: any = {
+      title: payload.title,
+      type: 'guidé',
+      tag_seance: payload.tag_seance,
+      notes: payload.notes,
+      planned_data: { blocs: payload.blocs },
+      date: format(payload.date, 'yyyy-MM-dd'),
+    };
+
+    if (activeFilter.type === 'group') {
+      planningPayload.assigned_to_group_id = activeFilter.id;
+    } else {
+      planningPayload.assigned_to_user_id = activeFilter.id;
+    }
+
+    try {
+        await planWorkout(planningPayload);
+        toast.success("Séance planifiée avec succès");
+        setSmartPlanningOpen(false);
+    } catch (e) {
+        toast.error("Erreur lors de la planification");
+        console.error(e);
+    }
+  };
+
+  // Kept for backward compatibility if needed, but not used in new flow
   const handleSaveWorkout = async (payload: { blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
     if (!selectedDate || !activeFilter) return;
 
@@ -377,6 +410,16 @@ export const CoachPlanning: React.FC = () => {
           userRole="coach"
           onCancel={() => setWorkoutFormOpen(false)}
           onSave={handleSaveWorkout}
+          initialData={initialWorkoutData}
+        />
+      )}
+
+      {isSmartPlanningOpen && selectedDate && (
+        <SmartPlanningModal
+          isOpen={isSmartPlanningOpen}
+          onClose={() => setSmartPlanningOpen(false)}
+          onSave={handleSaveSmartPlanning}
+          selectedDate={selectedDate}
           initialData={initialWorkoutData}
         />
       )}
