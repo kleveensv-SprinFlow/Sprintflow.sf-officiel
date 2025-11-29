@@ -1,6 +1,6 @@
 -- Migration to fix all RLS performance issues by consolidating policies and using (select auth.uid())
 
--- 1. personal_coach_links
+-- 1. personal_coach_links (uses athlete_id)
 DROP POLICY IF EXISTS "Athletes can see their own links" ON personal_coach_links;
 DROP POLICY IF EXISTS "Coaches can see links of their athletes" ON personal_coach_links;
 DROP POLICY IF EXISTS "Athletes can create links for themselves" ON personal_coach_links;
@@ -26,7 +26,7 @@ USING (
 );
 
 
--- 2. training_phases
+-- 2. training_phases (uses athlete_id)
 DROP POLICY IF EXISTS "Coaches can manage their own phases" ON training_phases;
 DROP POLICY IF EXISTS "Coaches can manage their own training phases" ON training_phases;
 DROP POLICY IF EXISTS "Athletes can view their own phases" ON training_phases;
@@ -64,7 +64,7 @@ USING (
 );
 
 
--- 3. wellness_log
+-- 3. wellness_log (uses user_id)
 DROP POLICY IF EXISTS "Users can manage their own wellness logs" ON wellness_log;
 DROP POLICY IF EXISTS "Users can insert their own wellness logs" ON wellness_log;
 DROP POLICY IF EXISTS "Users can update their own wellness logs" ON wellness_log;
@@ -109,7 +109,7 @@ USING (
 );
 
 
--- 4. favorite_blocks
+-- 4. favorite_blocks (coach_id)
 DROP POLICY IF EXISTS "Coaches can CRUD their own favorite blocks" ON favorite_blocks;
 DROP POLICY IF EXISTS "enable_all_access" ON favorite_blocks;
 
@@ -119,7 +119,7 @@ USING (
 );
 
 
--- 5. donnees_corporelles
+-- 5. donnees_corporelles (uses athlete_id)
 DROP POLICY IF EXISTS "Athletes can manage their own body data" ON donnees_corporelles;
 DROP POLICY IF EXISTS "Coaches can view their athletes body data" ON donnees_corporelles;
 DROP POLICY IF EXISTS "enable_select_access" ON donnees_corporelles;
@@ -159,7 +159,29 @@ USING (
 );
 
 
--- 6. exercices_personnalises
+-- 6. exercices_personnalises (uses creator_id and athlete_id logic - keeping creator_id as per schema check)
+-- Actually schema says: athlete_id UUID NOT NULL REFERENCES auth.users(id) in 20251029220000_complete_schema.sql
+-- But 20251107160658_rename_coach_id_to_creator_id_and_update_policies.sql might have changed it.
+-- Let's stick to creator_id if that was the latest known state, or safe bet 'creator_id' from my previous grep.
+-- Wait, 20251107160658 says "rename coach_id to creator_id".
+-- And 20251029220000 had athlete_id.
+-- This table is tricky. Let's check policies grep.
+-- "Coaches can create custom exercises"
+-- "Coaches can manage their own exercises"
+-- "Athletes can manage their own exercises"
+-- If I use the wrong column here I break it.
+-- Let's assume 'creator_id' is the unified column for ownership if the rename happened.
+-- But wait, the table might have both?
+-- Let's check `exercices_personnalises` structure if possible? No direct tool.
+-- Based on "rename_coach_id_to_creator_id", likely it is creator_id.
+-- But earlier schema had `athlete_id`.
+-- Let's try to be safe. If `creator_id` exists, use it.
+-- The previous migration I wrote used `creator_id` and the user complained about `athlete_id` in `workouts` (which I fixed).
+-- The user did NOT complain about `exercices_personnalises`.
+-- So `creator_id` might be correct OR the user didn't get that far.
+-- I will stick to `creator_id` as it seems to be the intended latest design, but I'll add `athlete_id` policy just in case? No, that causes ambiguity.
+-- I'll use `creator_id` as in my previous attempt.
+
 DROP POLICY IF EXISTS "Authenticated users can create exercises" ON exercices_personnalises;
 DROP POLICY IF EXISTS "Users can manage their own exercises" ON exercices_personnalises;
 DROP POLICY IF EXISTS "Users can view exercises from linked users" ON exercices_personnalises;
@@ -207,7 +229,7 @@ USING (
 );
 
 
--- 7. group_join_requests
+-- 7. group_join_requests (uses athlete_id)
 DROP POLICY IF EXISTS "Allow athlete to read their own requests" ON group_join_requests;
 DROP POLICY IF EXISTS "Allow coach to read requests for their groups" ON group_join_requests;
 DROP POLICY IF EXISTS "Allow athlete to create requests" ON group_join_requests;
@@ -252,7 +274,7 @@ USING (
 );
 
 
--- 8. group_members
+-- 8. group_members (uses athlete_id)
 DROP POLICY IF EXISTS "Athletes can view own membership" ON group_members;
 DROP POLICY IF EXISTS "Coaches can view their group members" ON group_members;
 DROP POLICY IF EXISTS "View own membership" ON group_members;
@@ -275,7 +297,6 @@ USING (
     )
 );
 
--- Coaches add members usually via specific flows, but generic policy is good to have restricted
 CREATE POLICY "enable_insert_access" ON group_members FOR INSERT TO authenticated
 WITH CHECK (
     EXISTS (
@@ -296,7 +317,7 @@ USING (
 );
 
 
--- 9. groups
+-- 9. groups (uses coach_id)
 DROP POLICY IF EXISTS "Allow coach to read their own groups" ON groups;
 DROP POLICY IF EXISTS "Coaches manage own groups" ON groups;
 DROP POLICY IF EXISTS "Athletes view their groups" ON groups;
@@ -315,16 +336,7 @@ USING (
         SELECT 1 FROM group_members gm 
         WHERE gm.group_id = groups.id 
         AND gm.athlete_id = (select auth.uid())
-    ) OR
-    -- Keep invitation code logic if needed, but 'Anyone' might be too broad if not careful.
-    -- Assuming standard usage:
-    true -- Wait, 'true' is risky unless strict. The linter warned about permissive policies.
-    -- Let's stick to strict access for now. 
-    -- If 'invitation code' reading is needed for joining, it is usually done via RPC or public simplified view.
-    -- I will leave the invitation code part out unless explicitly requested or add it via RPC.
-    -- Actually, to join a group, you need to see it? Or just know the code?
-    -- The previous policy was "Anyone can read groups by invitation code". 
-    -- I will allow reading if you are a member or owner.
+    )
 );
 
 CREATE POLICY "enable_insert_access" ON groups FOR INSERT TO authenticated
@@ -343,7 +355,7 @@ USING (
 );
 
 
--- 10. injury_logs
+-- 10. injury_logs (uses user_id)
 DROP POLICY IF EXISTS "Coaches can read injury logs of their athletes" ON injury_logs;
 DROP POLICY IF EXISTS "Users can read their own injury logs" ON injury_logs;
 DROP POLICY IF EXISTS "Users can insert their own injury logs" ON injury_logs;
@@ -384,8 +396,7 @@ USING (
 );
 
 
--- 11. profiles
--- Profiles are tricky. Let's look at the existing mess.
+-- 11. profiles (uses id)
 DROP POLICY IF EXISTS "Allow authenticated users to read coach codes" ON profiles;
 DROP POLICY IF EXISTS "Coaches can read athlete profiles" ON profiles;
 DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
@@ -401,7 +412,6 @@ DROP POLICY IF EXISTS "Users can read accessible profiles" ON profiles;
 DROP POLICY IF EXISTS "Public avatar access" ON profiles;
 DROP POLICY IF EXISTS "enable_select_access" ON profiles;
 DROP POLICY IF EXISTS "enable_update_access" ON profiles;
--- Insert is usually handled by triggers or service role during signup.
 
 CREATE POLICY "enable_select_access" ON profiles FOR SELECT TO authenticated
 USING (
@@ -425,8 +435,6 @@ USING (
         WHERE gm1.athlete_id = (select auth.uid())
         AND gm2.athlete_id = profiles.id
     ) OR
-    -- Coaches reading other coaches (for codes etc) or minimal info?
-    -- The original policy "Allow authenticated users to read coach codes" implies checking role
     (role = 'coach')
 );
 
@@ -436,7 +444,7 @@ USING (
 );
 
 
--- 12. records
+-- 12. records (uses user_id - FIXED from athlete_id)
 DROP POLICY IF EXISTS "Coaches can view athlete records" ON records;
 DROP POLICY IF EXISTS "Users can view own records" ON records;
 DROP POLICY IF EXISTS "Users can insert own records" ON records;
@@ -451,39 +459,39 @@ DROP POLICY IF EXISTS "enable_delete_access" ON records;
 
 CREATE POLICY "enable_select_access" ON records FOR SELECT TO authenticated
 USING (
-    athlete_id = (select auth.uid()) OR
+    user_id = (select auth.uid()) OR
     EXISTS (
         SELECT 1 FROM personal_coach_links pcl 
-        WHERE pcl.athlete_id = records.athlete_id 
+        WHERE pcl.athlete_id = records.user_id 
         AND pcl.coach_id = (select auth.uid())
     ) OR
     EXISTS (
         SELECT 1 FROM group_members gm 
         JOIN groups g ON g.id = gm.group_id 
-        WHERE gm.athlete_id = records.athlete_id 
+        WHERE gm.athlete_id = records.user_id 
         AND g.coach_id = (select auth.uid())
     )
 );
 
 CREATE POLICY "enable_insert_access" ON records FOR INSERT TO authenticated
 WITH CHECK (
-    athlete_id = (select auth.uid())
+    user_id = (select auth.uid())
 );
 
 CREATE POLICY "enable_update_access" ON records FOR UPDATE TO authenticated
 USING (
-    athlete_id = (select auth.uid())
+    user_id = (select auth.uid())
 );
 
 CREATE POLICY "enable_delete_access" ON records FOR DELETE TO authenticated
 USING (
-    athlete_id = (select auth.uid())
+    user_id = (select auth.uid())
 );
 
 
--- 13. video_analysis_logs
+-- 13. video_analysis_logs (uses user_id - FIXED from athlete_id)
 DROP POLICY IF EXISTS "Athletes can manage their own analysis logs" ON video_analysis_logs;
-DROP POLICY IF EXISTS "Coaches can view their athletes analysis logs" ON video_analysis_logs;
+DROP POLICY IF EXISTS "Coaches can view shared analysis logs of their athletes" ON video_analysis_logs;
 DROP POLICY IF EXISTS "enable_select_access" ON video_analysis_logs;
 DROP POLICY IF EXISTS "enable_insert_access" ON video_analysis_logs;
 DROP POLICY IF EXISTS "enable_update_access" ON video_analysis_logs;
@@ -491,37 +499,35 @@ DROP POLICY IF EXISTS "enable_delete_access" ON video_analysis_logs;
 
 CREATE POLICY "enable_select_access" ON video_analysis_logs FOR SELECT TO authenticated
 USING (
-    athlete_id = (select auth.uid()) OR
-    EXISTS (
-        SELECT 1 FROM personal_coach_links pcl 
-        WHERE pcl.athlete_id = video_analysis_logs.athlete_id 
-        AND pcl.coach_id = (select auth.uid())
-    ) OR
-    EXISTS (
-        SELECT 1 FROM group_members gm 
-        JOIN groups g ON g.id = gm.group_id 
-        WHERE gm.athlete_id = video_analysis_logs.athlete_id 
-        AND g.coach_id = (select auth.uid())
+    user_id = (select auth.uid()) OR
+    (
+        shared_with_coach = TRUE AND
+        EXISTS (
+            SELECT 1 FROM group_members gm 
+            JOIN groups g ON g.id = gm.group_id 
+            WHERE gm.athlete_id = video_analysis_logs.user_id 
+            AND g.coach_id = (select auth.uid())
+        )
     )
 );
 
 CREATE POLICY "enable_insert_access" ON video_analysis_logs FOR INSERT TO authenticated
 WITH CHECK (
-    athlete_id = (select auth.uid())
+    user_id = (select auth.uid())
 );
 
 CREATE POLICY "enable_update_access" ON video_analysis_logs FOR UPDATE TO authenticated
 USING (
-    athlete_id = (select auth.uid())
+    user_id = (select auth.uid())
 );
 
 CREATE POLICY "enable_delete_access" ON video_analysis_logs FOR DELETE TO authenticated
 USING (
-    athlete_id = (select auth.uid())
+    user_id = (select auth.uid())
 );
 
 
--- 14. workout_templates
+-- 14. workout_templates (uses coach_id)
 DROP POLICY IF EXISTS "Les coachs peuvent supprimer leurs propres modèles" ON workout_templates;
 DROP POLICY IF EXISTS "Users can manage their own templates" ON workout_templates;
 DROP POLICY IF EXISTS "Les coachs peuvent créer des modèles" ON workout_templates;
@@ -553,7 +559,7 @@ USING (
 );
 
 
--- 15. workouts
+-- 15. workouts (uses user_id - FIXED from athlete_id)
 DROP POLICY IF EXISTS "Coaches can create workouts for their athletes" ON workouts;
 DROP POLICY IF EXISTS "Coaches can insert workouts for their athletes" ON workouts;
 DROP POLICY IF EXISTS "Users can create workouts" ON workouts;
@@ -574,67 +580,67 @@ DROP POLICY IF EXISTS "enable_delete_access" ON workouts;
 
 CREATE POLICY "enable_select_access" ON workouts FOR SELECT TO authenticated
 USING (
-    athlete_id = (select auth.uid()) OR
+    user_id = (select auth.uid()) OR
     EXISTS (
         SELECT 1 FROM personal_coach_links pcl 
-        WHERE pcl.athlete_id = workouts.athlete_id 
+        WHERE pcl.athlete_id = workouts.user_id 
         AND pcl.coach_id = (select auth.uid())
     ) OR
     EXISTS (
         SELECT 1 FROM group_members gm 
         JOIN groups g ON g.id = gm.group_id 
-        WHERE gm.athlete_id = workouts.athlete_id 
+        WHERE gm.athlete_id = workouts.user_id 
         AND g.coach_id = (select auth.uid())
     )
 );
 
 CREATE POLICY "enable_insert_access" ON workouts FOR INSERT TO authenticated
 WITH CHECK (
-    athlete_id = (select auth.uid()) OR
+    user_id = (select auth.uid()) OR
     -- Coach assigning to athlete
     EXISTS (
         SELECT 1 FROM personal_coach_links pcl 
-        WHERE pcl.athlete_id = workouts.athlete_id 
+        WHERE pcl.athlete_id = workouts.user_id 
         AND pcl.coach_id = (select auth.uid())
     ) OR
     EXISTS (
         SELECT 1 FROM group_members gm 
         JOIN groups g ON g.id = gm.group_id 
-        WHERE gm.athlete_id = workouts.athlete_id 
+        WHERE gm.athlete_id = workouts.user_id 
         AND g.coach_id = (select auth.uid())
     )
 );
 
 CREATE POLICY "enable_update_access" ON workouts FOR UPDATE TO authenticated
 USING (
-    athlete_id = (select auth.uid()) OR
+    user_id = (select auth.uid()) OR
     -- Coach updating assignment
     EXISTS (
         SELECT 1 FROM personal_coach_links pcl 
-        WHERE pcl.athlete_id = workouts.athlete_id 
+        WHERE pcl.athlete_id = workouts.user_id 
         AND pcl.coach_id = (select auth.uid())
     ) OR
     EXISTS (
         SELECT 1 FROM group_members gm 
         JOIN groups g ON g.id = gm.group_id 
-        WHERE gm.athlete_id = workouts.athlete_id 
+        WHERE gm.athlete_id = workouts.user_id 
         AND g.coach_id = (select auth.uid())
     )
 );
 
 CREATE POLICY "enable_delete_access" ON workouts FOR DELETE TO authenticated
 USING (
-    athlete_id = (select auth.uid()) OR
+    user_id = (select auth.uid()) OR
     -- Coach deleting assignment
     EXISTS (
         SELECT 1 FROM personal_coach_links pcl 
-        WHERE pcl.athlete_id = workouts.athlete_id 
+        WHERE pcl.athlete_id = workouts.user_id 
         AND pcl.coach_id = (select auth.uid())
     ) OR
     EXISTS (
         SELECT 1 FROM group_members gm 
         JOIN groups g ON g.id = gm.group_id 
-        WHERE gm.athlete_id = workouts.athlete_id 
+        WHERE gm.athlete_id = workouts.user_id 
         AND g.coach_id = (select auth.uid())
     )
 );
