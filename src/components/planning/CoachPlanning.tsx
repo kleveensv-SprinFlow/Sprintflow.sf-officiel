@@ -254,60 +254,50 @@ export const CoachPlanning: React.FC = () => {
       {/* --- HEADER --- */}
       <header className="mb-6 space-y-4">
         
-        {/* Context Selector (Athlete/Group) */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-sm border border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row gap-2">
-           {/* Type Toggles */}
-           <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl shrink-0">
-               <button
-                  onClick={() => { setSelectionType('athlete'); setActiveFilter(null); }}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                      selectionType === 'athlete' 
-                      ? 'bg-white dark:bg-gray-600 shadow-sm text-sprint-primary' 
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
-                  }`}
-               >
-                   Athlètes
-               </button>
-               <button
-                  onClick={() => { setSelectionType('group'); setActiveFilter(null); }}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                      selectionType === 'group' 
-                      ? 'bg-white dark:bg-gray-600 shadow-sm text-sprint-primary' 
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
-                  }`}
-               >
-                   Groupes
-               </button>
-           </div>
+        {/* Master Selector (Group / Athlete) */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700/50">
+           <select
+             className="w-full h-12 bg-gray-50 dark:bg-gray-700/50 rounded-xl px-4 font-semibold text-gray-900 dark:text-white outline-none cursor-pointer border-r-[12px] border-transparent"
+             value={activeFilter ? `${activeFilter.type}:${activeFilter.id}` : ''}
+             onChange={(e) => {
+               const value = e.target.value;
+               if (!value) return;
 
-           {/* Dropdown */}
-           <div className="flex-1 px-1">
-               <select
-                 className="w-full h-full bg-transparent font-semibold text-gray-900 dark:text-white outline-none cursor-pointer py-2"
-                 value={activeFilter?.id || ''}
-                 onChange={(e) => {
-                   const id = e.target.value;
-                   if (selectionType === 'athlete') {
-                     const a = linkedAthletes.find(l => l.id === id);
-                     if (a) setActiveFilter({ type: 'athlete', id: a.id, name: `${a.first_name} ${a.last_name}`});
-                   } else {
-                     const g = groups.find(gr => gr.id === id);
-                     if (g) setActiveFilter({ type: 'group', id: g.id, name: g.name });
-                   }
-                 }}
-               >
-                 <option value="" disabled>Sélectionner...</option>
-                 {selectionType === 'athlete' ? (
-                     linkedAthletes.map(a => (
-                         <option key={a.id} value={a.id}>{a.first_name} {a.last_name}</option>
-                     ))
-                 ) : (
-                     groups.map(g => (
-                         <option key={g.id} value={g.id}>{g.name}</option>
-                     ))
-                 )}
-               </select>
-           </div>
+               const [type, id] = value.split(':');
+
+               if (type === 'athlete') {
+                 const a = linkedAthletes.find(l => l.id === id);
+                 if (a) {
+                   setSelectionType('athlete');
+                   setActiveFilter({ type: 'athlete', id: a.id, name: `${a.first_name} ${a.last_name}`});
+                 }
+               } else if (type === 'group') {
+                 const g = groups.find(gr => gr.id === id);
+                 if (g) {
+                   setSelectionType('group');
+                   setActiveFilter({ type: 'group', id: g.id, name: g.name });
+                 }
+               }
+             }}
+           >
+             <option value="" disabled>Sélectionner un planning...</option>
+
+             <optgroup label="Mes Groupes">
+               {groups.map(g => (
+                 <option key={g.id} value={`group:${g.id}`}>
+                   👥 {g.name}
+                 </option>
+               ))}
+             </optgroup>
+
+             <optgroup label="Mes Athlètes">
+               {linkedAthletes.map(a => (
+                 <option key={a.id} value={`athlete:${a.id}`}>
+                   👤 {a.first_name} {a.last_name}
+                 </option>
+               ))}
+             </optgroup>
+           </select>
         </div>
 
         {/* Rhythm Bar (Timeline) */}

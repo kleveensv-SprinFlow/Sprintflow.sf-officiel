@@ -200,7 +200,7 @@ export const SmartPlanningModal: React.FC<SmartPlanningModalProps> = ({
         </div>
 
         {/* --- FOOTER / ACTIONS --- */}
-        <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row items-center gap-4 justify-between">
+        <div className="p-4 pb-8 md:pb-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row items-center gap-4 justify-between">
           
           {/* Quick Add Actions */}
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
@@ -229,16 +229,16 @@ export const SmartPlanningModal: React.FC<SmartPlanningModalProps> = ({
           </div>
 
           {/* Main Actions */}
-          <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+          <div className="grid grid-cols-2 md:flex md:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
             <button
               onClick={onClose}
-              className="px-6 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-1 md:flex-none text-center"
+              className="px-6 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-center w-full md:w-auto"
             >
               Annuler
             </button>
             <button
               onClick={handleSave}
-              className="px-8 py-2.5 rounded-xl bg-sprint-primary text-white font-bold shadow-lg shadow-sprint-primary/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 flex-1 md:flex-none"
+              className="px-8 py-2.5 rounded-xl bg-sprint-primary text-white font-bold shadow-lg shadow-sprint-primary/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 text-center w-full md:w-auto"
             >
               <Save size={18} />
               Sauvegarder
