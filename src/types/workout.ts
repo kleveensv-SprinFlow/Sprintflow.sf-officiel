@@ -20,6 +20,9 @@ export interface WorkoutRound {
   target_time?: string;     // ex: "10.50" (Chrono cible)
   start_type?: StartType;   // Type de départ
   notes?: string;           // Consigne spécifique pour cette rep
+  
+  // Champs universels (Phase 3)
+  performance_value?: string; // ex: "1.65", "NM", "X" pour UniversalBlock
 }
 
 export interface WorkoutBlockConfig {
@@ -95,7 +98,18 @@ export interface SeriesBlock extends BaseBlock {
   blocks: WorkoutBlock[];
 }
 
-export type WorkoutBlock = CourseBlock | MuscuBlock | RestBlock | TechniqueBlock | SeriesBlock;
+// Phase 3: Nouveaux Blocs
+export interface NoteBlock extends BaseBlock {
+  type: 'note';
+  content: string;
+}
+
+export interface UniversalBlock extends BaseBlock {
+  type: 'universal';
+  metric_name: string; // ex: "Hauteur", "Lattes", "Distance"
+}
+
+export type WorkoutBlock = CourseBlock | MuscuBlock | RestBlock | TechniqueBlock | SeriesBlock | NoteBlock | UniversalBlock;
 
 export interface WorkoutTemplate {
   id: string;
