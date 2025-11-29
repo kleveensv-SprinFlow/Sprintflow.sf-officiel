@@ -61,7 +61,7 @@ export const CoachPlanning: React.FC = () => {
   }, [workoutTypes]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectionType, setSelectionType] = useState<SelectionType>('athlete'); // Default to athlete
+  const [selectionType, setSelectionType] = useState<SelectionType>('group'); // Default to group
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);

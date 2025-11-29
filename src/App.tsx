@@ -14,7 +14,7 @@ import Dashboard from './components/Dashboard';
 import NewWorkoutForm from './components/workouts/NewWorkoutForm';
 import MyFollowUpsPage from './components/coach/MyFollowUpsPage';
 import MyAthletes360Page from './components/coach/MyAthletes360Page';
-import ManagePlanningPage from './components/coach/ManagePlanningPage';
+import { CoachPlanning } from './components/planning/CoachPlanning';
 import { ActionType } from './data/actions';
 import HubView from './components/hub/HubView';
 import SprintyChatView from './components/chat/sprinty/SprintyChatView';
@@ -175,7 +175,7 @@ function App() {
             )}
             {mainView === 'dashboard' && activeAction === 'manage-planning' && (
               <motion.div key="manage-planning" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-                <ManagePlanningPage onBack={() => handleAction(null)} />
+                <CoachPlanning />
               </motion.div>
             )}
           </AnimatePresence>
