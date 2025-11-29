@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Clipboard, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, Clipboard, Plus, Edit2 } from 'lucide-react';
 import { format, eachDayOfInterval, startOfWeek, endOfWeek, isSameDay, addDays, subDays, parseISO, differenceInCalendarDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'react-toastify';
@@ -20,6 +20,7 @@ import { PhaseCreationModal } from './PhaseCreationModal';
 import { SmartPlanningModal, SmartPlanningPayload } from './SmartPlanningModal';
 import { useTrainingPhases } from '../../hooks/useTrainingPhases';
 import { Workout } from '../../types';
+import { PlanningPhase } from '../../types/planning';
 
 type ActiveFilter = {
   type: 'group' | 'athlete';
@@ -42,6 +43,7 @@ export const CoachPlanning: React.FC = () => {
   const { 
     phases, 
     createPhase, 
+    updatePhase,
     deletePhase, 
     getPhaseForDate 
   } = useTrainingPhases(selectionForHook || null);
@@ -66,6 +68,7 @@ export const CoachPlanning: React.FC = () => {
   const [isSmartPlanningOpen, setSmartPlanningOpen] = useState(false);
   const [isPhaseModalOpen, setPhaseModalOpen] = useState(false);
   const [phaseStartDate, setPhaseStartDate] = useState<Date>(new Date());
+  const [editingPhase, setEditingPhase] = useState<PlanningPhase | null>(null);
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [initialWorkoutData, setInitialWorkoutData] = useState<any>(null);
@@ -90,6 +93,9 @@ export const CoachPlanning: React.FC = () => {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  // Phase for the current week (based on Monday)
+  const currentWeekPhase = getPhaseForDate(weekStart);
 
   const filteredWorkouts = useMemo(() => {
     // Filter workouts to only show those that belong to the current filter
@@ -307,6 +313,7 @@ export const CoachPlanning: React.FC = () => {
                 phases={phases}
                 onAddPhase={(date) => {
                     setPhaseStartDate(date);
+                    setEditingPhase(null);
                     setPhaseModalOpen(true);
                 }}
                 onDeletePhase={deletePhase}
@@ -315,53 +322,95 @@ export const CoachPlanning: React.FC = () => {
         )}
 
         {/* Week Navigator & Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-            {/* Arrows & Date */}
-            <div className="flex items-center gap-4">
-                <button 
-                    onClick={() => setCurrentDate(subDays(currentDate, 7))}
-                    className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                    <ChevronLeft size={20} />
-                </button>
-                
-                <div className="text-center">
-                    <span className="block text-xs text-gray-500 font-medium uppercase tracking-wider">Semaine du</span>
-                    <span className="text-lg font-bold text-gray-900 dark:text-white">
-                        {format(weekStart, 'd MMM', { locale: fr })} - {format(weekEnd, 'd MMM yyyy', { locale: fr })}
-                    </span>
-                </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+              {/* Arrows & Date */}
+              <div className="flex items-center gap-4">
+                  <button
+                      onClick={() => setCurrentDate(subDays(currentDate, 7))}
+                      className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                      <ChevronLeft size={20} />
+                  </button>
 
-                <button 
-                    onClick={() => setCurrentDate(addDays(currentDate, 7))}
-                    className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                    <ChevronRight size={20} />
-                </button>
-            </div>
+                  <div className="text-center">
+                      <span className="block text-xs text-gray-500 font-medium uppercase tracking-wider">Semaine du</span>
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">
+                          {format(weekStart, 'd MMM', { locale: fr })} - {format(weekEnd, 'd MMM yyyy', { locale: fr })}
+                      </span>
+                  </div>
 
-            {/* Week Actions (Copy/Paste) */}
-            <div className="flex items-center gap-2">
-                <button
-                    onClick={copyWeek}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-                    title="Copier cette semaine"
-                >
-                    <Copy size={16} />
-                    <span className="hidden sm:inline">Copier</span>
-                </button>
-                
-                {weekClipboard && (
-                    <button
-                        onClick={pasteWeek}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-sprint-primary rounded-lg shadow-sm hover:bg-sprint-primary/90 transition-colors animate-pulse"
-                        title="Coller la semaine copiée"
-                    >
-                        <Clipboard size={16} />
-                        <span className="hidden sm:inline">Coller</span>
-                    </button>
-                )}
-            </div>
+                  <button
+                      onClick={() => setCurrentDate(addDays(currentDate, 7))}
+                      className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                      <ChevronRight size={20} />
+                  </button>
+              </div>
+
+              {/* Week Actions (Copy/Paste) */}
+              <div className="flex items-center gap-2">
+                  <button
+                      onClick={copyWeek}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                      title="Copier cette semaine"
+                  >
+                      <Copy size={16} />
+                      <span className="hidden sm:inline">Copier</span>
+                  </button>
+
+                  {weekClipboard && (
+                      <button
+                          onClick={pasteWeek}
+                          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-sprint-primary rounded-lg shadow-sm hover:bg-sprint-primary/90 transition-colors animate-pulse"
+                          title="Coller la semaine copiée"
+                      >
+                          <Clipboard size={16} />
+                          <span className="hidden sm:inline">Coller</span>
+                      </button>
+                  )}
+              </div>
+          </div>
+
+          {/* Explicit Phase Indicator */}
+          <div className="flex justify-center -mt-2">
+            {currentWeekPhase ? (
+              <button
+                onClick={() => {
+                  setPhaseStartDate(parseISO(currentWeekPhase.start_date));
+                  setEditingPhase(currentWeekPhase);
+                  setPhaseModalOpen(true);
+                }}
+                className="group flex items-center gap-2 px-4 py-1.5 rounded-full bg-opacity-20 backdrop-blur-sm border border-transparent hover:border-current transition-all cursor-pointer"
+                style={{
+                  backgroundColor: `${currentWeekPhase.color_hex}20`,
+                  color: currentWeekPhase.color_hex,
+                  borderColor: `${currentWeekPhase.color_hex}40`
+                }}
+              >
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: currentWeekPhase.color_hex }}
+                />
+                <span className="text-sm font-bold">
+                  {currentWeekPhase.name}
+                </span>
+                <Edit2 size={12} className="opacity-50 group-hover:opacity-100 transition-opacity ml-1" />
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setPhaseStartDate(weekStart);
+                  setEditingPhase(null);
+                  setPhaseModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-sprint-primary hover:border-sprint-primary transition-colors text-sm font-medium"
+              >
+                <Plus size={14} />
+                Définir le cycle / phase
+              </button>
+            )}
+          </div>
         </div>
 
       </header>
@@ -419,10 +468,12 @@ export const CoachPlanning: React.FC = () => {
             isOpen={isPhaseModalOpen}
             onClose={() => setPhaseModalOpen(false)}
             onSave={createPhase}
+            onUpdate={updatePhase}
             defaultStartDate={phaseStartDate}
             context={activeFilter}
             userRole="coach"
             userId={user.id}
+            editingPhase={editingPhase}
         />
       )}
 

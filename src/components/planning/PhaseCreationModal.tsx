@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check } from 'lucide-react';
 import { format, addDays } from 'date-fns';
-import { PhaseCreationPayload, PhaseType } from '../../types/planning';
+import { PhaseCreationPayload, PhaseType, PlanningPhase } from '../../types/planning';
 
 interface PhaseCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (payload: PhaseCreationPayload) => Promise<void>;
+  onUpdate?: (id: string, payload: Partial<PhaseCreationPayload>) => Promise<void>;
   defaultStartDate: Date;
   context: { type: 'athlete' | 'group', id: string };
   userRole: string; // 'coach' | 'athlete'
   userId: string;
+  editingPhase?: PlanningPhase | null;
 }
 
 const PHASE_TYPES: { type: PhaseType; label: string; color: string; desc: string }[] = [
@@ -25,15 +27,34 @@ export const PhaseCreationModal: React.FC<PhaseCreationModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  onUpdate,
   defaultStartDate,
   context,
-  userId
+  userId,
+  editingPhase
 }) => {
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<PhaseType>('volume');
   const [startDate, setStartDate] = useState(format(defaultStartDate, 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(addDays(defaultStartDate, 6), 'yyyy-MM-dd'));
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingPhase) {
+        setName(editingPhase.name);
+        setSelectedType(editingPhase.type);
+        setStartDate(editingPhase.start_date);
+        setEndDate(editingPhase.end_date);
+      } else {
+        // Reset for new creation
+        setName('');
+        setSelectedType('volume');
+        setStartDate(format(defaultStartDate, 'yyyy-MM-dd'));
+        setEndDate(format(addDays(defaultStartDate, 6), 'yyyy-MM-dd'));
+      }
+    }
+  }, [isOpen, editingPhase, defaultStartDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,10 +75,17 @@ export const PhaseCreationModal: React.FC<PhaseCreationModalProps> = ({
     };
 
     try {
-      await onSave(payload);
+      if (editingPhase && onUpdate) {
+        await onUpdate(editingPhase.id, payload);
+      } else {
+        await onSave(payload);
+      }
       onClose();
-      setName('');
-      setSelectedType('volume');
+      // Optional: clear state here, though useEffect handles it on re-open
+      if (!editingPhase) {
+        setName('');
+        setSelectedType('volume');
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -79,7 +107,7 @@ export const PhaseCreationModal: React.FC<PhaseCreationModalProps> = ({
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              Nouvelle Phase
+              {editingPhase ? 'Modifier la Phase' : 'Nouvelle Phase'}
             </h3>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <X size={20} />
@@ -173,7 +201,7 @@ export const PhaseCreationModal: React.FC<PhaseCreationModalProps> = ({
               disabled={isSubmitting}
               className="w-full py-3 rounded-xl bg-sprint-primary text-white font-bold shadow-lg shadow-sprint-primary/30 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
             >
-              {isSubmitting ? 'Création...' : 'Créer la phase'}
+              {isSubmitting ? 'Enregistrement...' : (editingPhase ? 'Mettre à jour' : 'Créer la phase')}
             </button>
 
           </form>
