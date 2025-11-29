@@ -1,95 +1,114 @@
-import { WorkoutBlock, WorkoutRound } from '../types/workout';
+import { WorkoutBlock, WorkoutBlockConfig, WorkoutRound } from '../types/workout';
 
-// --- 1. Générateur d'ID (Remplace uuid) ---
-const generateId = () => {
-  // Utilise l'API crypto du navigateur si disponible, sinon un fallback aléatoire
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-};
-
-// --- 2. Création d'une répétition vide (Round) ---
 export const createEmptyRound = (): WorkoutRound => ({
-  id: generateId(),
-  distance: 0,
-  intensity_value: undefined,
-  intensity_type: 'percent',
-  recovery_time: undefined,
-  target_time: '',
-  start_type: 'standing',
-  notes: ''
+  id: crypto.randomUUID(),
+  intensity_type: 'percent', // Default intensity type
 });
 
-// --- 3. Création d'un bloc vide avec configuration par défaut (Smart Defaults) ---
-export const createEmptyBlock = (type: 'course' | 'musculation' | 'technique'): WorkoutBlock => {
-  const blockId = generateId();
-  
-  // Configuration de base commune
-  const baseConfig = {
-    show_target_time: false,
-    show_intensity: true,
-    show_recovery: true,
-    show_start_type: false,
-    show_weight: false,
+export const getDefaultConfig = (type: WorkoutBlock['type']): WorkoutBlockConfig => {
+  const baseConfig: WorkoutBlockConfig = {
     show_distance: false,
     show_duration: false,
     show_reps_count: false,
-    show_notes: false
+    show_intensity: false,
+    show_weight: false,
+    show_recovery: false,
+    show_target_time: false,
+    show_start_type: false,
+    show_notes: false,
   };
 
   switch (type) {
     case 'course':
       return {
-        id: blockId,
-        type: 'course',
-        title: 'Bloc Course',
-        rounds: [createEmptyRound(), createEmptyRound()], // 2 lignes par défaut pour commencer
-        config: {
-          ...baseConfig,
-          show_distance: true,
-          show_recovery: true,
-          show_intensity: true
-        }
-      } as any; // Cast as any temporaire si les types stricts de Phase 1 ne sont pas parfaitement alignés
-
+        ...baseConfig,
+        show_distance: true,
+        show_recovery: true,
+        show_intensity: true,
+      };
     case 'musculation':
       return {
-        id: blockId,
-        type: 'musculation',
-        title: 'Bloc Musculation',
-        rounds: [createEmptyRound()],
-        config: {
-          ...baseConfig,
-          show_weight: true,
-          show_reps_count: true,
-          show_intensity: false, // En muscu on utilise souvent la charge plutôt que %Vmax
-          show_recovery: true
-        }
-      } as any;
-
+        ...baseConfig,
+        show_weight: true,
+        show_reps_count: true,
+        show_recovery: true,
+      };
     case 'technique':
       return {
-        id: blockId,
-        type: 'technique',
-        title: 'Technique / Drills',
-        rounds: [createEmptyRound()],
-        config: {
-          ...baseConfig,
-          show_duration: true,
-          show_notes: true,
-          show_intensity: false
-        }
-      } as any;
-
+        ...baseConfig,
+        show_duration: true,
+        show_notes: true,
+      };
     default:
-      // Fallback pour éviter les crashs
+      return baseConfig;
+  }
+};
+
+export const createEmptyBlock = (type: WorkoutBlock['type']): WorkoutBlock => {
+  const common = {
+    id: crypto.randomUUID(),
+    rounds: [createEmptyRound()],
+    config: getDefaultConfig(type),
+  };
+
+  switch (type) {
+    case 'course':
       return {
-        id: blockId,
+        ...common,
         type: 'course',
-        title: 'Bloc Générique',
-        rounds: [],
-        config: baseConfig
-      } as any;
+        // Legacy defaults to satisfy types
+        series: 1,
+        reps: 1,
+        distance: 0,
+        restBetweenReps: '0',
+        restBetweenSeries: '0',
+      };
+    case 'musculation':
+      return {
+        ...common,
+        type: 'musculation',
+        // Legacy defaults
+        exerciceId: '',
+        exerciceNom: 'Nouvel exercice',
+        series: 1,
+        reps: 1,
+        poids: null,
+        restTime: '0',
+      };
+    case 'technique':
+      return {
+        ...common,
+        type: 'technique',
+        // Legacy defaults
+        title: 'Bloc Technique',
+        duration_estimated_seconds: 0,
+      };
+    case 'repos':
+      return {
+        ...common,
+        type: 'repos',
+        rest_duration_seconds: 60,
+        activity_type: 'passif',
+      };
+    case 'series':
+      return {
+        ...common,
+        type: 'series',
+        seriesCount: 2,
+        restBetweenSeries: '0',
+        blocks: [],
+      };
+    default:
+        // Fallback for unknown types if any, though TS ensures we cover cases or return compatible type
+        // In practice this case might not be reachable if strictly typed
+         return {
+            ...common,
+            type: 'course', // fallback
+            series: 1,
+            reps: 1,
+            distance: 0,
+            restBetweenReps: '0',
+            restBetweenSeries: '0',
+        } as WorkoutBlock;
   }
 };
