@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Calendar, Tag, Type } from 'lucide-react';
+import { X, Plus, Trash2, Calendar, Tag, Type, StickyNote, Ruler } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'react-toastify';
@@ -215,10 +215,12 @@ export const SmartPlanningModal: React.FC<SmartPlanningModalProps> = ({
 
           {/* --- FOOTER --- */}
           <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row items-center gap-4 justify-between">
-            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
-              <button onClick={() => handleAddBlock('course')} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-100 whitespace-nowrap">+ Sprint</button>
-              <button onClick={() => handleAddBlock('musculation')} className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg text-sm font-bold hover:bg-purple-100 whitespace-nowrap">+ Muscu</button>
-              <button onClick={() => handleAddBlock('technique')} className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg text-sm font-bold hover:bg-amber-100 whitespace-nowrap">+ Technique</button>
+            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto scrollbar-hide">
+              <button onClick={() => handleAddBlock('course')} className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 whitespace-nowrap">+ Sprint</button>
+              <button onClick={() => handleAddBlock('musculation')} className="px-4 py-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg text-sm font-bold hover:bg-purple-100 dark:hover:bg-purple-900/50 whitespace-nowrap">+ Muscu</button>
+              <button onClick={() => handleAddBlock('technique')} className="px-4 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg text-sm font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 whitespace-nowrap">+ Technique</button>
+              <button onClick={() => handleAddBlock('universal')} className="px-4 py-2 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm font-bold hover:bg-green-100 dark:hover:bg-green-900/50 whitespace-nowrap flex items-center gap-1"><Ruler size={14}/> + Universel</button>
+              <button onClick={() => handleAddBlock('note')} className="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg text-sm font-bold hover:bg-yellow-100 dark:hover:bg-yellow-900/50 whitespace-nowrap flex items-center gap-1"><StickyNote size={14}/> + Note</button>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
               <button onClick={onClose} className="flex-1 px-6 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium">Annuler</button>
