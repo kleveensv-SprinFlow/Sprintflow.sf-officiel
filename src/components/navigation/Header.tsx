@@ -7,9 +7,10 @@ interface HeaderProps {
   currentView: 'dashboard' | 'profile' | 'settings';
   onNavigate: (target: 'profile' | 'settings' | 'back') => void;
   isLoading: boolean;
+  forceShowBack?: boolean;
 }
 
-export default function Header({ currentView, onNavigate, isLoading }: HeaderProps) {
+export default function Header({ currentView, onNavigate, isLoading, forceShowBack }: HeaderProps) {
   const { profile } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -24,14 +25,14 @@ export default function Header({ currentView, onNavigate, isLoading }: HeaderPro
 
   // Logique d'affichage pour la partie gauche du header
   const renderLeftPart = () => {
-    if (currentView === 'dashboard') {
+    if (currentView === 'dashboard' && !forceShowBack) {
       return (
         <h1 className="text-xl font-extrabold text-gray-900 dark:text-white font-manrope tracking-tight">
           SPRINTFLOW
         </h1>
       );
     }
-    // Pour les autres vues, on affiche un bouton "Retour"
+    // Pour les autres vues (ou si forceShowBack est true), on affiche un bouton "Retour"
     return (
       <button
         onClick={() => onNavigate('back')}

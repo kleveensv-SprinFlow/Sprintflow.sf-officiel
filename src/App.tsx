@@ -117,7 +117,18 @@ function App() {
         
         {/* Affichage conditionnel du Header */}
         {showGlobalHeader && (
-          <Header currentView={mainView} onNavigate={handleNavigation} isLoading={profileLoading} />
+          <Header
+            currentView={mainView}
+            onNavigate={(target) => {
+              if (activeAction) {
+                handleAction(null);
+              } else {
+                handleNavigation(target);
+              }
+            }}
+            isLoading={profileLoading}
+            forceShowBack={!!activeAction}
+          />
         )}
 
         {/* Ajustement dynamique du padding-top : 60px si header présent, sinon 0 */}
