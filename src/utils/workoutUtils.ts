@@ -39,6 +39,14 @@ export const getDefaultConfig = (type: WorkoutBlock['type']): WorkoutBlockConfig
         show_duration: true,
         show_notes: true,
       };
+    case 'universal':
+      return {
+        ...baseConfig,
+        show_intensity: true,
+        show_recovery: true,
+      };
+    case 'note':
+      return baseConfig; // Note block doesn't use grid config
     default:
       return baseConfig;
   }
@@ -97,6 +105,18 @@ export const createEmptyBlock = (type: WorkoutBlock['type']): WorkoutBlock => {
         seriesCount: 2,
         restBetweenSeries: '0',
         blocks: [],
+      };
+    case 'note':
+      return {
+        ...common,
+        type: 'note',
+        content: '',
+      };
+    case 'universal':
+      return {
+        ...common,
+        type: 'universal',
+        metric_name: 'Performance',
       };
     default:
         // Fallback for unknown types if any, though TS ensures we cover cases or return compatible type

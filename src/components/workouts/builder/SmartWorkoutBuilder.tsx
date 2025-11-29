@@ -13,21 +13,28 @@ interface SmartWorkoutBuilderProps {
 
 export const SmartWorkoutBuilder: React.FC<SmartWorkoutBuilderProps> = ({ initialBlock, onUpdate, readOnly = false }) => {
   // Ensure we have a valid config and rounds array even if the incoming block doesn't have them yet
-  const [block, setBlock] = useState<WorkoutBlock>(() => ({
-    ...initialBlock,
-    rounds: initialBlock.rounds || [],
-    config: initialBlock.config || {
-      show_distance: true,
-      show_duration: false,
-      show_reps_count: false,
-      show_intensity: true,
-      show_weight: false,
-      show_recovery: true,
-      show_target_time: true,
-      show_start_type: false,
-      show_notes: false
+  const [block, setBlock] = useState<WorkoutBlock>(() => {
+    // Handling Note Block which doesn't use config/rounds the same way
+    if (initialBlock.type === 'note') {
+      return initialBlock;
     }
-  }));
+
+    return {
+      ...initialBlock,
+      rounds: initialBlock.rounds || [],
+      config: initialBlock.config || {
+        show_distance: true,
+        show_duration: false,
+        show_reps_count: false,
+        show_intensity: true,
+        show_weight: false,
+        show_recovery: true,
+        show_target_time: true,
+        show_start_type: false,
+        show_notes: false
+      }
+    };
+  });
 
   // Synchroniser avec le parent si besoin
   useEffect(() => {
@@ -103,6 +110,7 @@ export const SmartWorkoutBuilder: React.FC<SmartWorkoutBuilderProps> = ({ initia
     
     // Colonnes dynamiques selon la config
     if (config.show_distance) columns += " 1fr";
+    if (block.type === 'universal') columns += " 1.5fr"; // Colonne métrique large (Phase 3)
     if (config.show_intensity) columns += " 1fr";
     if (config.show_target_time) columns += " 1fr";
     if (config.show_recovery) columns += " 1fr";
@@ -113,8 +121,38 @@ export const SmartWorkoutBuilder: React.FC<SmartWorkoutBuilderProps> = ({ initia
     return columns;
   };
 
-  if (!block.config) return null; // Should not happen with initialization
+  if (!block.config && block.type !== 'note') return null; // Should not happen with initialization
 
+  // --- RENDER : BLOC NOTE ---
+  if (block.type === 'note') {
+    // Cast sécurisé pour accéder à content
+    const noteContent = (block as any).content;
+
+    return (
+      <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg p-3 relative group">
+        <div className="flex items-start gap-3">
+          <div className="mt-1 text-yellow-500 dark:text-yellow-600">
+            <StickyNote size={20} />
+          </div>
+          {readOnly ? (
+            <div className="flex-1 whitespace-pre-wrap text-gray-700 dark:text-gray-300 font-medium font-handwriting py-1">
+              {noteContent || "Aucune note."}
+            </div>
+          ) : (
+             <textarea
+              className="flex-1 bg-transparent border-none outline-none resize-none text-gray-800 dark:text-gray-200 placeholder-gray-400 font-medium text-lg leading-relaxed"
+              rows={3}
+              placeholder="Écrire une consigne, un échauffement, ou une pause..."
+              value={noteContent || ''}
+              onChange={(e) => setBlock(prev => ({ ...prev, content: e.target.value }))}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER : BLOC STANDARD & UNIVERSEL ---
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
       
@@ -157,9 +195,29 @@ export const SmartWorkoutBuilder: React.FC<SmartWorkoutBuilderProps> = ({ initia
             
             <div className="text-center">#</div>
             
-            {block.config.show_distance && <div>Distance (m)</div>}
+            {block.config!.show_distance && <div>Distance (m)</div>}
+
+            {/* UNIVERSAL : Metric Name Header */}
+            {block.type === 'universal' && (
+              readOnly ? (
+                <div>{(block as any).metric_name}</div>
+              ) : (
+                <div className="relative group">
+                  <input
+                    type="text"
+                    className="w-full bg-transparent border-b border-dashed border-gray-300 dark:border-gray-600 focus:border-sprint-primary outline-none text-xs font-bold uppercase text-gray-600 dark:text-gray-300"
+                    value={(block as any).metric_name}
+                    onChange={(e) => setBlock(prev => ({ ...prev, metric_name: e.target.value }))}
+                    placeholder="Métrique"
+                  />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-gray-400">
+                    ✏️
+                  </div>
+                </div>
+              )
+            )}
             
-            {block.config.show_intensity && (
+            {block.config!.show_intensity && (
               <div className={`flex items-center gap-1 group ${!readOnly ? 'cursor-pointer hover:text-sprint-primary transition-colors' : ''}`} onClick={() => propagateFirstRow('intensity_value')}>
                 Intensité {!readOnly && <ArrowDown size={10} className="opacity-0 group-hover:opacity-100" />}
               </div>
@@ -204,6 +262,21 @@ export const SmartWorkoutBuilder: React.FC<SmartWorkoutBuilderProps> = ({ initia
                       value={round.distance || ''}
                       onChange={(e) => updateRound(round.id, 'distance', parseFloat(e.target.value))}
                       placeholder="m"
+                    />
+                  )
+                )}
+
+                {/* UNIVERSAL : Performance Input */}
+                {block.type === 'universal' && (
+                  readOnly ? (
+                    <div className="text-sm font-bold text-gray-900 dark:text-white px-2 py-1">{round.performance_value || '-'}</div>
+                  ) : (
+                    <input
+                      type="text"
+                      className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-sprint-primary/20 focus:border-sprint-primary outline-none transition-all"
+                      value={round.performance_value || ''}
+                      onChange={(e) => updateRound(round.id, 'performance_value', e.target.value)}
+                      placeholder="Perf"
                     />
                   )
                 )}
