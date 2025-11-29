@@ -12,9 +12,6 @@ interface SmartWorkoutBuilderProps {
 // We assume the block passed has rounds and config or we initialize them.
 
 export const SmartWorkoutBuilder: React.FC<SmartWorkoutBuilderProps> = ({ initialBlock, onUpdate, readOnly = false }) => {
-  // DEBUG LOG
-  console.log('SmartWorkoutBuilder render', { type: initialBlock.type, id: initialBlock.id, blockState: initialBlock });
-
   // Ensure we have a valid config and rounds array even if the incoming block doesn't have them yet
   const [block, setBlock] = useState<WorkoutBlock>(() => {
     // Handling Note Block which doesn't use config/rounds the same way
