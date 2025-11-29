@@ -23,7 +23,7 @@ import SharePerformancePage from '../components/sharing/SharePerformancePage';
 
 // Imports spécifiques Coach
 import MyFollowUpsPage from '../components/coach/MyFollowUpsPage';
-import ManagePlanningPage from '../components/coach/ManagePlanningPage';
+import { CoachPlanning } from '../components/planning/CoachPlanning';
 
 export const routes: RouteObject[] = [
   {
@@ -117,6 +117,6 @@ export const routes: RouteObject[] = [
   },
   {
     path: '/manage-planning',
-    element: <ManagePlanningPage />,
+    element: <CoachPlanning />,
   },
 ];
