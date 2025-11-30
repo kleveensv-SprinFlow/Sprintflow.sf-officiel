@@ -1,4 +1,4 @@
-import { Plus, Zap, Trophy, Bot, Video, Users, Calendar } from 'lucide-react';
+import { Plus, Zap, Trophy, Bot, Video, Users, Calendar, Dumbbell } from 'lucide-react';
 
 // --- IMPORTS IMAGES ATHLETE (PNG) ---
 import imgWorkout from '../assets/hub/ajouter-un-entrainement.png';
@@ -13,7 +13,7 @@ import imgPlanningCoach from '../assets/hub/planning.png';
 import imgMesSuivis from '../assets/hub/mes-suivie.png';
 
 export type AthleteActionType = 'new-workout' | 'live-workout' | 'new-record' | 'nutrition' | 'video-analysis';
-export type CoachActionType = 'my-follow-ups' | 'manage-planning';
+export type CoachActionType = 'my-follow-ups' | 'manage-planning' | 'my-library';
 export type ActionType = AthleteActionType | CoachActionType;
 
 export interface Action {
@@ -77,4 +77,11 @@ export const coachActions: Action[] = [
     Icon: Calendar, 
     image: imgPlanningCoach
   },
+  {
+    id: 'my-library',
+    title: "Ma Bibliothèque",
+    subtitle: "Gérez vos exercices personnalisés.",
+    Icon: Dumbbell,
+    image: 'https://images.pexels.com/photos/841130/pexels-photo-841130.jpeg?auto=compress&cs=tinysrgb&w=800'
+  }
 ];

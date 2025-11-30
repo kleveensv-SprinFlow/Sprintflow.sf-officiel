@@ -3,13 +3,13 @@ import { ChevronLeft, Users, User } from 'lucide-react';
 import { CoachPlanning } from '../planning/CoachPlanning';
 import { AnimatePresence, motion } from 'framer-motion';
 
-interface ManagePlanningPageProps {
+interface CoachPlanningPageProps {
   onBack: () => void;
 }
 
 type SelectionMode = 'athlete' | 'group';
 
-const ManagePlanningPage: React.FC<ManagePlanningPageProps> = ({ onBack }) => {
+const CoachPlanningPage: React.FC<CoachPlanningPageProps> = ({ onBack }) => {
   const [selectedMode, setSelectedMode] = useState<SelectionMode | null>(null);
 
   const handleModeSelect = (mode: SelectionMode) => {
@@ -115,4 +115,4 @@ const ManagePlanningPage: React.FC<ManagePlanningPageProps> = ({ onBack }) => {
   );
 };
 
-export default ManagePlanningPage;
+export default CoachPlanningPage;
