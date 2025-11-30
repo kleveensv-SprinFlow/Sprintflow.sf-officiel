@@ -14,7 +14,7 @@ import Dashboard from './components/Dashboard';
 import NewWorkoutForm from './components/workouts/NewWorkoutForm';
 import MyFollowUpsPage from './components/coach/MyFollowUpsPage';
 import MyAthletes360Page from './components/coach/MyAthletes360Page';
-import ManagePlanningPage from './components/coach/ManagePlanningPage.tsx';
+import ManagePlanningPage from './components/coach/CoachPlanningPage';
 import ExerciseLibrary from './components/library/ExerciseLibrary';
 import { ActionType } from './data/actions';
 import HubView from './components/hub/HubView';
