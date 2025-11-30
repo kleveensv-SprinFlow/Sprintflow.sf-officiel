@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CourseBlock, MuscuBlock, RestBlock, TechniqueBlock, WorkoutBlock, SeriesBlock } from '../../../types/workout';
 import RulerSlider from '../../common/RulerSlider';
+import { Search } from 'lucide-react';
+import ExerciseSelectorModal from '../ExerciseSelectorModal';
 
 // --- Specific Forms ---
 
@@ -107,34 +109,74 @@ const RestCockpit = ({ block, update }: { block: RestBlock, update: (b: RestBloc
 };
 
 const MuscuCockpit = ({ block, update }: { block: MuscuBlock, update: (b: MuscuBlock) => void }) => {
-    return (
-        <div className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">Exercice</label>
-                <input 
-                  type="text" 
-                  value={block.exerciceNom} 
-                  onChange={(e) => update({...block, exerciceNom: e.target.value})}
-                  className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl"
-                  placeholder="Nom de l'exercice"
-                />
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+
+  const handleExerciseSelect = (exo: { id: string; name: string; type: string }) => {
+    update({
+      ...block,
+      exerciceNom: exo.name,
+      exerciceId: exo.id,  // Legacy support
+      exercice_id: exo.id  // DB Link support (Phase 3 Fix)
+    });
+    setIsSelectorOpen(false);
+  };
+
+  return (
+    <>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+            Exercice
+          </label>
+
+          <div className="flex gap-2">
+            {/* Input Texte (Reste éditable pour les variations rapides) */}
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={block.exerciceNom || ''}
+                onChange={(e) => update({...block, exerciceNom: e.target.value})}
+                className="w-full pl-4 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-sprint-primary/50 outline-none"
+                placeholder="Nom de l'exercice..."
+              />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-                <div>
-                   <label className="block text-xs font-medium text-gray-500 mb-1">Séries</label>
-                   <input type="number" value={block.series} onChange={(e) => update({...block, series: parseInt(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-center" />
-                </div>
-                <div>
-                   <label className="block text-xs font-medium text-gray-500 mb-1">Reps</label>
-                   <input type="number" value={block.reps} onChange={(e) => update({...block, reps: parseInt(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-center" />
-                </div>
-                <div>
-                   <label className="block text-xs font-medium text-gray-500 mb-1">Charge (kg)</label>
-                   <input type="number" value={block.poids || ''} onChange={(e) => update({...block, poids: parseFloat(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-center" placeholder="-" />
-                </div>
+
+            {/* Bouton Loupe / Bibliothèque */}
+            <button
+              type="button"
+              onClick={() => setIsSelectorOpen(true)}
+              className="px-4 py-3 bg-sprint-primary/10 hover:bg-sprint-primary/20 text-sprint-primary rounded-xl transition-colors flex items-center justify-center"
+              title="Choisir dans la bibliothèque"
+            >
+              <Search size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+            <div>
+               <label className="block text-xs font-medium text-gray-500 mb-1">Séries</label>
+               <input type="number" value={block.series} onChange={(e) => update({...block, series: parseInt(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-center" />
+            </div>
+            <div>
+               <label className="block text-xs font-medium text-gray-500 mb-1">Reps</label>
+               <input type="number" value={block.reps} onChange={(e) => update({...block, reps: parseInt(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-center" />
+            </div>
+            <div>
+               <label className="block text-xs font-medium text-gray-500 mb-1">Charge (kg)</label>
+               <input type="number" value={block.poids || ''} onChange={(e) => update({...block, poids: parseFloat(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-center" placeholder="-" />
             </div>
         </div>
-    );
+      </div>
+
+      {/* La Modale connectée */}
+      <ExerciseSelectorModal
+        isOpen={isSelectorOpen}
+        onClose={() => setIsSelectorOpen(false)}
+        onSelect={handleExerciseSelect}
+      />
+    </>
+  );
 };
 
 const TechniqueCockpit = ({ block, update }: { block: TechniqueBlock, update: (b: TechniqueBlock) => void }) => {

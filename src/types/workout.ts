@@ -67,6 +67,7 @@ export interface MuscuBlock extends BaseBlock {
   type: 'musculation';
   // Legacy fields
   exerciceId: string;
+  exercice_id?: string; // Phase 3: DB Link
   exerciceNom: string;
   series: number;
   reps: number;
