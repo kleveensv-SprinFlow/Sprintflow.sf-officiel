@@ -1,6 +1,7 @@
 import React from 'react';
 import { CourseBlock, MuscuBlock, RestBlock, TechniqueBlock, WorkoutBlock, SeriesBlock } from '../../../types/workout';
 import RulerSlider from '../../common/RulerSlider';
+import { ExerciseSelector } from '../../common/ExerciseSelector';
 
 // --- Specific Forms ---
 
@@ -111,12 +112,13 @@ const MuscuCockpit = ({ block, update }: { block: MuscuBlock, update: (b: MuscuB
         <div className="space-y-4">
             <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">Exercice</label>
-                <input 
-                  type="text" 
-                  value={block.exerciceNom} 
-                  onChange={(e) => update({...block, exerciceNom: e.target.value})}
-                  className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl"
-                  placeholder="Nom de l'exercice"
+                <ExerciseSelector
+                  selectedId={block.exerciceId}
+                  onSelect={(ex) => update({
+                      ...block,
+                      exerciceNom: ex.nom,
+                      exerciceId: ex.id
+                  })}
                 />
             </div>
             <div className="grid grid-cols-3 gap-3">
