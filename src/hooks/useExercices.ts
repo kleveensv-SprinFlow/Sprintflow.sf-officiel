@@ -9,7 +9,7 @@ export interface ExerciceReference {
   creator_id?: string;
 }
 
-const mapSupabaseToExerciceReference = (item: any, type: 'reference' | 'custom'): ExerciceReference => ({
+const mapSupabaseToExerciceReference = (item: { id: string; nom: string; categorie: string; creator_id?: string }, type: 'reference' | 'custom'): ExerciceReference => ({
   id: item.id,
   nom: item.nom,
   categorie: item.categorie,
@@ -53,18 +53,51 @@ export const useExercices = () => {
 
       setExercices(allExercices);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erreur lors du chargement des exercices:", err);
-      setError(err.message || 'Une erreur est survenue.');
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
       setExercices([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  const addCustomExercise = useCallback(async (nom: string, categorie: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Vous devez être connecté pour créer un exercice.");
+      }
+
+      const { data, error } = await supabase
+        .from('exercices_personnalises')
+        .insert([
+          {
+            nom,
+            categorie,
+            creator_id: user.id
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // Reload exercises to include the new one
+      await loadExercices();
+      return data;
+    } catch (err: unknown) {
+      console.error("Erreur lors de la création de l'exercice:", err);
+      throw err;
+    }
+  }, [loadExercices]);
+
   useEffect(() => {
     loadExercices();
   }, [loadExercices]);
 
-  return { exercices, loading, error, loadExercices };
+  return { exercices, loading, error, loadExercices, addCustomExercise };
 };

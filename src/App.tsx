@@ -18,9 +18,10 @@ import ManagePlanningPage from './components/coach/ManagePlanningPage';
 import { ActionType } from './data/actions';
 import HubView from './components/hub/HubView';
 import SprintyChatView from './components/chat/sprinty/SprintyChatView';
+import { ExerciseLibrary } from './components/library/ExerciseLibrary';
 
 type MainView = 'dashboard' | 'profile' | 'settings';
-type ActionView = null | 'new-workout' | 'new-record' | 'my-follow-ups' | 'my-athletes-360' | 'manage-planning';
+type ActionView = null | 'new-workout' | 'new-record' | 'my-follow-ups' | 'my-athletes-360' | 'manage-planning' | 'exercise-library';
 
 function App() {
   const { user, loading, profile, profileLoading } = useAuth();
@@ -176,6 +177,11 @@ function App() {
             {mainView === 'dashboard' && activeAction === 'manage-planning' && (
               <motion.div key="manage-planning" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
                 <ManagePlanningPage onBack={() => handleAction(null)} />
+              </motion.div>
+            )}
+            {mainView === 'dashboard' && activeAction === 'exercise-library' && (
+              <motion.div key="exercise-library" initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+                <ExerciseLibrary onBack={() => handleAction(null)} />
               </motion.div>
             )}
           </AnimatePresence>
