@@ -1,57 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-
-type Theme = 'light' | 'dark' | 'system';
+import { useState } from 'react';
 
 /**
- * Hook pour gérer le changement de thème de l'application.
- * Le thème initial est déjà défini via un script dans index.html pour éviter un flash.
- * Ce hook gère uniquement les mises à jour post-chargement.
+ * Hook pour gérer le thème de l'application.
+ * Version "Dark Mode Radical" : Retourne toujours 'dark'.
+ * La logique de changement est désactivée.
  */
 export const useTheme = () => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem('theme') as Theme) || 'system';
-  });
+  // On ne gère plus d'état dynamique, on impose le sombre.
+  const theme = 'dark';
 
-  // Fonction pour appliquer le thème
-  const applyTheme = useCallback((newTheme: Theme) => {
-    const root = window.document.documentElement;
-    
-    // Détermine si le mode sombre doit être appliqué
-    const isDark =
-      newTheme === 'dark' ||
-      (newTheme === 'system' &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-    root.classList.toggle('dark', isDark);
-    
-    // Sauvegarde le choix
-    try {
-      localStorage.setItem('theme', newTheme);
-    } catch (error) {
-      console.warn('Could not save theme to localStorage', error);
-    }
-    
-    setThemeState(newTheme);
-  }, []);
-
-  // Écouteur pour les changements de thème du système
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = () => {
-      // Si l'utilisateur a choisi 'system' (basé sur l'état React), on ré-applique le thème.
-      if (theme === 'system') {
-        applyTheme('system');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [applyTheme, theme]);
-
-  // La fonction de mise à jour que le composant UI utilisera
-  const setTheme = (newTheme: Theme) => {
-    applyTheme(newTheme);
+  // Fonction factice pour ne pas casser les composants qui l'utilisent
+  const setTheme = (newTheme: string) => {
+    console.log('Changement de thème désactivé : Mode Sombre imposé.', newTheme);
   };
 
   return { theme, setTheme };

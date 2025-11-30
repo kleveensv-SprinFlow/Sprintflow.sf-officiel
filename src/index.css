@@ -8,21 +8,47 @@
 
 /* 2. Base layer and animations */
 @layer base {
-  /* Définition des variables CSS pour les ombres dynamiques */
   :root {
-    --shadow-premium: theme('boxShadow.premium-light');
+    --shadow-premium: none;
   }
 
   .dark {
-    --shadow-premium: theme('boxShadow.premium-dark');
+    --shadow-premium: none;
   }
 
+  /* GLOBAL DARK MODE BACKGROUND */
   body {
+    @apply bg-sprint-dark-background text-sprint-dark-text-primary;
+    background-image: linear-gradient(to bottom, #0A0A10, #000000);
+    background-attachment: fixed;
+    min-height: 100vh;
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* GLOBAL INPUT STYLING (The GOWOD Look) */
+  input, select, textarea {
+    @apply bg-sprint-dark-surface text-white border-none rounded-xl shadow-none outline-none transition-all duration-200 !important;
+  }
+
+  /* Focus state for inputs */
+  input:focus, select:focus, textarea:focus {
+    @apply ring-2 ring-sprint-primary/50 bg-sprint-dark-surface-elevated !important;
+  }
+
+  /* Placeholder styling */
+  input::placeholder, textarea::placeholder {
+    @apply text-gray-500 !important;
+  }
+
+  /* Override specific overrides if needed */
+  .dark input, .dark select, .dark textarea {
+    background-color: theme('colors.sprint-dark-surface') !important;
+    border-color: transparent !important;
+    color: white !important;
   }
   
   @keyframes fadeIn-slideUp {
@@ -49,32 +75,12 @@
     80% { opacity: 1; transform: scale(1.02); }
     100% { opacity: 1; transform: scale(1); }
   }
-
-  /* Ambient Blob Animation */
-  @keyframes float-blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
-  }
-  
-  .animate-blob {
-    animation: float-blob 7s infinite;
-  }
-  
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
-  
-  .animation-delay-4000 {
-    animation-delay: 4s;
-  }
 }
 
 /* 3. Custom utility classes */
 @layer utilities {
   .shadow-premium {
-    box-shadow: var(--shadow-premium);
+    box-shadow: none;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -86,25 +92,24 @@
   }
 
   .text-shadow-light {
-    text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+    text-shadow: none;
   }
   .text-shadow-dark {
     text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
   }
 
-  /* Nouvelle classe pour l'effet "verre dépoli" - UPDATED FOR BETTER VISIBILITY */
+  /* Nouvelle classe pour l'effet "verre dépoli" - UPDATED FOR DARK MODE */
   .card-glass {
-    @apply bg-white/60 backdrop-blur-lg border border-white/40 rounded-xl shadow-sm;
+    @apply bg-sprint-dark-surface/80 backdrop-blur-lg border-none rounded-xl shadow-none;
+  }
+
+  /* Helper for inputs that need to look like buttons */
+  .input-btn {
+    @apply bg-sprint-dark-surface text-white border-none rounded-xl px-4 py-3 text-center font-medium active:scale-95 transition-transform;
   }
 
   .shadow-glow {
-    box-shadow: 0 0 25px -5px var(--glow-color, theme('colors.sprint-accent')), 0 0 15px -10px var(--glow-color, theme('colors.sprint-accent'));
-  }
-  
-  .dark .card-glass {
-    --tw-bg-opacity: 0.7; /* Increased from 0.3 */
-    background-color: color-mix(in srgb, theme(colors.sprint-dark-surface) var(--tw-bg-opacity), transparent);
-    @apply border-white/10;
+    box-shadow: 0 0 25px -5px var(--glow-color, theme('colors.sprint-primary')), 0 0 15px -10px var(--glow-color, theme('colors.sprint-primary'));
   }
 }
 

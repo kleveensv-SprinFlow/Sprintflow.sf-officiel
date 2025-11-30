@@ -55,22 +55,22 @@ export default function SettingsPage() {
       
       <div className="space-y-4">
         <SettingsItem
-          icon={<Lock className="w-6 h-6 text-accent" />}
+          icon={<Lock className="w-6 h-6 text-sprint-primary" />}
           label="Changer le mot de passe"
           onClick={handleChangePassword}
         />
         <SettingsItem
-          icon={<Globe className="w-6 h-6 text-accent" />}
+          icon={<Globe className="w-6 h-6 text-sprint-primary" />}
           label="Changer de langue"
           onClick={handleChangeLanguage}
         />
         <SettingsItem
-          icon={<HelpCircle className="w-6 h-6 text-accent" />}
+          icon={<HelpCircle className="w-6 h-6 text-sprint-primary" />}
           label="FAQ"
           onClick={handleFaq}
         />
         <SettingsItem
-          icon={<Info className="w-6 h-6 text-accent" />}
+          icon={<Info className="w-6 h-6 text-sprint-primary" />}
           label="AIDE"
           onClick={handleHelp}
         />
