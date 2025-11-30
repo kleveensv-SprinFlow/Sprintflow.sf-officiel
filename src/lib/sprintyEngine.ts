@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 
-export type SprintyMode = 'simplified' | 'expert';
 export type Language = 'fr' | 'en' | 'es';
 
 export interface SprintyResponse {
@@ -15,23 +14,25 @@ interface ConversationMessage {
 
 /**
  * Fonction principale pour obtenir une réponse de Sprinty via Mistral AI.
+ * Désormais adaptée pour inclure l'ID utilisateur et le rôle pour le contexte.
  */
 export async function getSprintyAnswer(
   question: string,
-  mode: SprintyMode = 'simplified',
+  userId: string,
+  userRole: string,
   language: Language = 'fr',
   conversationHistory: ConversationMessage[] = []
 ): Promise<SprintyResponse> {
   try {
-    console.log('[SprintyEngine] Appel à Mistral AI :', { question, mode, language });
+    console.log('[SprintyEngine] Appel à Mistral AI :', { question, userId, userRole, language });
 
     // Appel à la fonction Edge Supabase : le dossier s'appelle « sprinty-mistal »
-    // donc l’identifiant de la fonction est le même.
     const { data, error } = await supabase.functions.invoke('sprinty-mistal', {
       body: {
         question,
+        userId,
+        userRole,
         language,
-        mode,
         conversationHistory,
       },
     });
