@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { getSprintyAnswer, SprintyMode } from '../../../lib/sprintyEngine';
+import { getSprintyAnswer } from '../../../lib/sprintyEngine';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useSprinty } from '../../../context/SprintyContext';
+import { useAuth } from '../../../hooks/useAuth';
 import SprintyChatHeader from './SprintyChatHeader';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
@@ -30,10 +31,11 @@ const CoachSprintyChatView: React.FC = () => {
   const { id: conversationId } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { language, t } = useLanguage();
+  const { user, profile } = useAuth();
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [sprintyMode, setSprintyMode] = useState<SprintyMode>('simplified');
+  // SprintyMode est désormais géré automatiquement par le rôle
   const [conversations, setConversations] = useState<ConversationRecord[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<ConversationRecord | null>(null);
@@ -70,14 +72,13 @@ const CoachSprintyChatView: React.FC = () => {
   useEffect(() => {
     const loadConversations = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data } = await supabase.from('sprinty_conversations').select('*').eq('user_id', user.id).order('updated_at', { ascending: false });
         setConversations(data || []);
       } catch (e) { console.error(e); }
     };
     loadConversations();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -109,14 +110,22 @@ const CoachSprintyChatView: React.FC = () => {
 
   const handleSendMessage = async (text: string) => {
     const sanitizedText = text.trim();
-    if (!sanitizedText) return;
+    if (!sanitizedText || !user) return;
 
     setMessages(prev => [...prev, { id: Date.now().toString(), text: sanitizedText, sender: 'user' }]);
     setIsTyping(true);
     setExpression('typing');
 
     try {
-      const result = await getSprintyAnswer(sanitizedText, sprintyMode, language, []);
+      // On passe maintenant l'ID et le rôle (qui sera 'coach' ici)
+      const userRole = profile?.role || 'coach';
+      const result = await getSprintyAnswer(
+        sanitizedText,
+        user.id,
+        userRole,
+        language,
+        []
+      );
       setMessages(prev => [...prev, { id: Date.now().toString(), text: result.text, sender: 'sprinty' }]);
       setExpression('success');
       setTimeout(() => setExpression('neutral'), 3000);

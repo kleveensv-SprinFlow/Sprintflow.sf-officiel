@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { getSprintyAnswer } from '../lib/sprintyEngine';
 
 export type SprintyExpression = 'neutral' | 'happy' | 'success' | 'thinking' | 'perplexed' | 'caution' | 'frustrated' | 'sleep' | 'typing';
 
@@ -58,7 +59,7 @@ export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children })
       setIsThinking(true);
       setExpression('perplexed'); 
 
-      // On sauvegarde le message
+      // 1. On sauvegarde le message utilisateur
       const { error: msgError } = await supabase
         .from('individual_chat_messages')
         .insert({
@@ -69,16 +70,43 @@ export const SprintyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       if (msgError) throw msgError;
 
-      // On appelle l'IA avec le contexte du personnage actuel
-      const { error: fnError } = await supabase.functions.invoke('sprinty-brain', {
-        body: { 
-          user_id: user.id, 
-          message,
-          persona: currentPersona.id // On envoie l'ID du personnage à l'IA
-        }
-      });
+      // 2. On récupère le profil pour connaître le rôle (ou on déduit depuis le client)
+      // Ici on fait une requête légère pour être sûr
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-      if (fnError) throw fnError;
+      const userRole = profile?.role || 'athlete';
+
+      // 3. On appelle la fonction unifiée getSprintyAnswer
+      // Note: getSprintyAnswer appelle 'sprinty-mistal'
+      const response = await getSprintyAnswer(
+        message,
+        user.id,
+        userRole,
+        'fr', // Langue par défaut ou à récupérer du contexte si dispo
+        [] // Historique géré côté serveur ou à passer si besoin
+      );
+
+      if (response.error) throw new Error(response.text);
+
+      // 4. On sauvegarde la réponse de l'IA (normalement fait par sprinty-mistal si on le configure,
+      // mais getSprintyAnswer renvoie juste le texte. sprinty-mistal ne sauvegarde pas forcément
+      // dans 'individual_chat_messages' si on ne lui dit pas de le faire.
+      // Vérifions la logique : sprinty-brain le faisait. sprinty-mistal ne le faisait pas.
+      // Nous allons donc le faire ici pour être sûr.
+
+      const { error: replyError } = await supabase
+        .from('individual_chat_messages')
+        .insert({
+          sender_id: '00000000-0000-0000-0000-000000000000',
+          receiver_id: user.id,
+          message: response.text
+        });
+
+      if (replyError) throw replyError;
 
     } catch (error) {
       console.error("Error talking to Sprinty:", error);
