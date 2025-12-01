@@ -27,7 +27,8 @@ const CoachWorkoutCard: React.FC<CoachWorkoutCardProps> = ({ selection, onPlan, 
 
   const renderWorkoutContent = (workout: Workout) => (
      <div className="space-y-3 mt-4">
-        {workout.planned_data?.blocks.map((block, index) => (
+        {/* CORRECTION CRITIQUE ici : utilisation de ?? [] */}
+        {(workout.planned_data?.blocks ?? []).map((block, index) => (
           <div key={index} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
             <p className="font-bold text-md text-gray-800 dark:text-gray-100">
               <span className="text-sprint-primary">{index + 1}.</span> {block.name}
