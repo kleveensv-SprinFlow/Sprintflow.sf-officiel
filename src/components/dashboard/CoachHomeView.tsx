@@ -6,39 +6,42 @@ import { CoachDailyPlanCarousel } from './CoachDailyPlanCarousel';
 import { GroupRecordsCarousel } from './coach/GroupRecordsCarousel';
 
 export const CoachHomeView: React.FC = () => {
-  // Récupération des données pour le tableau de bord
-  const { data, loading, error } = useCoachDashboard();
+  const { data, loading, error, refreshData } = useCoachDashboard();
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sprint-primary mb-2"></div>
-        <p>Chargement du QG...</p>
-      </div>
-    );
-  }
+  // Valeurs par défaut si data est null/undefined
+  const teamHealth = data?.teamHealth ??  { 
+    wellnessTrend: [], 
+    adherence: { completed: 0, planned: 0, rate: 0 } 
+  };
+  
+  const priorityActions = data?.priorityActions ?? { 
+    pendingWellness: [], 
+    pendingValidation: [] 
+  };
+
+  // TODO: Ces données ne viennent pas encore de l'API
+  const dailyPlans: any[] = [];
+  const recentRecords: any[] = [];
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-red-400">
-        <p>Erreur lors du chargement du tableau de bord</p>
+        <p>Erreur lors du chargement</p>
         <p className="text-sm text-gray-500 mt-2">{error}</p>
+        <button 
+          onClick={refreshData}
+          className="mt-4 px-4 py-2 bg-sprint-primary text-white rounded-lg"
+        >
+          Réessayer
+        </button>
       </div>
     );
   }
 
-  // Extraire les données avec des valeurs par défaut
-  const teamStats = data?.teamHealth || { wellnessTrend: [], adherence: { completed: 0, planned: 0, rate: 0 } };
-  const alerts = data?.priorityActions || { pendingWellness: [], pendingValidation: [] };
-  
-  // TODO: Ces données ne viennent pas de l'API actuelle, à ajouter plus tard
-  const dailyPlans: any[] = [];
-  const recentRecords: any[] = [];
-
   return (
     <div className="flex flex-col gap-6 pb-24 pt-4 bg-gray-50 dark:bg-gray-900 min-h-full overflow-y-auto">
       
-      {/* HEADER INTERNE : Message de bienvenue ou Date */}
+      {/* HEADER INTERNE */}
       <div className="px-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Bonjour Coach 👋
@@ -48,16 +51,21 @@ export const CoachHomeView: React.FC = () => {
         </p>
       </div>
 
-      {/* 1. SECTION CRITIQUE : ALERTES & SANTÉ */}
+      {/* 1.  SECTION CRITIQUE : ALERTES & SANTÉ */}
       <div className="px-4 space-y-4">
-        {/* Qui est blessé ou a besoin d'attention ?  */}
-        <ActionsListWidget alerts={alerts} />
+        <ActionsListWidget 
+          data={priorityActions} 
+          loading={loading} 
+          onActionComplete={refreshData} 
+        />
         
-        {/* État général des troupes (Graphique Radar) */}
-        <TeamHealthWidget stats={teamStats} />
+        <TeamHealthWidget 
+          data={teamHealth} 
+          loading={loading} 
+        />
       </div>
 
-      {/* 2.  SECTION OPÉRATIONNELLE : SÉANCE DU JOUR */}
+      {/* 2. SECTION OPÉRATIONNELLE : SÉANCE DU JOUR */}
       {dailyPlans.length > 0 && (
         <div className="space-y-2">
           <div className="px-4 flex justify-between items-end">
