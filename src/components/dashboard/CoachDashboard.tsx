@@ -1,178 +1,193 @@
-import React, { useState, useEffect } from 'react';
-import { useLocalStorage } from 'react-use';
-import { Users, User } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
-import { toast } from 'react-toastify';
+// Fichier : src/components/dashboard/CoachDashboard.tsx
 
-import { AthleteSelectionModal } from './AthleteSelectionModal';
-import { GroupSelectionModal } from './GroupSelectionModal';
-import { NewWorkoutForm } from '../workouts/NewWorkoutForm';
-import { WorkoutDetailsModal } from '../workouts/WorkoutDetailsModal';
-import { useWorkouts } from '../../hooks/useWorkouts';
-import useAuth from '../../hooks/useAuth';
-import { useGroups } from '../../hooks/useGroups';
-import { AthleteDetails } from '../groups/AthleteDetails';
-import { Profile, Workout } from '../../types';
-import { WorkoutBlock } from '../workouts/WorkoutBuilder';
-import SelectionHeader from './SelectionHeader';
-import CoachWorkoutCard from './CoachWorkoutCard';
-import HealthIndexCard from './HealthIndexCard';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Users, 
+  Calendar, 
+  Settings, 
+  LogOut, 
+  BarChart2, 
+  Trophy,
+  Video,
+  Home
+} from 'lucide-react';
 
-type Selection = {
-  type: 'athlete' | 'group';
-  id: string;
-  name: string;
-  color?: string;
-} | null;
+// --- IMPORTS DES COMPOSANTS ---
+import CoachHeader from '../navigation/CoachHeader';
+import CoachHubView from '../hub/CoachHubView'; // Utilise la nouvelle vue LISTE
+import { CoachPlanning } from '../planning/CoachPlanning';
+import MyFollowUpsPage from '../coach/MyFollowUpsPage'; // (Peut être renommée MyAthletesPage plus tard)
+import { CoachProfilePageView } from '../profile/CoachProfilePageView';
+import RecordsPage from '../records/RecordsPage';
+import VideoAnalysisFlow from '../video_analysis/VideoAnalysisFlow';
 
-type FormState = {
-  isOpen: boolean;
-  initialData?: { id: string; tag_seance: string; blocs: WorkoutBlock[]; type?: any; notes?: string; date: string; };
-  date?: Date;
-}
+// --- TYPES ---
+import { ActionType } from '../../data/actions';
+
+type ViewType = 'hub' | 'planning' | 'athletes' | 'records' | 'analysis' | 'profile' | 'settings' | 'periodization';
 
 export const CoachDashboard: React.FC = () => {
-  const { profile } = useAuth();
-  const [selection, setSelection] = useLocalStorage<Selection>('coach-dashboard-selection', null);
+  // État pour savoir quelle vue afficher (par défaut: le Hub)
+  const [currentView, setCurrentView] = useState<ViewType>('hub');
 
-  const [isAthleteModalOpen, setAthleteModalOpen] = useState(false);
-  const [isGroupModalOpen, setGroupModalOpen] = useState(false);
-  const [formState, setFormState] = useState<FormState>({ isOpen: false });
-  const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
-  
-  const { coachAthletes, groups, loading: groupsLoading } = useGroups();
-  const [selectedAthlete, setSelectedAthlete] = useState<Profile | null>(null);
-  const { workouts, planWorkout, updateWorkout } = useWorkouts(selection || undefined);
-
-  useEffect(() => {
-    if (!selection && !groupsLoading) {
-      if (groups && groups.length > 0) {
-        setSelection({ type: 'group', id: groups[0].id, name: groups[0].name, color: groups[0].color });
-      } else if (coachAthletes && coachAthletes.length > 0) {
-        const firstAthlete = coachAthletes[0];
-        const name = `${firstAthlete.first_name} ${firstAthlete.last_name || ''}`.trim();
-        setSelection({ type: 'athlete', id: firstAthlete.id, name: name });
-      }
-    }
-  }, [selection, groups, coachAthletes, groupsLoading, setSelection]);
-
-  const handleSelectAthlete = (athlete: { id: string; name: string }) => {
-    setSelection({ type: 'athlete', ...athlete });
-    setAthleteModalOpen(false);
+  // --- FONCTION DE NAVIGATION CENTRALE ---
+  const handleNavigation = (view: ViewType) => {
+    if (navigator.vibrate) navigator.vibrate(10);
+    setCurrentView(view);
   };
 
-  const handleSelectGroup = (group: { id: string; name: string; color?: string }) => {
-    setSelection({ type: 'group', ...group });
-    setGroupModalOpen(false);
-  };
-  
-  const handlePlanClick = (date: Date) => {
-    if (!selection) return;
-    setFormState({ isOpen: true, date });
-  };
+  // --- GESTION DES CLICS SUR LA NOUVELLE LISTE (OPTION 2) ---
+  const handleHubAction = (action: ActionType) => {
+    console.log("Action reçue du Hub:", action); // Pour le débogage
 
-  const handleEditClick = (workoutId: string) => {
-    const workoutToEdit = workouts.find(w => w.id === workoutId);
-    if (!workoutToEdit) return;
-    setFormState({
-      isOpen: true,
-      initialData: {
-        id: workoutToEdit.id,
-        tag_seance: workoutToEdit.tag_seance,
-        blocs: workoutToEdit.planned_data?.blocs || [],
-        type: workoutToEdit.type,
-        notes: workoutToEdit.notes,
-        date: workoutToEdit.date,
-      }
-    });
-  };
-  
-  const handleViewWorkout = (workoutId: string) => {
-    const workoutToShow = workouts.find(w => w.id === workoutId);
-    if (workoutToShow) setViewingWorkout(workoutToShow);
-  };
-  
-  const handleSaveWorkout = async (payload: any) => {
-    if (!selection) return;
-    const isEditing = !!formState.initialData?.id;
-    try {
-      if (isEditing) {
-        await updateWorkout(formState.initialData!.id, payload);
-      } else {
-        const creationPayload = {
-            ...payload,
-            date: format(formState.date!, 'yyyy-MM-dd'),
-            assigned_to_user_id: selection.type === 'athlete' ? selection.id : undefined,
-            assigned_to_group_id: selection.type === 'group' ? selection.id : undefined,
-        };
-        await planWorkout(creationPayload);
-      }
-      setFormState({ isOpen: false });
-      toast.success('Séance enregistrée !');
-    } catch (e) {
-      toast.error((e as Error).message);
+    switch (action) {
+      // 1. Planning Hebdomadaire (Redirection DIRECTE)
+      case 'weekly-planning':
+        setCurrentView('planning');
+        break;
+
+      // 2. Mes Athlètes (Suivi 360)
+      case 'my-athletes':
+      case 'my-follow-ups': // Gardé pour compatibilité au cas où
+        setCurrentView('athletes');
+        break;
+
+      // 3. Périodisation (Nouveau)
+      // Pour l'instant, on redirige vers le planning, mais on pourrait créer une vue dédiée 'periodization'
+      case 'periodization':
+        setCurrentView('planning'); 
+        // TODO: Plus tard, faire: setCurrentView('periodization'); quand le composant sera prêt
+        break;
+
+      // 4. Autres actions existantes (si besoin)
+      case 'video-analysis':
+        setCurrentView('analysis');
+        break;
+
+      default:
+        console.warn(`Action non gérée: ${action}`);
+        break;
     }
   };
 
-  if (selectedAthlete) {
-    return <AthleteDetails athlete={selectedAthlete} onBack={() => setSelectedAthlete(null)} />;
-  }
+  // --- RENDU DU CONTENU PRINCIPAL ---
+  const renderContent = () => {
+    switch (currentView) {
+      case 'hub':
+        return <CoachHubView onAction={handleHubAction} />;
+      
+      case 'planning':
+      case 'periodization': // On utilise le même composant pour l'instant
+        return (
+          <CoachPlanning 
+            // On peut passer une prop ici pour dire à CoachPlanning quel onglet ouvrir par défaut si on veut
+            initialSelectionType='group' 
+            onBackToSelection={() => setCurrentView('hub')}
+          />
+        );
+
+      case 'athletes':
+        return <MyFollowUpsPage />;
+
+      case 'records':
+        return <RecordsPage />;
+
+      case 'analysis':
+        return <VideoAnalysisFlow />;
+
+      case 'profile':
+      case 'settings':
+        return <CoachProfilePageView />;
+
+      default:
+        return <CoachHubView onAction={handleHubAction} />;
+    }
+  };
 
   return (
-    <>
-      <div className="p-4">
-        <SelectionHeader 
-          selection={selection} 
-          onSelectAthlete={() => setAthleteModalOpen(true)}
-          onSelectGroup={() => setGroupModalOpen(true)}
-        />
-        
-        <div className="space-y-6">
-          {!selection ? (
-            <motion.div className="text-center py-16" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <h2 className="text-2xl font-bold mb-4">Bienvenue, {profile?.first_name} !</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-8">Sélectionnez un athlète ou un groupe pour commencer.</p>
-              <div className="flex justify-center gap-4">
-                <button onClick={() => setAthleteModalOpen(true)} className="flex items-center gap-2 px-6 py-3 font-semibold rounded-xl text-white bg-accent">
-                  <User size={16} /> Athlète
-                </button>
-                <button onClick={() => setGroupModalOpen(true)} className="flex items-center gap-2 px-6 py-3 font-semibold rounded-xl bg-gray-100 dark:bg-gray-700">
-                  <Users size={16} /> Groupe
-                </button>
-              </div>
-            </motion.div>
-          ) : (
-            <>
-              <CoachWorkoutCard 
-                selection={selection}
-                onPlan={handlePlanClick}
-                onEdit={handleEditClick}
-                onView={handleViewWorkout}
-              />
-              <HealthIndexCard selection={selection} />
-            </>
-          )}
-        </div>
-
-        <AthleteSelectionModal isOpen={isAthleteModalOpen} onClose={() => setAthleteModalOpen(false)} onSelect={handleSelectAthlete} />
-        <GroupSelectionModal isOpen={isGroupModalOpen} onClose={() => setGroupModalOpen(false)} onSelect={handleSelectGroup} />
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       
-      {formState.isOpen && (
-        <NewWorkoutForm
-          userRole="coach"
-          onSave={handleSaveWorkout}
-          onCancel={() => setFormState({ isOpen: false })}
-          initialData={formState.initialData}
-        />
-      )}
-      
-      <WorkoutDetailsModal 
-        isOpen={!!viewingWorkout}
-        onClose={() => setViewingWorkout(null)}
-        workout={viewingWorkout}
+      {/* HEADER (Barre du haut) */}
+      <CoachHeader 
+        currentView={currentView}
+        onNavigate={handleNavigation}
       />
-    </>
+
+      {/* CONTENU ANIMÉ */}
+      <main className="flex-1 relative overflow-hidden pb-20"> {/* pb-20 pour la barre du bas */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentView}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="h-full"
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* BARRE DE NAVIGATION INFÉRIEURE (Tab Bar) */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pb-safe px-6 py-3 z-50">
+        <div className="flex justify-between items-center max-w-lg mx-auto">
+          
+          <NavButton 
+            icon={Home} 
+            label="Hub" 
+            isActive={currentView === 'hub'} 
+            onClick={() => handleNavigation('hub')} 
+          />
+          
+          <NavButton 
+            icon={Calendar} 
+            label="Planning" 
+            isActive={currentView === 'planning'} 
+            onClick={() => handleNavigation('planning')} 
+          />
+          
+          <NavButton 
+            icon={Users} 
+            label="Athlètes" 
+            isActive={currentView === 'athletes'} 
+            onClick={() => handleNavigation('athletes')} 
+          />
+          
+          <NavButton 
+            icon={Trophy} 
+            label="Records" 
+            isActive={currentView === 'records'} 
+            onClick={() => handleNavigation('records')} 
+          />
+
+          <NavButton 
+            icon={Settings} 
+            label="Profil" 
+            isActive={currentView === 'profile'} 
+            onClick={() => handleNavigation('profile')} 
+          />
+          
+        </div>
+      </div>
+    </div>
   );
 };
+
+// Petit composant pour les boutons du bas (plus propre)
+const NavButton: React.FC<{ icon: any, label: string, isActive: boolean, onClick: () => void }> = ({ icon: Icon, label, isActive, onClick }) => (
+  <button 
+    onClick={onClick}
+    className={`flex flex-col items-center gap-1 transition-colors ${
+      isActive 
+        ? 'text-sprint-primary' 
+        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+    }`}
+  >
+    <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+    <span className="text-[10px] font-medium">{label}</span>
+  </button>
+);
+
+export default CoachDashboard; // Important pour l'import dans View
