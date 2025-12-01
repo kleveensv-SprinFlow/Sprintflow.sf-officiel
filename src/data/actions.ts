@@ -1,4 +1,4 @@
-import { Plus, Zap, Trophy, Bot, Video, Users, Calendar, BarChart4, TrendingUp } from 'lucide-react';
+import { Plus, Zap, Trophy, Bot, Video, Users, Calendar, TrendingUp } from 'lucide-react';
 
 // --- IMPORTS IMAGES ATHLETE (PNG) ---
 import imgWorkout from '../assets/hub/ajouter-un-entrainement.png';
@@ -12,7 +12,7 @@ import imgPlanningCoach from '../assets/hub/planning.png';
 import imgMesSuivis from '../assets/hub/mes-suivie.png';
 
 export type AthleteActionType = 'new-workout' | 'live-workout' | 'new-record' | 'nutrition' | 'video-analysis';
-// Mise à jour des types d'actions Coach
+// NOUVEAUX TYPES POUR LE COACH (Option 2)
 export type CoachActionType = 'my-athletes' | 'weekly-planning' | 'periodization'; 
 export type ActionType = AthleteActionType | CoachActionType;
 
@@ -62,26 +62,27 @@ export const athleteActions: Action[] = [
   },
 ];
 
+// NOUVELLE LISTE D'ACTIONS COACH (Directe et Claire)
 export const coachActions: Action[] = [
   { 
-    id: 'my-athletes', // Ancien 'my-follow-ups'
+    id: 'my-athletes', 
     title: "Mes Athlètes (Suivi 360)", 
     subtitle: "État de forme, charge et progression.",
     Icon: Users, 
     image: imgMesSuivis
   },
   { 
-    id: 'weekly-planning', // Ancien 'manage-planning' (partiel)
+    id: 'weekly-planning',
     title: "Planning Hebdomadaire", 
     subtitle: "Gérez les séances de la semaine.",
     Icon: Calendar, 
     image: imgPlanningCoach
   },
   { 
-    id: 'periodization', // Nouvelle action distincte
+    id: 'periodization',
     title: "Périodisation & Macrocycles", 
     subtitle: "Structurez la saison et les blocs.",
-    Icon: TrendingUp, // Icône plus "stratégique"
-    image: imgPlanningCoach // On peut réutiliser l'image ou en mettre une spécifique "Graphique"
+    Icon: TrendingUp,
+    image: imgPlanningCoach
   },
 ];
