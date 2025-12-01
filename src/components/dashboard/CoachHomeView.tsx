@@ -7,13 +7,7 @@ import { GroupRecordsCarousel } from './coach/GroupRecordsCarousel';
 
 export const CoachHomeView: React.FC = () => {
   // Récupération des données pour le tableau de bord
-  const { 
-    teamStats, 
-    alerts, 
-    dailyPlans, 
-    recentRecords, 
-    loading 
-  } = useCoachDashboard();
+  const { data, loading, error } = useCoachDashboard();
 
   if (loading) {
     return (
@@ -24,6 +18,23 @@ export const CoachHomeView: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-red-400">
+        <p>Erreur lors du chargement du tableau de bord</p>
+        <p className="text-sm text-gray-500 mt-2">{error}</p>
+      </div>
+    );
+  }
+
+  // Extraire les données avec des valeurs par défaut
+  const teamStats = data?.teamHealth || { wellnessTrend: [], adherence: { completed: 0, planned: 0, rate: 0 } };
+  const alerts = data?.priorityActions || { pendingWellness: [], pendingValidation: [] };
+  
+  // TODO: Ces données ne viennent pas de l'API actuelle, à ajouter plus tard
+  const dailyPlans: any[] = [];
+  const recentRecords: any[] = [];
+
   return (
     <div className="flex flex-col gap-6 pb-24 pt-4 bg-gray-50 dark:bg-gray-900 min-h-full overflow-y-auto">
       
@@ -33,34 +44,36 @@ export const CoachHomeView: React.FC = () => {
           Bonjour Coach 👋
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Voici le point sur votre effectif aujourd'hui.
+          Voici le point sur votre effectif aujourd'hui. 
         </p>
       </div>
 
       {/* 1. SECTION CRITIQUE : ALERTES & SANTÉ */}
       <div className="px-4 space-y-4">
-        {/* Qui est blessé ou a besoin d'attention ? */}
+        {/* Qui est blessé ou a besoin d'attention ?  */}
         <ActionsListWidget alerts={alerts} />
         
         {/* État général des troupes (Graphique Radar) */}
         <TeamHealthWidget stats={teamStats} />
       </div>
 
-      {/* 2. SECTION OPÉRATIONNELLE : SÉANCE DU JOUR */}
-      <div className="space-y-2">
-        <div className="px-4 flex justify-between items-end">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-            Séances du Jour
-          </h2>
-          <span className="text-xs text-sprint-primary font-medium bg-sprint-primary/10 px-2 py-1 rounded-full">
-            {dailyPlans.length} groupes actifs
-          </span>
+      {/* 2.  SECTION OPÉRATIONNELLE : SÉANCE DU JOUR */}
+      {dailyPlans.length > 0 && (
+        <div className="space-y-2">
+          <div className="px-4 flex justify-between items-end">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              Séances du Jour
+            </h2>
+            <span className="text-xs text-sprint-primary font-medium bg-sprint-primary/10 px-2 py-1 rounded-full">
+              {dailyPlans.length} groupes actifs
+            </span>
+          </div>
+          <CoachDailyPlanCarousel plans={dailyPlans} />
         </div>
-        <CoachDailyPlanCarousel plans={dailyPlans} />
-      </div>
+      )}
 
       {/* 3. SECTION MOTIVATION : RECORDS */}
-      {recentRecords.length > 0 && (
+      {recentRecords. length > 0 && (
         <div className="px-4 space-y-2 mb-4">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             Derniers Records 🔥
