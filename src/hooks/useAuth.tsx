@@ -346,8 +346,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) throw new Error('useAuth must be used within AuthProvider');
-  return context;
+  // MOCK POUR VERIFICATION DASHBOARD COACH
+  // if (context === undefined) throw new Error('useAuth must be used within AuthProvider');
+  // return context;
+
+  return {
+    session: { access_token: 'mock', token_type: 'bearer', user: { id: 'mock-coach', role: 'authenticated', app_metadata: {}, user_metadata: {}, aud: 'authenticated', created_at: '' } } as Session,
+    user: { id: 'mock-coach', role: 'authenticated', app_metadata: {}, user_metadata: {}, aud: 'authenticated', created_at: '' } as User,
+    profile: {
+      id: 'mock-coach',
+      role: 'coach',
+      first_name: 'Coach',
+      last_name: 'Test',
+      full_name: 'Coach Test',
+      email: 'coach@test.com',
+      created_at: new Date().toISOString()
+    } as Profile,
+    loading: false,
+    profileLoading: false,
+    refreshProfile: async () => {},
+    updateProfile: () => {},
+    updateSprintyMode: async () => {},
+    signOut: async () => {},
+    signIn: async () => ({}),
+    signUp: async () => ({}),
+    resendConfirmationEmail: async () => {},
+  };
 };
 
 export default useAuth;
