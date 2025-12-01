@@ -1,4 +1,4 @@
-import { Plus, Zap, Trophy, Bot, Video, Users, Calendar } from 'lucide-react';
+import { Plus, Zap, Trophy, Bot, Video, Users, Calendar, BarChart4, TrendingUp } from 'lucide-react';
 
 // --- IMPORTS IMAGES ATHLETE (PNG) ---
 import imgWorkout from '../assets/hub/ajouter-un-entrainement.png';
@@ -7,13 +7,13 @@ import imgVideo from '../assets/hub/analyse-video.png';
 import imgLive from '../assets/hub/live.png';
 import imgNutrition from '../assets/hub/nutrition.png';
 
-// --- IMPORTS IMAGES COACH (CORRECTION EXTENSION .PNG) ---
-// Le système voit des .png, on s'adapte pour éliminer l'erreur
+// --- IMPORTS IMAGES COACH ---
 import imgPlanningCoach from '../assets/hub/planning.png';
 import imgMesSuivis from '../assets/hub/mes-suivie.png';
 
 export type AthleteActionType = 'new-workout' | 'live-workout' | 'new-record' | 'nutrition' | 'video-analysis';
-export type CoachActionType = 'my-follow-ups' | 'manage-planning';
+// Mise à jour des types d'actions Coach
+export type CoachActionType = 'my-athletes' | 'weekly-planning' | 'periodization'; 
 export type ActionType = AthleteActionType | CoachActionType;
 
 export interface Action {
@@ -64,17 +64,24 @@ export const athleteActions: Action[] = [
 
 export const coachActions: Action[] = [
   { 
-    id: 'my-follow-ups', 
-    title: "Mes suivis", 
-    subtitle: "Suivez la progression de vos athlètes.",
+    id: 'my-athletes', // Ancien 'my-follow-ups'
+    title: "Mes Athlètes (Suivi 360)", 
+    subtitle: "État de forme, charge et progression.",
     Icon: Users, 
     image: imgMesSuivis
   },
   { 
-    id: 'manage-planning', 
-    title: "Gestion de planning", 
-    subtitle: "Gérez les programmes d'entraînement.",
+    id: 'weekly-planning', // Ancien 'manage-planning' (partiel)
+    title: "Planning Hebdomadaire", 
+    subtitle: "Gérez les séances de la semaine.",
     Icon: Calendar, 
     image: imgPlanningCoach
+  },
+  { 
+    id: 'periodization', // Nouvelle action distincte
+    title: "Périodisation & Macrocycles", 
+    subtitle: "Structurez la saison et les blocs.",
+    Icon: TrendingUp, // Icône plus "stratégique"
+    image: imgPlanningCoach // On peut réutiliser l'image ou en mettre une spécifique "Graphique"
   },
 ];
