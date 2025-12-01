@@ -18,9 +18,9 @@ import CoachHeader from '../navigation/CoachHeader';
 import CoachHubView from '../hub/CoachHubView'; // Utilise la nouvelle vue LISTE
 import { CoachPlanning } from '../planning/CoachPlanning';
 import MyFollowUpsPage from '../coach/MyFollowUpsPage'; // (Peut être renommée MyAthletesPage plus tard)
-import { CoachProfilePageView } from '../profile/CoachProfilePageView';
+import CoachProfilePageView from '../profile/CoachProfilePageView';
 import RecordsPage from '../records/RecordsPage';
-import VideoAnalysisFlow from '../video_analysis/VideoAnalysisFlow';
+import { VideoAnalysisFlow } from '../video_analysis/VideoAnalysisFlow';
 
 // --- TYPES ---
 import { ActionType } from '../../data/actions';
@@ -94,7 +94,7 @@ export const CoachDashboard: React.FC = () => {
         return <RecordsPage />;
 
       case 'analysis':
-        return <VideoAnalysisFlow />;
+        return <VideoAnalysisFlow onBack={() => setCurrentView('hub')} />;
 
       case 'profile':
       case 'settings':
