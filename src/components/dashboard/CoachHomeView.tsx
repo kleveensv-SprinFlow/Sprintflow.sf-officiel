@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCoachDashboard } from '../../hooks/useCoachDashboard';
-import { TeamHealthWidget } from './coach/TeamHealthWidget';
-import { ActionsListWidget } from './coach/ActionsListWidget';
+import TeamHealthWidget from './coach/TeamHealthWidget';
+import ActionsListWidget from './coach/ActionsListWidget';
 import { CoachDailyPlanCarousel } from './CoachDailyPlanCarousel';
 import { GroupRecordsCarousel } from './coach/GroupRecordsCarousel';
 

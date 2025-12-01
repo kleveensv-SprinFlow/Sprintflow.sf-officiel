@@ -16,9 +16,9 @@ import CoachHubView from '../hub/CoachHubView'; // La vue en liste (Option 2)
 import { CoachHomeView } from './CoachHomeView'; // La nouvelle vue Widgets (à créer)
 import { CoachPlanning } from '../planning/CoachPlanning';
 import MyFollowUpsPage from '../coach/MyFollowUpsPage';
-import { CoachProfilePageView } from '../profile/CoachProfilePageView';
+import CoachProfilePageView from '../profile/CoachProfilePageView';
 import RecordsPage from '../records/RecordsPage';
-import VideoAnalysisFlow from '../video_analysis/VideoAnalysisFlow';
+import { VideoAnalysisFlow } from '../video_analysis/VideoAnalysisFlow';
 
 // --- TYPES ---
 import { ActionType } from '../../data/actions';
