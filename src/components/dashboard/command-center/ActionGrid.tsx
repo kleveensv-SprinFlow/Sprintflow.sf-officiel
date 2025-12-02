@@ -15,7 +15,7 @@ export const ActionGrid: React.FC<ActionGridProps> = ({ actions, onActionClick }
       {/* 1. Wellness Pending */}
       <button 
         onClick={() => onActionClick('wellness')}
-        className="group relative flex flex-col items-start p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+        className="group relative flex flex-col items-start p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] duration-200 cursor-pointer"
       >
         <div className="flex justify-between w-full items-start mb-2">
            <div className={`p-2 rounded-xl ${actions.pending_wellness > 0 ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400' : 'bg-gray-50 text-gray-400 dark:bg-gray-700'}`}>
@@ -45,7 +45,7 @@ export const ActionGrid: React.FC<ActionGridProps> = ({ actions, onActionClick }
       {/* 2. Validation Pending */}
       <button 
         onClick={() => onActionClick('validation')}
-        className="group relative flex flex-col items-start p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+        className="group relative flex flex-col items-start p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] duration-200 cursor-pointer"
       >
         <div className="flex justify-between w-full items-start mb-2">
            <div className={`p-2 rounded-xl ${actions.pending_review > 0 ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-gray-50 text-gray-400 dark:bg-gray-700'}`}>
