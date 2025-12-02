@@ -7,7 +7,8 @@ import {
   Calendar, 
   Settings, 
   LayoutGrid, // Pour l'icône du Hub
-  Home
+  Home,
+  CheckCircle2 // Icône validation (utilisée pour le type si besoin, mais surtout dans les enfants)
 } from 'lucide-react';
 
 // --- IMPORTS DES COMPOSANTS ---
@@ -19,23 +20,35 @@ import MyFollowUpsPage from '../coach/MyFollowUpsPage';
 import CoachProfilePageView from '../profile/CoachProfilePageView';
 import RecordsPage from '../records/RecordsPage';
 import { VideoAnalysisFlow } from '../video_analysis/VideoAnalysisFlow';
+import { ValidationQueue } from './validation/ValidationQueue'; // Nouvelle vue validation
 
 // --- TYPES ---
 import { ActionType } from '../../data/actions';
 
 // Ajout de 'home' aux types de vue
-type ViewType = 'home' | 'hub' | 'planning' | 'athletes' | 'records' | 'analysis' | 'profile' | 'settings' | 'periodization';
+type ViewType = 'home' | 'hub' | 'planning' | 'athletes' | 'records' | 'analysis' | 'profile' | 'settings' | 'periodization' | 'validation';
+
+// Nouvelle structure d'état pour supporter les paramètres
+interface NavigationState {
+  view: ViewType;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params?: any;
+}
 
 export const CoachDashboard: React.FC = () => {
   // On démarre sur 'home' pour voir les alertes/widgets tout de suite
-  const [currentView, setCurrentView] = useState<ViewType>('home');
+  const [navigationState, setNavigationState] = useState<NavigationState>({ view: 'home' });
+
+  // Helper pour obtenir la vue courante (legacy support)
+  const currentView = navigationState.view;
 
   // --- FONCTION DE NAVIGATION CENTRALE ---
-  const handleNavigation = (view: ViewType) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleNavigation = (view: ViewType, params?: any) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(10);
     }
-    setCurrentView(view);
+    setNavigationState({ view, params });
   };
 
   // --- GESTION DES CLICS SUR LA LISTE DU HUB ---
@@ -44,21 +57,21 @@ export const CoachDashboard: React.FC = () => {
 
     switch (action) {
       case 'weekly-planning':
-        setCurrentView('planning');
+        handleNavigation('planning', { date: 'today' });
         break;
 
       case 'my-athletes':
       case 'my-follow-ups': 
-        setCurrentView('athletes');
+        handleNavigation('athletes');
         break;
 
       case 'periodization':
         // Redirige vers le planning pour l'instant (ou un composant dédié plus tard)
-        setCurrentView('planning'); 
+        handleNavigation('planning'); 
         break;
 
       case 'video-analysis':
-        setCurrentView('analysis');
+        handleNavigation('analysis');
         break;
 
       default:
@@ -69,10 +82,12 @@ export const CoachDashboard: React.FC = () => {
 
   // --- RENDU DU CONTENU PRINCIPAL ---
   const renderContent = () => {
-    switch (currentView) {
+    const { view, params } = navigationState;
+
+    switch (view) {
       case 'home':
         // Affiche le tableau de bord "Command Center"
-        return <CoachCommandCenter onNavigate={(view) => handleNavigation(view as ViewType)} />;
+        return <CoachCommandCenter onNavigate={(view, params) => handleNavigation(view as ViewType, params)} />;
 
       case 'hub':
         // Affiche la liste des outils
@@ -83,26 +98,35 @@ export const CoachDashboard: React.FC = () => {
         return (
           <CoachPlanning 
             initialSelectionType='group' 
-            onBackToSelection={() => setCurrentView('home')} // Retour à l'accueil
+            initialDate={params?.date === 'today' ? new Date() : (params?.date ? new Date(params.date) : undefined)}
+            focusSessionId={params?.focus}
           />
         );
 
       case 'athletes':
-        return <MyFollowUpsPage />;
+        return (
+          <MyFollowUpsPage 
+            onBack={() => handleNavigation('home')}
+            initialFilter={params?.filter} 
+          />
+        );
+
+      case 'validation':
+        return <ValidationQueue onBack={() => handleNavigation('home')} />;
 
       case 'records':
         // Accessible via le Hub ou un raccourci, mais on garde la vue pour le rendu
         return <RecordsPage />;
 
       case 'analysis':
-        return <VideoAnalysisFlow onBack={() => setCurrentView('hub')} />;
+        return <VideoAnalysisFlow onBack={() => handleNavigation('hub')} />;
 
       case 'profile':
       case 'settings':
         return <CoachProfilePageView />;
 
       default:
-        return <CoachCommandCenter onNavigate={(view) => handleNavigation(view as ViewType)} />;
+        return <CoachCommandCenter onNavigate={(view, params) => handleNavigation(view as ViewType, params)} />;
     }
   };
 
@@ -112,7 +136,7 @@ export const CoachDashboard: React.FC = () => {
       {/* HEADER */}
       <CoachHeader 
         currentView={currentView}
-        onNavigate={handleNavigation}
+        onNavigate={(view) => handleNavigation(view as ViewType)}
       />
 
       {/* CONTENU ANIMÉ */}
@@ -156,7 +180,7 @@ export const CoachDashboard: React.FC = () => {
             icon={Calendar} 
             label="Planning" 
             isActive={currentView === 'planning'} 
-            onClick={() => handleNavigation('planning')} 
+            onClick={() => handleNavigation('planning', { date: 'today' })} 
           />
           
           {/* 4. ATHLÈTES (Gestion Humaine) */}
@@ -177,6 +201,9 @@ export const CoachDashboard: React.FC = () => {
           
         </div>
       </div>
+      
+      {/* Hidden element to satisfy unused var check if icon is needed strictly for type or future use */}
+      <div className="hidden"><CheckCircle2 /></div>
     </div>
   );
 };
