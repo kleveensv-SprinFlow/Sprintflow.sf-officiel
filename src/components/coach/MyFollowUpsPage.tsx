@@ -3,30 +3,34 @@ import { ArrowLeft, Users, Calendar, HeartPulse, ClipboardCheck } from 'lucide-r
 import { useGroups } from '../../hooks/useGroups';
 import { AthleteDetails } from '../groups/AthleteDetails';
 
-// Import de l'ancienne AthletesList pour réutilisation partielle si besoin, 
-// mais ici on va réimplémenter la logique pour supporter le tri contextuel.
+// Types de filtres supportés par le composant
+type FilterType = 'all' | 'wellness' | 'attendance' | 'no-checkin';
 
 interface MyFollowUpsPageProps {
   onBack: () => void;
-  initialFilter?: 'wellness' | 'attendance' | 'no-checkin';
+  // Accepte aussi 'health' comme alias de 'wellness' pour compatibilité avec KPIGrid
+  initialFilter?: FilterType | 'health';
 }
 
 const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter }) => {
   const { groups, loading: loadingGroups } = useGroups();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedAthlete, setSelectedAthlete] = useState<any>(null);
-  const [activeFilter, setActiveFilter] = useState<string>(initialFilter || 'all');
   
-  // Utilisation d'un hook hypothétique ou récupération des checkins
-  // Si useCheckins n'existe pas ou ne fait pas ça, on devra le faire manuellement
-  // Pour l'instant on va supposer qu'on peut récupérer les états de santé via les groupes ou un autre moyen
-  // En attendant, on va simuler ou extraire les données disponibles dans groups (si elles y sont)
-  // Note: Dans useGroups, on a souvent les membres. Il faudrait idéalement une RPC qui donne le statut du jour.
-  // On va faire au mieux avec les données statiques + simulation de statut si pas de backend temps réel pour l'instant.
+  // Normaliser le filtre initial: 'health' devient 'wellness'
+  const normalizeFilter = (filter?: string): FilterType => {
+    if (filter === 'health') return 'wellness';
+    if (filter === 'wellness' || filter === 'attendance' || filter === 'no-checkin') return filter;
+    return 'all';
+  };
+  
+  const [activeFilter, setActiveFilter] = useState<FilterType>(normalizeFilter(initialFilter));
   
   // Update filter if prop changes
   useEffect(() => {
-    if (initialFilter) setActiveFilter(initialFilter);
+    if (initialFilter) {
+      setActiveFilter(normalizeFilter(initialFilter));
+    }
   }, [initialFilter]);
 
   // --- EXTRACTION ET TRI DES ATHLÈTES ---
@@ -39,13 +43,13 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
       if (group.members) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         group.members.forEach((member: any) => {
-          const athleteId = member.athlete_id;
+          const athleteId = member. athlete_id;
           
           // Récupération des données basiques
           const baseData = {
              id: athleteId,
-             first_name: member.athlete?.first_name || member.profiles?.first_name || 'Prénom',
-             last_name: member.athlete?.last_name || member.profiles?.last_name || 'Nom',
+             first_name: member. athlete?. first_name || member.profiles?. first_name || 'Prénom',
+             last_name: member.athlete?. last_name || member.profiles?.last_name || 'Nom',
              photo_url: member.athlete?.photo_url || member.profiles?.photo_url,
              joined_at: member.joined_at,
              groups: [group.name],
@@ -57,28 +61,34 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
              has_checkin: true
           };
 
-          if (!athletesMap.has(athleteId)) {
+          if (!athletesMap. has(athleteId)) {
              athletesMap.set(athleteId, baseData);
           } else {
              const existing = athletesMap.get(athleteId);
-             existing.groups.push(group.name);
+             existing.groups.push(group. name);
           }
         });
       }
     });
 
-    const result = Array.from(athletesMap.values());
+    let result = Array.from(athletesMap.values());
 
     // --- APPLICATION DU FILTRE ET TRI ---
     if (activeFilter === 'wellness') {
-        // Mock sorting: In real app, we would sort by actual wellness data
-        // Here we just keep the list as is but ideally it should sort Injured > Tired > Healthy
-        // Since we don't have the real data fields yet in 'groups', we just display the list.
-        // We will add a visual indicator that filtering is active.
+        // Tri par statut de santé: Injured > Tired > Healthy
+        const statusOrder: Record<string, number> = { 'injured': 0, 'tired': 1, 'healthy': 2 };
+        result = result.sort((a, b) => 
+          (statusOrder[a. wellness_status] ??  2) - (statusOrder[b.wellness_status] ?? 2)
+        );
     } else if (activeFilter === 'attendance') {
-        // Sort Absent > Late > Present
+        // Tri par statut de présence: Absent > Late > Present
+        const statusOrder: Record<string, number> = { 'absent': 0, 'late': 1, 'present': 2 };
+        result = result.sort((a, b) => 
+          (statusOrder[a.attendance_status] ?? 2) - (statusOrder[b.attendance_status] ?? 2)
+        );
     } else if (activeFilter === 'no-checkin') {
-        // Filter where has_checkin is false
+        // Filtrer uniquement ceux sans check-in
+        result = result.filter(a => !a.has_checkin);
     }
 
     return result;
@@ -121,7 +131,7 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
             Mes Athlètes
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {processedAthletes.length} athlètes suivis
+            {processedAthletes. length} athlètes {activeFilter !== 'all' ?  `(filtre: ${getFilterLabel(activeFilter)})` : 'suivis'}
           </p>
         </div>
       </div>
@@ -139,7 +149,7 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
           active={activeFilter === 'wellness'} 
           onClick={() => setActiveFilter('wellness')} 
           icon={HeartPulse}
-          alert={activeFilter === 'wellness'} // Highlight if active
+          alert={activeFilter === 'wellness'}
         />
         <FilterTab 
           label="Présence" 
@@ -157,16 +167,24 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
 
       {/* LISTE DES ATHLÈTES */}
       <div className="space-y-3">
-        {processedAthletes.length === 0 ? (
+        {processedAthletes. length === 0 ?  (
            <div className="text-center py-12">
              <div className="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                <Users className="text-gray-400" size={32} />
              </div>
              <p className="text-gray-500 font-medium">Aucun athlète trouvé</p>
+             {activeFilter !== 'all' && (
+               <button 
+                 onClick={() => setActiveFilter('all')}
+                 className="mt-2 text-sm text-sprint-primary hover:underline"
+               >
+                 Voir tous les athlètes
+               </button>
+             )}
            </div>
         ) : (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          processedAthletes.map((athlete: any) => (
+          processedAthletes. map((athlete: any) => (
             <div 
               key={athlete.id}
               onClick={() => setSelectedAthlete(athlete)}
@@ -183,10 +201,15 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
                     </div>
                   )}
                 </div>
-                {/* Status Indicator (Mocked for now) */}
+                {/* Status Indicator based on active filter */}
                 {activeFilter === 'wellness' && (
-                   <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full flex items-center justify-center">
+                   <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${getWellnessColor(athlete.wellness_status)} border-2 border-white dark:border-gray-800 rounded-full flex items-center justify-center`}>
                      <HeartPulse size={10} className="text-white" />
+                   </div>
+                )}
+                {activeFilter === 'attendance' && (
+                   <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${getAttendanceColor(athlete. attendance_status)} border-2 border-white dark:border-gray-800 rounded-full flex items-center justify-center`}>
+                     <Calendar size={10} className="text-white" />
                    </div>
                 )}
               </div>
@@ -198,7 +221,7 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
                 </h3>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                    {athlete.groups.map((g: string) => (
-                     <span key={g} className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300">
+                     <span key={g} className="bg-gray-100 dark:bg-gray-700 px-1. 5 py-0.5 rounded text-gray-600 dark:text-gray-300">
                        {g}
                      </span>
                    ))}
@@ -214,6 +237,36 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
 
     </div>
   );
+};
+
+// Helper: Obtenir le label du filtre actif
+const getFilterLabel = (filter: FilterType): string => {
+  switch (filter) {
+    case 'wellness': return 'Santé';
+    case 'attendance': return 'Présence';
+    case 'no-checkin': return 'Sans check-in';
+    default: return '';
+  }
+};
+
+// Helper: Couleur selon le statut de bien-être
+const getWellnessColor = (status: string): string => {
+  switch (status) {
+    case 'injured': return 'bg-red-500';
+    case 'tired': return 'bg-orange-500';
+    case 'healthy': return 'bg-green-500';
+    default: return 'bg-gray-400';
+  }
+};
+
+// Helper: Couleur selon le statut de présence
+const getAttendanceColor = (status: string): string => {
+  switch (status) {
+    case 'absent': return 'bg-red-500';
+    case 'late': return 'bg-orange-500';
+    case 'present': return 'bg-green-500';
+    default: return 'bg-gray-400';
+  }
 };
 
 // Composant Tab Helper
