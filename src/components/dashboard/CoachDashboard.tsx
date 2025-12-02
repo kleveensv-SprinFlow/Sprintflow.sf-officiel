@@ -6,29 +6,27 @@ import {
   Users, 
   Calendar, 
   Settings, 
-  LayoutGrid, // Pour l'icône du Hub
+  LayoutGrid,
   Home,
-  CheckCircle2 // Icône validation (utilisée pour le type si besoin, mais surtout dans les enfants)
+  CheckCircle2
 } from 'lucide-react';
 
 // --- IMPORTS DES COMPOSANTS ---
 import CoachHeader from '../navigation/CoachHeader';
-import CoachHubView from '../hub/CoachHubView'; // La vue en liste (Option 2)
+import CoachHubView from '../hub/CoachHubView';
 import { CoachCommandCenter } from './command-center/CoachCommandCenter';
 import { CoachPlanning } from '../planning/CoachPlanning';
 import MyFollowUpsPage from '../coach/MyFollowUpsPage';
 import CoachProfilePageView from '../profile/CoachProfilePageView';
 import RecordsPage from '../records/RecordsPage';
 import { VideoAnalysisFlow } from '../video_analysis/VideoAnalysisFlow';
-import { ValidationQueue } from './validation/ValidationQueue'; // Nouvelle vue validation
+import { ValidationQueue } from './validation/ValidationQueue';
 
 // --- TYPES ---
 import { ActionType } from '../../data/actions';
 
-// Ajout de 'home' aux types de vue
 type ViewType = 'home' | 'hub' | 'planning' | 'athletes' | 'records' | 'analysis' | 'profile' | 'settings' | 'periodization' | 'validation';
 
-// Structure d'état pour supporter les paramètres de navigation
 interface NavigationState {
   view: ViewType;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,14 +34,10 @@ interface NavigationState {
 }
 
 export const CoachDashboard: React.FC = () => {
-  // On démarre sur 'home' pour voir les alertes/widgets tout de suite
   const [navigationState, setNavigationState] = useState<NavigationState>({ view: 'home' });
 
-  // Helper pour obtenir la vue courante (legacy support)
   const currentView = navigationState. view;
 
-  // --- FONCTION DE NAVIGATION CENTRALE ---
-  // Accepte un second argument optionnel pour les paramètres
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleNavigation = (view: ViewType, params?: any) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -52,7 +46,6 @@ export const CoachDashboard: React.FC = () => {
     setNavigationState({ view, params });
   };
 
-  // --- GESTION DES CLICS SUR LA LISTE DU HUB ---
   const handleHubAction = (action: ActionType) => {
     switch (action) {
       case 'weekly-planning':
@@ -78,14 +71,11 @@ export const CoachDashboard: React.FC = () => {
     }
   };
 
-  // --- RENDU DU CONTENU PRINCIPAL ---
   const renderContent = () => {
     const { view, params } = navigationState;
 
     switch (view) {
       case 'home':
-        // Affiche le tableau de bord "Command Center"
-        // On passe handleNavigation avec sa signature complète (view, params)
         return (
           <CoachCommandCenter 
             onNavigate={(view, params) => handleNavigation(view as ViewType, params)} 
@@ -93,7 +83,6 @@ export const CoachDashboard: React.FC = () => {
         );
 
       case 'hub':
-        // Affiche la liste des outils
         return <CoachHubView onAction={handleHubAction} />;
       
       case 'planning':
@@ -101,13 +90,12 @@ export const CoachDashboard: React.FC = () => {
         return (
           <CoachPlanning 
             initialSelectionType='group' 
-            initialDate={params?.date === 'today' ?  new Date() : (params?.date ?  new Date(params. date) : undefined)}
+            initialDate={params?.date === 'today' ?  new Date() : (params?.date ? new Date(params.date) : undefined)}
             focusSessionId={params?.focus}
           />
         );
 
       case 'athletes':
-        // On passe le paramètre de filtre au composant MyFollowUpsPage
         return (
           <MyFollowUpsPage 
             onBack={() => handleNavigation('home')}
@@ -140,13 +128,11 @@ export const CoachDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       
-      {/* HEADER */}
       <CoachHeader 
         currentView={currentView}
         onNavigate={(view) => handleNavigation(view as ViewType)}
       />
 
-      {/* CONTENU ANIMÉ */}
       <main className="flex-1 relative overflow-hidden pb-20">
         <AnimatePresence mode="wait">
           <motion.div
@@ -162,11 +148,9 @@ export const CoachDashboard: React.FC = () => {
         </AnimatePresence>
       </main>
 
-      {/* BARRE DE NAVIGATION INFÉRIEURE (5 Boutons) */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pb-safe px-4 py-2 z-50">
         <div className="flex justify-between items-center max-w-lg mx-auto">
           
-          {/* 1. ACCUEIL (Widgets & Alertes) */}
           <NavButton 
             icon={Home} 
             label="Accueil" 
@@ -174,7 +158,6 @@ export const CoachDashboard: React.FC = () => {
             onClick={() => handleNavigation('home')} 
           />
           
-          {/* 2. HUB (Menu Outils) */}
           <NavButton 
             icon={LayoutGrid} 
             label="Hub" 
@@ -182,7 +165,6 @@ export const CoachDashboard: React.FC = () => {
             onClick={() => handleNavigation('hub')} 
           />
           
-          {/* 3.  PLANNING (Action quotidienne) */}
           <NavButton 
             icon={Calendar} 
             label="Planning" 
@@ -190,7 +172,6 @@ export const CoachDashboard: React.FC = () => {
             onClick={() => handleNavigation('planning', { date: 'today' })} 
           />
           
-          {/* 4. ATHLÈTES (Gestion Humaine) */}
           <NavButton 
             icon={Users} 
             label="Athlètes" 
@@ -198,7 +179,6 @@ export const CoachDashboard: React.FC = () => {
             onClick={() => handleNavigation('athletes')} 
           />
 
-          {/* 5. PROFIL (Réglages) */}
           <NavButton 
             icon={Settings} 
             label="Profil" 
@@ -209,7 +189,6 @@ export const CoachDashboard: React.FC = () => {
         </div>
       </div>
       
-      {/* Hidden element to satisfy unused var check if icon is needed strictly for type or future use */}
       <div className="hidden"><CheckCircle2 /></div>
     </div>
   );
