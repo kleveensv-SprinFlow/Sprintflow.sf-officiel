@@ -5,7 +5,7 @@ import { KPIGrid } from './KPIGrid';
 import { ActionGrid } from './ActionGrid';
 import { OperationalView } from './OperationalView';
 import { CommandCenterData } from './types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 
 interface CoachCommandCenterProps {
   onNavigate: (view: string) => void;
@@ -63,6 +63,10 @@ export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNaviga
     );
   }
 
+  // Determine if it's a "Zero Data" state (Onboarding case)
+  // Logic: No next up items AND 0 planned athletes
+  const isZeroData = (!data.next_up || data.next_up.length === 0) && (data.presence?.planned === 0);
+
   return (
     <div className="p-4 max-w-lg mx-auto pb-24">
       
@@ -81,10 +85,41 @@ export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNaviga
         presence={data.presence}
         health={data.health}
         load={data.load}
+        onNavigate={onNavigate}
       />
 
       {/* 3. Operational Context (Center) */}
-      <OperationalView nextUp={data.next_up} />
+      {isZeroData ? (
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white px-1 mb-2">
+            À vous de jouer
+          </h2>
+          <button 
+            onClick={() => onNavigate('planning')}
+            className="w-full p-8 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden group active:scale-[0.98] transition-all duration-200"
+          >
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-sprint-primary/10 rounded-full blur-2xl -mr-10 -mt-10" />
+            
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              <div className="p-3 bg-white/10 rounded-full text-white mb-1 group-hover:scale-110 transition-transform duration-200">
+                <PlusCircle size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-white leading-tight">
+                Votre tableau de bord est vide.
+              </h3>
+              <p className="text-sm text-gray-400 max-w-[200px] mx-auto">
+                Lancez la machine en créant votre première séance.
+              </p>
+              <div className="mt-2 px-4 py-2 bg-white text-black text-sm font-bold rounded-full shadow-lg">
+                Créer ma première séance
+              </div>
+            </div>
+          </button>
+        </div>
+      ) : (
+        <OperationalView nextUp={data.next_up} onNavigate={onNavigate} />
+      )}
 
       {/* 4. Action Buttons (Bottom) */}
       <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
