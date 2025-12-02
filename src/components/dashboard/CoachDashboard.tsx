@@ -205,7 +205,7 @@ const NavButton: React.FC<{ icon: React.ElementType, label: string, isActive: bo
     }`}
   >
     <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-sprint-primary/10' : 'bg-transparent'}`}>
-      <Icon size={24} strokeWidth={isActive ?  2. 5 : 2} />
+      <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
     </div>
     <span className={`text-[10px] font-medium ${isActive ? 'font-bold' : ''}`}>
       {label}
