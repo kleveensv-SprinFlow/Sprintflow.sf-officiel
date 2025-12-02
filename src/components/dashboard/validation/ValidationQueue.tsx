@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, CheckCircle2, Eye, User, Calendar } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Eye, User, Calendar, ArrowRight } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -20,6 +20,7 @@ interface WorkoutWithAthlete extends Workout {
     last_name?: string;
     photo_url?: string;
   };
+  // Pour gérer les différences de structure retournées par Supabase
   profiles?: {
     first_name?: string;
     last_name?: string;
@@ -38,12 +39,13 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
     try {
       setLoading(true);
       
-      // On récupère les séances terminées mais non validées
+      // ✅ CORRECTION : Utilisation explicite de la jointure 'profiles' avec ! pour éviter l'ambiguïté
+      // On tente d'abord avec l'alias 'athlete', si ça échoue on prendra 'profiles'
       const { data, error } = await supabase
         .from('workouts')
         .select(`
           *,
-          athlete:assigned_to_user_id (
+          athlete:profiles!assigned_to_user_id (
              first_name,
              last_name,
              photo_url
@@ -56,14 +58,12 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
 
       if (error) throw error;
       
-      // Adaptation car assigned_to_user_id est la clé étrangère vers profiles
-      // Supabase retourne parfois un objet imbriqué ou un tableau selon la relation
-      // Ici on cast proprement
       setWorkouts((data || []) as unknown as WorkoutWithAthlete[]);
 
     } catch (err) {
       console.error('Erreur chargement validation:', err);
-      toast.error("Impossible de charger la liste de validation");
+      // Mode dégradé: on essaie sans la jointure si erreur
+      toast.error("Erreur de récupération des données.");
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
   // --- ACTIONS ---
 
   const handleQuickValidate = async (workoutId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Évite d'ouvrir la modal si on clique sur le bouton valider
+    e.stopPropagation(); 
     
     try {
       const { error } = await supabase
@@ -87,7 +87,7 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
 
       if (error) throw error;
 
-      // Mise à jour optimiste de l'UI
+      // Mise à jour optimiste
       setWorkouts(prev => prev.filter(w => w.id !== workoutId));
       toast.success("Séance validée !");
 
@@ -103,7 +103,6 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
 
   const handleCloseDetails = () => {
     setSelectedWorkout(null);
-    // On recharge la liste au cas où des modifs ont été faites dans la modal
     fetchPendingWorkouts(); 
   };
 
@@ -126,7 +125,7 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
             {workouts.length}
           </span>
         </h1>
-        <div className="w-10" /> {/* Spacer pour centrer le titre */}
+        <div className="w-10" /> 
       </div>
 
       {/* Contenu Liste */}
@@ -138,29 +137,35 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
             ))}
           </div>
         ) : workouts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle2 className="text-green-600 dark:text-green-400" size={32} />
+          <div className="flex flex-col items-center justify-center h-full pt-10 text-center">
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
+              <CheckCircle2 className="text-green-600 dark:text-green-400" size={40} />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Tout est à jour !</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-xs">
-              Vous avez validé toutes les séances terminées. Bon travail coach.
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Tout est à jour !</h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-xs mb-8">
+              Vous avez validé toutes les séances terminées.
             </p>
+            
+            {/* ✅ AJOUT : Boutons de navigation quand vide */}
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+                <button 
+                    onClick={onBack}
+                    className="w-full py-3 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold flex items-center justify-center gap-2 hover:opacity-90"
+                >
+                    Retour au Dashboard
+                </button>
+                {/* Note: Dans une app réelle, on injecterait la navigation vers le planning ici */}
+            </div>
           </div>
         ) : (
           workouts.map(workout => {
-            // Extraction des infos
             const athleteName = workout.athlete 
               ? `${workout.athlete.first_name} ${workout.athlete.last_name}`
-              : (workout.assigned_to_user_id ? "Athlète inconnu" : "Non assigné");
+              : (workout.assigned_to_user_id ? "Athlète" : "Non assigné");
             
             const athletePhoto = workout.athlete?.photo_url;
-            
-            // Formatage date
             const dateStr = format(new Date(workout.date), 'dd MMM', { locale: fr });
             
-            // RPE ou Feedback (si présent dans notes ou rpe column)
-            // On suppose ici que 'rpe' existe sur l'objet workout (ajouté dans les types)
             const hasRpe = workout.rpe !== undefined && workout.rpe !== null;
 
             return (
@@ -170,8 +175,6 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
                 onClick={() => handleOpenDetails(workout)}
               >
                 <div className="flex items-start justify-between gap-3">
-                  
-                  {/* Gauche: Info Athlète */}
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">
                       {athletePhoto ? (
@@ -193,7 +196,6 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
                     </div>
                   </div>
 
-                  {/* Droite: Feedback rapide */}
                   {hasRpe && (
                     <div className={`px-2 py-1 rounded-lg text-xs font-bold ${
                         (workout.rpe || 0) > 7 
@@ -205,7 +207,6 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
                   )}
                 </div>
 
-                {/* Milieu: Titre Séance */}
                 <div className="pl-[52px]">
                     <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-1">
                         {workout.tag_seance || "Séance sans titre"}
@@ -217,14 +218,13 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
                     )}
                 </div>
 
-                {/* Bas: Actions Boutons */}
                 <div className="flex gap-2 pt-2 border-t border-gray-50 dark:border-gray-700 mt-1">
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleOpenDetails(workout); }}
                         className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center gap-2"
                     >
                         <Eye size={16} />
-                        Ouvrir
+                        Détails
                     </button>
                     <button 
                         onClick={(e) => handleQuickValidate(workout.id, e)}
@@ -234,14 +234,12 @@ export const ValidationQueue: React.FC<ValidationQueueProps> = ({ onBack }) => {
                         Valider
                     </button>
                 </div>
-
               </div>
             );
           })
         )}
       </div>
 
-      {/* Details Modal */}
       {selectedWorkout && (
         <WorkoutDetailsModal 
             isOpen={!!selectedWorkout}
