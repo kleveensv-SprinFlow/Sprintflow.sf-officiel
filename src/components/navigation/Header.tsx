@@ -14,20 +14,41 @@ export default function Header({ currentView, onNavigate, isLoading, forceShowBa
   const { profile } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Effet pour détecter le scroll et adapter le style du header
+  // Optimisation Scroll : requestAnimationFrame pour 60fps stable
   useEffect(() => {
+    let rafId: number;
+    
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      // Annule la frame précédente si elle n'a pas encore été exécutée
+      cancelAnimationFrame(rafId);
+      
+      rafId = requestAnimationFrame(() => {
+        // Seuil très bas (10px) pour déclencher l'effet glass immédiatement
+        const shouldBeScrolled = window.scrollY > 10;
+        
+        // Mise à jour de l'état uniquement si changement nécessaire
+        setIsScrolled(prev => {
+          if (prev !== shouldBeScrolled) {
+            return shouldBeScrolled;
+          }
+          return prev;
+        });
+      });
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true }); // passive: true pour perf scroll
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Logique d'affichage pour la partie gauche du header
   const renderLeftPart = () => {
     if (currentView === 'dashboard' && !forceShowBack) {
       return (
-        <h1 className="text-xl font-extrabold text-gray-900 dark:text-white font-manrope tracking-tight">
+        <h1 className="text-xl font-extrabold text-white font-manrope tracking-tight">
           SPRINTFLOW
         </h1>
       );
@@ -36,7 +57,7 @@ export default function Header({ currentView, onNavigate, isLoading, forceShowBa
     return (
       <button
         onClick={() => onNavigate('back')}
-        className="p-2 -ml-2 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-white"
+        className="p-2 -ml-2 rounded-full transition-colors hover:bg-white/10 text-white"
       >
         <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
       </button>
@@ -47,7 +68,7 @@ export default function Header({ currentView, onNavigate, isLoading, forceShowBa
   const renderRightPart = () => {
     if (currentView === 'dashboard') {
       if (isLoading) {
-        return <div className="w-9 h-9 rounded-full bg-gray-300 dark:bg-gray-700 animate-pulse" />;
+        return <div className="w-9 h-9 rounded-full bg-gray-700 animate-pulse" />;
       }
       return (
         <button
@@ -57,8 +78,8 @@ export default function Header({ currentView, onNavigate, isLoading, forceShowBa
           {profile?.photo_url ? (
             <img src={profile.photo_url} alt="Profil" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-              <UserIcon className="w-5 h-5 text-gray-500 dark:text-gray-300" strokeWidth={2} />
+            <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+              <UserIcon className="w-5 h-5 text-gray-300" strokeWidth={2} />
             </div>
           )}
         </button>
@@ -68,7 +89,7 @@ export default function Header({ currentView, onNavigate, isLoading, forceShowBa
       return (
         <button
           onClick={() => onNavigate('settings')}
-          className="p-2 -mr-2 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-white/10 text-gray-800 dark:text-white"
+          className="p-2 -mr-2 rounded-full transition-colors hover:bg-white/10 text-white"
         >
           <Settings className="h-6 w-6" strokeWidth={2} />
         </button>
@@ -83,7 +104,7 @@ export default function Header({ currentView, onNavigate, isLoading, forceShowBa
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ease-in-out 
                  pt-[env(safe-area-inset-top)] ${
                    isScrolled
-                     ? 'bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 shadow-sm'
+                     ? 'bg-[#0B1120]/90 backdrop-blur-xl border-b border-white/10 shadow-sm'
                      : 'bg-transparent border-b border-transparent'
                  }`}
     >
