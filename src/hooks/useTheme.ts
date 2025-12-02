@@ -1,57 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'dark';
 
 /**
- * Hook pour gérer le changement de thème de l'application.
- * Le thème initial est déjà défini via un script dans index.html pour éviter un flash.
- * Ce hook gère uniquement les mises à jour post-chargement.
+ * Hook simplifié pour verrouiller le thème en mode 'dark'.
+ * L'application est désormais "Dark Mode Only".
+ * La structure du hook est conservée pour éviter de casser les imports existants.
  */
 export const useTheme = () => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem('theme') as Theme) || 'system';
-  });
+  // Le state est figé sur 'dark'
+  const [theme] = useState<Theme>('dark');
 
-  // Fonction pour appliquer le thème
-  const applyTheme = useCallback((newTheme: Theme) => {
-    const root = window.document.documentElement;
-    
-    // Détermine si le mode sombre doit être appliqué
-    const isDark =
-      newTheme === 'dark' ||
-      (newTheme === 'system' &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-    root.classList.toggle('dark', isDark);
-    
-    // Sauvegarde le choix
-    try {
-      localStorage.setItem('theme', newTheme);
-    } catch (error) {
-      console.warn('Could not save theme to localStorage', error);
-    }
-    
-    setThemeState(newTheme);
-  }, []);
-
-  // Écouteur pour les changements de thème du système
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = () => {
-      // Si l'utilisateur a choisi 'system' (basé sur l'état React), on ré-applique le thème.
-      if (theme === 'system') {
-        applyTheme('system');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [applyTheme, theme]);
-
-  // La fonction de mise à jour que le composant UI utilisera
-  const setTheme = (newTheme: Theme) => {
-    applyTheme(newTheme);
+  // La fonction de mise à jour est une no-op (ne fait rien)
+  // On garde la signature pour compatibilité
+  const setTheme = (_: string) => {
+    // Intentionnellement vide : le thème ne peut plus être changé
+    // On pourrait logger un warning si nécessaire
+    // console.debug("Changement de thème désactivé : SprintFlow est 'Dark Mode Only'");
   };
 
   return { theme, setTheme };
