@@ -28,7 +28,7 @@ import { ActionType } from '../../data/actions';
 // Ajout de 'home' aux types de vue
 type ViewType = 'home' | 'hub' | 'planning' | 'athletes' | 'records' | 'analysis' | 'profile' | 'settings' | 'periodization' | 'validation';
 
-// Nouvelle structure d'état pour supporter les paramètres
+// Structure d'état pour supporter les paramètres de navigation
 interface NavigationState {
   view: ViewType;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,6 +43,7 @@ export const CoachDashboard: React.FC = () => {
   const currentView = navigationState.view;
 
   // --- FONCTION DE NAVIGATION CENTRALE ---
+  // Accepte un second argument optionnel pour les paramètres
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleNavigation = (view: ViewType, params?: any) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -53,8 +54,6 @@ export const CoachDashboard: React.FC = () => {
 
   // --- GESTION DES CLICS SUR LA LISTE DU HUB ---
   const handleHubAction = (action: ActionType) => {
-    // console.log("Action reçue du Hub:", action);
-
     switch (action) {
       case 'weekly-planning':
         handleNavigation('planning', { date: 'today' });
@@ -66,7 +65,6 @@ export const CoachDashboard: React.FC = () => {
         break;
 
       case 'periodization':
-        // Redirige vers le planning pour l'instant (ou un composant dédié plus tard)
         handleNavigation('planning'); 
         break;
 
@@ -87,7 +85,12 @@ export const CoachDashboard: React.FC = () => {
     switch (view) {
       case 'home':
         // Affiche le tableau de bord "Command Center"
-        return <CoachCommandCenter onNavigate={(view, params) => handleNavigation(view as ViewType, params)} />;
+        // On passe handleNavigation avec sa signature complète (view, params)
+        return (
+          <CoachCommandCenter 
+            onNavigate={(view, params) => handleNavigation(view as ViewType, params)} 
+          />
+        );
 
       case 'hub':
         // Affiche la liste des outils
@@ -98,12 +101,13 @@ export const CoachDashboard: React.FC = () => {
         return (
           <CoachPlanning 
             initialSelectionType='group' 
-            initialDate={params?.date === 'today' ? new Date() : (params?.date ? new Date(params.date) : undefined)}
+            initialDate={params?.date === 'today' ?  new Date() : (params?.date ?  new Date(params. date) : undefined)}
             focusSessionId={params?.focus}
           />
         );
 
       case 'athletes':
+        // On passe le paramètre de filtre au composant MyFollowUpsPage
         return (
           <MyFollowUpsPage 
             onBack={() => handleNavigation('home')}
@@ -115,7 +119,6 @@ export const CoachDashboard: React.FC = () => {
         return <ValidationQueue onBack={() => handleNavigation('home')} />;
 
       case 'records':
-        // Accessible via le Hub ou un raccourci, mais on garde la vue pour le rendu
         return <RecordsPage />;
 
       case 'analysis':
@@ -126,7 +129,11 @@ export const CoachDashboard: React.FC = () => {
         return <CoachProfilePageView />;
 
       default:
-        return <CoachCommandCenter onNavigate={(view, params) => handleNavigation(view as ViewType, params)} />;
+        return (
+          <CoachCommandCenter 
+            onNavigate={(view, params) => handleNavigation(view as ViewType, params)} 
+          />
+        );
     }
   };
 
@@ -151,7 +158,7 @@ export const CoachDashboard: React.FC = () => {
             className="h-full"
           >
             {renderContent()}
-          </motion.div>
+          </motion. div>
         </AnimatePresence>
       </main>
 
@@ -175,7 +182,7 @@ export const CoachDashboard: React.FC = () => {
             onClick={() => handleNavigation('hub')} 
           />
           
-          {/* 3. PLANNING (Action quotidienne) */}
+          {/* 3.  PLANNING (Action quotidienne) */}
           <NavButton 
             icon={Calendar} 
             label="Planning" 
@@ -214,12 +221,12 @@ const NavButton: React.FC<{ icon: React.ElementType, label: string, isActive: bo
     onClick={onClick}
     className={`flex-1 flex flex-col items-center justify-center py-1 gap-1 transition-all duration-200 ${
       isActive 
-        ? 'text-sprint-primary scale-105' 
+        ?  'text-sprint-primary scale-105' 
         : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
     }`}
   >
     <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-sprint-primary/10' : 'bg-transparent'}`}>
-      <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+      <Icon size={24} strokeWidth={isActive ? 2. 5 : 2} />
     </div>
     <span className={`text-[10px] font-medium ${isActive ? 'font-bold' : ''}`}>
       {label}
