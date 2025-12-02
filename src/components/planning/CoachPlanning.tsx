@@ -30,7 +30,21 @@ type ActiveFilter = {
 
 type SelectionType = 'group' | 'athlete';
 
-export const CoachPlanning: React.FC = () => {
+interface CoachPlanningProps {
+  initialSelectionType?: SelectionType;
+  onBackToSelection?: () => void;
+  // Nouvelles props pour le deep linking
+  initialDate?: Date;
+  focusSessionId?: string;
+}
+
+export const CoachPlanning: React.FC<CoachPlanningProps> = ({ 
+  initialSelectionType = 'group',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onBackToSelection, 
+  initialDate,
+  focusSessionId
+}) => {
   const { user } = useAuth();
   // Pass the active filter to useWorkouts to fetch relevant data
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
@@ -60,8 +74,17 @@ export const CoachPlanning: React.FC = () => {
     return map;
   }, [workoutTypes]);
 
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectionType, setSelectionType] = useState<SelectionType>('athlete'); // Default to athlete
+  // Initialisation de la date courante : priorité à initialDate si fournie
+  const [currentDate, setCurrentDate] = useState(initialDate || new Date());
+  
+  // Update currentDate if initialDate prop changes (e.g. navigation from another view)
+  useEffect(() => {
+    if (initialDate) {
+      setCurrentDate(initialDate);
+    }
+  }, [initialDate]);
+
+  const [selectionType, setSelectionType] = useState<SelectionType>(initialSelectionType);
 
   const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
   const [isWorkoutFormOpen, setWorkoutFormOpen] = useState(false);
@@ -71,11 +94,36 @@ export const CoachPlanning: React.FC = () => {
   const [editingPhase, setEditingPhase] = useState<PlanningPhase | null>(null);
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [initialWorkoutData, setInitialWorkoutData] = useState<any>(null);
   const [viewingWorkout, setViewingWorkout] = useState<Workout | null>(null);
   
   // Clipboard state for Copy/Paste Week
   const [weekClipboard, setWeekClipboard] = useState<Workout[] | null>(null);
+
+  // --- LOGIC FOR FOCUS SESSION ---
+  // If a focusSessionId is provided, we try to find the workout and open it or highlight it.
+  // We also ensure the calendar is centered on that week (if not already handled by initialDate).
+  useEffect(() => {
+    if (focusSessionId && workouts.length > 0) {
+      const targetWorkout = workouts.find(w => w.id === focusSessionId);
+      if (targetWorkout) {
+        // 1. Open details immediately
+        setViewingWorkout(targetWorkout);
+        
+        // 2. Ensure date is correct (if initialDate wasn't set correctly or to sync)
+        const workoutDate = parseISO(targetWorkout.date);
+        // Check if workoutDate is in current view
+        const currentWeekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+        const currentWeekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+        
+        if (workoutDate < currentWeekStart || workoutDate > currentWeekEnd) {
+             setCurrentDate(workoutDate);
+        }
+      }
+    }
+  }, [focusSessionId, workouts, currentDate]);
+
 
   useEffect(() => {
     // Logic to select the first available item if nothing is selected
@@ -136,6 +184,7 @@ export const CoachPlanning: React.FC = () => {
   const handleSaveSmartPlanning = async (payload: SmartPlanningPayload) => {
     if (!selectedDate || !activeFilter) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const planningPayload: any = {
       title: payload.title,
       type: 'guidé',
@@ -162,11 +211,13 @@ export const CoachPlanning: React.FC = () => {
   };
 
   // Kept for backward compatibility if needed, but not used in new flow
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSaveWorkout = async (payload: { blocs: any[]; type: 'guidé' | 'manuscrit'; tag_seance: string; notes?: string; }) => {
     if (!selectedDate || !activeFilter) return;
 
     const workoutTypeName = workoutTypeMap.get(payload.tag_seance)?.name || 'Séance';
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const planningPayload: any = {
       title: workoutTypeName,
       type: payload.type,
