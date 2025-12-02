@@ -13,7 +13,7 @@ import {
 // --- IMPORTS DES COMPOSANTS ---
 import CoachHeader from '../navigation/CoachHeader';
 import CoachHubView from '../hub/CoachHubView'; // La vue en liste (Option 2)
-import { CoachHomeView } from './CoachHomeView'; // La nouvelle vue Widgets (à créer)
+import { CoachCommandCenter } from './command-center/CoachCommandCenter';
 import { CoachPlanning } from '../planning/CoachPlanning';
 import MyFollowUpsPage from '../coach/MyFollowUpsPage';
 import CoachProfilePageView from '../profile/CoachProfilePageView';
@@ -72,7 +72,7 @@ export const CoachDashboard: React.FC = () => {
     switch (currentView) {
       case 'home':
         // Affiche le tableau de bord "Command Center"
-        return <CoachHomeView />;
+        return <CoachCommandCenter onNavigate={(view) => handleNavigation(view as ViewType)} />;
 
       case 'hub':
         // Affiche la liste des outils
@@ -102,7 +102,7 @@ export const CoachDashboard: React.FC = () => {
         return <CoachProfilePageView />;
 
       default:
-        return <CoachHomeView />;
+        return <CoachCommandCenter onNavigate={(view) => handleNavigation(view as ViewType)} />;
     }
   };
 
@@ -182,7 +182,7 @@ export const CoachDashboard: React.FC = () => {
 };
 
 // Composant Bouton Navigation Optimisé
-const NavButton: React.FC<{ icon: any, label: string, isActive: boolean, onClick: () => void }> = ({ icon: Icon, label, isActive, onClick }) => (
+const NavButton: React.FC<{ icon: React.ElementType, label: string, isActive: boolean, onClick: () => void }> = ({ icon: Icon, label, isActive, onClick }) => (
   <button 
     onClick={onClick}
     className={`flex-1 flex flex-col items-center justify-center py-1 gap-1 transition-all duration-200 ${
