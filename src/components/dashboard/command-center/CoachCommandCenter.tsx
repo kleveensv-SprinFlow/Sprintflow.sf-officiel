@@ -8,7 +8,9 @@ import { CommandCenterData } from './types';
 import { Loader2, PlusCircle } from 'lucide-react';
 
 interface CoachCommandCenterProps {
-  onNavigate: (view: string) => void;
+  // Signature mise à jour pour accepter les paramètres de navigation
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onNavigate: (view: string, params?: any) => void;
 }
 
 export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNavigate }) => {
@@ -19,7 +21,7 @@ export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNaviga
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_coach_command_center_data');
+        const { data: rpcData, error: rpcError } = await supabase. rpc('get_coach_command_center_data');
         if (rpcError) throw rpcError;
         setData(rpcData as CommandCenterData);
       } catch (err) {
@@ -34,12 +36,12 @@ export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNaviga
 
   const handleActionClick = (type: 'wellness' | 'validation') => {
     // Navigate to the appropriate view to handle these actions
-    // For now, we route to 'athletes' for wellness and 'planning' for validation
-    // or we could have specific dedicated views.
     if (type === 'wellness') {
-      onNavigate('athletes'); // Or specific wellness monitoring view
+      // Navigation vers athlètes avec filtre santé
+      onNavigate('athletes', { filter: 'wellness' });
     } else {
-      onNavigate('planning'); // Or specific validation queue
+      // Navigation vers validation queue
+      onNavigate('validation');
     }
   };
 
@@ -65,7 +67,7 @@ export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNaviga
 
   // Determine if it's a "Zero Data" state (Onboarding case)
   // Logic: No next up items AND 0 planned athletes
-  const isZeroData = (!data.next_up || data.next_up.length === 0) && (data.presence?.planned === 0);
+  const isZeroData = (! data.next_up || data.next_up.length === 0) && (data.presence?. planned === 0);
 
   return (
     <div className="p-4 max-w-lg mx-auto pb-24">
@@ -76,11 +78,11 @@ export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNaviga
           Cockpit
         </h1>
         <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-          {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {new Date(). toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
 
-      {/* 2. Top KPIs */}
+      {/* 2. Top KPIs - On transmet onNavigate pour le "Smart Links" */}
       <KPIGrid 
         presence={data.presence}
         health={data.health}
@@ -88,15 +90,15 @@ export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNaviga
         onNavigate={onNavigate}
       />
 
-      {/* 3. Operational Context (Center) */}
-      {isZeroData ? (
+      {/* 3.  Operational Context (Center) */}
+      {isZeroData ?  (
         <div className="mb-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white px-1 mb-2">
             À vous de jouer
           </h2>
           <button 
             onClick={() => onNavigate('planning')}
-            className="w-full p-8 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden group active:scale-[0.98] transition-all duration-200"
+            className="w-full p-8 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden group hover:shadow-xl transition-shadow"
           >
             {/* Background decoration */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-sprint-primary/10 rounded-full blur-2xl -mr-10 -mt-10" />
@@ -106,10 +108,10 @@ export const CoachCommandCenter: React.FC<CoachCommandCenterProps> = ({ onNaviga
                 <PlusCircle size={32} />
               </div>
               <h3 className="text-xl font-bold text-white leading-tight">
-                Votre tableau de bord est vide.
+                Votre tableau de bord est vide. 
               </h3>
               <p className="text-sm text-gray-400 max-w-[200px] mx-auto">
-                Lancez la machine en créant votre première séance.
+                Lancez la machine en créant votre première séance. 
               </p>
               <div className="mt-2 px-4 py-2 bg-white text-black text-sm font-bold rounded-full shadow-lg">
                 Créer ma première séance
