@@ -7,29 +7,37 @@ interface KPIGridProps {
   presence: PresenceKPI;
   health: HealthKPI;
   load: LoadKPI;
+  onNavigate: (view: string) => void;
 }
 
-export const KPIGrid: React.FC<KPIGridProps> = ({ presence, health, load }) => {
+export const KPIGrid: React.FC<KPIGridProps> = ({ presence, health, load, onNavigate }) => {
   
   // Logic for Health Color
-  const isCriticalHealth = health.injured > 0;
-  const isWarningHealth = !isCriticalHealth && health.fatigued > 0;
+  const isCriticalHealth = (health?.injured ?? 0) > 0;
+  const isWarningHealth = !isCriticalHealth && (health?.fatigued ?? 0) > 0;
   
   const healthColor = isCriticalHealth ? 'bg-red-500' : isWarningHealth ? 'bg-orange-500' : 'bg-emerald-500';
 
   // Load Progress Calculation
-  const loadProgress = load.planned > 0 ? (load.realized / load.planned) * 100 : 0;
+  const plannedLoad = load?.planned ?? 0;
+  const realizedLoad = load?.realized ?? 0;
+  const loadProgress = plannedLoad > 0 ? (realizedLoad / plannedLoad) * 100 : 0;
   
+  const cardBaseClass = "w-full text-left bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between h-32 relative overflow-hidden active:scale-[0.98] transition-transform duration-200 cursor-pointer hover:shadow-md";
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
       
-      {/* 1. PRESENCE */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between h-32 relative overflow-hidden">
-        <div className="flex justify-between items-start z-10">
+      {/* 1. PRESENCE -> Athletes View */}
+      <button 
+        onClick={() => onNavigate('athletes')}
+        className={cardBaseClass}
+      >
+        <div className="flex justify-between items-start z-10 w-full">
           <div className="flex flex-col">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Présence</span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-3xl font-bold text-gray-900 dark:text-white">{presence.planned}</span>
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">{presence?.planned ?? 0}</span>
               <span className="text-sm font-medium text-gray-500">athlètes</span>
             </div>
             <span className="text-xs text-gray-400 mt-1">Attendus aujourd'hui</span>
@@ -39,36 +47,39 @@ export const KPIGrid: React.FC<KPIGridProps> = ({ presence, health, load }) => {
           </div>
         </div>
         
-        {presence.checked_in > 0 && (
+        {(presence?.checked_in ?? 0) > 0 && (
            <div className="mt-auto flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 py-1 px-2 rounded-md w-fit z-10">
              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
              {presence.checked_in} déjà connectés
            </div>
         )}
-      </div>
+      </button>
 
-      {/* 2. SANTÉ (Check Engine) */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between h-32 relative overflow-hidden">
+      {/* 2. SANTÉ (Check Engine) -> Athletes View */}
+      <button 
+        onClick={() => onNavigate('athletes')}
+        className={cardBaseClass}
+      >
         <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-gray-50 to-transparent dark:from-gray-700 rounded-bl-3xl -mr-2 -mt-2 z-0 opacity-50" />
         
-        <div className="flex justify-between items-start z-10">
+        <div className="flex justify-between items-start z-10 w-full">
            <div className="flex flex-col">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Santé Équipe</span>
             <div className="mt-2 flex items-center gap-2">
-               {health.injured > 0 && (
+               {(health?.injured ?? 0) > 0 && (
                  <div className="flex items-center gap-2 px-2 py-1 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900/50">
                     <AlertTriangle size={14} className="text-red-500" />
                     <span className="text-sm font-bold text-red-600 dark:text-red-400">{health.injured} Blessé{health.injured > 1 ? 's' : ''}</span>
                  </div>
                )}
-               {health.fatigued > 0 && (
+               {(health?.fatigued ?? 0) > 0 && (
                  <div className="flex items-center gap-2 px-2 py-1 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-100 dark:border-orange-900/50">
                     <Activity size={14} className="text-orange-500" />
                     <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{health.fatigued} Fatigué{health.fatigued > 1 ? 's' : ''}</span>
                  </div>
                )}
                
-               {health.injured === 0 && health.fatigued === 0 && (
+               {(health?.injured ?? 0) === 0 && (health?.fatigued ?? 0) === 0 && (
                   <div className="flex items-center gap-2 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
                      <CheckCircle size={14} className="text-emerald-500" />
                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Tout va bien</span>
@@ -82,11 +93,14 @@ export const KPIGrid: React.FC<KPIGridProps> = ({ presence, health, load }) => {
         <div className={`mt-auto h-1 w-full rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden`}>
            <div className={`h-full ${healthColor}`} style={{ width: '100%' }} />
         </div>
-      </div>
+      </button>
 
-      {/* 3. CHARGE (Pilotage) */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between h-32 relative">
-         <div className="flex justify-between items-start mb-2">
+      {/* 3. CHARGE (Pilotage) -> Planning View */}
+      <button 
+        onClick={() => onNavigate('planning')}
+        className={cardBaseClass}
+      >
+         <div className="flex justify-between items-start mb-2 w-full">
           <div className="flex flex-col">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Charge Hebdo</span>
              <div className="flex items-baseline gap-1 mt-1">
@@ -101,8 +115,8 @@ export const KPIGrid: React.FC<KPIGridProps> = ({ presence, health, load }) => {
 
         <div className="w-full mt-auto">
           <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>{load.realized} UA</span>
-            <span>Obj. {load.planned} UA</span>
+            <span>{realizedLoad} UA</span>
+            <span>Obj. {plannedLoad} UA</span>
           </div>
           <div className="h-2 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div 
@@ -111,7 +125,7 @@ export const KPIGrid: React.FC<KPIGridProps> = ({ presence, health, load }) => {
             />
           </div>
         </div>
-      </div>
+      </button>
 
     </div>
   );
