@@ -5,21 +5,27 @@ import { NextUpItem } from './types';
 
 interface OperationalViewProps {
   nextUp: NextUpItem[];
+  onNavigate: (view: string) => void;
 }
 
-export const OperationalView: React.FC<OperationalViewProps> = ({ nextUp }) => {
+export const OperationalView: React.FC<OperationalViewProps> = ({ nextUp, onNavigate }) => {
+
+  const emptyStateClasses = "mb-6 p-4 w-full text-left bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between active:scale-[0.98] transition-transform duration-200 cursor-pointer";
 
   if (!nextUp || nextUp.length === 0) {
     return (
-       <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
-          <div className="flex flex-col">
+       <button 
+        onClick={() => onNavigate('planning')}
+        className={emptyStateClasses}
+       >
+          <div className="flex flex-col text-left">
              <span className="text-sm font-semibold text-gray-900 dark:text-white">Aucune séance prévue</span>
              <span className="text-xs text-gray-500">Aujourd'hui est un jour de repos pour l'équipe.</span>
           </div>
           <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded-full text-gray-400">
              <Clock size={20} />
           </div>
-       </div>
+       </button>
     );
   }
 
@@ -35,11 +41,14 @@ export const OperationalView: React.FC<OperationalViewProps> = ({ nextUp }) => {
       </h2>
 
       {/* Primary Card */}
-      <div className="p-5 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 rounded-2xl shadow-lg border-l-4 border-sprint-gold text-white relative overflow-hidden">
+      <button 
+        onClick={() => onNavigate('planning')}
+        className="w-full text-left p-5 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 rounded-2xl shadow-lg border-l-4 border-sprint-gold text-white relative overflow-hidden active:scale-[0.98] transition-transform duration-200 cursor-pointer"
+      >
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-sprint-gold/10 rounded-full blur-2xl -mr-10 -mt-10" />
         
-        <div className="relative z-10 flex justify-between items-center">
+        <div className="relative z-10 flex justify-between items-center w-full">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sprint-gold text-black uppercase tracking-wide">
@@ -63,7 +72,7 @@ export const OperationalView: React.FC<OperationalViewProps> = ({ nextUp }) => {
             <Clock size={20} className="text-white" />
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Secondary Items (Simple List) */}
       {otherItems.length > 0 && (
