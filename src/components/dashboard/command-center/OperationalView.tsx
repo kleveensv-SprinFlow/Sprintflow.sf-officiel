@@ -8,8 +8,8 @@ interface OperationalViewProps {
 }
 
 export const OperationalView: React.FC<OperationalViewProps> = ({ nextUp }) => {
-  
-  if (nextUp.length === 0) {
+
+  if (!nextUp || nextUp.length === 0) {
     return (
        <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
           <div className="flex flex-col">
