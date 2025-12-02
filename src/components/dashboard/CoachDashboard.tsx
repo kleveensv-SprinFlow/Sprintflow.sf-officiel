@@ -40,7 +40,7 @@ export const CoachDashboard: React.FC = () => {
   const [navigationState, setNavigationState] = useState<NavigationState>({ view: 'home' });
 
   // Helper pour obtenir la vue courante (legacy support)
-  const currentView = navigationState.view;
+  const currentView = navigationState. view;
 
   // --- FONCTION DE NAVIGATION CENTRALE ---
   // Accepte un second argument optionnel pour les paramètres
@@ -158,7 +158,7 @@ export const CoachDashboard: React.FC = () => {
             className="h-full"
           >
             {renderContent()}
-          </motion. div>
+          </motion.div>
         </AnimatePresence>
       </main>
 
@@ -226,7 +226,7 @@ const NavButton: React.FC<{ icon: React.ElementType, label: string, isActive: bo
     }`}
   >
     <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-sprint-primary/10' : 'bg-transparent'}`}>
-      <Icon size={24} strokeWidth={isActive ? 2. 5 : 2} />
+      <Icon size={24} strokeWidth={isActive ?  2. 5 : 2} />
     </div>
     <span className={`text-[10px] font-medium ${isActive ? 'font-bold' : ''}`}>
       {label}
