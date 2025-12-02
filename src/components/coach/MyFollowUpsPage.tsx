@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Users, Calendar, HeartPulse, ClipboardCheck } from 'lucide-react';
 import { useGroups } from '../../hooks/useGroups';
 import { AthleteDetails } from '../groups/AthleteDetails';
@@ -34,7 +34,7 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
   }, [initialFilter]);
 
   // --- EXTRACTION ET TRI DES ATHLÈTES ---
-  const processedAthletes = React.useMemo(() => {
+  const processedAthletes = useMemo(() => {
     if (loadingGroups) return [];
 
     const athletesMap = new Map();
@@ -43,29 +43,40 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
       if (group.members) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         group.members.forEach((member: any) => {
-          const athleteId = member. athlete_id;
+          const athleteId = member.athlete_id;
           
+          // --- SMART MOCK DATA (Pour test UX) ---
+          // Génère un statut aléatoire stable basé sur l'ID pour simuler la réalité
+          // En production, remplace ceci par member.wellness_status venant de la DB
+          const mockWellness = ['healthy', 'healthy', 'healthy', 'tired', 'injured'];
+          const randomWellness = mockWellness[athleteId.charCodeAt(0) % mockWellness.length];
+          
+          const mockAttendance = ['present', 'present', 'present', 'late', 'absent'];
+          const randomAttendance = mockAttendance[athleteId.charCodeAt(athleteId.length - 1) % mockAttendance.length];
+
           // Récupération des données basiques
           const baseData = {
              id: athleteId,
-             first_name: member. athlete?. first_name || member.profiles?. first_name || 'Prénom',
-             last_name: member.athlete?. last_name || member.profiles?.last_name || 'Nom',
+             first_name: member.athlete?.first_name || member.profiles?.first_name || 'Prénom',
+             last_name: member.athlete?.last_name || member.profiles?.last_name || 'Nom',
              photo_url: member.athlete?.photo_url || member.profiles?.photo_url,
              joined_at: member.joined_at,
              groups: [group.name],
-             // --- MOCK DATA FOR SORTING (Waiting for real backend data integration) ---
-             // TODO: Connecter aux vraies données de checkin/santé
-             // Pour l'instant on initialise à des valeurs par défaut "neutres"
-             wellness_status: 'healthy', // 'injured', 'tired', 'healthy'
-             attendance_status: 'present', // 'absent', 'late', 'present'
-             has_checkin: true
+             
+             // Utilisation du Mock "Smart" pour voir les couleurs changer
+             wellness_status: member.wellness_status || randomWellness, 
+             attendance_status: member.attendance_status || randomAttendance,
+             has_checkin: Math.random() > 0.3 // 30% n'ont pas checkin
           };
 
-          if (!athletesMap. has(athleteId)) {
+          if (!athletesMap.has(athleteId)) {
              athletesMap.set(athleteId, baseData);
           } else {
              const existing = athletesMap.get(athleteId);
-             existing.groups.push(group. name);
+             // Avoid duplicate group names
+             if (!existing.groups.includes(group.name)) {
+                existing.groups.push(group.name);
+             }
           }
         });
       }
@@ -75,13 +86,13 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
 
     // --- APPLICATION DU FILTRE ET TRI ---
     if (activeFilter === 'wellness') {
-        // Tri par statut de santé: Injured > Tired > Healthy
+        // Tri par statut de santé: Injured (0) > Tired (1) > Healthy (2)
         const statusOrder: Record<string, number> = { 'injured': 0, 'tired': 1, 'healthy': 2 };
         result = result.sort((a, b) => 
-          (statusOrder[a. wellness_status] ??  2) - (statusOrder[b.wellness_status] ?? 2)
+          (statusOrder[a.wellness_status] ?? 2) - (statusOrder[b.wellness_status] ?? 2)
         );
     } else if (activeFilter === 'attendance') {
-        // Tri par statut de présence: Absent > Late > Present
+        // Tri par statut de présence: Absent (0) > Late (1) > Present (2)
         const statusOrder: Record<string, number> = { 'absent': 0, 'late': 1, 'present': 2 };
         result = result.sort((a, b) => 
           (statusOrder[a.attendance_status] ?? 2) - (statusOrder[b.attendance_status] ?? 2)
@@ -89,6 +100,9 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
     } else if (activeFilter === 'no-checkin') {
         // Filtrer uniquement ceux sans check-in
         result = result.filter(a => !a.has_checkin);
+    } else {
+        // Tri par défaut (Alphabétique)
+        result = result.sort((a, b) => a.last_name.localeCompare(b.last_name));
     }
 
     return result;
@@ -131,7 +145,7 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
             Mes Athlètes
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {processedAthletes. length} athlètes {activeFilter !== 'all' ?  `(filtre: ${getFilterLabel(activeFilter)})` : 'suivis'}
+            {processedAthletes.length} athlètes {activeFilter !== 'all' ? `(filtre: ${getFilterLabel(activeFilter)})` : 'suivis'}
           </p>
         </div>
       </div>
@@ -167,7 +181,7 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
 
       {/* LISTE DES ATHLÈTES */}
       <div className="space-y-3">
-        {processedAthletes. length === 0 ?  (
+        {processedAthletes.length === 0 ? (
            <div className="text-center py-12">
              <div className="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                <Users className="text-gray-400" size={32} />
@@ -184,7 +198,7 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
            </div>
         ) : (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          processedAthletes. map((athlete: any) => (
+          processedAthletes.map((athlete: any) => (
             <div 
               key={athlete.id}
               onClick={() => setSelectedAthlete(athlete)}
@@ -202,13 +216,13 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
                   )}
                 </div>
                 {/* Status Indicator based on active filter */}
-                {activeFilter === 'wellness' && (
+                {(activeFilter === 'wellness' || activeFilter === 'all') && athlete.wellness_status !== 'healthy' && (
                    <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${getWellnessColor(athlete.wellness_status)} border-2 border-white dark:border-gray-800 rounded-full flex items-center justify-center`}>
                      <HeartPulse size={10} className="text-white" />
                    </div>
                 )}
                 {activeFilter === 'attendance' && (
-                   <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${getAttendanceColor(athlete. attendance_status)} border-2 border-white dark:border-gray-800 rounded-full flex items-center justify-center`}>
+                   <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${getAttendanceColor(athlete.attendance_status)} border-2 border-white dark:border-gray-800 rounded-full flex items-center justify-center`}>
                      <Calendar size={10} className="text-white" />
                    </div>
                 )}
@@ -221,7 +235,7 @@ const MyFollowUpsPage: React.FC<MyFollowUpsPageProps> = ({ onBack, initialFilter
                 </h3>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                    {athlete.groups.map((g: string) => (
-                     <span key={g} className="bg-gray-100 dark:bg-gray-700 px-1. 5 py-0.5 rounded text-gray-600 dark:text-gray-300">
+                     <span key={g} className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300">
                        {g}
                      </span>
                    ))}
